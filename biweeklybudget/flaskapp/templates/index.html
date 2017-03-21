@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Budget App{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <!-- /.row -->
+            <div class="row" id="content-row">
+                <div class="col-lg-8">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Placeholder - Chart of Transactions
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                        Actions
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" role="menu">
+                                        <li><a href="#">Action</a>
+                                        </li>
+                                        <li><a href="#">Another action</a>
+                                        </li>
+                                        <li><a href="#">Something else here</a>
+                                        </li>
+                                        <li class="divider"></li>
+                                        <li><a href="#">Separated link</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="morris-area-chart"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-8 -->
+                <div class="col-lg-4">
+                    <div class="panel panel-default" id="panel-bank-accounts">
+                        <div class="panel-heading">
+                            <i class="fa fa-bank fa-fw"></i> Bank Accounts
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for acct in bank_accounts|sort(attribute='name') %}
+                                        <tr>
+                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td>
+                                                <span>{{ acct.balance.ledger|dollars }}</span>
+                                                {% if acct.is_stale %}
+                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% else %}
+                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                    <div class="panel panel-default" id="panel-credit-cards">
+                        <div class="panel-heading">
+                            <i class="fa fa-credit-card fa-fw"></i> Credit Cards
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for acct in credit_accounts|sort(attribute='name') %}
+                                        <tr>
+                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td>
+                                                <span>{{ acct.balance.ledger|dollars }}</span>
+                                                {% if acct.is_stale %}
+                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% else %}
+                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                    <div class="panel panel-default" id="panel-investment">
+                        <div class="panel-heading">
+                            <i class="glyphicon glyphicon-piggy-bank"></i> Investment Accounts
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for acct in investment_accounts|sort(attribute='name') %}
+                                        <tr>
+                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td>
+                                                <span>{{ acct.balance.ledger|dollars }}</span>
+                                                {% if acct.is_stale %}
+                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% else %}
+                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-4 -->
+            </div>
+            <!-- /.row -->
+{% endblock %}

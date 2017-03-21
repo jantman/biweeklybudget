@@ -2,7 +2,7 @@
 The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
-##################################################################################
+################################################################################
 Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
@@ -23,31 +23,37 @@ Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 The Copyright and Authors attributions contained herein may not be removed or
 otherwise altered, except to add the Author attribution of a contributor to
 this work. (Additional Terms pursuant to Section 7b of the AGPL v3)
-##################################################################################
+################################################################################
 While not legally required, I sincerely request that anyone who finds
 bugs please submit them at <https://github.com/jantman/biweeklybudget> or
 to me via email, and that you send any contributions or improvements
 either as a pull request on GitHub, or to me via email.
-##################################################################################
+################################################################################
 
 AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
-##################################################################################
+################################################################################
 """
 
 from setuptools import setup, find_packages
 from biweeklybudget.version import VERSION, PROJECT_URL
 
-with open('README.rst') as file:
-    long_description = file.read()
+with open('README.rst') as f:
+    long_description = f.read()
 
-requires = [
-    'requests==2.13.0'
-]
+pyver_requires = []
+dep_links = []
+with open('requirements.txt') as f:
+    for line in f.readlines():
+        if line.startswith('#'):
+            continue
+        if '://' in line:
+            dep_links.append(line.strip())
+        else:
+            pyver_requires.append(line.strip())
 
 classifiers = [
-    'Development Status :: 1 - Planning',
-    # 'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 2 - Pre-Alpha',
     'Environment :: Web Environment',
     'Framework :: Flask',
     'Intended Audience :: End Users/Desktop',
@@ -71,11 +77,25 @@ setup(
     author='Jason Antman',
     author_email='jason@jasonantman.com',
     packages=find_packages(),
+    package_data={
+        'biweeklybudget': [
+            'flaskapp/templates/*',
+            'flaskapp/static/*',
+        ]
+    },
     url=PROJECT_URL,
     description='Responsive Flask/SQLAlchemy personal finance app, '
                 'specifically for biweekly budgeting.',
     long_description=long_description,
-    install_requires=requires,
+    install_requires=pyver_requires,
+    dependency_links=dep_links,
+    include_package_data=True,
+    entry_points="""
+    [console_scripts]
+    loaddata = biweeklybudget.load_data:main
+    ofxgetter = biweeklybudget.ofxgetter:main
+    ofxbackfiller = biweeklybudget.backfill_ofx:main
+    """,
     keywords="budget finance biweekly ofx flask responsive sqlalchemy bank",
     classifiers=classifiers
 )

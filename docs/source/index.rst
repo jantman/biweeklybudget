@@ -1,5 +1,5 @@
 .. meta::
-   :description: A script and python module to check your AWS service limits and usage, and warn when usage approaches limits.
+   :description: Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
 .. include:: ../../README.rst
 
@@ -10,7 +10,6 @@ Contents
    :maxdepth: 4
 
    API <modules>
-   Changelog <changes>
 
 Indices and tables
 ==================

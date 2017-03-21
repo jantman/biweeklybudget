@@ -1,3 +1,5 @@
 include CHANGES.rst
 include LICENSE
 include README.rst
+include requirements.txt
+include alembic.ini

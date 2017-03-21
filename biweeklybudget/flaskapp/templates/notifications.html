@@ -1,0 +1,13 @@
+            <!-- BEGIN notifications.html -->
+            {% if notifications|length > 0 %}
+            <div class="row" id="notifications-row">
+                <div class="col-lg-12">
+                    {% for n in notifications %}
+                    <div class="{{ n.classes }}">{{ n.content|safe }}</div>
+                    {% endfor %}
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+            {% endif %}
+            <!-- END notifications.html -->

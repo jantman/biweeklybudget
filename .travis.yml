@@ -1,9 +1,21 @@
 language: python
+dist: trusty
 sudo: false
 
 cache:
   directories:
     - $HOME/.pip-cache/
+
+services:
+  - mysql
+
+before_install:
+  - mysql -e 'CREATE DATABASE budgettest;'
+
+env:
+  global:
+    - MYSQL_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
+    - SETTINGS_MODULE=biweeklybudget.settings_example
 
 matrix:
   include:
@@ -16,8 +28,12 @@ matrix:
     - python: "3.5"
       env: TOXENV=py35 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
     - python: "3.6"
-      env: TOXENV=py36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache      
+      env: TOXENV=py36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
     - python: "2.7"
+      env: TOXENV=acceptance27 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+    - python: "3.6"
+      env: TOXENV=acceptance36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+    - python: "3.6"
       env: TOXENV=docs PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
 
 install:

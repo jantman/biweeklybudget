@@ -8,8 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-bin/
-include/
 env/
 build/
 develop-eggs/
@@ -17,6 +15,7 @@ dist/
 downloads/
 eggs/
 .eggs/
+include/
 lib/
 lib64/
 parts/
@@ -46,6 +45,9 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.hypothesis/
+results/
+selenium/
 
 # Translations
 *.mo
@@ -53,6 +55,14 @@ coverage.xml
 
 # Django stuff:
 *.log
+local_settings.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
 
 # Sphinx documentation
 docs/build/
@@ -60,8 +70,57 @@ docs/build/
 # PyBuilder
 target/
 
-# virtualenv
-bin/
-include/
+# IPython Notebook
+.ipynb_checkpoints
 
-.idea/
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# dotenv
+.env
+
+# virtualenv
+venv/
+ENV/
+bin/activate
+bin/activate.csh
+bin/activate.fish
+bin/activate_this.py
+bin/alembic
+bin/easy_install
+bin/easy_install-2.7
+bin/easy_install-3.6
+bin/flask
+bin/keyring
+bin/loaddata
+bin/mako-render
+bin/newMonthlyBudget_reconcile
+bin/newMonthlyBudget_template
+bin/ofxbackfiller
+bin/ofxclient
+bin/ofxgetter
+bin/pip*
+bin/pyrsa-decrypt
+bin/pyrsa-decrypt-bigfile
+bin/pyrsa-encrypt
+bin/pyrsa-encrypt-bigfile
+bin/pyrsa-keygen
+bin/pyrsa-priv2pub
+bin/pyrsa-sign
+bin/pyrsa-verify
+bin/python*
+bin/tox
+bin/tox-quickstart
+bin/virtualenv
+bin/wheel
+
+# Spyder project settings
+.spyderproject
+
+# Rope project settings
+.ropeproject
+
+.idea

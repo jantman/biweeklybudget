@@ -1,5 +1,5 @@
 biweeklybudget
-===============
+==============
 
 .. toctree::
    :maxdepth: 4

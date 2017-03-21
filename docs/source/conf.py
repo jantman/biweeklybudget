@@ -17,7 +17,7 @@ import os
 import re
 # to let sphinx find the actual source...
 sys.path.insert(0, os.path.abspath("../.."))
-from biweeklybudget.version import VERSION
+from biweeklybudget.version import VERSION, PROJECT_URL
 import sphinx.environment
 from docutils.utils import get_source_line
 
@@ -68,7 +68,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'biweeklybudget'
-copyright = u'2016 Jason Antman'
+copyright = u'2017 Jason Antman'
 author = u'Jason Antman'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -134,7 +134,7 @@ if is_rtd:
         sphinx_rtd_theme.get_html_theme_path(),
     ]
     html_static_path = ['_static']
-    htmlhelp_basename = 'biweeklybudgetdoc'
+    htmlhelp_basename = 'budgetdoc'
 
 #html_theme_options = {
 #    'analytics_id': 'Your-ID-Here',
@@ -142,7 +142,7 @@ if is_rtd:
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = 'v{v} - Description of Package Here'.format(v=version)
+html_title = 'v{v} - Biweekly Budget App'.format(v=version)
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -205,7 +205,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-#htmlhelp_basename = 'biweeklybudgetdoc'
+#htmlhelp_basename = 'budgetdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -292,6 +292,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'https://docs.python.org/2/': None,
+    'sqlalchemy': (
+        'http://docs.sqlalchemy.org/en/latest/objects.inv', None
+    ),
+    'selenium': ('http://selenium-python.readthedocs.io/', None)
 }
 
 autoclass_content = 'class'
@@ -303,7 +307,15 @@ linkcheck_ignore = [
     r'https?://.*\.readthedocs\.org.*',
     r'https?://codecov\.io.*',
     r'https?://.*readthedocs\.org.*',
-    r'https?://pypi\.python\.org/pypi/biweeklybudget'
+    r'https?://pypi\.python\.org/pypi/biweeklybudget',
+    r'https?://localhost.*'
+]
+
+nitpick_ignore = [
+    ('py:class', 'flask.views.MethodView'),
+    ('py:class', 'sqlalchemy.ext.declarative.api.Base'),
+    ('py:class', 'enum.Enum'),
+    ('py:class', 'Exception')
 ]
 
 # exclude module docstrings - see http://stackoverflow.com/a/18031024/211734
