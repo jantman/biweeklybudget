@@ -47,9 +47,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 logger = logging.getLogger(__name__)
 
 logger.debug('Creating DB engine with connection: %s',
-             settings.MYSQL_CONNSTRING)
+             settings.DB_CONNSTRING)
 engine = create_engine(
-    settings.MYSQL_CONNSTRING, convert_unicode=True, echo=False
+    settings.DB_CONNSTRING, convert_unicode=True, echo=False
 )
 logger.debug('Creating DB session')
 db_session = scoped_session(

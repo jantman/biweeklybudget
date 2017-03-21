@@ -48,15 +48,15 @@ TOKEN_PATH = 'vault_token.txt'
 STATEMENTS_SAVE_PATH = os.path.expanduser('~/ofx')
 
 # MySQL connection settings
-if 'MYSQL_CONNSTRING' in os.environ:
-    MYSQL_CONNSTRING = os.environ['MYSQL_CONNSTRING']
+if 'DB_CONNSTRING' in os.environ:
+    DB_CONNSTRING = os.environ['DB_CONNSTRING']
 else:
     MYSQL_DBNAME = 'budget'
     MYSQL_HOST = 'localhost'
     MYSQL_PORT = 3306
     MYSQL_USER = 'budgetUser'
     MYSQL_PASS = 'budgetPassword'
-    MYSQL_CONNSTRING = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4'.format(
+    DB_CONNSTRING = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8mb4'.format(
         MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME
     )
 

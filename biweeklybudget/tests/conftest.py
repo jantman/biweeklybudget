@@ -47,12 +47,12 @@ try:
 except ImportError:
     pass
 
-connstr = os.environ.get('MYSQL_CONNSTRING', None)
+connstr = os.environ.get('DB_CONNSTRING', None)
 if connstr is None:
     connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
               'budgettest?charset=utf8mb4'
-    os.environ['MYSQL_CONNSTRING'] = connstr
-biweeklybudget.settings.MYSQL_CONNSTRING = connstr
+    os.environ['DB_CONNSTRING'] = connstr
+biweeklybudget.settings.DB_CONNSTRING = connstr
 
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa

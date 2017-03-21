@@ -92,7 +92,7 @@ Flask App
 * Run with debug/reload: ``flask run --host=0.0.0.0 --reload --debugger``
 * Build theme: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
-To run the app against the acceptance test database, use: ``MYSQL_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run --host=0.0.0.0``
+To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run --host=0.0.0.0``
 
 Scripts / Entrypoints
 ---------------------
@@ -194,7 +194,7 @@ There's a pytest marker for integration tests, effectively defined as anything t
 
 There are acceptance tests, which use a real MySQL DB (see the connection string in ``tox.ini`` and ``conftest.py``) and a real Flask HTTP server, and selenium. Run them via the ``acceptance`` tox environment.
 
-The acceptance tests connect to a local MySQL database using a connection string specified by the ``MYSQL_CONNSTRING`` environment variable, or defaulting to a DB name and user/password that can be seen in ``conftest.py``. Once connected, the tests will drop all tables in the test DB, re-create all models/tables, and then load sample data. After the DB is initialized, tests will run the local Flask app on a random port, and run Selenium backed by PhantomJS.
+The acceptance tests connect to a local MySQL database using a connection string specified by the ``DB_CONNSTRING`` environment variable, or defaulting to a DB name and user/password that can be seen in ``conftest.py``. Once connected, the tests will drop all tables in the test DB, re-create all models/tables, and then load sample data. After the DB is initialized, tests will run the local Flask app on a random port, and run Selenium backed by PhantomJS.
 
 If you want to run the acceptance tests without dumping and refreshing the test database, export the ``NO_REFRESH_DB`` environment variable.
 

@@ -39,7 +39,7 @@ from __future__ import with_statement
 from alembic import context
 from sqlalchemy import pool, create_engine
 from logging.config import fileConfig
-from biweeklybudget.settings import MYSQL_CONNSTRING
+from biweeklybudget.settings import DB_CONNSTRING
 from biweeklybudget.models.base import Base
 
 # this is the Alembic Config object, which provides
@@ -74,7 +74,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = MYSQL_CONNSTRING
+    url = DB_CONNSTRING
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True)
 
@@ -89,7 +89,7 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = create_engine(MYSQL_CONNSTRING, poolclass=pool.NullPool)
+    connectable = create_engine(DB_CONNSTRING, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(

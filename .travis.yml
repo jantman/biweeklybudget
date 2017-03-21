@@ -14,7 +14,7 @@ before_install:
 
 env:
   global:
-    - MYSQL_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
+    - DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - SETTINGS_MODULE=biweeklybudget.settings_example
 
 matrix:
