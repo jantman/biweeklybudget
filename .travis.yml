@@ -10,7 +10,7 @@ services:
   - mysql
 
 before_install:
-  - mysql -e 'CREATE DATABASE budgettest;'
+  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest;'
 
 env:
   global:
