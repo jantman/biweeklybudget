@@ -44,4 +44,10 @@ if 'SETTINGS_MODULE' not in os.environ:
         'with the path to your settings module.'
     )
 modname = os.environ.get('SETTINGS_MODULE')
-importlib.import_module(modname)
+m = importlib.import_module(modname)
+module_dict = m.__dict__
+try:
+    to_import = m.__all__
+except AttributeError:
+    to_import = [name for name in module_dict if not name.startswith('_')]
+globals().update({name: module_dict[name] for name in to_import})
