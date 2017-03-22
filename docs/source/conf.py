@@ -308,6 +308,7 @@ linkcheck_ignore = [
     r'https?://codecov\.io.*',
     r'https?://.*readthedocs\.org.*',
     r'https?://pypi\.python\.org/pypi/biweeklybudget',
+    r'https?://testpypi\.python\.org/pypi/biweeklybudget',
     r'https?://localhost.*'
 ]
 

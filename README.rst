@@ -1,22 +1,6 @@
 biweeklybudget
 ==============
 
-.. image:: https://img.shields.io/pypi/v/biweeklybudget.svg?maxAge=2592000
-   :target: https://pypi.python.org/pypi/biweeklybudget
-   :alt: pypi version
-
-.. image:: https://img.shields.io/github/forks/jantman/biweeklybudget.svg
-   :alt: GitHub Forks
-   :target: https://github.com/jantman/biweeklybudget/network
-
-.. image:: https://img.shields.io/github/issues/jantman/biweeklybudget.svg
-   :alt: GitHub Open Issues
-   :target: https://github.com/jantman/biweeklybudget/issues
-
-.. image:: https://landscape.io/github/jantman/biweeklybudget/master/landscape.svg
-   :target: https://landscape.io/github/jantman/biweeklybudget/master
-   :alt: Code Health
-
 .. image:: https://secure.travis-ci.org/jantman/biweeklybudget.png?branch=master
    :target: http://travis-ci.org/jantman/biweeklybudget
    :alt: travis-ci for master branch
@@ -51,8 +35,12 @@ for information on how to create a venv.
 This app is developed against Python 3.6, but should work back to 2.7. It does
 not support Python3 < 3.3.
 
+Please note that, at the moment, two dependencies are installed via git in order
+to make use of un-merged pull requests that fix bugs; since
+
 .. code-block:: bash
 
+    git clone https://github.com/jantman/biweeklybudget.git && cd biweeklybudget
     virtualenv --python=python3.6 .
     source bin/activate
     pip install -r requirements.txt
