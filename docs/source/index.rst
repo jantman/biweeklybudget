@@ -9,6 +9,12 @@ Contents
 .. toctree::
    :maxdepth: 4
 
+   Screenshots <screenshots>
+   Getting Started <getting_started>
+   Flask App <flask_app>
+   OFX Transaction Downloading <ofx>
+   Getting Help <getting_help>
+   Development <development>
    Changelog <changes>
    API <modules>
 

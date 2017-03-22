@@ -1,0 +1,25 @@
+biweeklybudget.flaskapp package
+===============================
+
+.. automodule:: biweeklybudget.flaskapp
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    biweeklybudget.flaskapp.controllers
+    biweeklybudget.flaskapp.views
+
+Submodules
+----------
+
+.. toctree::
+
+   biweeklybudget.flaskapp.app
+   biweeklybudget.flaskapp.filters
+   biweeklybudget.flaskapp.jinja_tests
+

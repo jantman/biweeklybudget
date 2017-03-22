@@ -19,11 +19,48 @@ biweeklybudget
 
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
+**See `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_ for full documentation.**
+
+Overview
+--------
+
+biweeklybudget is a responsive (mobile-friendly) Flask/SQLAlchemy personal finance application, specifically
+targeted at budgeting on a biweekly basis. This is a personal project of mine, and really only intended for my
+personal use. If you find it helpful, great! But this is provided as-is; I'll happily accept pull requests if they
+don't mess things up for me, but I don't intend on working any feature requests or bug reports at this time. Sorry.
+
+The main motivation for writing this is that I get paid every other Friday, and have for almost all of my professional
+life. I also essentially live paycheck-to-paycheck; what savings I have is earmarked for specific purposes, so I budget
+in periods identical to my pay periods. No existing financial software that I know of handles this, and many of them
+have thousands of Google results of people asking for it; almost everything existing budgets on calendar months. I spent
+many years using Google Sheets and a handful of scripts to template out budgets and reconcile transactions, but I decided
+it's time to just bite the bullet and write something that isn't a pain.
+
+**Intended Audience:** This is decidedly not an end-user application. You should be familiar with Python/Flask/MySQL. If
+you're going to use the automatic transaction download functionality, you should be familiar with `Hashicorp Vault <https://www.vaultproject.io/>`_
+and how to run a reasonably secure installation of it. I personally don't recommend running this on anything other than
+your own computer that you physically control, given the sensitivity of the information. I also don't recommend making the
+application available to anything other than localhost, but if you do, you need to be aware of the security implications. This
+application is **not** designed to be accessible in any way to anyone other than authorized users (i.e. if you just serve it
+over the web, someone *will* get your account numbers, or worse).
+
+Main Features
++++++++++++++
+
+* Budgeting on a biweekly (fortnightly; every other week) basis, for those of us who are paid that way.
+* Optional automatic downloading of transactions/statements from your financial institutions.
+
 Requirements
 ------------
 
-* Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6)
+* Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6 and developed with 3.6)
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
+* Git, to install certain upstream dependencies.
+* MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
+* To use the automated OFX transaction downloading functionality:
+
+  * A running, reachable instance of `Hashicorp Vault <https://www.vaultproject.io/>`_ with your financial institution web credentials stored in it.
+  * `PhantomJS <http://phantomjs.org/>`_ for downloading transaction data from institutions that do not support OFX remote access ("Direct Connect").
 
 Installation
 ------------
@@ -45,143 +82,3 @@ to make use of un-merged pull requests that fix bugs; since
     source bin/activate
     pip install -r requirements.txt
     python setup.py develop
-
-Configuration
--------------
-
-Something here.
-
-Usage
------
-
-Something else here.
-
-Bugs and Feature Requests
--------------------------
-
-Bug reports and feature requests are happily accepted via the `GitHub Issue Tracker <https://github.com/jantman/biweeklybudget/issues>`_. Pull requests are
-welcome. Issues that don't have an accompanying pull request will be worked on
-as my time and priority allows.
-
-Old Script Contents
--------------------
-
--  **ofxgetter.py** - Library for retrieving OFX files. Usage: ``./ofxgetter.py`` for all accounts, or ``./ofxgetter.py ACCT-NAME`` for one account.
--  `~/GIT/misc-scripts/lastpass2vault.py <https://github.com/jantman/misc-scripts/blob/master/lastpass2vault.py>`_ - Script to pull all entries from LastPass and write them to local Vault. Run as ``./lastpass2vault.py -vv -f PATH_TO_VAULT_TOKEN LASTPASS_USERNAME``
-
-Flask App
----------
-
-1. ``source bin/activate``
-2. ``export FLASK_APP="biweeklybudget.flaskapp.app"``
-3. ``flask --help``
-
-* Run App: ``flask run --host=0.0.0.0``
-* Run with debug/reload: ``flask run --host=0.0.0.0 --reload --debugger``
-* Build theme: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
-
-To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run --host=0.0.0.0``
-
-Scripts / Entrypoints
----------------------
-
-* ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work.
-* ``bin/loaddata`` - Entrypoint for loading test fixture data, or my base data. This is an awful, manual hack right now.
-* ``bin/ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
-* ``bin/ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB.
-
-DB Migrations
--------------
-
-This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
-for DB migrations:
-
-* To generate migrations, run ``alembic revision --autogenerate -m "message"`` and examine/edit then commit the resulting file(s).
-* To apply migrations, run ``alembic upgrade head``.
-* To see the current DB version, run ``alembic current``.
-* To see migration history, run ``alembic history``.
-
-OFX Downloads
--------------
-
-``ofxgetter`` downloads OFX statements from your bank(s), stores them locally, and writes
-them to the database. It requires an instance of `Hashicorp Vault <https://www.vaultproject.io/>`_ to retrieve credentials from.
-
-Testing
--------
-
-There are minimal unit tests, really only some examples and room to test some potentially fragile code. Run them via the ``py27`` tox environment.
-
-There's a pytest marker for integration tests, effectively defined as anything that might use either a mocked/in-memory DB or the flask test client, but no HTTP server and no real RDBMS. Run them via the ``integration`` tox environment.
-
-There are acceptance tests, which use a real MySQL DB (see the connection string in ``tox.ini`` and ``conftest.py``) and a real Flask HTTP server, and selenium. Run them via the ``acceptance`` tox environment.
-
-The acceptance tests connect to a local MySQL database using a connection string specified by the ``DB_CONNSTRING`` environment variable, or defaulting to a DB name and user/password that can be seen in ``conftest.py``. Once connected, the tests will drop all tables in the test DB, re-create all models/tables, and then load sample data. After the DB is initialized, tests will run the local Flask app on a random port, and run Selenium backed by PhantomJS.
-
-If you want to run the acceptance tests without dumping and refreshing the test database, export the ``NO_REFRESH_DB`` environment variable.
-
-Development
-===========
-
-To install for development:
-
-1. Fork the `biweeklybudget <https://github.com/jantman/biweeklybudget>`_ repository on GitHub
-2. Create a new branch off of master in your fork.
-
-.. code-block:: bash
-
-    $ virtualenv biweeklybudget
-    $ cd biweeklybudget && source bin/activate
-    $ pip install -e git+git@github.com:YOURNAME/biweeklybudget.git@BRANCHNAME#egg=biweeklybudget
-    $ cd src/biweeklybudget
-
-The git clone you're now in will probably be checked out to a specific commit,
-so you may want to ``git checkout BRANCHNAME``.
-
-Guidelines
-----------
-
-* pep8 compliant with some exceptions (see pytest.ini)
-* 100% test coverage with pytest (with valid tests)
-
-Testing
--------
-
-Testing is done via `pytest <http://pytest.org/latest/>`_, driven by `tox <http://tox.testrun.org/>`_.
-
-* testing is as simple as:
-
-  * ``pip install tox``
-  * ``tox``
-
-* If you want to pass additional arguments to pytest, add them to the tox command line after "--". i.e., for verbose pytext output on py27 tests: ``tox -e py27 -- -v``
-
-Release Checklist
------------------
-
-1. Open an issue for the release; cut a branch off master for that issue.
-2. Confirm that there are CHANGES.rst entries for all major changes.
-3. Ensure that Travis tests passing in all environments.
-4. Ensure that test coverage is no less than the last release (ideally, 100%).
-5. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
-6. Confirm that README.rst renders correctly on GitHub.
-7. Upload package to testpypi:
-
-   * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
-   * ``rm -Rf dist``
-   * ``python setup.py register -r https://testpypi.python.org/pypi``
-   * ``python setup.py sdist bdist_wheel``
-   * ``twine upload -r test dist/*``
-   * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
-
-8. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
-9. Tag the release in Git, push tag to GitHub:
-
-   * tag the release. for now the message is quite simple: ``git tag -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
-   * push the tag to GitHub: ``git push origin X.Y.Z``
-
-11. Upload package to live pypi:
-
-    * ``twine upload dist/*``
-
-10. make sure any GH issues fixed in the release were closed.
