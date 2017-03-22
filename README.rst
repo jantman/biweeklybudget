@@ -19,7 +19,7 @@ biweeklybudget
 
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
-**See `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_ for full documentation.**
+**For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
 
 Overview
 --------
