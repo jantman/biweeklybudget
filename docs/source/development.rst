@@ -24,6 +24,25 @@ Guidelines
 * pep8 compliant with some exceptions (see pytest.ini)
 * 100% test coverage with pytest (with valid tests)
 
+.. _development.loading_data:
+
+Loading Data
+------------
+
+The sample data used for acceptance tests is defined in ``biweeklybudget/tests/fixtures/sampledata.py``.
+This data can be loaded by `setting up the environment <_getting_started.setup>`
+and then using the ``biweeklybudget/load_data.py`` script (the following values for
+options are actually the defaults, but are shown for clarity:
+
+.. code-block:: bash
+
+    biweeklybudget/load_data.py -m biweeklybudget.tests.fixtures.sampledata -c SampleDataLoader
+
+If you wish, you can copy ``biweeklybudget/tests/fixtures/sampledata.py`` to your
+`customization package <_getting_started.customization>` and edit it to load your own
+custom data. This should only be required if you plan on dropping and reinitializing the
+database often.
+
 Testing
 -------
 
@@ -65,6 +84,13 @@ for DB migrations:
 * To apply migrations, run ``alembic upgrade head``.
 * To see the current DB version, run ``alembic current``.
 * To see migration history, run ``alembic history``.
+
+Frontend / UI
+-------------
+
+The UI is based on `BlackrockDigital's startbootstrap-sb-admin-2 <https://github.com/BlackrockDigital/startbootstrap-sb-admin-2>`_,
+currently as of the 3.3.7-1 GitHub release. It is currently not modified at all, but should it need to be rebuilt,
+this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
 Release Checklist
 -----------------

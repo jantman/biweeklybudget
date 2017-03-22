@@ -6,13 +6,12 @@ Flask Application
 Running
 -------
 
-1. ``source bin/activate``
+1. First, setup your environment per `Getting Started - Setup <getting_started.setup>`.
 2. ``export FLASK_APP="biweeklybudget.flaskapp.app"``
-3. ``flask --help``
+3. ``flask --help`` for information on usage:
 
-* Run App: ``flask run``
-* Run with debug/reload: ``flask run --reload --debugger``
-* Build theme: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
+  * Run App: ``flask run``
+  * Run with debug/reload: ``flask run --reload --debugger``
 
 To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run``
 

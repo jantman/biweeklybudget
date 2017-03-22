@@ -65,12 +65,16 @@ to store your passwords, you may find my `lastpass2vault.py <https://github.com/
 helpful; run it as ``./lastpass2vault.py -vv -f PATH_TO_VAULT_TOKEN LASTPASS_USERNAME`` and
 it will copy all of your credentials from LastPass to Vault, preserving the folder structure.
 
+.. _ofx.ofxclient:
+
 Configuring Accounts for Downloading with ofxclient
 ---------------------------------------------------
 
 1. Use the ``ofxclient`` CLI to configure and test your account.
 2. Put your creds in Vault.
 3. Migrate ~/ofxclient.ini to JSON, add it to your :py:class:`~biweeklybudget.models.account.Account`.
+
+.. _ofx.selenium:
 
 Configuring Accounts for Downloading with Selenium
 --------------------------------------------------

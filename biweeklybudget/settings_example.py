@@ -38,14 +38,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 from datetime import timedelta
 
-# Address to connect to Vault at, for OFX credentials
+#: Address to connect to Vault at, for OFX credentials
 VAULT_ADDR = 'http://127.0.0.1:8200'
 
-# Path to read Vault token from
+#: Path to read Vault token from, for OFX credentials
 TOKEN_PATH = 'vault_token.txt'
 
-# Path to download OFX statements to, and read them from
+#: Path to download OFX statements to, and for backfill_ofx to read them from
 STATEMENTS_SAVE_PATH = os.path.expanduser('~/ofx')
+
+#: SQLAlchemy database connection string. Note that the value given in
+#: generated documentation is the value used in TravisCI, not the real default.
+DB_CONNSTRING = None
 
 # MySQL connection settings
 if 'DB_CONNSTRING' in os.environ:
@@ -60,4 +64,5 @@ else:
         MYSQL_USER, MYSQL_PASS, MYSQL_HOST, MYSQL_PORT, MYSQL_DBNAME
     )
 
+#: :py:class:`datetime.timedelta` beyond which OFX data will be considered old
 STALE_DATA_TIMEDELTA = timedelta(days=2)

@@ -46,13 +46,51 @@ for DB migrations:
 * To see the current DB version, run ``alembic current``.
 * To see migration history, run ``alembic history``.
 
+.. _getting_started.configuration:
+
 Configuration
 -------------
 
-Something here.
+biweeklybudget primarily takes its settings from constants defined in a Python
+module. :py:mod:`biweeklybudget.settings` imports all globals/constants from a
+module defined in the ``SETTINGS_MODULE`` environment variable. The recommended
+way to configure this is to create your own separate Python package for customization
+(either in a private git repository, or just in a directory on your computer)
+and install this package into the same virtualenv as biweeklybudget. You then
+set the ``SETTINGS_MODULE`` environment variable to the Python module/import
+path of this module (i.e. the dotted path, like ``packagename.modulename``).
+
+Once you've created the customization package, you can install it in the virtualenv
+with ``pip install -e <git URL>`` (if it is kept in a git repository) or
+``pip install -e <local path>``.
+
+This customization package can also be used for
+:ref:`Loading Data <_development.loading_data>` during development, or
+implementing :ref:`Custom OFX Downloading via Selenium <_ofx.selenium>`.
+
+If you just want to try the application without worrying about creating a
+customization package, you can copy ``biweeklybudget/settings_example.py`` to
+a new file, edit it, add it to ``.gitignore``, and then use
+``SETTINGS_MODULE=biweeklybudget.NewModuleName``. This will, however, make it
+more complicated to pull upstream changes and improvements.
 
 Usage
 -----
+
+.. _getting_started.setup:
+
+Setup
++++++
+
+.. code-block:: bash
+
+    source bin/activate
+    export SETTINGS_MODULE=<settings module>
+
+It's recommended that you create an alias or script to do this for you.
+
+Flask
++++++
 
 For information on the Flask application, see `Flask App <flask_app>`.
 
@@ -60,10 +98,10 @@ Command Line Entrypoints and Scripts
 ++++++++++++++++++++++++++++++++++++
 
 biweeklybudget provides the following setuptools entrypoints (command-line
-script wrappers in ``bin/``):
+script wrappers in ``bin/``). First setup your environment according to the
+instructions above.
 
 * ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work.
 * ``loaddata`` - Entrypoint for loading test fixture data, or my base data. This is an awful, manual hack right now.
 * ``ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
 * ``ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB.
-
