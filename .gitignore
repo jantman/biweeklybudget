@@ -85,37 +85,8 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
-bin/activate
-bin/activate.csh
-bin/activate.fish
-bin/activate_this.py
-bin/alembic
-bin/easy_install
-bin/easy_install-2.7
-bin/easy_install-3.6
-bin/flask
-bin/keyring
-bin/loaddata
-bin/mako-render
-bin/newMonthlyBudget_reconcile
-bin/newMonthlyBudget_template
-bin/ofxbackfiller
-bin/ofxclient
-bin/ofxgetter
-bin/pip*
-bin/pyrsa-decrypt
-bin/pyrsa-decrypt-bigfile
-bin/pyrsa-encrypt
-bin/pyrsa-encrypt-bigfile
-bin/pyrsa-keygen
-bin/pyrsa-priv2pub
-bin/pyrsa-sign
-bin/pyrsa-verify
-bin/python*
-bin/tox
-bin/tox-quickstart
-bin/virtualenv
-bin/wheel
+bin/*
+!bin/db_tester.py
 
 # Spyder project settings
 .spyderproject
