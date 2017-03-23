@@ -176,7 +176,7 @@ class OfxGetter(object):
         logger.debug('Scraper - getting class %s from module %s',
                      clsname, modname)
         cls = getattr(
-            importlib.import_module('biweeklybudget.%s' % modname),
+            importlib.import_module(modname),
             clsname
         )
         logger.debug('Getting secrets for account %s', account_name)

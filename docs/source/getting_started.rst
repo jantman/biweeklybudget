@@ -87,7 +87,7 @@ Setup
     source bin/activate
     export SETTINGS_MODULE=<settings module>
 
-It's recommended that you create an alias or script to do this for you.
+It's recommended that you create an alias to do this for you.
 
 Flask
 +++++
