@@ -50,7 +50,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'Budget App'
+        assert heading.text == 'BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')
@@ -78,6 +78,9 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             ('/reconcile', 'Reconcile'),
             ('/budgets', 'Budgets'),
             ('/scheduled', 'Scheduled'),
+            ('https://github.com/jantman/biweeklybudget',
+             'biweeklybudget is AGPLv3+ Free Software'),
+            ('http://biweeklybudget.readthedocs.io/en/latest/', 'Docs')
         ]
 
 

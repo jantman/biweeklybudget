@@ -50,7 +50,7 @@ class TestAccountsNavigation(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'Accounts - Budget App'
+        assert heading.text == 'Accounts - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')

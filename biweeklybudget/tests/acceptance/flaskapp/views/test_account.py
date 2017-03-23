@@ -50,7 +50,7 @@ class TestAccount(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'BankOne - Budget App'
+        assert heading.text == 'BankOne - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')
@@ -75,7 +75,7 @@ class TestAccountBankOne(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'BankOne - Budget App'
+        assert heading.text == 'BankOne - BiweeklyBudget'
 
     def test_panel_heading(self, selenium):
         panel = selenium.find_element_by_id('panel-account')
@@ -126,7 +126,7 @@ class TestAccountBankTwoStale(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'BankTwoStale - Budget App'
+        assert heading.text == 'BankTwoStale - BiweeklyBudget'
 
     def test_panel_heading(self, selenium):
         panel = selenium.find_element_by_id('panel-account')
@@ -176,7 +176,7 @@ class TestAccountCreditOne(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'CreditOne - Budget App'
+        assert heading.text == 'CreditOne - BiweeklyBudget'
 
     def test_panel_heading(self, selenium):
         panel = selenium.find_element_by_id('panel-account')
@@ -227,7 +227,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'CreditTwo - Budget App'
+        assert heading.text == 'CreditTwo - BiweeklyBudget'
 
     def test_panel_heading(self, selenium):
         panel = selenium.find_element_by_id('panel-account')
@@ -278,7 +278,7 @@ class TestAccountInvestmentOne(AcceptanceHelper):
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'InvestmentOne - Budget App'
+        assert heading.text == 'InvestmentOne - BiweeklyBudget'
 
     def test_panel_heading(self, selenium):
         panel = selenium.find_element_by_id('panel-account')
