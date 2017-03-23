@@ -111,7 +111,7 @@ to take whatever keyword arguments are required, and add those to your account's
 ``ofxgetter_config_json`` as shown below. :py:class:~biweeklybudget.ofxgetter.OfxGetter`
 will instantiate the class passing it the specified keyword arguments in addition to
 ``username``, ``password`` and ``savedir`` keyword arguments. ``savedir`` is the
-directory under :py:const:`~.settings.STATEMENTS_SAVE_PATH` where the account's
+directory under :py:const:`~biweeklybudget.settings_example.STATEMENTS_SAVE_PATH` where the account's
 OFX statements should be saved. After instantiating the class, ``ofxgetter`` will
 call the class's ``run()`` method with no arguments, and expect to receive an OFX
 statement string back.

@@ -65,8 +65,8 @@ with ``pip install -e <git URL>`` (if it is kept in a git repository) or
 ``pip install -e <local path>``.
 
 This customization package can also be used for
-:ref:`Loading Data <_development.loading_data>` during development, or
-implementing :ref:`Custom OFX Downloading via Selenium <_ofx.selenium>`.
+:ref:`Loading Data <development.loading_data>` during development, or
+implementing :ref:`Custom OFX Downloading via Selenium <ofx.selenium>`.
 
 If you just want to try the application without worrying about creating a
 customization package, you can copy ``biweeklybudget/settings_example.py`` to
