@@ -47,6 +47,9 @@ from biweeklybudget.db import db_session
 
 
 class AccountsView(MethodView):
+    """
+    Render the GET /accounts view using the ``accounts.html`` template.
+    """
 
     def get(self):
         return render_template(
@@ -65,6 +68,10 @@ class AccountsView(MethodView):
 
 
 class OneAccountView(MethodView):
+    """
+    Render the /accounts/<int:acct_id> view using the ``account.html``
+    template.
+    """
 
     def get(self, acct_id):
         return render_template(

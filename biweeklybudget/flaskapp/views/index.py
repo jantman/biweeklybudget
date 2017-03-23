@@ -47,6 +47,9 @@ from biweeklybudget.db import db_session
 
 
 class IndexView(MethodView):
+    """
+    Render the GET / view using the ``index.html`` template.
+    """
 
     def get(self):
         return render_template(

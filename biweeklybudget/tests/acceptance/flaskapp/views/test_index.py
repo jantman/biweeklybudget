@@ -65,7 +65,7 @@ class TestIndexNavigation(AcceptanceHelper):
             )
         assert navlinks == [
             ('/', 'Home'),
-            ('/payperiods', 'Calendar'),
+            ('/payperiods', 'Pay Periods'),
             ('/accounts', 'Accounts'),
             ('/ofx', 'OFX'),
             ('/transactions', 'Transactions'),

@@ -52,6 +52,9 @@ logger = logging.getLogger(__name__)
 
 
 class OfxView(MethodView):
+    """
+    Render the GET /ofx view using the ``ofx.html`` template.
+    """
 
     def get(self):
         accts = {}
@@ -65,6 +68,9 @@ class OfxView(MethodView):
 
 
 class OfxAjax(MethodView):
+    """
+    Handle GET /ajax/ofx endpoint.
+    """
 
     def _args_dict(self, args):
         """
@@ -168,6 +174,9 @@ class OfxAjax(MethodView):
         return False
 
     def get(self):
+        """
+        Render and return JSON response for GET /ajax/ofx
+        """
         args = request.args.to_dict()
         args_dict = self._args_dict(args)
         if args['search[value]'] != '':
