@@ -56,44 +56,16 @@ class TestOFX(AcceptanceHelper):
         heading = selenium.find_element_by_class_name('navbar-brand')
         assert heading.text == 'OFX Transactions - Budget App'
 
-    def test_nav_links(self, selenium):
-        navlinks = []
-        for li in selenium.find_elements_by_xpath(
-                "//div[contains(@class, 'sidebar-nav')]/ul/li/a"
-        ):
-            if li.text.strip() == '':
-                continue
-            navlinks.append(
-                (self.relurl(li.get_attribute('href')), li.text)
-            )
-        assert navlinks == [
-            ('/', 'Home'),
-            ('/payperiods', 'Pay Periods'),
-            ('/accounts', 'Accounts'),
-            ('/ofx', 'OFX'),
-            ('/transactions', 'Transactions'),
-            ('/reconcile', 'Reconcile'),
-            ('/budgets', 'Budgets'),
-            ('/scheduled', 'Scheduled'),
-        ]
+    def test_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
 
-    def test_stale_accounts(self, selenium):
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[0]
-        assert div.text == '2 Accounts with stale data. View Accounts.'
-        a = div.find_element_by_tag_name('a')
-        assert self.relurl(a.get_attribute('href')) == '/accounts'
-        assert a.text == 'View Accounts'
-
-    def test_unreconciled_transactions(self, selenium):
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
-        assert div.text == 'XX Unreconciled Transactions. (EXAMPLE) Alert Link.'
-        a = div.find_element_by_tag_name('a')
-        assert self.relurl(a.get_attribute('href')) == '/reconcile'
-        assert a.text == 'Alert Link'
+    def test_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'
 
 
 @pytest.mark.acceptance
