@@ -40,11 +40,10 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountsNavigation(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts')
 
@@ -65,11 +64,10 @@ class TestAccountsNavigation(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountsMainPage(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts')
 

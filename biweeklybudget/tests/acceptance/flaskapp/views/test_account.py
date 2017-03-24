@@ -40,11 +40,10 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccount(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/1')
 
@@ -65,11 +64,10 @@ class TestAccount(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountBankOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/1')
 
@@ -116,11 +114,10 @@ class TestAccountBankOne(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountBankTwoStale(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/2')
 
@@ -166,11 +163,10 @@ class TestAccountBankTwoStale(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountCreditOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/3')
 
@@ -217,11 +213,10 @@ class TestAccountCreditOne(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountCreditTwo(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/4')
 
@@ -268,11 +263,10 @@ class TestAccountCreditTwo(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures("testdb", "testflask")
 class TestAccountInvestmentOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/5')
 

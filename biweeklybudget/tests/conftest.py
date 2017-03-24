@@ -79,6 +79,7 @@ def testdb():
             sessionmaker(autocommit=False, autoflush=False, bind=conn)
         )
         SampleDataLoader(data_sess).load()
+        data_sess.flush()
         data_sess.commit()
         data_sess.close()
     # start a wrapping transaction
