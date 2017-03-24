@@ -42,6 +42,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import biweeklybudget.settings
 import socket
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+from time import sleep
 try:
     from pytest_flask.fixtures import LiveServer
 except ImportError:
@@ -81,6 +82,8 @@ def testdb():
         SampleDataLoader(data_sess).load()
         data_sess.commit()
         data_sess.close()
+    # Travis seems to have a slight timing issue here...
+    sleep(2)
     # start a wrapping transaction
     trans = conn.begin()
     # create a session to use for the tests
