@@ -47,6 +47,45 @@
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+            <!-- Modal -->
+            <div class="modal fade" id="ofxTxnModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" id="ofxTxnModalLabel">Modal title</h4>
+                        </div>
+                        <div class="modal-body" id="ofxTxnModalBody">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <tbody>
+                                        <tr>
+                                            <th>Account</th>
+                                            <td>foo</td>
+                                        </tr>
+                                        <tr>
+                                            <th>FITID</th>
+                                            <td>foo</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Amount</th>
+                                            <td>{{ 123.45|dollars }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+                        </div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+            <!-- /.modal -->
 {% endblock %}
 {% block extra_foot_script %}
     <!-- DataTables JavaScript -->
@@ -110,5 +149,18 @@ $(document).ready(function() {
         mytable.fnFilter(selectedVal, 2, false);
     });
 } );
+
+/**
+ * Show the modal popup, populated with information for one OFX Transaction.
+ */
+function ofxTransModal(acct_id, fitid) {
+    var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
+    $.ajax(url).done(function( msg ) {
+        alert(msg);
+        var modal = $("#ofxTxnModal");
+        modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
+        modal.modal('show');
+    });
+}
 </script>
 {% endblock %}

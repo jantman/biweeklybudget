@@ -201,3 +201,27 @@ class TestOFXDefault(AcceptanceHelper):
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == p1trans
+
+
+@pytest.mark.acceptance
+class TestOFXTransModal(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/ofx')
+
+    def test_modal_on_click(self, selenium):
+        link = selenium.find_element_by_xpath('//a[text()="BankOne.0.1"]')
+        link.click()
+        self.wait_for_modal_shown(selenium, 'ofxTxnModalLabel')
+        modal = selenium.find_element_by_id('ofxTxnModal')
+        title = selenium.find_element_by_id('ofxTxnModalLabel')
+        body = selenium.find_element_by_id('ofxTxnModalBody')
+        assert modal.is_displayed()
+        assert modal.is_enabled()
+        assert title.is_displayed()
+        assert title.is_enabled()
+        assert body.is_displayed()
+        assert body.is_enabled()
+        assert title.text == 'OFXTransaction Account=1 FITID=BankOne.0.1'

@@ -63,6 +63,21 @@ class OfxView(MethodView):
         )
 
 
+class OfxTransAjax(MethodView):
+    """
+    Handle GET /ajax/ofx/<int:acct_id>/<str:fitid> endpoint.
+    """
+
+    def get(self, acct_id, fitid):
+        txn = db_session.query(OFXTransaction).get((acct_id, fitid))
+        res = {
+            'acct': db_session.query(Account).get(acct_id).as_dict,
+            'stmt': txn.statement.as_dict,
+            'txn': txn.as_dict
+        }
+        return jsonify(res)
+
+
 class OfxAjax(MethodView):
     """
     Handle GET /ajax/ofx endpoint.
@@ -217,3 +232,7 @@ class OfxAjax(MethodView):
 
 app.add_url_rule('/ofx', view_func=OfxView.as_view('ofx_view'))
 app.add_url_rule('/ajax/ofx', view_func=OfxAjax.as_view('ofx_ajax'))
+app.add_url_rule(
+    '/ajax/ofx/<int:acct_id>/<fitid>',
+    view_func=OfxTransAjax.as_view('ofx_trans_ajax')
+)

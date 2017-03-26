@@ -37,6 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from time import sleep
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 class AcceptanceHelper(object):
@@ -129,3 +132,15 @@ class AcceptanceHelper(object):
                 e = ex
                 sleep(1)
         raise e
+
+    def wait_for_modal_shown(self, driver, modal_id):
+        """
+        Wait for the modal with the given ID to be shown.
+
+        :param driver: Selenium driver instance
+        :param modal_id: the id of the modal div
+        :type modal_id: str
+        """
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, modal_id))
+        )
