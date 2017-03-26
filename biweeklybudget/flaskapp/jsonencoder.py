@@ -35,7 +35,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from datetime import date, datetime
+from time import mktime
 from json import JSONEncoder
+from decimal import Decimal
 
 
 class MagicJSONEncoder(JSONEncoder):
@@ -46,5 +49,30 @@ class MagicJSONEncoder(JSONEncoder):
 
     def default(self, o):
         if hasattr(o, 'as_dict') and isinstance(type(o).as_dict, property):
-            return o.as_dict
+            d = o.as_dict
+            d['class'] = o.__class__.__name__
+            return d
+        if isinstance(o, datetime):
+            return {
+                'class': 'datetime',
+                'str': o.strftime('%Y-%m-%d %H:%M:%S'),
+                'ts': mktime(o.timetuple()),
+                'year': o.year,
+                'month': o.month,
+                'date': o.day,
+                'hour': o.hour,
+                'minute': o.minute,
+                'second': o.second
+            }
+        if isinstance(o, date):
+            return {
+                'class': 'date',
+                'str': o.strftime('%Y-%m-%d'),
+                'ts': mktime(o.timetuple()),
+                'year': o.year,
+                'month': o.month,
+                'date': o.day
+            }
+        if isinstance(o, Decimal):
+            return float(o)
         return super(MagicJSONEncoder, self).default(o)
