@@ -35,10 +35,26 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.flaskapp.controllers.accounts import AccountController
+from biweeklybudget.db import db_session
+from biweeklybudget.models.account import Account
 
 
 class NotificationsController(object):
+
+    @staticmethod
+    def num_stale_accounts():
+        """
+        Return the number of accounts with stale data.
+
+        @TODO This is a hack because I just cannot figure out how to do this
+        natively in SQLAlchemy.
+
+        :return: count of accounts with stale data
+        :rtype: int
+        """
+        return sum(
+            1 if a.is_stale else 0 for a in db_session.query(Account).all()
+        )
 
     @staticmethod
     def get_notifications():
@@ -50,7 +66,7 @@ class NotificationsController(object):
         is the string content of the div.
         """
         res = []
-        num_stale = AccountController.num_stale_accounts()
+        num_stale = NotificationsController.num_stale_accounts()
         if num_stale > 0:
             a = 'Accounts'
             if num_stale == 1:

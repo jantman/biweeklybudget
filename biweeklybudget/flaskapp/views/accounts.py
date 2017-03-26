@@ -39,9 +39,6 @@ from flask.views import MethodView
 from flask import render_template
 
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.flaskapp.controllers.notifications import (
-    NotificationsController
-)
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.db import db_session
 
@@ -62,8 +59,7 @@ class AccountsView(MethodView):
                 Account.is_active == True).all(),  # noqa
             investment_accounts=db_session.query(Account).filter(
                 Account.acct_type == AcctType.Investment,
-                Account.is_active == True).all(),  # noqa
-            notifications=NotificationsController().get_notifications()
+                Account.is_active == True).all()  # noqa
         )
 
 
@@ -76,8 +72,7 @@ class OneAccountView(MethodView):
     def get(self, acct_id):
         return render_template(
             'account.html',
-            acct=db_session.query(Account).get(acct_id),
-            notifications=NotificationsController().get_notifications()
+            acct=db_session.query(Account).get(acct_id)
         )
 
 app.add_url_rule('/accounts', view_func=AccountsView.as_view('accounts_view'))

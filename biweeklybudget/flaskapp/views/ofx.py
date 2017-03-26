@@ -41,9 +41,6 @@ from flask import render_template, jsonify, request
 from datatables import DataTable
 
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.flaskapp.controllers.notifications import (
-    NotificationsController
-)
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.db import db_session
@@ -62,8 +59,7 @@ class OfxView(MethodView):
             accts[a.name] = a.id
         return render_template(
             'ofx.html',
-            accts=accts,
-            notifications=NotificationsController().get_notifications()
+            accts=accts
         )
 
 

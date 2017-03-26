@@ -34,3 +34,17 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
+
+from biweeklybudget.flaskapp.app import app
+from biweeklybudget.flaskapp.notifications import NotificationsController
+
+
+@app.context_processor
+def notifications():
+    """
+    Add notifications to template context for all templates.
+
+    :return: template context with notifications added
+    :rtype: dict
+    """
+    return dict(notifications=NotificationsController().get_notifications())

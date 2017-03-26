@@ -62,3 +62,4 @@ def shutdown_session(exception=None):
 from biweeklybudget.flaskapp.views import *  # noqa
 from biweeklybudget.flaskapp.filters import *  # noqa
 from biweeklybudget.flaskapp.jinja_tests import *  # noqa
+from biweeklybudget.flaskapp.context_processors import *  # noqa
