@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from __future__ import with_statement
+from biweeklybudget.db_fullindex import *  # noqa
 from alembic import context
 from sqlalchemy import pool, create_engine
 from logging.config import fileConfig

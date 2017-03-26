@@ -3,6 +3,7 @@ Jinja2==2.8.1
 Mako==1.0.6
 MarkupSafe==1.0
 PyMySQL==0.7.10
+SQLAlchemy-FullText-Search==0.2.3
 SQLAlchemy-Utc==0.9.0
 SQLAlchemy==1.1.6
 SecretStorage==2.3.1

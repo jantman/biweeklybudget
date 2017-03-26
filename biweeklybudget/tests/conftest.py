@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import os
+from biweeklybudget.db_fullindex import *  # noqa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import biweeklybudget.settings

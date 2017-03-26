@@ -41,6 +41,7 @@ from biweeklybudget import settings
 import logging
 from copy import deepcopy
 
+from biweeklybudget.db_fullindex import *  # noqa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
