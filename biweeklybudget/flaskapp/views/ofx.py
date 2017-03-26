@@ -209,7 +209,7 @@ class OfxAjax(MethodView):
                 ('reconciled', 'reconcile_id')
             ]
         )
-        table.add_data(link=lambda o: '/accounts/%d' % o.account_id)
+        table.add_data(acct_id=lambda o: o.account_id)
         if self._have_column_search(args_dict):
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
         return jsonify(table.json())

@@ -73,14 +73,19 @@ $(document).ready(function() {
             {
                 data: "account",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", row.DT_RowData.link).text(data)).html();
+                    return $("<div>").append($("<a/>").attr("href", "/accounts/" + row.DT_RowData.acct_id).text(data)).html();
                 }
             },
             { data: "type" },
             { data: "name" },
             { data: "memo" },
             { data: "description" },
-            { data: "fitid" },
+            {
+                data: "fitid",
+                "render": function(data, type, row) {
+                    return $("<div>").append($("<a/>").attr("href", "javascript:ofxTransModal(" + row.DT_RowData.acct_id + ", '" + data + "')").text(data)).html();
+                }
+            },
             { data: "last_stmt" },
             { data: "last_stmt_date" },
             { data: "reconciled" }

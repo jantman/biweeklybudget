@@ -95,6 +95,9 @@ class TestOFXDefault(AcceptanceHelper):
         ]
         assert elems[0][2].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
+        assert elems[0][7].get_attribute(
+            'innerHTML') == '<a href="javascript:ofxTransModal(' \
+                            '3, \'T1\')">T1</a>'
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
             ['CreditOne (3)', 'T1'],
