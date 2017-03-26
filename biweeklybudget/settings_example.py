@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-from datetime import timedelta
+from datetime import timedelta, date
 
 #: Address to connect to Vault at, for OFX credentials
 VAULT_ADDR = 'http://127.0.0.1:8200'
@@ -66,3 +66,7 @@ else:
 
 #: :py:class:`datetime.timedelta` beyond which OFX data will be considered old
 STALE_DATA_TIMEDELTA = timedelta(days=2)
+
+#: The starting date of one pay period. The dates of all pay periods will be
+#: determined based on an interval from this date.
+PAY_PERIOD_START_DATE = date(2017, 3, 17)

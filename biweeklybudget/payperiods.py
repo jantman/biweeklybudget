@@ -35,9 +35,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from datetime import timedelta
+from datetime import timedelta, datetime
+from functools import total_ordering
+from biweeklybudget import settings
 
 
+@total_ordering
 class BiweeklyPayPeriod(object):
     """
     This object contains all logic related to working with pay periods,
@@ -47,11 +50,38 @@ class BiweeklyPayPeriod(object):
     simple.
     """
 
-    _period_length = timedelta(days=13, hours=23, minutes=59, seconds=59)
-
     def __init__(self, start_date):
+        """
+        Create a new BiweeklyPayPeriod instance.
+
+        :param start_date: starting date of the pay period
+        :type start_date: datetime.date
+        """
+        if isinstance(start_date, datetime):
+            start_date = start_date.date()
         self._start_date = start_date
-        self._end_date = start_date + self._period_length
+        self._end_date = start_date + self.period_length
+
+    @property
+    def period_interval(self):
+        """
+        Return the interval between BiweeklyPayPeriods as a timedelta.
+
+        :return: interval between BiweeklyPayPeriods
+        :rtype: datetime.timedelta
+        """
+        return timedelta(days=14)
+
+    @property
+    def period_length(self):
+        """
+        Return the length of a BiweeklyPayPeriod; this is calculated as
+        :py:attr:`~.period_interval` minus one second.
+
+        :return: length of one BiweeklyPayPeriod
+        :rtype: datetime.timedelta
+        """
+        return self.period_interval - timedelta(days=1)
 
     @property
     def start_date(self):
@@ -59,10 +89,10 @@ class BiweeklyPayPeriod(object):
         Return the starting date for this pay period. The period is generally
         considered to start at midnight (00:00) of this date.
 
-        :return:
-        :rtype:
+        :return: start date for pay period
+        :rtype: datetime.date
         """
-        pass
+        return self._start_date
 
     @property
     def end_date(self):
@@ -71,18 +101,30 @@ class BiweeklyPayPeriod(object):
         generally considered to end at the last instant (i.e. 23:59:59) of this
         date.
 
-        :return:
-        :rtype:
+        :return: last date in the pay period
+        :rtype: datetime.date
         """
-        pass
+        return self._end_date
 
     @property
-    def next_start_date(self):
-        pass
+    def next(self):
+        """
+        Return the BiweeklyPayPeriod following this one.
+
+        :return: next BiweeklyPayPeriod after this one
+        :rtype: BiweeklyPayPeriod
+        """
+        return BiweeklyPayPeriod((self.start_date + self.period_interval))
 
     @property
-    def previous_start_date(self):
-        pass
+    def previous(self):
+        """
+        Return the BiweeklyPayPeriod preceding this one.
+
+        :return: previous BiweeklyPayPeriod before this one
+        :rtype: BiweeklyPayPeriod
+        """
+        return BiweeklyPayPeriod((self.start_date - self.period_interval))
 
     @staticmethod
     def period_for_date(dt):
@@ -90,9 +132,59 @@ class BiweeklyPayPeriod(object):
         Given a datetime, return the BiweeklyPayPeriod instance describing the
         pay period containing this date.
 
+        .. todo:: This is a very naive, poorly-performing implementation.
+
         :param dt: datetime or date to find the pay period for
         :type dt: :py:class:`~datetime.datetime` or :py:class:`~datetime.date`
-        :return:
+        :return: BiweeklyPayPeriod containing the specified date
         :rtype: :py:class:`~.BiweeklyPayPeriod`
         """
-        pass
+        p = BiweeklyPayPeriod(settings.PAY_PERIOD_START_DATE)
+        if dt < p.start_date:
+            while True:
+                if p.end_date >= dt >= p.start_date:
+                    return p
+                p = p.previous
+        if dt > p.end_date:
+            while True:
+                if p.end_date >= dt >= p.start_date:
+                    return p
+                p = p.next
+        return p
+
+    def filter_query(self, query, date_prop):
+        """
+        Filter ``query`` for ``date_prop`` in this pay period. Returns a copy
+        of the query.
+
+        e.g. to filter an existing query of :py:class:`~.OFXTransaction` for
+        the BiweeklyPayPeriod starting on 2017-01-14:
+
+        .. code-block:: python
+
+            q = # some query here
+            p = BiweeklyPayPeriod(date(2017, 1, 14))
+            q = p.filter_query(q, OFXTransaction.date_posted)
+
+        :param query: The query to filter
+        :type query: sqlalchemy.orm.query.Query
+        :param date_prop: the Model's date property, to filter on.
+        :return: the filtered query
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return query.filter(
+            date_prop >= self.start_date, date_prop <= self.end_date
+        )
+
+    def __repr__(self):
+        return '<BiweeklyPayPeriod(%s)>' % self._start_date.strftime('%Y-%m-%d')
+
+    def __eq__(self, other):
+        if not isinstance(other, BiweeklyPayPeriod):
+            return NotImplemented
+        return self.start_date == other.start_date
+
+    def __lt__(self, other):
+        if not isinstance(other, BiweeklyPayPeriod):
+            return NotImplemented
+        return self.start_date < other.start_date

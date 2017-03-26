@@ -25,6 +25,7 @@ Submodules
    biweeklybudget.load_data
    biweeklybudget.ofxgetter
    biweeklybudget.ofxupdater
+   biweeklybudget.payperiods
    biweeklybudget.screenscraper
    biweeklybudget.settings
    biweeklybudget.settings_example

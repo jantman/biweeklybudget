@@ -51,3 +51,14 @@ try:
 except AttributeError:
     to_import = [name for name in module_dict if not name.startswith('_')]
 globals().update({name: module_dict[name] for name in to_import})
+
+for x in [
+    'STATEMENTS_SAVE_PATH',
+    'DB_CONNSTRING',
+    'STALE_DATA_TIMEDELTA',
+    'PAY_PERIOD_START_DATE'
+]:
+    if x not in to_import:
+        raise RuntimeError(
+            'ERROR: setting constant "%s" not in settings module' % x
+        )

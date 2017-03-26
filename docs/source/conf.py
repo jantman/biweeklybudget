@@ -319,6 +319,8 @@ nitpick_ignore = [
     ('py:class', 'Exception')
 ]
 
+todo_include_todos = True
+
 # exclude module docstrings - see http://stackoverflow.com/a/18031024/211734
 def remove_module_docstring(app, what, name, obj, options, lines):
     if what == "module":
