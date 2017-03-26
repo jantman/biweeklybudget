@@ -19,8 +19,10 @@ Submodules
 .. toctree::
 
    biweeklybudget.flaskapp.app
+   biweeklybudget.flaskapp.cli_commands
    biweeklybudget.flaskapp.context_processors
    biweeklybudget.flaskapp.filters
    biweeklybudget.flaskapp.jinja_tests
+   biweeklybudget.flaskapp.jsonencoder
    biweeklybudget.flaskapp.notifications
 

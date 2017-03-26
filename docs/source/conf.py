@@ -291,7 +291,7 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'https://docs.python.org/2/': None,
+    'https://docs.python.org/3/': None,
     'sqlalchemy': (
         'http://docs.sqlalchemy.org/en/latest/objects.inv', None
     ),
@@ -316,7 +316,8 @@ nitpick_ignore = [
     ('py:class', 'flask.views.MethodView'),
     ('py:class', 'sqlalchemy.ext.declarative.api.Base'),
     ('py:class', 'enum.Enum'),
-    ('py:class', 'Exception')
+    ('py:class', 'Exception'),
+    ('py:class', 'json.encoder.JSONEncoder')
 ]
 
 todo_include_todos = True
