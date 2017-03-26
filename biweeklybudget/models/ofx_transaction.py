@@ -136,6 +136,6 @@ class OFXTransaction(Base, ModelAsDict):
             if not hasattr(t, x):
                 continue
             val = getattr(t, x)
-            if val is not None and val.strip() != '':
+            if val is not None and val != '':
                 kwargs[x] = val
         return kwargs
