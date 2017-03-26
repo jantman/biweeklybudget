@@ -56,12 +56,27 @@ app.json_encoder = MagicJSONEncoder
 init_db()
 
 
+def before_request():
+    """
+    When running in debug mode, clear jinja cache.
+    """
+    logger.warning('DEBUG MODE - Clearing jinja cache')
+    app.jinja_env.cache = {}
+
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     cleanup_db()
+
+
+if app.debug:
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.before_request(before_request)
+    app.jinja_env.auto_reload = True
 
 
 from biweeklybudget.flaskapp.views import *  # noqa
 from biweeklybudget.flaskapp.filters import *  # noqa
 from biweeklybudget.flaskapp.jinja_tests import *  # noqa
 from biweeklybudget.flaskapp.context_processors import *  # noqa
+from biweeklybudget.flaskapp.cli_commands import *  # noqa

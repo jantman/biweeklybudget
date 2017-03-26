@@ -95,6 +95,8 @@ setup(
     loaddata = biweeklybudget.load_data:main
     ofxgetter = biweeklybudget.ofxgetter:main
     ofxbackfiller = biweeklybudget.backfill_ofx:main
+    [flask.commands]
+    rundev=biweeklybudget.flaskapp.cli_commands:rundev_command
     """,
     keywords="budget finance biweekly ofx flask responsive sqlalchemy bank",
     classifiers=classifiers

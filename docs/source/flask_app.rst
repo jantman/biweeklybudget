@@ -11,7 +11,7 @@ Running
 3. ``flask --help`` for information on usage:
 
   * Run App: ``flask run``
-  * Run with debug/reload: ``FLASK_DEBUG=1 flask run --reload``
+  * Run with debug/reload: ``flask rundev``
 
 To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run``
 
