@@ -40,8 +40,9 @@ import logging
 import atexit
 import importlib
 
-from biweeklybudget.db import init_db, cleanup_db, db_session
+from biweeklybudget.db import init_db, cleanup_db, db_session, engine
 from biweeklybudget.cliutils import set_log_debug, set_log_info
+from biweeklybudget.models.base import Base
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,10 @@ def main():
         set_log_info(logger)
 
     atexit.register(cleanup_db)
+    Base.metadata.reflect(engine)
+    Base.metadata.drop_all(engine)
+    db_session.flush()
+    db_session.commit()
     init_db()
 
     logger.info('Loading data from: %s.%s', args.modname, args.clsname)
