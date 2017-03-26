@@ -35,33 +35,16 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import logging
-import locale
-
-from flask import Flask
-
-from biweeklybudget.db import init_db, cleanup_db
-from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
-
-format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
-         "%(name)s.%(funcName)s() ] %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=format)
-logger = logging.getLogger()
-
-locale.setlocale(locale.LC_ALL, '')
-
-app = Flask(__name__)
-app.jinja_env.add_extension('jinja2.ext.loopcontrols')
-app.json_encoder = MagicJSONEncoder
-init_db()
+from json import JSONEncoder
 
 
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    cleanup_db()
+class MagicJSONEncoder(JSONEncoder):
+    """
+    Customized JSONEncoder class that uses ``as_dict`` properties on objects
+    to encode them.
+    """
 
-
-from biweeklybudget.flaskapp.views import *  # noqa
-from biweeklybudget.flaskapp.filters import *  # noqa
-from biweeklybudget.flaskapp.jinja_tests import *  # noqa
-from biweeklybudget.flaskapp.context_processors import *  # noqa
+    def default(self, o):
+        if hasattr(o, 'as_dict') and isinstance(type(o).as_dict, property):
+            return o.as_dict
+        return super(MagicJSONEncoder, self).default(o)
