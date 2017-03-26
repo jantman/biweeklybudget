@@ -41,7 +41,6 @@ from biweeklybudget import settings
 import logging
 from copy import deepcopy
 
-from biweeklybudget.db_fullindex import *  # noqa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -50,7 +49,7 @@ logger = logging.getLogger(__name__)
 logger.debug('Creating DB engine with connection: %s',
              settings.DB_CONNSTRING)
 engine = create_engine(
-    settings.DB_CONNSTRING, convert_unicode=True, echo=True
+    settings.DB_CONNSTRING, convert_unicode=True, echo=False
 )
 logger.debug('Creating DB session')
 db_session = scoped_session(

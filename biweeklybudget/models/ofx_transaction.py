@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from sqlalchemy import (
     Column, String, PrimaryKeyConstraint, Text, Numeric, Boolean, ForeignKey,
-    Integer, Index
+    Integer
 )
 from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship
@@ -54,10 +54,6 @@ class OFXTransaction(Base, ModelAsDict):
     __tablename__ = 'ofx_trans'
     __table_args__ = (
         PrimaryKeyConstraint('account_id', 'fitid'),
-        Index('ix_ofx_trans_name', 'name', mysql_fulltext=True),
-        Index('ix_ofx_trans_memo', 'memo', mysql_fulltext=True),
-        Index('ix_ofx_trans_description', 'description', mysql_fulltext=True),
-        Index('ix_ofx_trans_notes', 'notes', mysql_fulltext=True),
         {'mysql_engine': 'InnoDB'}
     )
 
@@ -78,14 +74,14 @@ class OFXTransaction(Base, ModelAsDict):
     trans_type = Column(String(50))
     date_posted = Column(UtcDateTime)
     amount = Column(Numeric(precision=10, scale=4))  # Amount format from OFX
-    name = Column(String(255))
-    memo = Column(String(255))
+    name = Column(String(255), index=True)
+    memo = Column(String(255), index=True)
     sic = Column(String(255))
     mcc = Column(String(255))
     checknum = Column(String(32))
 
     # app-specific fields
-    description = Column(String(254))
+    description = Column(String(254), index=True)
     notes = Column(Text)
 
     is_payment = Column(Boolean, default=False)

@@ -40,12 +40,11 @@ from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
 from sqlalchemy import or_
-from sqlalchemy_fulltext import FullTextSearch, FullTextMode
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.account import Account
-from biweeklybudget.db import db_session, FullTextMode, FullTextSearch
+from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
 
@@ -191,21 +190,13 @@ class OfxAjax(MethodView):
         if s != '' and s != 'FILTERHACK':
             if len(s) < 3:
                 return qs
+            s = '%' + s + '%'
             qs = qs.filter(or_(
-                FullTextSearch(
-                    s, OFXTransaction.name, mode=FullTextMode.DEFAULT
-                ),
-                FullTextSearch(
-                    s, OFXTransaction.memo, mode=FullTextMode.DEFAULT
-                ),
-                FullTextSearch(
-                    s, OFXTransaction.description, mode=FullTextMode.DEFAULT
-                ),
-                FullTextSearch(
-                    s, OFXTransaction.notes, mode=FullTextMode.DEFAULT
-                )
+                OFXTransaction.name.like(s),
+                OFXTransaction.memo.like(s),
+                OFXTransaction.description.like(s),
+                OFXTransaction.notes.like(s)
             ))
-        print(qs)
         return qs
 
     def _have_column_search(self, args):

@@ -202,6 +202,33 @@ class TestOFXDefault(AcceptanceHelper):
         trans = [[t[2], t[7]] for t in texts]
         assert trans == p1trans
 
+    def test_search(self, selenium):
+        p1trans = [
+            ['CreditTwo (4)', '001'],
+            ['BankTwoStale (2)', '1'],
+            ['DisabledBank (6)', '001']
+        ]
+        selenium.get(self.baseurl + '/ofx')
+        search = self.retry_stale(
+            selenium.find_element_by_xpath,
+            '//input[@type="search"]'
+        )
+        search.send_keys('inte')
+        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [[t[2], t[7]] for t in texts]
+        # check sanity
+        assert trans == p1trans
+        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        # select CreditTwo (4)
+        acct_filter.select_by_value('4')
+        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [[t[2], t[7]] for t in texts]
+        assert trans == [
+            ['CreditTwo (4)', '001']
+        ]
+
 
 @pytest.mark.acceptance
 class TestOFXTransModal(AcceptanceHelper):
