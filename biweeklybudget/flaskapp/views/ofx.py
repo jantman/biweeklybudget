@@ -39,11 +39,13 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
+from sqlalchemy import or_
+from sqlalchemy_fulltext import FullTextSearch, FullTextMode
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.account import Account
-from biweeklybudget.db import db_session
+from biweeklybudget.db import db_session, FullTextMode, FullTextSearch
 
 logger = logging.getLogger(__name__)
 
@@ -181,12 +183,29 @@ class OfxAjax(MethodView):
         :return: Query with searching applied
         :rtype: ``sqlalchemy.orm.query.Query``
         """
-        if s != 'FILTERHACK':
-            raise NotImplementedError('OFX search not implemented')
         # Ok, build our filter...
         acct_filter = args['columns'][2]['search']['value']
         if acct_filter != '' and acct_filter != 'None':
             qs = qs.filter(OFXTransaction.account_id == acct_filter)
+        # search
+        if s != '' and s != 'FILTERHACK':
+            if len(s) < 3:
+                return qs
+            qs = qs.filter(or_(
+                FullTextSearch(
+                    s, OFXTransaction.name, mode=FullTextMode.DEFAULT
+                ),
+                FullTextSearch(
+                    s, OFXTransaction.memo, mode=FullTextMode.DEFAULT
+                ),
+                FullTextSearch(
+                    s, OFXTransaction.description, mode=FullTextMode.DEFAULT
+                ),
+                FullTextSearch(
+                    s, OFXTransaction.notes, mode=FullTextMode.DEFAULT
+                )
+            ))
+        print(qs)
         return qs
 
     def _have_column_search(self, args):
@@ -210,9 +229,7 @@ class OfxAjax(MethodView):
         """
         args = request.args.to_dict()
         args_dict = self._args_dict(args)
-        if args['search[value]'] != '':
-            raise NotImplementedError('OFX search not implemented')
-        if self._have_column_search(args_dict):
+        if self._have_column_search(args_dict) and args['search[value]'] == '':
             args['search[value]'] = 'FILTERHACK'
         table = DataTable(
             args, OFXTransaction, db_session.query(OFXTransaction), [
@@ -245,7 +262,7 @@ class OfxAjax(MethodView):
             ]
         )
         table.add_data(acct_id=lambda o: o.account_id)
-        if self._have_column_search(args_dict):
+        if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
         return jsonify(table.json())
 
