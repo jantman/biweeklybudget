@@ -56,6 +56,10 @@ class AcctType(enum.Enum):
     Cash = 4
     Other = 5
 
+    @property
+    def as_dict(self):
+        return {'name': self.name, 'value': self.value}
+
 
 class Account(Base, ModelAsDict):
 
