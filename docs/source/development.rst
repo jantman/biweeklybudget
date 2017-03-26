@@ -31,12 +31,12 @@ Loading Data
 
 The sample data used for acceptance tests is defined in ``biweeklybudget/tests/fixtures/sampledata.py``.
 This data can be loaded by `setting up the environment <_getting_started.setup>`
-and then using the ``biweeklybudget/load_data.py`` script (the following values for
+and then using the ``loaddata`` entrypoint (the following values for
 options are actually the defaults, but are shown for clarity:
 
 .. code-block:: bash
 
-    biweeklybudget/load_data.py -m biweeklybudget.tests.fixtures.sampledata -c SampleDataLoader
+    loaddata -m biweeklybudget.tests.fixtures.sampledata -c SampleDataLoader
 
 If you wish, you can copy ``biweeklybudget/tests/fixtures/sampledata.py`` to your
 `customization package <_getting_started.customization>` and edit it to load your own

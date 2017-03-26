@@ -59,18 +59,6 @@
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover">
                                     <tbody>
-                                        <tr>
-                                            <th>Account</th>
-                                            <td>foo</td>
-                                        </tr>
-                                        <tr>
-                                            <th>FITID</th>
-                                            <td>foo</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Amount</th>
-                                            <td>{{ 123.45|dollars }}</td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -89,11 +77,43 @@
 {% endblock %}
 {% block extra_foot_script %}
     <!-- DataTables JavaScript -->
-    <script src="./static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
 
 <script>
+/**
+ * Show the modal popup, populated with information for one OFX Transaction.
+ */
+function ofxTransModal(acct_id, fitid) {
+    var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
+    $.ajax(url).done(function( msg ) {
+        var modal = $("#ofxTxnModal");
+        modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
+        var tbody = modal.find('tbody');
+        tbody.empty();
+        tbody.append('<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>');
+        tbody.append('<tr><th>FITID</th><td>' + msg['txn']['fitid'] + '</td></tr>');
+        tbody.append('<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['txn']['date_posted']) + '</td></tr>');
+        tbody.append('<tr><th>Amount</th><td>' + fmt_currency(msg['txn']['amount']) + '</td></tr>');
+        tbody.append('<tr><th>Name</th><td>' + msg['txn']['name'] + '</td></tr>');
+        tbody.append('<tr><th>Memo</th><td>' + fmt_null(msg['txn']['memo']) + '</td></tr>');
+        tbody.append('<tr><th>Type</th><td>' + fmt_null(msg['txn']['trans_type']) + '</td></tr>');
+        tbody.append('<tr><th>Description</th><td>' + fmt_null(msg['txn']['description']) + '</td></tr>');
+        tbody.append('<tr><th>Notes</th><td>' + fmt_null(msg['txn']['notes']) + '</td></tr>');
+        tbody.append('<tr><th>Checknum</th><td>' + fmt_null(msg['txn']['checknum']) + '</td></tr>');
+        tbody.append('<tr><th>MCC</th><td>' + fmt_null(msg['txn']['mcc']) + '</td></tr>');
+        tbody.append('<tr><th>SIC</th><td>' + fmt_null(msg['txn']['sic']) + '</td></tr>');
+        tbody.append('<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>');
+        tbody.append('<tr><th>ID</th><td>' + fmt_null(msg['stmt']['id']) + '</td></tr>');
+        tbody.append('<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['stmt']['as_of']) + '</td></tr>');
+        tbody.append('<tr><th>Filename</th><td>' + fmt_null(msg['stmt']['filename']) + '</td></tr>');
+        tbody.append('<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['stmt']['file_mtime']) + '</td></tr>');
+        tbody.append('<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['stmt']['ledger_bal']) + '</td></tr>');
+        modal.modal('show');
+    });
+}
+
 $(document).ready(function() {
     var mytable = $('#table-ofx-txn').dataTable({
         processing: true,
@@ -148,19 +168,12 @@ $(document).ready(function() {
         var selectedVal = $(this).val();
         mytable.fnFilter(selectedVal, 2, false);
     });
-} );
 
-/**
- * Show the modal popup, populated with information for one OFX Transaction.
- */
-function ofxTransModal(acct_id, fitid) {
-    var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
-    $.ajax(url).done(function( msg ) {
-        alert(msg);
-        var modal = $("#ofxTxnModal");
-        modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
-        modal.modal('show');
-    });
-}
+    /* BEGIN conditional default modal for /ofx/<acct_id>/<fitid> */
+    {% if acct_id is defined and fitid is defined and acct_id is not none and fitid is not none %}
+    ofxTransModal({{ acct_id }}, "{{ fitid }}");
+    {% endif %}
+    /* END conditional default modal for /ofx/<acct_id>/<fitid> */
+});
 </script>
 {% endblock %}

@@ -212,7 +212,7 @@ class TestOFXTransModal(AcceptanceHelper):
         selenium.get(base_url + '/ofx')
 
     def test_modal_on_click(self, selenium):
-        link = selenium.find_element_by_xpath('//a[text()="BankOne.0.1"]')
+        link = selenium.find_element_by_xpath('//a[text()="T1"]')
         link.click()
         self.wait_for_modal_shown(selenium, 'ofxTxnModalLabel')
         modal = selenium.find_element_by_id('ofxTxnModal')
@@ -224,4 +224,78 @@ class TestOFXTransModal(AcceptanceHelper):
         assert title.is_enabled()
         assert body.is_displayed()
         assert body.is_enabled()
-        assert title.text == 'OFXTransaction Account=1 FITID=BankOne.0.1'
+        assert title.text == 'OFXTransaction Account=3 FITID=T1'
+        texts = self.tbody2textlist(body)
+        elems = self.tbody2elemlist(body)
+        pdate = (dtnow() - timedelta(hours=22))
+        fdate = (dtnow() - timedelta(hours=13))
+        assert texts == [
+            ['Account', 'CreditOne (3)'],
+            ['FITID', 'T1'],
+            ['Date Posted', pdate.strftime('%Y-%m-%d')],
+            ['Amount', '$123.81'],
+            ['Name', '123.81 Credit Purchase T1'],
+            ['Memo', '38328'],
+            ['Type', 'Purchase'],
+            ['Description', 'CreditOneT1Desc'],
+            ['Notes', ''],
+            ['Checknum', '123'],
+            ['MCC', 'T1mcc'],
+            ['SIC', 'T1sic'],
+            ['OFX Statement'],
+            ['ID', '4'],
+            ['Date', fdate.strftime('%Y-%m-%d')],
+            ['Filename', '/stmt/CreditOne/0'],
+            ['File mtime', fdate.strftime('%Y-%m-%d')],
+            ['Ledger Balance', '$952.06']
+        ]
+        assert elems[0][1].get_attribute(
+            'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
+
+
+@pytest.mark.acceptance
+class TestOFXTransURL(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/ofx/3/T1')
+
+    def test_modal_auto_displayed(self, selenium):
+        self.wait_for_modal_shown(selenium, 'ofxTxnModalLabel')
+        modal = selenium.find_element_by_id('ofxTxnModal')
+        title = selenium.find_element_by_id('ofxTxnModalLabel')
+        body = selenium.find_element_by_id('ofxTxnModalBody')
+        assert modal.is_displayed()
+        assert modal.is_enabled()
+        assert title.is_displayed()
+        assert title.is_enabled()
+        assert body.is_displayed()
+        assert body.is_enabled()
+        assert title.text == 'OFXTransaction Account=3 FITID=T1'
+        texts = self.tbody2textlist(body)
+        elems = self.tbody2elemlist(body)
+        pdate = (dtnow() - timedelta(hours=22))
+        fdate = (dtnow() - timedelta(hours=13))
+        assert texts == [
+            ['Account', 'CreditOne (3)'],
+            ['FITID', 'T1'],
+            ['Date Posted', pdate.strftime('%Y-%m-%d')],
+            ['Amount', '$123.81'],
+            ['Name', '123.81 Credit Purchase T1'],
+            ['Memo', '38328'],
+            ['Type', 'Purchase'],
+            ['Description', 'CreditOneT1Desc'],
+            ['Notes', ''],
+            ['Checknum', '123'],
+            ['MCC', 'T1mcc'],
+            ['SIC', 'T1sic'],
+            ['OFX Statement'],
+            ['ID', '4'],
+            ['Date', fdate.strftime('%Y-%m-%d')],
+            ['Filename', '/stmt/CreditOne/0'],
+            ['File mtime', fdate.strftime('%Y-%m-%d')],
+            ['Ledger Balance', '$952.06']
+        ]
+        assert elems[0][1].get_attribute(
+            'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'

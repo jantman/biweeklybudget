@@ -63,6 +63,24 @@ class OfxView(MethodView):
         )
 
 
+class OfxTransView(MethodView):
+    """
+    Render the GET /ofx/<int:acct_id>/<str:fitid> view
+    using the ``ofx.html`` template.
+    """
+
+    def get(self, acct_id, fitid):
+        accts = {}
+        for a in db_session.query(Account).all():
+            accts[a.name] = a.id
+        return render_template(
+            'ofx.html',
+            accts=accts,
+            acct_id=acct_id,
+            fitid=fitid
+        )
+
+
 class OfxTransAjax(MethodView):
     """
     Handle GET /ajax/ofx/<int:acct_id>/<str:fitid> endpoint.
@@ -70,10 +88,12 @@ class OfxTransAjax(MethodView):
 
     def get(self, acct_id, fitid):
         txn = db_session.query(OFXTransaction).get((acct_id, fitid))
+        stmt = txn.statement.as_dict
         res = {
-            'acct': db_session.query(Account).get(acct_id).as_dict,
-            'stmt': txn.statement.as_dict,
-            'txn': txn.as_dict
+            'acct_name': db_session.query(Account).get(acct_id).name,
+            'acct_id': txn.account_id,
+            'txn': txn.as_dict,
+            'stmt': stmt
         }
         return jsonify(res)
 
@@ -235,4 +255,8 @@ app.add_url_rule('/ajax/ofx', view_func=OfxAjax.as_view('ofx_ajax'))
 app.add_url_rule(
     '/ajax/ofx/<int:acct_id>/<fitid>',
     view_func=OfxTransAjax.as_view('ofx_trans_ajax')
+)
+app.add_url_rule(
+    '/ofx/<int:acct_id>/<fitid>',
+    view_func=OfxTransView.as_view('ofx_trans')
 )

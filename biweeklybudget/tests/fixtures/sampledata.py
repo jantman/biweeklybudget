@@ -248,7 +248,10 @@ class SampleDataLoader(object):
                     amount=123.81,
                     name='123.81 Credit Purchase T1',
                     memo='38328',
-                    description='CreditOneT1Desc'
+                    description='CreditOneT1Desc',
+                    checknum=123,
+                    mcc='T1mcc',
+                    sic='T1sic'
                 )
             ]
         }
