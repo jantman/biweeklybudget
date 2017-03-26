@@ -11,7 +11,6 @@ Subpackages
 
 .. toctree::
 
-    biweeklybudget.flaskapp.controllers
     biweeklybudget.flaskapp.views
 
 Submodules
@@ -20,6 +19,8 @@ Submodules
 .. toctree::
 
    biweeklybudget.flaskapp.app
+   biweeklybudget.flaskapp.context_processors
    biweeklybudget.flaskapp.filters
    biweeklybudget.flaskapp.jinja_tests
+   biweeklybudget.flaskapp.notifications
 
