@@ -82,19 +82,14 @@ def testdb():
         data_sess.flush()
         data_sess.commit()
         data_sess.close()
-    # start a wrapping transaction
-    trans = conn.begin()
     # create a session to use for the tests
     sess = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=conn)
     )
-    biweeklybudget.db.db_session = sess
-    biweeklybudget.models.base.Base.query = sess.query_property()
     # yield the session
     yield(sess)
     # when we're done, close and rollback
     sess.close()
-    trans.rollback()
     conn.close()
 
 
