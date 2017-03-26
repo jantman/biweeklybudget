@@ -35,8 +35,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import pytest
 import sys
+import pytest
 from datetime import datetime, date, timedelta
 from biweeklybudget.payperiods import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
@@ -104,7 +104,16 @@ class TestBiweeklyPayPeriod(object):
     def test_repr(self):
         assert str(self.cls) == '<BiweeklyPayPeriod(2017-03-17)>'
 
-    def test_ordering(self):
+    @pytest.mark.skipif(sys.version_info[0] >= 3, reason='py2 only')
+    def test_ordering_py27(self):
+        assert self.cls < BiweeklyPayPeriod(date(2017, 4, 16))
+        assert self.cls > BiweeklyPayPeriod(date(2017, 2, 13))
+        assert self.cls == BiweeklyPayPeriod(date(2017, 3, 17))
+        self.cls < 2
+        self.cls.__eq__(2)
+
+    @pytest.mark.skipif(sys.version_info[0] < 3, reason='py3 only')
+    def test_ordering_py3(self):
         assert self.cls < BiweeklyPayPeriod(date(2017, 4, 16))
         assert self.cls > BiweeklyPayPeriod(date(2017, 2, 13))
         assert self.cls == BiweeklyPayPeriod(date(2017, 3, 17))

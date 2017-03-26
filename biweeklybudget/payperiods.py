@@ -167,10 +167,10 @@ class BiweeklyPayPeriod(object):
             q = p.filter_query(q, OFXTransaction.date_posted)
 
         :param query: The query to filter
-        :type query: sqlalchemy.orm.query.Query
+        :type query: ``sqlalchemy.orm.query.Query``
         :param date_prop: the Model's date property, to filter on.
         :return: the filtered query
-        :rtype: sqlalchemy.orm.query.Query
+        :rtype: ``sqlalchemy.orm.query.Query``
         """
         return query.filter(
             date_prop >= self.start_date, date_prop <= self.end_date
