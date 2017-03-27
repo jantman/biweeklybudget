@@ -4,9 +4,95 @@
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Budgets</h1>
+                    <div class="panel panel-default" id="panel-bank-accounts">
+                        <div class="panel-heading">
+                            Periodic Budgets
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Budget</th>
+                                            <th>Starting Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for b in periodic %}
+                                        <tr>
+                                            <td>{{ b.name }}</a></td>
+                                            <td>{{ b.starting_balance|dollars }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                    <div class="panel panel-default" id="panel-credit-cards">
+                        <div class="panel-heading">
+                            Standing Budgets
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Budget</th>
+                                            <th>Current Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for b in standing %}
+                                        <tr>
+                                            <td>{{ b.name }}</a></td>
+                                            <td>
+                                                <span>{{ b.current_balance|dollars }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+            <!-- Modal -->
+            <div class="modal fade" id="budgetModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" id="budgetModalLabel">Modal title</h4>
+                        </div>
+                        <div class="modal-body" id="budgetModalBody">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="budgetModalSaveButton">Save changes</button>
+                        </div>
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+            <!-- /.modal -->
 {% endblock %}

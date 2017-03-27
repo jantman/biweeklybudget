@@ -35,27 +35,30 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from flask.views import MethodView
-from flask import render_template
+import pytest
 
-from biweeklybudget.flaskapp.app import app
-from biweeklybudget.db import db_session
-from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
-class BudgetsView(MethodView):
+@pytest.mark.acceptance
+class TestBudgets(AcceptanceHelper):
 
-    def get(self):
-        standing = db_session.query(Budget).filter(
-            Budget.is_active == True, Budget.is_periodic == False
-        ).order_by(Budget.name).all()
-        periodic = db_session.query(Budget).filter(
-            Budget.is_active == True, Budget.is_periodic == True
-        ).order_by(Budget.name).all()
-        return render_template(
-            'budgets.html',
-            standing=standing,
-            periodic=periodic
-        )
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/budgets')
 
-app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
+    def test_heading(self, selenium):
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        assert heading.text == 'OFX Transactions - BiweeklyBudget'
+
+    def test_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
+
+    def test_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'

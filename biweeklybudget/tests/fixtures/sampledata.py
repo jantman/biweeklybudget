@@ -62,7 +62,7 @@ class SampleDataLoader(object):
         self.budgets = self._budgets()
 
     def _budgets(self):
-        return {
+        res = {
             'Periodic1': Budget(
                 name='Periodic1',
                 is_periodic=True,
@@ -95,6 +95,9 @@ class SampleDataLoader(object):
                 current_balance=9482.29
             )
         }
+        for x in res.keys():
+            self.db.add(res[x])
+        return res
 
     def _add_account(self, acct, statements, transactions):
         self.db.add(acct)
