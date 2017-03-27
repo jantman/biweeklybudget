@@ -59,6 +59,42 @@ class SampleDataLoader(object):
             'InvestmentOne': self._investment_one(),
             'DisabledBank': self._disabled_bank()
         }
+        self.budgets = self._budgets()
+
+    def _budgets(self):
+        return {
+            'Periodic1': Budget(
+                name='Periodic1',
+                is_periodic=True,
+                description='P1desc',
+                starting_balance=100
+            ),
+            'Periodic2': Budget(
+                name='Periodic2',
+                is_periodic=True,
+                description='P2desc',
+                starting_balance=234
+            ),
+            'Periodic3 Inactive': Budget(
+                name='Periodic3 Inactive',
+                is_periodic=True,
+                description='P3desc',
+                starting_balance=10.23,
+                is_active=False
+            ),
+            'Standing1': Budget(
+                name='Standing1',
+                is_periodic=False,
+                description='S1desc',
+                current_balance=1284.23
+            ),
+            'Standing2': Budget(
+                name='Standing2',
+                is_periodic=False,
+                description='S2desc',
+                current_balance=9482.29
+            )
+        }
 
     def _add_account(self, acct, statements, transactions):
         self.db.add(acct)
