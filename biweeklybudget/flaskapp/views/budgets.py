@@ -47,10 +47,10 @@ class BudgetsView(MethodView):
 
     def get(self):
         standing = db_session.query(Budget).filter(
-            Budget.is_active == True, Budget.is_periodic == False
+            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
         ).order_by(Budget.name).all()
         periodic = db_session.query(Budget).filter(
-            Budget.is_active == True, Budget.is_periodic == True
+            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
         return render_template(
             'budgets.html',

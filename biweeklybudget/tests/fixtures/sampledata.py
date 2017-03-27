@@ -93,6 +93,13 @@ class SampleDataLoader(object):
                 is_periodic=False,
                 description='S2desc',
                 current_balance=9482.29
+            ),
+            'Standing3 Inactive': Budget(
+                name='Standing3 Inactive',
+                is_periodic=False,
+                description='S3desc',
+                current_balance=-92.29,
+                is_active=False
             )
         }
         for x in res.keys():
