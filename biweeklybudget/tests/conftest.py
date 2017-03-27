@@ -64,8 +64,7 @@ engine = create_engine(connstr)
 @pytest.fixture(scope="session")
 def testdb():
     """
-    This fixture handles the overall DB setup and isolates everything else in
-    a transaction.
+    This fixture handles the overall DB setup.
     """
     # setup the connection
     conn = engine.connect()
@@ -88,8 +87,43 @@ def testdb():
     )
     # yield the session
     yield(sess)
-    # when we're done, close and rollback
+    # when we're done, close
     sess.close()
+    conn.close()
+
+
+@pytest.fixture(scope="class")
+def class_scoped_db():
+    """
+    This fixture rolls the DB back to the previous state when the class is
+    finished; to be used on classes that alter data.
+
+    Use like:
+
+        @pytest.mark.usefixtures('class_scoped_db', 'testdb')
+        class MyClass(AcceptanceHelper):
+    """
+    # setup the connection
+    conn = engine.connect()
+    sess = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=conn)
+    )
+    # yield the session
+    yield(sess)
+    sess.close()
+    # clean the database
+    biweeklybudget.models.base.Base.metadata.reflect(engine)
+    biweeklybudget.models.base.Base.metadata.drop_all(engine)
+    biweeklybudget.models.base.Base.metadata.create_all(engine)
+    # load the sample data
+    data_sess = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=conn)
+    )
+    SampleDataLoader(data_sess).load()
+    data_sess.flush()
+    data_sess.commit()
+    data_sess.close()
+    # when we're done, close
     conn.close()
 
 
