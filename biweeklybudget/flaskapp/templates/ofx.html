@@ -6,6 +6,13 @@
 
     <!-- DataTables Responsive CSS -->
     <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = {{ accts[name] }};
+        {% endfor %}
+    </script>
 {% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
@@ -81,99 +88,12 @@
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
 
+<script src="/static/js/ofx.js"></script>
 <script>
-/**
- * Show the modal popup, populated with information for one OFX Transaction.
- */
-function ofxTransModal(acct_id, fitid) {
-    var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
-    $.ajax(url).done(function( msg ) {
-        var modal = $("#ofxTxnModal");
-        modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
-        var tbody = modal.find('tbody');
-        tbody.empty();
-        tbody.append('<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>');
-        tbody.append('<tr><th>FITID</th><td>' + msg['txn']['fitid'] + '</td></tr>');
-        tbody.append('<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['txn']['date_posted']) + '</td></tr>');
-        tbody.append('<tr><th>Amount</th><td>' + fmt_currency(msg['txn']['amount']) + '</td></tr>');
-        tbody.append('<tr><th>Name</th><td>' + msg['txn']['name'] + '</td></tr>');
-        tbody.append('<tr><th>Memo</th><td>' + fmt_null(msg['txn']['memo']) + '</td></tr>');
-        tbody.append('<tr><th>Type</th><td>' + fmt_null(msg['txn']['trans_type']) + '</td></tr>');
-        tbody.append('<tr><th>Description</th><td>' + fmt_null(msg['txn']['description']) + '</td></tr>');
-        tbody.append('<tr><th>Notes</th><td>' + fmt_null(msg['txn']['notes']) + '</td></tr>');
-        tbody.append('<tr><th>Checknum</th><td>' + fmt_null(msg['txn']['checknum']) + '</td></tr>');
-        tbody.append('<tr><th>MCC</th><td>' + fmt_null(msg['txn']['mcc']) + '</td></tr>');
-        tbody.append('<tr><th>SIC</th><td>' + fmt_null(msg['txn']['sic']) + '</td></tr>');
-        tbody.append('<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>');
-        tbody.append('<tr><th>ID</th><td>' + fmt_null(msg['stmt']['id']) + '</td></tr>');
-        tbody.append('<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['stmt']['as_of']) + '</td></tr>');
-        tbody.append('<tr><th>Filename</th><td>' + fmt_null(msg['stmt']['filename']) + '</td></tr>');
-        tbody.append('<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['stmt']['file_mtime']) + '</td></tr>');
-        tbody.append('<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['stmt']['ledger_bal']) + '</td></tr>');
-        modal.modal('show');
-    });
-}
-
-$(document).ready(function() {
-    var mytable = $('#table-ofx-txn').dataTable({
-        processing: true,
-        serverSide: true,
-        ajax: "/ajax/ofx",
-        columns: [
-            { data: "date" },
-            {
-                data: "amount",
-                "render": function(data, type, row) {
-                    return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
-                        data;
-                }
-            },
-            {
-                data: "account",
-                "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "/accounts/" + row.DT_RowData.acct_id).text(data)).html();
-                }
-            },
-            { data: "type" },
-            { data: "name" },
-            { data: "memo" },
-            { data: "description" },
-            {
-                data: "fitid",
-                "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "javascript:ofxTransModal(" + row.DT_RowData.acct_id + ", '" + data + "')").text(data)).html();
-                }
-            },
-            { data: "last_stmt" },
-            { data: "last_stmt_date" },
-            { data: "reconciled" }
-        ],
-        order: [[ 0, "desc"]],
-        bInfo: true
-    });
-
-    $('#table-ofx-txn_length').parent().removeClass('col-sm-6');
-    $('#table-ofx-txn_length').parent().addClass('col-sm-4');
-    $('#table-ofx-txn_filter').parent().removeClass('col-sm-6');
-    $('#table-ofx-txn_filter').parent().addClass('col-sm-4');
-    var acctsel = '<div class="col-sm-4"><div id="table-ofx-txn_acct_filter" class="dataTables_length"><label>Account: <select name="account_filter" id="account_filter" class="form-control input-sm" aria-controls="table-ofx-txn">';
-    acctsel += '<option value="None" selected="selected"></option>';
-    {% for name in accts.keys()|sort %}
-    acctsel += '<option value="{{ accts[name] }}">{{ name }}</option>';
-    {% endfor %}
-    acctsel += '</select></label></div></div>';
-    $(acctsel).insertAfter($('#table-ofx-txn_length').parent());
-    $('#account_filter').on('change', function() {
-        var selectedVal = $(this).val();
-        mytable.fnFilter(selectedVal, 2, false);
-    });
-
-    /* BEGIN conditional default modal for /ofx/<acct_id>/<fitid> */
-    {% if acct_id is defined and fitid is defined and acct_id is not none and fitid is not none %}
-    ofxTransModal({{ acct_id }}, "{{ fitid }}");
-    {% endif %}
-    /* END conditional default modal for /ofx/<acct_id>/<fitid> */
-});
+/* BEGIN conditional default modal for /ofx/<acct_id>/<fitid> */
+{% if acct_id is defined and fitid is defined and acct_id is not none and fitid is not none %}
+ofxTransModal({{ acct_id }}, "{{ fitid }}");
+{% endif %}
+/* END conditional default modal for /ofx/<acct_id>/<fitid> */
 </script>
 {% endblock %}
