@@ -127,3 +127,121 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         sel = Select(selenium.find_element_by_id('budget_frm_account'))
         assert sel.first_selected_option.text == ''
+        assert sel.first_selected_option.get_attribute('value') == 'None'
+
+
+@pytest.mark.acceptance
+class TestEditPeriodic2(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/budgets')
+
+    def test_1_populate_modal(self, selenium):
+        link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
+        link.click()
+        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
+        modal = selenium.find_element_by_id('budgetModal')
+        title = selenium.find_element_by_id('budgetModalLabel')
+        body = selenium.find_element_by_id('budgetModalBody')
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 2'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Periodic2'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'P2desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == '234'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed()
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed() is False
+        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        sel = Select(selenium.find_element_by_id('budget_frm_account'))
+        assert sel.first_selected_option.text == 'BankOne'
+        assert sel.first_selected_option.get_attribute('value') == '1'
+
+
+@pytest.mark.acceptance
+class TestEditStanding1(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/budgets')
+
+    def test_1_populate_modal(self, selenium):
+        link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
+        link.click()
+        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
+        modal = selenium.find_element_by_id('budgetModal')
+        title = selenium.find_element_by_id('budgetModalLabel')
+        body = selenium.find_element_by_id('budgetModalBody')
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 4'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Standing1'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'S1desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == '1284.23'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed()
+        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        sel = Select(selenium.find_element_by_id('budget_frm_account'))
+        assert sel.first_selected_option.text == 'BankTwoStale'
+        assert sel.first_selected_option.get_attribute('value') == '2'
+
+
+@pytest.mark.acceptance
+class TestEditStanding2(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/budgets')
+
+    def test_1_populate_modal(self, selenium):
+        link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
+        link.click()
+        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
+        modal = selenium.find_element_by_id('budgetModal')
+        title = selenium.find_element_by_id('budgetModalLabel')
+        body = selenium.find_element_by_id('budgetModalBody')
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 5'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Standing2'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'S2desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == '9482.29'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed()
+        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        sel = Select(selenium.find_element_by_id('budget_frm_account'))
+        assert sel.first_selected_option.text == ''
+        assert sel.first_selected_option.get_attribute('value') == 'None'
