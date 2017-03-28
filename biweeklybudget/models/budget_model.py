@@ -35,8 +35,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from sqlalchemy import Column, Integer, Numeric, Boolean, String
+from sqlalchemy import Column, Integer, Numeric, Boolean, String, ForeignKey
 from biweeklybudget.models.base import Base, ModelAsDict
+from sqlalchemy.orm import relationship
 
 
 class Budget(Base, ModelAsDict):
@@ -46,27 +47,33 @@ class Budget(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
-    # Whether the budget is standing (long-running) or periodic (resets each
-    # pay period or budget cycle)
+    #: Whether the budget is standing (long-running) or periodic (resets each
+    #: pay period or budget cycle)
     is_periodic = Column(Boolean, default=True)
 
-    # name of the budget
+    #: name of the budget
     name = Column(String(50), unique=True, index=True)
 
-    # description
+    #: description
     description = Column(String(254))
 
-    # starting balance for periodic
+    #: starting balance for periodic budgets
     starting_balance = Column(Numeric(precision=10, scale=4))
 
-    # current balance for standing
+    #: current balance for standing budgets
     current_balance = Column(Numeric(precision=10, scale=4))
 
-    # whether active or historical
+    #: whether active or historical
     is_active = Column(Boolean, default=True)
+
+    #: ID of the account this budget is associated with, if any
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=True)
+
+    #: Account this budget is associated with, if any
+    account = relationship('Account')
 
     def __repr__(self):
         return "<Budget(id=%d)>" % (
