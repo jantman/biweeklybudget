@@ -41,8 +41,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 function ofxTransModal(acct_id, fitid) {
     var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
     $.ajax(url).done(function( msg ) {
-        var modal = $("#ofxTxnModal");
+        var modal = $("#modalDiv");
         modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
+        var mbody = $('#modalBody');
+        mbody.append('<div class="table-responsive"><table class="table table-bordered table-hover"><tbody></tbody></table></div><!-- /.table-responsive -->');
         var tbody = modal.find('tbody');
         tbody.empty();
         tbody.append('<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>');
@@ -63,6 +65,7 @@ function ofxTransModal(acct_id, fitid) {
         tbody.append('<tr><th>Filename</th><td>' + fmt_null(msg['stmt']['filename']) + '</td></tr>');
         tbody.append('<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['stmt']['file_mtime']) + '</td></tr>');
         tbody.append('<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['stmt']['ledger_bal']) + '</td></tr>');
+        $('#modalSaveButton').hide();
         modal.modal('show');
     });
 }

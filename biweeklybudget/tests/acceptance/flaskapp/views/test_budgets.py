@@ -102,10 +102,10 @@ class TestEditPeriodic1(AcceptanceHelper):
     def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
         link.click()
-        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
-        modal = selenium.find_element_by_id('budgetModal')
-        title = selenium.find_element_by_id('budgetModalLabel')
-        body = selenium.find_element_by_id('budgetModalBody')
+        self.wait_for_modal_shown(selenium, 'modalLabel')
+        modal = selenium.find_element_by_id('modalDiv')
+        title = selenium.find_element_by_id('modalLabel')
+        body = selenium.find_element_by_id('modalBody')
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -141,10 +141,10 @@ class TestEditPeriodic2(AcceptanceHelper):
     def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
         link.click()
-        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
-        modal = selenium.find_element_by_id('budgetModal')
-        title = selenium.find_element_by_id('budgetModalLabel')
-        body = selenium.find_element_by_id('budgetModalBody')
+        self.wait_for_modal_shown(selenium, 'modalLabel')
+        modal = selenium.find_element_by_id('modalDiv')
+        title = selenium.find_element_by_id('modalLabel')
+        body = selenium.find_element_by_id('modalBody')
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 2'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -180,10 +180,10 @@ class TestEditStanding1(AcceptanceHelper):
     def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
         link.click()
-        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
-        modal = selenium.find_element_by_id('budgetModal')
-        title = selenium.find_element_by_id('budgetModalLabel')
-        body = selenium.find_element_by_id('budgetModalBody')
+        self.wait_for_modal_shown(selenium, 'modalLabel')
+        modal = selenium.find_element_by_id('modalDiv')
+        title = selenium.find_element_by_id('modalLabel')
+        body = selenium.find_element_by_id('modalBody')
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 4'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -219,10 +219,10 @@ class TestEditStanding2(AcceptanceHelper):
     def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
         link.click()
-        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
-        modal = selenium.find_element_by_id('budgetModal')
-        title = selenium.find_element_by_id('budgetModalLabel')
-        body = selenium.find_element_by_id('budgetModalBody')
+        self.wait_for_modal_shown(selenium, 'modalLabel')
+        modal = selenium.find_element_by_id('modalDiv')
+        title = selenium.find_element_by_id('modalLabel')
+        body = selenium.find_element_by_id('modalBody')
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 5'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(

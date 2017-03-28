@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 /**
  * Handle change of the "Type" radio buttons on the modal
  */
-function budgetModalHandleType() {
+function modalDivHandleType() {
     if($('#budget_frm_type_standing').is(':checked')) {
         $('#budget_frm_group_starting_balance').hide();
         $('#budget_frm_group_current_balance').show();
@@ -51,12 +51,12 @@ function budgetModalHandleType() {
 /**
  * Generate the HTML for the form on the Modal
  */
-function budgetModalForm() {
+function modalDivForm() {
     var frm = '<form role="form">';
     // name
     frm += '<div class="form-group"><label>Name</label><input class="form-control" id="budget_frm_name" name="name"></div>';
     // type
-    frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_periodic" value="periodic" onchange="budgetModalHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_standing" value="standing" onchange="budgetModalHandleType()">Standing</label></div>';
+    frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_periodic" value="periodic" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_standing" value="standing" onchange="modalDivHandleType()">Standing</label></div>';
     // description
     frm += '<div class="form-group"><label>Description</label><input class="form-control" id="budget_frm_description" name="description"></div>';
     // starting balance (for periodic)
@@ -77,17 +77,17 @@ function budgetModalForm() {
 }
 
 /**
- * Ajax callback to fill in the budgetModal with data on a budget.
+ * Ajax callback to fill in the modalDiv with data on a budget.
  */
-function budgetModalFillAndShow(msg) {
-    $('#budgetModalLabel').text('Edit Budget ' + msg['id']);
+function modalDivFillAndShow(msg) {
+    $('#modalLabel').text('Edit Budget ' + msg['id']);
     $('#budget_frm_name').val(msg['name']);
     if(msg['is_periodic'] === true) {
         $('#budget_frm_type_periodic').prop('checked', true);
     } else {
         $('#budget_frm_type_standing').prop('checked', true);
     }
-    budgetModalHandleType();
+    modalDivHandleType();
     $('#budget_frm_description').val(msg['description']);
     $('#budget_frm_starting_balance').val(msg['starting_balance']);
     $('#budget_frm_current_balance').val(msg['current_balance']);
@@ -97,20 +97,20 @@ function budgetModalFillAndShow(msg) {
         $('#budget_frm_active').prop('checked', false);
     }
     $('#budget_frm_account option[value="' + msg['account_id'] + '"]').prop('selected', 'selected');
-    $("#budgetModal").modal('show');
+    $("#modalDiv").modal('show');
 }
 
 /**
  * Show the modal popup, populated with information for one Budget.
  */
 function budgetModal(id) {
-    $('#budgetModalBody').empty();
-    $('#budgetModalBody').append(budgetModalForm());
+    $('#modalBody').empty();
+    $('#modalBody').append(modalDivForm());
     if(id) {
         var url = "/ajax/budget/" + id;
-        $.ajax(url).done(budgetModalFillAndShow);
+        $.ajax(url).done(modalDivFillAndShow);
     } else {
-        $('#budgetModalLabel').text('Add New Budget');
-        $("#budgetModal").modal('show');
+        $('#modalLabel').text('Add New Budget');
+        $("#modalDiv").modal('show');
     }
 }
