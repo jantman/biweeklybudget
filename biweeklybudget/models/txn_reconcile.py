@@ -53,27 +53,41 @@ class TxnReconcile(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
+    #: Transaction ID
     txn_id = Column(Integer, ForeignKey('transactions.id'))
+
+    #: Relationship - :py:class:`~.Transaction`
     transaction = relationship(
         "Transaction", backref="reconcile", uselist=False,
         foreign_keys=[txn_id]
     )
 
+    #: OFX Transaction FITID
     ofx_fitid = Column(String(255))
+
+    #: OFX Transaction Account ID
     ofx_account_id = Column(Integer)
+
+    #: Relationship - :py:class:`~.OFXTransaction`
     ofx_trans = relationship(
         "OFXTransaction", backref="reconcile", uselist=False,
         foreign_keys=[ofx_fitid, ofx_account_id]
     )
 
+    #: ReconcileRule ID; set if this reconcile was created by a rule
     rule_id = Column(Integer, ForeignKey('reconcile_rules.id'))
+
+    #: Relationship - :py:class:`~.ReconcileRule` that created this reconcile,
+    #: if any.
     rule = relationship("ReconcileRule")
 
+    #: Notes
     note = Column(String(254))
 
+    #: time when this reconcile was made
     reconciled_at = Column(UtcDateTime, default=dtnow())
 
     def __repr__(self):

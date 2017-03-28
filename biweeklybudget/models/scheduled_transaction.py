@@ -50,34 +50,45 @@ class ScheduledTransaction(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
+    #: Amount of the transaction
     amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
+    #: description
     description = Column(String(254), nullable=False, index=True)
 
+    #: notes
     notes = Column(String(254))
 
+    #: ID of the account the transaction is against
     account_id = Column(Integer, ForeignKey('accounts.id'))
+
+    #: Relationship - :py:class:`~.Account` the transaction is against
     account = relationship(
         "Account", backref="scheduled_transactions"
     )
 
+    #: ID of the budget the transaction is against
     budget_id = Column(Integer, ForeignKey('budgets.id'))
+
+    #: Relationship - :py:class:`~.Budget` the transaction is against
     budget = relationship(
         "Budget", backref="scheduled_transactions"
     )
 
+    #: whether the scheduled transaction is enabled or disabled
     is_active = Column(Boolean, default=True)
 
-    # Denotes a scheduled transaction that will happen once on the given date
+    #: Denotes a scheduled transaction that will happen once on the given date
     date = Column(Date)
 
-    # Denotes a scheduled transaction that happens on the same day of each month
+    #: Denotes a scheduled transaction that happens on the same day of each
+    #: month
     day_of_month = Column(SmallInteger)
 
-    # Denotes a scheduled transaction that happens N times per pay period
+    #: Denotes a scheduled transaction that happens N times per pay period
     num_per_period = Column(SmallInteger)
 
     def __repr__(self):

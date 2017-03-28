@@ -48,33 +48,49 @@ class Transaction(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
+    #: date of the transaction
     date = Column(Date, default=dtnow())
 
+    #: Actual amount of the transaction
     actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
+    #: Budgeted amount of the transaction
     budgeted_amount = Column(Numeric(precision=10, scale=4))
 
+    #: description
     description = Column(String(254), nullable=False, index=True)
 
+    #: free-form notes
     notes = Column(String(254))
 
+    #: ID of the account this transaction is against
     account_id = Column(Integer, ForeignKey('accounts.id'))
+
+    #: Relationship - :py:class:`~.Account` this transaction is against
     account = relationship(
         "Account", backref="transactions", uselist=False
     )
 
-    # set when a scheduled transaction is converted to a real one
+    #: ID of the ScheduledTransaction this Transaction was created from;
+    #: set when a scheduled transaction is converted to a real one
     scheduled_trans_id = Column(
         Integer, ForeignKey('scheduled_transactions.id')
     )
+
+    #: Relationship - the :py:class:`~.ScheduledTransaction`
+    #: this Transaction was created from; set when a scheduled transaction
+    #: is converted to a real one
     scheduled_trans = relationship(
         "ScheduledTransaction", backref="transactions", uselist=False
     )
 
+    #: ID of the Budget this transaction is against
     budget_id = Column(Integer, ForeignKey('budgets.id'))
+
+    #: Relationship - the :py:class:`~.Budget` this transaction is against
     budget = relationship(
         "Budget", backref="transactions", uselist=False
     )

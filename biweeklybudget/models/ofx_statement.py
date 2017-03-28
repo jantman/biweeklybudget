@@ -51,51 +51,57 @@ class OFXStatement(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Unique ID
+    #: Unique ID
     id = Column(Integer, primary_key=True)
 
-    # Foreign key - Account.id
+    #: Foreign key - Account.id - ID of the account this statement is for
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+
+    #: Relationship to the :py:class:`~.Account` this statement is for
     account = relationship(
         "Account", uselist=False
     )
 
-    # Filename parsed from
+    #: Filename parsed from
     filename = Column(String(254))
 
-    # File mtime
+    #: File mtime
     file_mtime = Column(UtcDateTime)
 
-    # Currency definition ("USD")
+    #: Currency definition ("USD")
     currency = Column(String(10))
 
-    # FID of the Institution
+    #: FID of the Institution
     bankid = Column(String(20))
 
-    # Routing Number
+    #: Routing Number
     routing_number = Column(String(20))
 
-    # Textual account type, from the bank
+    #: Textual account type, from the bank (i.e. "Checking")
     acct_type = Column(String(32))
 
-    # BrokerID, for investment accounts
+    #: BrokerID, for investment accounts
     brokerid = Column(String(30))
 
-    # Institution's account ID
+    #: Institution's account ID
     acctid = Column(String(30))
 
-    # Account Type, string corresponding to ofxparser.ofxparser.AccountType
+    #: Account Type, string corresponding to ofxparser.ofxparser.AccountType
     type = Column(String(20))
 
-    # Last OFX statement datetime
+    #: Last OFX statement datetime
     as_of = Column(UtcDateTime)
 
-    # Ledger balance, or investment account value
+    #: Ledger balance, or investment account value
     ledger_bal = Column(Numeric(precision=10, scale=4))
+
+    #: as-of date for the ledger balance
     ledger_bal_as_of = Column(UtcDateTime)
 
-    # Available balance
+    #: Available balance
     avail_bal = Column(Numeric(precision=10, scale=4))
+
+    #: as-of date for the available balance
     avail_bal_as_of = Column(UtcDateTime)
 
     def __repr__(self):

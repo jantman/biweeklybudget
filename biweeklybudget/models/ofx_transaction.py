@@ -57,39 +57,75 @@ class OFXTransaction(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
+    #: Account ID this transaction is associated with
     account_id = Column(
         Integer, ForeignKey('accounts.id'), nullable=False
     )
+
+    #: Account this transaction is associated with
     account = relationship('Account', uselist=False)
 
+    #: OFXStatement ID this transaction was last seen in
     statement_id = Column(
         Integer, ForeignKey('ofx_statements.id'), nullable=False
     )
+
+    #: OFXStatement this transaction was last seen in
     statement = relationship(
         "OFXStatement", backref="ofx_trans"
     )
 
-    # OFX fields
+    #: OFX - FITID
     fitid = Column(String(255))
+
+    #: OFX - Transaction Type
     trans_type = Column(String(50))
+
+    #: OFX - Date Posted
     date_posted = Column(UtcDateTime)
+
+    #: OFX - Amount
     amount = Column(Numeric(precision=10, scale=4))  # Amount format from OFX
+
+    #: OFX - Name
     name = Column(String(255), index=True)
+
+    #: OFX - Memo
     memo = Column(String(255), index=True)
+
+    #: OFX - SIC
     sic = Column(String(255))
+
+    #: OFX - MCC
     mcc = Column(String(255))
+
+    #: OFX - Checknum
     checknum = Column(String(32))
 
     # app-specific fields
+
+    #: Description
     description = Column(String(254), index=True)
+
+    #: Notes
     notes = Column(Text)
 
+    #: Account's ``re_payment`` matched
     is_payment = Column(Boolean, default=False)
+
+    #: Account's ``re_late_fee`` matched
     is_late_fee = Column(Boolean, default=False)
+
+    #: Account's ``re_interest_charge`` matched
     is_interest_charge = Column(Boolean, default=False)
+
+    #: Account's ``re_fee`` matched
     is_other_fee = Column(Boolean, default=False)
+
+    #: Account's ``re_interest_paid`` matched
     is_interest_payment = Column(Boolean, default=False)
 
+    #: The reconcile_id for the OFX Transaction
     reconcile_id = Column(Integer, ForeignKey('txn_reconciles.id'))
 
     def __repr__(self):

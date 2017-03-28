@@ -54,6 +54,12 @@ class ModelAsDict(object):
 
     @property
     def as_dict(self):
+        """
+        Return a dict representation of the model.
+
+        :return: model's variables/attributes
+        :rtype: dict
+        """
         d = {}
         for k, v in vars(self).items():
             if not k.startswith('_'):

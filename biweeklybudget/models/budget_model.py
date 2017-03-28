@@ -72,7 +72,8 @@ class Budget(Base, ModelAsDict):
     #: ID of the account this budget is associated with, if any
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=True)
 
-    #: Account this budget is associated with, if any
+    #: Relationship to the :py:class:`~.Account` this budget is associated
+    #: with, if any
     account = relationship('Account')
 
     def __repr__(self):

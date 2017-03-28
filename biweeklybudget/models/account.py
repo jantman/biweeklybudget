@@ -68,51 +68,58 @@ class Account(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
-    # name for the account
+    #: name for the account
     name = Column(String(50), unique=True, index=True)
 
-    # description
+    #: description
     description = Column(String(254))
 
-    # whether or not to concatenate the OFX memo text onto the OFX name text;
-    # for banks like Chase that use the memo for run-on from the name
+    #: whether or not to concatenate the OFX memo text onto the OFX name text;
+    #: for banks like Chase that use the memo for run-on from the name
     ofx_cat_memo_to_name = Column(Boolean, default=False)
 
-    # path in Vault to read the credentials from
+    #: path in Vault to read the credentials from
     vault_creds_path = Column(String(254))
 
-    # JSON-encoded ofxgetter configuration
+    #: JSON-encoded ofxgetter configuration
     ofxgetter_config_json = Column(Text)
 
-    # Type of account
+    #: Type of account (Enum :py:class:`~.AcctType` )
     acct_type = Column(Enum(AcctType))
 
-    # credit limit, for credit accounts
+    #: credit limit, for credit accounts
     credit_limit = Column(Numeric(precision=10, scale=4))
 
-    # whether or not the account is active and can be used, or historical
+    #: whether or not the account is active and can be used, or historical
     is_active = Column(Boolean, default=True)
 
+    #: Relationship to all :py:class:`~.OFXStatement` for this Account
     all_statements = relationship(
         'OFXStatement', order_by='OFXStatement.as_of'
     )
 
-    # regexes for matching transactions as various types; case insensitive
+    #: regex for matching transactions as interest charges
     re_interest_charge = Column(
         String(254),
         default='^(interest charge|purchase finance charge)'
     )
+
+    #: regex for matching transactions as interest paid
     re_interest_paid = Column(
         String(254),
         default='^interest paid'
     )
+
+    #: regex for matching transactions as payments
     re_payment = Column(
         String(254),
         default='^(online payment|internet payment|online pymt|payment)'
     )
+
+    #: regex for matching transactions as fees
     re_fee = Column(
         String(254),
         default='^(late fee|past due fee)'

@@ -49,23 +49,30 @@ class AccountBalance(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    # Primary Key
+    #: Primary Key
     id = Column(Integer, primary_key=True)
 
+    #: ID of the account this balance is for
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+
+    #: Relationship to :py:class:`~.Account` this balance is for
     account = relationship(
         "Account", backref="all_balances"
     )
 
-    # Ledger balance, or investment account value, or credit card balance
+    #: Ledger balance, or investment account value, or credit card balance
     ledger = Column(Numeric(precision=10, scale=4))
+
+    #: as-of date for the ledger balance
     ledger_date = Column(UtcDateTime)
 
-    # Available balance
+    #: Available balance
     avail = Column(Numeric(precision=10, scale=4))
+
+    #: as-of date for the available balance
     avail_date = Column(UtcDateTime)
 
-    # overall balance as of DateTime
+    #: overall balance as of DateTime
     overall_date = Column(UtcDateTime, default=dtnow())
 
     def __repr__(self):
