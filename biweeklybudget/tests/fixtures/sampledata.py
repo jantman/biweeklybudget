@@ -104,7 +104,7 @@ class SampleDataLoader(object):
                 is_active=False
             )
         }
-        for x in res.keys():
+        for x in sorted(res.keys()):
             self.db.add(res[x])
         return res
 
