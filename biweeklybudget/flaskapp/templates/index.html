@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block title %}BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Morris Charts CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <!-- /.row -->
@@ -150,4 +154,10 @@
                 <!-- /.col-lg-4 -->
             </div>
             <!-- /.row -->
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- Morris Charts JavaScript -->
+    <script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/data/morris-data.js"></script>
 {% endblock %}
