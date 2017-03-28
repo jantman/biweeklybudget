@@ -52,11 +52,11 @@ function modalDivHandleType() {
  * Generate the HTML for the form on the Modal
  */
 function modalDivForm() {
-    var frm = '<form role="form">';
+    var frm = '<form role="form" id="budgetForm">';
     // name
     frm += '<div class="form-group"><label>Name</label><input class="form-control" id="budget_frm_name" name="name"></div>\n';
     // type
-    frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_periodic" value="periodic" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_standing" value="standing" onchange="modalDivHandleType()">Standing</label></div>';
+    frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="is_periodic" id="budget_frm_type_periodic" value="true" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="is_periodic" id="budget_frm_type_standing" value="false" onchange="modalDivHandleType()">Standing</label></div>';
     // description
     frm += '<div class="form-group"><label>Description</label><input class="form-control" id="budget_frm_description" name="description"></div>';
     // starting balance (for periodic)
@@ -64,7 +64,7 @@ function modalDivForm() {
     // current balance (for standing)
     frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label>Current Balance</label><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div>';
     // is_active checkbox
-    frm += '<div class="form-group"><label class="checkbox-inline"><input type="checkbox" id="budget_frm_active" name="active" checked> Active?</label>';
+    frm += '<div class="form-group"><label class="checkbox-inline"><input type="checkbox" id="budget_frm_active" name="is_active" checked> Active?</label>';
     // account_id (select)
     frm += '<div class="form-group"><label>Account</label><select class="form-control" id="budget_frm_account" name="account">';
     frm += '<option value="None" selected="selected"></option>';
