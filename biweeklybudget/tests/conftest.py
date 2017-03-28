@@ -161,4 +161,8 @@ def selenium(selenium):
     """
     selenium.set_window_size(1200, 800)
     selenium.implicitly_wait(2)
+    # from http://stackoverflow.com/a/13853684/211734
+    selenium.set_script_timeout(60)
+    # from http://stackoverflow.com/a/17536547/211734
+    selenium.set_page_load_timeout(60)
     return selenium

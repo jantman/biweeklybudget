@@ -54,7 +54,7 @@ function modalDivHandleType() {
 function modalDivForm() {
     var frm = '<form role="form">';
     // name
-    frm += '<div class="form-group"><label>Name</label><input class="form-control" id="budget_frm_name" name="name"></div>';
+    frm += '<div class="form-group"><label>Name</label><input class="form-control" id="budget_frm_name" name="name"></div>\n';
     // type
     frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_periodic" value="periodic" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_standing" value="standing" onchange="modalDivHandleType()">Standing</label></div>';
     // description
@@ -83,8 +83,10 @@ function modalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Budget ' + msg['id']);
     $('#budget_frm_name').val(msg['name']);
     if(msg['is_periodic'] === true) {
+        $('#budget_frm_type_standing').prop('checked', false);
         $('#budget_frm_type_periodic').prop('checked', true);
     } else {
+        $('#budget_frm_type_periodic').prop('checked', false);
         $('#budget_frm_type_standing').prop('checked', true);
     }
     modalDivHandleType();
