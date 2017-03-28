@@ -68,12 +68,23 @@ class TestBudgets(AcceptanceHelper):
         ptexts = self.tbody2textlist(ptable)
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
-        # pelems = self.tbody2elemlist(ptable)
         assert ptexts == [
-            ['Periodic1', '$100.00', ''],
-            ['Periodic2', '$234.00', 'BankOne']
+            ['Periodic1 (1)', '$100.00', ''],
+            ['Periodic2 (2)', '$234.00', 'BankOne (1)']
         ]
         assert stexts == [
-            ['Standing1', '$1,284.23', 'BankTwoStale'],
-            ['Standing2', '$9,482.29', '']
+            ['Standing1 (4)', '$1,284.23', 'BankTwoStale (2)'],
+            ['Standing2 (5)', '$9,482.29', '']
         ]
+        pelems = self.tbody2elemlist(ptable)
+        selems = self.tbody2elemlist(stable)
+        assert pelems[1][0].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(2)">' \
+                            'Periodic2 (2)</a>'
+        assert pelems[1][2].get_attribute(
+            'innerHTML') == '<a href="/accounts/1">BankOne (1)</a>'
+        assert selems[0][0].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(4)">' \
+                            'Standing1 (4)</a>'
+        assert selems[0][2].get_attribute(
+            'innerHTML') == '<a href="/accounts/2">BankTwoStale (2)</a>'
