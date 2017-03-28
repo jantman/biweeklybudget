@@ -241,10 +241,7 @@ class TestOFXTransModal(AcceptanceHelper):
     def test_modal_on_click(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="T1"]')
         link.click()
-        self.wait_for_modal_shown(selenium, 'modalLabel')
-        modal = selenium.find_element_by_id('modalDiv')
-        title = selenium.find_element_by_id('modalLabel')
-        body = selenium.find_element_by_id('modalBody')
+        modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'OFXTransaction Account=3 FITID=T1'
         texts = self.tbody2textlist(body)
@@ -286,10 +283,7 @@ class TestOFXTransURL(AcceptanceHelper):
         selenium.get(base_url + '/ofx/3/T1')
 
     def test_modal_auto_displayed(self, selenium):
-        self.wait_for_modal_shown(selenium, 'modalLabel')
-        modal = selenium.find_element_by_id('modalDiv')
-        title = selenium.find_element_by_id('modalLabel')
-        body = selenium.find_element_by_id('modalBody')
+        modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'OFXTransaction Account=3 FITID=T1'
         texts = self.tbody2textlist(body)

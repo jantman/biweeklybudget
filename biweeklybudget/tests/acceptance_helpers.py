@@ -133,17 +133,34 @@ class AcceptanceHelper(object):
                 sleep(1)
         raise e
 
-    def wait_for_modal_shown(self, driver, modal_id):
+    def wait_for_modal_shown(self, driver):
         """
-        Wait for the modal with the given ID to be shown.
+        Wait for the modal to be shown.
 
         :param driver: Selenium driver instance
-        :param modal_id: the id of the modal div
-        :type modal_id: str
         """
         WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, modal_id))
+            EC.element_to_be_clickable((By.ID, 'modalLabel'))
         )
+
+    def get_modal_parts(self, selenium, wait=True):
+        """
+        Return a 3-tuple of the WebElements representing the modalDiv,
+        modalLabel h4 and modalBody div.
+
+        :param selenium: Selenium driver instance
+        :param wait: whether or not to wait for presence of modalLabel
+        :type wait: bool
+        :return: 3-tuple of (modalDiv WebElement, modalLabel WebElement,
+          modalBody WebElement)
+        :rtype: tuple
+        """
+        if wait:
+            self.wait_for_modal_shown(selenium)
+        modal = selenium.find_element_by_id('modalDiv')
+        title = selenium.find_element_by_id('modalLabel')
+        body = selenium.find_element_by_id('modalBody')
+        return modal, title, body
 
     def assert_modal_displayed(self, modal, title, body):
         """
