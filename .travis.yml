@@ -10,6 +10,8 @@ services:
 
 before_install:
   - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest;'
+  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest27;'
+  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest36;'
 
 env:
   global:
@@ -31,9 +33,9 @@ matrix:
     - python: "3.6"
       env: TOXENV=py36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
     - python: "2.7"
-      env: TOXENV=acceptance27 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+      env: TOXENV=acceptance27 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest27?charset=utf8mb4'
     - python: "3.6"
-      env: TOXENV=acceptance36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+      env: TOXENV=acceptance36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
     - python: "3.6"
       env: TOXENV=docs PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
 
