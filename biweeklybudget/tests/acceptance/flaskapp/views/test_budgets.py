@@ -70,10 +70,10 @@ class TestBudgets(AcceptanceHelper):
         stexts = self.tbody2textlist(stable)
         # pelems = self.tbody2elemlist(ptable)
         assert ptexts == [
-            ['Periodic1', '$100.00'],
-            ['Periodic2', '$234.00']
+            ['Periodic1', '$100.00', ''],
+            ['Periodic2', '$234.00', 'BankOne']
         ]
         assert stexts == [
-            ['Standing1', '$1,284.23'],
-            ['Standing2', '$9,482.29']
+            ['Standing1', '$1,284.23', 'BankTwoStale'],
+            ['Standing2', '$9,482.29', '']
         ]

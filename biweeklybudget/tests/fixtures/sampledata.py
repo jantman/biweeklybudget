@@ -73,7 +73,8 @@ class SampleDataLoader(object):
                 name='Periodic2',
                 is_periodic=True,
                 description='P2desc',
-                starting_balance=234
+                starting_balance=234,
+                account=self.accounts['BankOne']['account']
             ),
             'Periodic3 Inactive': Budget(
                 name='Periodic3 Inactive',
@@ -86,7 +87,8 @@ class SampleDataLoader(object):
                 name='Standing1',
                 is_periodic=False,
                 description='S1desc',
-                current_balance=1284.23
+                current_balance=1284.23,
+                account=self.accounts['BankTwoStale']['account']
             ),
             'Standing2': Budget(
                 name='Standing2',
