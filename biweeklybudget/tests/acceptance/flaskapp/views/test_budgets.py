@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
@@ -88,3 +89,41 @@ class TestBudgets(AcceptanceHelper):
                             'Standing1 (4)</a>'
         assert selems[0][2].get_attribute(
             'innerHTML') == '<a href="/accounts/2">BankTwoStale (2)</a>'
+
+
+@pytest.mark.acceptance
+class TestEditPeriodic1(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/budgets')
+
+    def test_1_populate_modal(self, selenium):
+        link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
+        link.click()
+        self.wait_for_modal_shown(selenium, 'budgetModalLabel')
+        modal = selenium.find_element_by_id('budgetModal')
+        title = selenium.find_element_by_id('budgetModalLabel')
+        body = selenium.find_element_by_id('budgetModalBody')
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 1'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Periodic1'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'P1desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == '100'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed()
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed() is False
+        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        sel = Select(selenium.find_element_by_id('budget_frm_account'))
+        assert sel.first_selected_option.text == ''

@@ -144,3 +144,21 @@ class AcceptanceHelper(object):
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, modal_id))
         )
+
+    def assert_modal_displayed(self, modal, title, body):
+        """
+        Assert that the modal is displayed.
+
+        :param modal: the modal itself
+        :type modal: selenium.webdriver.remote.webelement.WebElement
+        :param title: the title element of the modal
+        :type title: selenium.webdriver.remote.webelement.WebElement
+        :param body: the body element of the modal
+        :type body: selenium.webdriver.remote.webelement.WebElement
+        """
+        assert modal.is_displayed()
+        assert modal.is_enabled()
+        assert title.is_displayed()
+        assert title.is_enabled()
+        assert body.is_displayed()
+        assert body.is_enabled()
