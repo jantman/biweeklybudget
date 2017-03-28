@@ -36,11 +36,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, jsonify
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account
 
 
 class BudgetsView(MethodView):
@@ -52,10 +53,29 @@ class BudgetsView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
+        accts = {}
+        for a in db_session.query(Account).all():
+            accts[a.name] = a.id
         return render_template(
             'budgets.html',
             standing=standing,
-            periodic=periodic
+            periodic=periodic,
+            accts=accts
         )
 
+
+class BudgetAjax(MethodView):
+    """
+    Handle GET /ajax/budget/<int:budget_id> endpoint.
+    """
+
+    def get(self, budget_id):
+        budget = db_session.query(Budget).get(budget_id)
+        return jsonify(budget.as_dict)
+
+
 app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
+app.add_url_rule(
+    '/ajax/budget/<int:budget_id>',
+    view_func=BudgetAjax.as_view('budget_ajax')
+)

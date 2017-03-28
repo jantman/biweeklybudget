@@ -4,6 +4,7 @@
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
+                    <div><a href="javascript:budgetModal()">Add Budget</a></div>
                     <div class="panel panel-default" id="panel-bank-accounts">
                         <div class="panel-heading">
                             Periodic Budgets
@@ -96,35 +97,83 @@
 {% block extra_foot_script %}
 <script>
 /**
+ * Handle change of the "Type" radio buttons on the modal
+ */
+function budgetModalHandleType() {
+    if($('#budget_frm_type_standing').is(':checked')) {
+        $('#budget_frm_group_starting_balance').hide();
+        $('#budget_frm_group_current_balance').show();
+    } else {
+        $('#budget_frm_group_current_balance').hide();
+        $('#budget_frm_group_starting_balance').show();
+    }
+}
+
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function budgetModalForm() {
+    var frm = '<form role="form">';
+    // name
+    frm += '<div class="form-group"><label>Name</label><input class="form-control" id="budget_frm_name" name="name"></div>';
+    // type
+    frm += '<div class="form-group"><label>Type </label> <label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_periodic" value="periodic" onchange="budgetModalHandleType()" checked>Periodic</label><label class="radio-inline"><input type="radio" name="budget_frm_type" id="budget_frm_type_standing" value="standing" onchange="budgetModalHandleType()">Standing</label></div>';
+    // description
+    frm += '<div class="form-group"><label>Description</label><input class="form-control" id="budget_frm_description" name="description"></div>';
+    // starting balance (for periodic)
+    frm += '<div class="form-group" id="budget_frm_group_starting_balance"><label>Starting Balance</label><input type="text" class="form-control" id="budget_frm_starting_balance" name="starting_balance"></div>';
+    // current balance (for standing)
+    frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label>Current Balance</label><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div>';
+    // is_active checkbox
+    frm += '<div class="form-group"><label class="checkbox-inline"><input type="checkbox" id="budget_frm_active" name="active"> Active?</label>';
+    // account_id (select)
+    frm += '<div class="form-group"><label>Account</label><select class="form-control" id="budget_frm_account" name="account">';
+    frm += '<option value="None" selected="selected"></option>';
+    {% for name in accts.keys()|sort %}
+    frm += '<option value="{{ accts[name] }}">{{ name }}</option>';
+    {% endfor %}
+    frm += '</select></div>';
+    frm += '</form>';
+    return frm;
+}
+
+/**
+ * Ajax callback to fill in the budgetModal with data on a budget.
+ */
+function budgetModalFillAndShow(msg) {
+    $('#budgetModalLabel').text('Budget ' + msg['id']);
+    $('#budget_frm_name').val(msg['name']);
+    if(msg['is_periodic'] === true) {
+        $('#budget_frm_type_periodic').prop('checked', true);
+    } else {
+        $('#budget_frm_type_standing').prop('checked', true);
+    }
+    budgetModalHandleType();
+    $('#budget_frm_description').val(msg['description']);
+    $('#budget_frm_starting_balance').val(msg['starting_balance']);
+    $('#budget_frm_current_balance').val(msg['current_balance']);
+    if(msg['is_active'] === true) {
+        $('#budget_frm_active').prop('checked', true);
+    } else {
+        $('#budget_frm_active').prop('checked', false);
+    }
+    $('#budget_frm_account option[value="' + msg['account_id'] + '"]').prop('selected', 'selected');
+    $("#budgetModal").modal('show');
+}
+
+/**
  * Show the modal popup, populated with information for one Budget.
  */
-function budgetModal() {
-    var url = "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid);
-    $.ajax(url).done(function( msg ) {
-        var modal = $("#ofxTxnModal");
-        modal.find('.modal-title').text('OFXTransaction Account=' + acct_id + ' FITID=' + fitid);
-        var tbody = modal.find('tbody');
-        tbody.empty();
-        tbody.append('<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>');
-        tbody.append('<tr><th>FITID</th><td>' + msg['txn']['fitid'] + '</td></tr>');
-        tbody.append('<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['txn']['date_posted']) + '</td></tr>');
-        tbody.append('<tr><th>Amount</th><td>' + fmt_currency(msg['txn']['amount']) + '</td></tr>');
-        tbody.append('<tr><th>Name</th><td>' + msg['txn']['name'] + '</td></tr>');
-        tbody.append('<tr><th>Memo</th><td>' + fmt_null(msg['txn']['memo']) + '</td></tr>');
-        tbody.append('<tr><th>Type</th><td>' + fmt_null(msg['txn']['trans_type']) + '</td></tr>');
-        tbody.append('<tr><th>Description</th><td>' + fmt_null(msg['txn']['description']) + '</td></tr>');
-        tbody.append('<tr><th>Notes</th><td>' + fmt_null(msg['txn']['notes']) + '</td></tr>');
-        tbody.append('<tr><th>Checknum</th><td>' + fmt_null(msg['txn']['checknum']) + '</td></tr>');
-        tbody.append('<tr><th>MCC</th><td>' + fmt_null(msg['txn']['mcc']) + '</td></tr>');
-        tbody.append('<tr><th>SIC</th><td>' + fmt_null(msg['txn']['sic']) + '</td></tr>');
-        tbody.append('<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>');
-        tbody.append('<tr><th>ID</th><td>' + fmt_null(msg['stmt']['id']) + '</td></tr>');
-        tbody.append('<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['stmt']['as_of']) + '</td></tr>');
-        tbody.append('<tr><th>Filename</th><td>' + fmt_null(msg['stmt']['filename']) + '</td></tr>');
-        tbody.append('<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['stmt']['file_mtime']) + '</td></tr>');
-        tbody.append('<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['stmt']['ledger_bal']) + '</td></tr>');
-        modal.modal('show');
-    });
+function budgetModal(id) {
+    $('#budgetModalBody').empty();
+    $('#budgetModalBody').append(budgetModalForm());
+    if(id) {
+        var url = "/ajax/budget/" + id;
+        $.ajax(url).done(budgetModalFillAndShow);
+    } else {
+        $('#budgetModalLabel').text('Add New Budget');
+        $("#budgetModal").modal('show');
+    }
 }
 </script>
 {% endblock %}
