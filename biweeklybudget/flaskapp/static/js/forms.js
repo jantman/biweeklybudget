@@ -1,0 +1,147 @@
+/*
+The latest version of this package is available at:
+<http://github.com/jantman/biweeklybudget>
+
+################################################################################
+Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+
+    This file is part of biweeklybudget, also known as biweeklybudget.
+
+    biweeklybudget is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    biweeklybudget is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with biweeklybudget.  If not, see <http://www.gnu.org/licenses/>.
+
+The Copyright and Authors attributions contained herein may not be removed or
+otherwise altered, except to add the Author attribution of a contributor to
+this work. (Additional Terms pursuant to Section 7b of the AGPL v3)
+################################################################################
+While not legally required, I sincerely request that anyone who finds
+bugs please submit them at <https://github.com/jantman/biweeklybudget> or
+to me via email, and that you send any contributions or improvements
+either as a pull request on GitHub, or to me via email.
+################################################################################
+
+AUTHORS:
+Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+################################################################################
+*/
+
+/**
+ * Generic function to handle form submission with server-side validation.
+ *
+ * See the Python server-side code for further information.
+ *
+ * @param {string} container_id - The ID of the container element (div) that is
+ *  the visual parent of the form. On successful submission, this element will
+ *  be emptied and replaced with a success message.
+ * @param {string} form_id - The ID of the form itself.
+ * @param {string} post_url - Relative URL to post form data to.
+ */
+function handleForm(container_id, form_id, post_url) {
+    console.log(
+      'Modal form save clicked; container_id=%s form_id=%s post_url=%s',
+      container_id, form_id, post_url
+    );
+    var data = serializeForm(form_id);
+    $('.formfeedback').remove();
+    $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
+    $.ajax({
+        type: "POST",
+        url: post_url,
+        data: data,
+        success: function(data) {
+            handleFormSubmitted(data, container_id, form_id);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
+        }
+    });
+}
+
+/**
+ * Handle the response from the API URL that the form data is POSTed to.
+ *
+ * This should either display a success message, or one or more error messages.
+ */
+function handleFormSubmitted(data, container_id, form_id) {
+    if(data.hasOwnProperty('error_message')) {
+        $('#' + container_id).prepend(
+            '<div class="alert alert-danger formfeedback">' +
+            '<strong>Server Error: </strong> ' + data.error_message + '</div>');
+    } else if (data.hasOwnProperty('errors')) {
+        var form = $('#' + form_id);
+        Object.keys(data.errors).forEach(function (key) {
+            console.log("key: " + key);
+            var elem = form.find('[name=' + key + ']');
+            console.log(elem);
+            data.errors[key].forEach( function(msg) {
+                console.log(elem);
+                console.log("message: " + msg);
+                elem.parent().append('<p class="text-danger formfeedback">' + msg + '</p>');
+                elem.parent().addClass('has-error');
+            });
+        });
+    } else {
+        $('#' + container_id).empty();
+        $('#' + container_id).append('<div class="alert alert-success">' + data.success_message + '</div>');
+        $('#modalSaveButton').hide();
+    }
+}
+
+/**
+ * Handle an error in the HTTP request to submit the form.
+ */
+function handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id) {
+    console.log("Form submission error: %s (%s)", textStatus, errorThrown);
+    $('#' + container_id).prepend(
+        '<div class="alert alert-danger formfeedback"><strong>Error submitting ' +
+        'form:</strong> ' + textStatus + ' ' + errorThrown + '</div>'
+    );
+}
+
+/**
+ * Given the ID of a form, return an Object (hash/dict) of all data from it,
+ * to POST to the server.
+ *
+ * @param {string} form_id - The ID of the form itself.
+ */
+function serializeForm(form_id) {
+    var form = $('#' + form_id);
+    var data = {};
+    form.find('input').each(function(index) {
+        var type = $(this).attr('type');
+        if (type == 'text' || type == 'hidden') {
+            data[$(this).attr('name')] = $(this).val();
+        } else if (type == 'checkbox') {
+            data[$(this).attr('name')] = $(this).prop('checked');
+        } else if (type == 'radio') {
+            if ($(this).prop('checked') === true) {
+                if ($(this).prop('value') == 'true') {
+                    data[$(this).attr('name')] = true;
+                } else if ($(this).prop('value') == 'false') {
+                    data[$(this).attr('name')] = false;
+                } else {
+                    data[$(this).attr('name')] = $(this).prop('value');
+                }
+            }
+        } else {
+            console.error(
+                "Found form input with unknown type: %s (name=%s)",
+                type, $(this).attr('name')
+            );
+        }
+    });
+    form.find('select').each(function(index) {
+        data[$(this).attr('name')] = $(this).find(':selected').val();
+    });
+    return data;
+}

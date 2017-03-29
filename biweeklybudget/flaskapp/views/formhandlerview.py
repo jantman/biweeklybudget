@@ -37,51 +37,47 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from flask.views import MethodView
-from flask import render_template, jsonify, request
+from flask import jsonify, request
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
-from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
 logger = logging.getLogger(__name__)
 
 
-class BudgetsView(MethodView):
+class FormHandlerView(MethodView):
 
-    def get(self):
-        standing = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
-        ).order_by(Budget.name).all()
-        periodic = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
-        ).order_by(Budget.name).all()
-        accts = {}
-        for a in db_session.query(Account).all():
-            accts[a.name] = a.id
-        return render_template(
-            'budgets.html',
-            standing=standing,
-            periodic=periodic,
-            accts=accts
-        )
+    def post(self):
+        """
+        Handle a POST request for a form. Validate it, if valid update the DB.
 
+        Returns a JSON hash with the following structure:
 
-class BudgetAjax(MethodView):
-    """
-    Handle GET /ajax/budget/<int:budget_id> endpoint.
-    """
-
-    def get(self, budget_id):
-        budget = db_session.query(Budget).get(budget_id)
-        return jsonify(budget.as_dict)
-
-
-class BudgetFormHandler(FormHandlerView):
-    """
-    Handle POST /forms/budget
-    """
+        'errors' -> hash of field names to list of error strings
+        'error_message' -> string error message
+        'success' -> boolean
+        'success_message' -> string success message
+        """
+        data = request.form.to_dict()
+        res = self.validate(data)
+        if res is not None:
+            return jsonify({
+                'success': False,
+                'errors': res
+            })
+        try:
+            res = self.submit(data)
+        except Exception as ex:
+            return jsonify({
+                'success': False,
+                'error_message': str(ex)
+            })
+        return jsonify({
+            'success': True,
+            'success_message': res
+        })
 
     def validate(self, data):
         """
@@ -93,31 +89,15 @@ class BudgetFormHandler(FormHandlerView):
         :return: None if no errors, or hash of field name to errors for that
           field
         """
-        logger.info(data)
-        return {
-            'description': ['Some validation error']
-        }
+        raise NotImplementedError()
 
     def submit(self, data):
         """
-        Handle form submission; create or update models in the DB. Raises an
-        Exception for any errors.
+        Handle form submission; create or update models in the DB.
 
         :param data: submitted form data
         :type data: dict
-        :return: message describing changes to DB (i.e. link to created record)
+        :return: message describing changes to DB
         :rtype: str
         """
-        #return 'foo bar'
-        raise Exception('My Exception')
-
-
-app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
-app.add_url_rule(
-    '/ajax/budget/<int:budget_id>',
-    view_func=BudgetAjax.as_view('budget_ajax')
-)
-app.add_url_rule(
-    '/forms/budget',
-    view_func=BudgetFormHandler.as_view('budget_form')
-)
+        raise NotImplementedError()
