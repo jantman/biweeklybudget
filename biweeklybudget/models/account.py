@@ -141,6 +141,17 @@ class Account(Base, ModelAsDict):
         return self.ofxgetter_config_json.isnot(None)
 
     @hybrid_property
+    def is_budget_source(self):
+        """
+        Return whether or not this account should be considered a funding
+        source for Budgets.
+
+        :return: whether or not this account is a Budget funding source
+        :rtype: bool
+        """
+        return self.acct_type in [AcctType.Bank, AcctType.Cash]
+
+    @hybrid_property
     def is_stale(self):
         """
         Return whether or not there is stale data for this account.
