@@ -69,13 +69,6 @@ class Budget(Base, ModelAsDict):
     #: whether active or historical
     is_active = Column(Boolean, default=True)
 
-    #: ID of the account this budget is associated with, if any
-    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=True)
-
-    #: Relationship to the :py:class:`~.Account` this budget is associated
-    #: with, if any
-    account = relationship('Account')
-
     def __repr__(self):
         return "<Budget(id=%d)>" % (
             self.id

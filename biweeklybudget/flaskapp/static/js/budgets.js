@@ -67,13 +67,6 @@ function modalDivForm() {
     frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label for="budget_frm_current_balance" class="control-label">Current Balance</label><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div>\n';
     // is_active checkbox
     frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_active"><input type="checkbox" id="budget_frm_active" name="is_active" checked> Active?</label>\n';
-    // account_id (select)
-    frm += '<div class="form-group"><label for="budget_frm_account" class="control-label">Account</label><select class="form-control" id="budget_frm_account" name="account">\n';
-    frm += '<option value="None" selected="selected"></option>\n';
-    Object.keys(acct_names_to_id).forEach(function (key) {
-        frm += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>\n';
-    });
-    frm += '</select></div>\n';
     frm += '</form>\n';
     return frm;
 }
@@ -101,7 +94,6 @@ function modalDivFillAndShow(msg) {
     } else {
         $('#budget_frm_active').prop('checked', false);
     }
-    $('#budget_frm_account option[value="' + msg['account_id'] + '"]').prop('selected', 'selected');
     $("#modalDiv").modal('show');
 }
 

@@ -37,12 +37,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from flask.views import MethodView
-from flask import render_template, jsonify, request
+from flask import render_template, jsonify
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.account import Account
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
 logger = logging.getLogger(__name__)
@@ -57,14 +56,10 @@ class BudgetsView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
-        accts = {}
-        for a in db_session.query(Account).all():
-            accts[a.name] = a.id
         return render_template(
             'budgets.html',
             standing=standing,
-            periodic=periodic,
-            accts=accts
+            periodic=periodic
         )
 
 
@@ -108,7 +103,7 @@ class BudgetFormHandler(FormHandlerView):
         :return: message describing changes to DB (i.e. link to created record)
         :rtype: str
         """
-        #return 'foo bar'
+        # return 'foo bar'
         raise Exception('My Exception')
 
 

@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
@@ -70,25 +69,21 @@ class TestBudgets(AcceptanceHelper):
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert ptexts == [
-            ['Periodic1 (1)', '$100.00', ''],
-            ['Periodic2 (2)', '$234.00', 'BankOne (1)']
+            ['Periodic1 (1)', '$100.00'],
+            ['Periodic2 (2)', '$234.00']
         ]
         assert stexts == [
-            ['Standing1 (4)', '$1,284.23', 'BankTwoStale (2)'],
-            ['Standing2 (5)', '$9,482.29', '']
+            ['Standing1 (4)', '$1,284.23'],
+            ['Standing2 (5)', '$9,482.29']
         ]
         pelems = self.tbody2elemlist(ptable)
         selems = self.tbody2elemlist(stable)
         assert pelems[1][0].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(2)">' \
                             'Periodic2 (2)</a>'
-        assert pelems[1][2].get_attribute(
-            'innerHTML') == '<a href="/accounts/1">BankOne (1)</a>'
         assert selems[0][0].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(4)">' \
                             'Standing1 (4)</a>'
-        assert selems[0][2].get_attribute(
-            'innerHTML') == '<a href="/accounts/2">BankTwoStale (2)</a>'
 
 
 @pytest.mark.acceptance
@@ -122,9 +117,6 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        sel = Select(selenium.find_element_by_id('budget_frm_account'))
-        assert sel.first_selected_option.text == ''
-        assert sel.first_selected_option.get_attribute('value') == 'None'
 
 
 @pytest.mark.acceptance
@@ -158,9 +150,6 @@ class TestEditPeriodic2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        sel = Select(selenium.find_element_by_id('budget_frm_account'))
-        assert sel.first_selected_option.text == 'BankOne'
-        assert sel.first_selected_option.get_attribute('value') == '1'
 
 
 @pytest.mark.acceptance
@@ -194,9 +183,6 @@ class TestEditStanding1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed()
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        sel = Select(selenium.find_element_by_id('budget_frm_account'))
-        assert sel.first_selected_option.text == 'BankTwoStale'
-        assert sel.first_selected_option.get_attribute('value') == '2'
 
 
 @pytest.mark.acceptance
@@ -230,6 +216,3 @@ class TestEditStanding2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed()
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        sel = Select(selenium.find_element_by_id('budget_frm_account'))
-        assert sel.first_selected_option.text == ''
-        assert sel.first_selected_option.get_attribute('value') == 'None'

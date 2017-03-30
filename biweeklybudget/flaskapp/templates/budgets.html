@@ -1,19 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Budgets - BiweeklyBudget{% endblock %}
-{% block extra_head_css %}
-<script>
-    var acct_names_to_id = {};
-    {% for name in accts.keys()|sort %}
-    acct_names_to_id["{{ name }}"] = {{ accts[name] }};
-    {% endfor %}
-</script>
-{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
                     <div><a href="javascript:budgetModal()">Add Budget</a></div>
-                    <div class="panel panel-default" id="panel-bank-accounts">
+                    <div class="panel panel-default" id="panel-periodic-budgets">
                         <div class="panel-heading">
                             Periodic Budgets
                         </div>
@@ -25,7 +17,6 @@
                                         <tr>
                                             <th>Budget</th>
                                             <th>Starting Balance</th>
-                                            <th>Account</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -33,7 +24,6 @@
                                         <tr>
                                             <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
                                             <td>{{ b.starting_balance|dollars }}</td>
-                                            <td>{% if b.account is not none %}<a href="/accounts/{{ b.account.id }}">{{ b.account.name }} ({{ b.account.id }})</a>{% else %}&nbsp;{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -44,7 +34,7 @@
                         <!-- /.panel-body -->
                     </div>
                     <!-- /.panel -->
-                    <div class="panel panel-default" id="panel-credit-cards">
+                    <div class="panel panel-default" id="panel-standing-budgets">
                         <div class="panel-heading">
                             Standing Budgets
                         </div>
@@ -56,7 +46,6 @@
                                         <tr>
                                             <th>Budget</th>
                                             <th>Current Balance</th>
-                                            <th>Account</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -66,7 +55,6 @@
                                             <td>
                                                 <span>{{ b.current_balance|dollars }}</span>
                                             </td>
-                                            <td>{% if b.account is not none %}<a href="/accounts/{{ b.account.id }}">{{ b.account.name }} ({{ b.account.id }})</a>{% else %}&nbsp;{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

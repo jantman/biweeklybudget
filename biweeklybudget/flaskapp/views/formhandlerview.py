@@ -39,11 +39,6 @@ import logging
 from flask.views import MethodView
 from flask import jsonify, request
 
-from biweeklybudget.flaskapp.app import app
-from biweeklybudget.db import db_session
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.account import Account
-
 logger = logging.getLogger(__name__)
 
 
