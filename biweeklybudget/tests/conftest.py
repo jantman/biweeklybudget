@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import os
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import biweeklybudget.settings
@@ -58,7 +59,15 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
 
-engine = create_engine(connstr)
+engine = create_engine(
+    connstr, convert_unicode=True, echo=False,
+    connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
+)
+
+# suppress webdriver DEBUG logging
+selenium_log = logging.getLogger("selenium")
+selenium_log.setLevel(logging.INFO)
+selenium_log.propagate = True
 
 
 @pytest.fixture(scope="session")
