@@ -80,12 +80,8 @@ function handleFormSubmitted(data, container_id, form_id) {
     } else if (data.hasOwnProperty('errors')) {
         var form = $('#' + form_id);
         Object.keys(data.errors).forEach(function (key) {
-            console.log("key: " + key);
             var elem = form.find('[name=' + key + ']');
-            console.log(elem);
             data.errors[key].forEach( function(msg) {
-                console.log(elem);
-                console.log("message: " + msg);
                 elem.parent().append('<p class="text-danger formfeedback">' + msg + '</p>');
                 elem.parent().addClass('has-error');
             });
@@ -94,6 +90,9 @@ function handleFormSubmitted(data, container_id, form_id) {
         $('#' + container_id).empty();
         $('#' + container_id).append('<div class="alert alert-success">' + data.success_message + '</div>');
         $('#modalSaveButton').hide();
+        $('[data-dismiss="modal"]').click(function() {
+            location.reload();
+        });
     }
 }
 

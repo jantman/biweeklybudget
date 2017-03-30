@@ -48,6 +48,9 @@ logger = logging.getLogger(__name__)
 
 
 class BudgetsView(MethodView):
+    """
+    Render the GET /budgets view using the ``budgets.html`` template.
+    """
 
     def get(self):
         standing = db_session.query(Budget).filter(
@@ -60,6 +63,27 @@ class BudgetsView(MethodView):
             'budgets.html',
             standing=standing,
             periodic=periodic
+        )
+
+
+class OneBudgetView(MethodView):
+    """
+    Render the GET /budgets/<int:budget_id> view using the ``budgets.html``
+    template.
+    """
+
+    def get(self, budget_id):
+        standing = db_session.query(Budget).filter(
+            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
+        ).order_by(Budget.name).all()
+        periodic = db_session.query(Budget).filter(
+            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
+        ).order_by(Budget.name).all()
+        return render_template(
+            'budgets.html',
+            standing=standing,
+            periodic=periodic,
+            budget_id=budget_id
         )
 
 
@@ -88,10 +112,14 @@ class BudgetFormHandler(FormHandlerView):
         :return: None if no errors, or hash of field name to errors for that
           field
         """
-        logger.info(data)
-        return {
-            'description': ['Some validation error']
-        }
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('name', '').strip() == '':
+            errors['name'].append('Name cannot be empty')
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
 
     def submit(self, data):
         """
@@ -103,11 +131,38 @@ class BudgetFormHandler(FormHandlerView):
         :return: message describing changes to DB (i.e. link to created record)
         :rtype: str
         """
-        # return 'foo bar'
-        raise Exception('My Exception')
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing budget
+            budget = db_session.query(Budget).get(int(data['id']))
+            if budget is None:
+                raise RuntimeError("Error: no Budget with ID %s" % data['id'])
+            action = 'updating Budget ' + data['id']
+        else:
+            budget = Budget()
+            action = 'creating new Budget'
+        budget.name = data['name'].strip()
+        budget.description = data['description'].strip()
+        if data['is_periodic'] == 'true':
+            budget.is_periodic = True
+            budget.starting_balance = data['starting_balance']
+        else:
+            budget.is_periodic = False
+            budget.current_balance = data['current_balance']
+        if data['is_active'] == 'true':
+            budget.is_active = True
+        else:
+            budget.is_active = False
+        logger.info('%s: %s', action, budget.as_dict)
+        db_session.add(budget)
+        db_session.commit()
+        return 'Successfully saved Budget %d in database.' % budget.id
 
 
 app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
+app.add_url_rule(
+    '/budgets/<int:budget_id>',
+    view_func=OneBudgetView.as_view('one_budget_view')
+)
 app.add_url_rule(
     '/ajax/budget/<int:budget_id>',
     view_func=BudgetAjax.as_view('budget_ajax')

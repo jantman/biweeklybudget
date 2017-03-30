@@ -74,4 +74,11 @@
 {% block extra_foot_script %}
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/budgets.js"></script>
+<script>
+/* BEGIN conditional default modal for /budgets/<id> */
+{% if budget_id is defined and budget_id is not none %}
+budgetModal({{ budget_id }});
+{% endif %}
+/* END conditional default modal for /budgets/<id> */
+</script>
 {% endblock %}

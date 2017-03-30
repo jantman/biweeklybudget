@@ -35,9 +35,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from sqlalchemy import Column, Integer, Numeric, Boolean, String, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, Boolean, String
 from biweeklybudget.models.base import Base, ModelAsDict
-from sqlalchemy.orm import relationship
 
 
 class Budget(Base, ModelAsDict):

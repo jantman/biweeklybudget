@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.models.budget_model import Budget
 
 
 @pytest.mark.acceptance
@@ -89,12 +90,19 @@ class TestBudgets(AcceptanceHelper):
 @pytest.mark.acceptance
 class TestEditPeriodic1(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
-        self.baseurl = base_url
-        selenium.get(base_url + '/budgets')
+    def test_0_verify_db(self, class_scoped_db):
+        db = class_scoped_db
+        b = db.query(Budget).get(1)
+        assert b.name == 'Periodic1'
+        assert b.is_periodic is True
+        assert b.description == 'P1desc'
+        assert b.starting_balance == 100.00
+        assert b.is_active is True
 
-    def test_1_populate_modal(self, selenium):
+    def test_1_populate_modal(
+            self, base_url, selenium, testflask, class_scoped_db  # noqa
+    ):
+        selenium.get(base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -118,16 +126,58 @@ class TestEditPeriodic1(AcceptanceHelper):
             'budget_frm_group_current_balance').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
 
+    def test_2_update_modal(
+            self, base_url, selenium, testflask, class_scoped_db  # noqa
+    ):
+        # Fill in the form
+        selenium.get(base_url + '/budgets')
+        link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        selenium.find_element_by_id('budget_frm_name').send_keys(
+            'EditedPeriodic1'
+        )
+        selenium.find_element_by_id('budget_frm_description').send_keys(
+            'EditedP1desc'
+        )
+        selenium.find_element_by_id('budget_frm_starting_balance').send_keys(
+            '2345.67'
+        )
+        selenium.find_element_by_id('budget_frm_active').click()
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected() is False
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Budget 1 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        # test that updated budget is shown on the page
+        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptexts = self.tbody2textlist(ptable)
+        assert ptexts[0] == ['EditedPeriodic1 (1)', '$2,345.67']
+
+    def test_3_verify_db(self, class_scoped_db):
+        db = class_scoped_db
+        b = db.query(Budget).get(1)
+        assert b.name == 'EditedPeriodic1'
+        assert b.is_periodic is True
+        assert b.description == 'EditedP1desc'
+        assert b.starting_balance == 2345.67
+        assert b.is_active is False
+
 
 @pytest.mark.acceptance
 class TestEditPeriodic2(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
-        self.baseurl = base_url
+    def test_1_populate_modal(
+            self, base_url, selenium, testflask, class_scoped_db  # noqa
+    ):
         selenium.get(base_url + '/budgets')
-
-    def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -155,12 +205,10 @@ class TestEditPeriodic2(AcceptanceHelper):
 @pytest.mark.acceptance
 class TestEditStanding1(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
-        self.baseurl = base_url
+    def test_1_populate_modal(
+            self, base_url, selenium, testflask, class_scoped_db  # noqa
+    ):
         selenium.get(base_url + '/budgets')
-
-    def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -188,12 +236,10 @@ class TestEditStanding1(AcceptanceHelper):
 @pytest.mark.acceptance
 class TestEditStanding2(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
-        self.baseurl = base_url
+    def test_1_populate_modal(
+            self, base_url, selenium, testflask, class_scoped_db  # noqa
+    ):
         selenium.get(base_url + '/budgets')
-
-    def test_1_populate_modal(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -215,4 +261,31 @@ class TestEditStanding2(AcceptanceHelper):
             'budget_frm_current_balance').get_attribute('value') == '9482.29'
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed()
+        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+
+
+@pytest.mark.acceptance
+class TestDirectURLPeriodic1(AcceptanceHelper):
+
+    def test_1_populate_modal(self, base_url, selenium, class_scoped_db):  # noqa
+        selenium.get(base_url + '/budgets/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 1'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Periodic1'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'P1desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == '100'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed()
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
