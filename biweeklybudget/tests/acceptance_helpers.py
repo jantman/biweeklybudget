@@ -35,11 +35,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import logging
 from time import sleep
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+logger = logging.getLogger(__name__)
 
 
 class AcceptanceHelper(object):
@@ -138,10 +141,40 @@ class AcceptanceHelper(object):
         Wait for the modal to be shown.
 
         :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
         """
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, 'modalLabel'))
         )
+
+    def wait_for_jquery_done(self, driver, sleep_sec=0.2, tries=20):
+        """
+        Wait until ``jQuery.active == 0``. Tries ``tries`` times at
+        ``sleep`` second intervals; raises an exception if all tries fail.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param sleep_sec: how long to sleep between tries
+        :type sleep_sec: float
+        :param tries: how many times to try
+        :type tries: bool
+        """
+        script = 'return jQuery.active == 0'
+        count = 0
+        while count < 20:
+            res = driver.execute_script(script)
+            if res:
+                logger.debug(
+                    'jQuery done after %d seconds', (sleep_sec * tries)
+                )
+                break
+            sleep(sleep_sec)
+        else:
+            raise RuntimeError(
+                'jQuery did not finish after %d seconds',
+                (sleep_sec * tries)
+            )
+        return True
 
     def get_modal_parts(self, selenium, wait=True):
         """
@@ -149,6 +182,7 @@ class AcceptanceHelper(object):
         modalLabel h4 and modalBody div.
 
         :param selenium: Selenium driver instance
+        :type selenium: selenium.webdriver.remote.webdriver.WebDriver
         :param wait: whether or not to wait for presence of modalLabel
         :type wait: bool
         :return: 3-tuple of (modalDiv WebElement, modalLabel WebElement,
