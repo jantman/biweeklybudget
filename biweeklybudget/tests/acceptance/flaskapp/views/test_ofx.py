@@ -47,7 +47,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 class TestOFX(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/ofx')
 
@@ -71,7 +71,7 @@ class TestOFX(AcceptanceHelper):
 class TestOFXDefault(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         self.dt = dtnow()
         selenium.get(base_url + '/ofx')
@@ -234,7 +234,7 @@ class TestOFXDefault(AcceptanceHelper):
 class TestOFXTransModal(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/ofx')
 
@@ -278,7 +278,7 @@ class TestOFXTransModal(AcceptanceHelper):
 class TestOFXTransURL(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/ofx/3/T1')
 

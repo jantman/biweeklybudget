@@ -64,6 +64,8 @@ engine = create_engine(
     connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
 )
 
+logger = logging.getLogger(__name__)
+
 # suppress webdriver DEBUG logging
 selenium_log = logging.getLogger("selenium")
 selenium_log.setLevel(logging.INFO)
@@ -71,13 +73,14 @@ selenium_log.propagate = True
 
 
 @pytest.fixture(scope="session")
-def testdb():
+def refreshdb():
     """
-    This fixture handles the overall DB setup.
+    Refresh/Load DB data before tests
     """
     # setup the connection
     conn = engine.connect()
     if 'NO_REFRESH_DB' not in os.environ:
+        logger.info('Refreshing DB (session-scoped)')
         # clean the database
         biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
@@ -90,9 +93,11 @@ def testdb():
         data_sess.flush()
         data_sess.commit()
         data_sess.close()
+    else:
+        logger.info('Skipping session-scoped DB refresh')
     # create a session to use for the tests
     sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        sessionmaker(autocommit=False, bind=conn)
     )
     # yield the session
     yield(sess)
@@ -102,24 +107,24 @@ def testdb():
 
 
 @pytest.fixture(scope="class")
-def class_scoped_db():
+def class_refresh_db():
     """
     This fixture rolls the DB back to the previous state when the class is
     finished; to be used on classes that alter data.
 
     Use like:
 
-        @pytest.mark.usefixtures('class_scoped_db', 'testdb')
+        @pytest.mark.usefixtures('class_refresh_db', 'testdb')
         class MyClass(AcceptanceHelper):
     """
+    logger.info('Connecting to DB (class-scoped)')
     # setup the connection
     conn = engine.connect()
-    sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=conn)
-    )
+    sess = sessionmaker(autocommit=False, bind=conn)()
     # yield the session
     yield(sess)
     sess.close()
+    logger.info('Refreshing DB (class-scoped)')
     # clean the database
     biweeklybudget.models.base.Base.metadata.reflect(engine)
     biweeklybudget.models.base.Base.metadata.drop_all(engine)
@@ -134,6 +139,19 @@ def class_scoped_db():
     data_sess.close()
     # when we're done, close
     conn.close()
+
+
+@pytest.fixture
+def testdb():
+    """
+    DB fixture to be used in tests
+    """
+    # setup the connection
+    conn = engine.connect()
+    sess = sessionmaker(autocommit=False, bind=conn)()
+    # yield the session
+    yield(sess)
+    sess.close()
 
 
 @pytest.fixture(scope="session")

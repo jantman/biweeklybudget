@@ -43,7 +43,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 class TestAccount(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/1')
 
@@ -67,7 +67,7 @@ class TestAccount(AcceptanceHelper):
 class TestAccountBankOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/1')
 
@@ -117,7 +117,7 @@ class TestAccountBankOne(AcceptanceHelper):
 class TestAccountBankTwoStale(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/2')
 
@@ -166,7 +166,7 @@ class TestAccountBankTwoStale(AcceptanceHelper):
 class TestAccountCreditOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/3')
 
@@ -216,7 +216,7 @@ class TestAccountCreditOne(AcceptanceHelper):
 class TestAccountCreditTwo(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/4')
 
@@ -266,7 +266,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
 class TestAccountInvestmentOne(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, testdb):  # noqa
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         selenium.get(base_url + '/accounts/5')
 
