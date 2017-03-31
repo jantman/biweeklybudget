@@ -35,8 +35,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from sqlalchemy import func
+
 from biweeklybudget.db import db_session
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.flaskapp.filters import dollars_filter
 
 
 class NotificationsController(object):
@@ -53,8 +57,38 @@ class NotificationsController(object):
         :rtype: int
         """
         return sum(
-            1 if a.is_stale else 0 for a in db_session.query(Account).all()
+            1 if a.is_stale else 0 for a in db_session.query(
+                Account).filter(Account.is_active.__eq__(True)).all()
         )
+
+    @staticmethod
+    def budget_account_sum():
+        """
+        Return the sum of current balances for all is_budget_source accounts.
+
+        :return: Combined balance of all budget source accounts
+        :rtype: float
+        """
+        sum = 0
+        for acct in db_session.query(Account).filter(
+                Account.is_budget_source.__eq__(True),
+                Account.is_active.__eq__(True)
+        ):
+            sum += float(acct.balance.ledger)
+        return sum
+
+    @staticmethod
+    def standing_budgets_sum():
+        """
+        Return the sum of current balances of all standing budgets.
+
+        :return: sum of current balances of all standing budgets
+        :rtype: float
+        """
+        return float(db_session.query(func.sum(Budget.current_balance)).filter(
+            Budget.is_periodic.__eq__(False),
+            Budget.is_active.__eq__(True)
+        ).all()[0][0])
 
     @staticmethod
     def get_notifications():
@@ -76,6 +110,18 @@ class NotificationsController(object):
                 'content': '%d %s with stale data. <a href="/accounts" '
                            'class="alert-link">View Accounts</a>.' % (num_stale,
                                                                       a)
+            })
+        accounts_bal = NotificationsController.budget_account_sum()
+        standing_bal = NotificationsController.standing_budgets_sum()
+        if accounts_bal < standing_bal:
+            res.append({
+                'classes': 'alert alert-danger',
+                'content': 'Combined balance of all <a href="/accounts">'
+                           'budget-funding accounts</a> '
+                           '(%s) is less than balance of all <a href='
+                           '"/budgets">standing budgets</a> (%s)!' % (
+                    dollars_filter(accounts_bal), dollars_filter(standing_bal)
+                )
             })
         res.append({
             'classes': 'alert alert-warning',
