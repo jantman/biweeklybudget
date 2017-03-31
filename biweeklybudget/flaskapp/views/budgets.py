@@ -54,10 +54,10 @@ class BudgetsView(MethodView):
 
     def get(self):
         standing = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
+            Budget.is_periodic.__eq__(False)
         ).order_by(Budget.name).all()
         periodic = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
+            Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
         return render_template(
             'budgets.html',
@@ -74,10 +74,10 @@ class OneBudgetView(MethodView):
 
     def get(self, budget_id):
         standing = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
+            Budget.is_periodic.__eq__(False)
         ).order_by(Budget.name).all()
         periodic = db_session.query(Budget).filter(
-            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(True)
+            Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
         return render_template(
             'budgets.html',

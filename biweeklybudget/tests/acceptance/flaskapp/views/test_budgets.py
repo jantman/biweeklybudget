@@ -71,19 +71,21 @@ class TestBudgets(AcceptanceHelper):
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert ptexts == [
-            ['Periodic1 (1)', '$100.00'],
-            ['Periodic2 (2)', '$234.00']
+            ['yes', 'Periodic1 (1)', '$100.00'],
+            ['yes', 'Periodic2 (2)', '$234.00'],
+            ['NO', 'Periodic3 Inactive (3)', '$10.23']
         ]
         assert stexts == [
-            ['Standing1 (4)', '$1,284.23'],
-            ['Standing2 (5)', '$9,482.29']
+            ['yes', 'Standing1 (4)', '$1,284.23'],
+            ['yes', 'Standing2 (5)', '$9,482.29'],
+            ['NO', 'Standing3 Inactive (6)', '-$92.29']
         ]
         pelems = self.tbody2elemlist(ptable)
         selems = self.tbody2elemlist(stable)
-        assert pelems[1][0].get_attribute(
+        assert pelems[1][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(2)">' \
                             'Periodic2 (2)</a>'
-        assert selems[0][0].get_attribute(
+        assert selems[0][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(4)">' \
                             'Standing1 (4)</a>'
 
@@ -201,6 +203,39 @@ class TestEditPeriodic2(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestEditPeriodic3(AcceptanceHelper):
+
+    def test_1_populate_modal(self, base_url, selenium):
+        selenium.get(base_url + '/budgets')
+        link = selenium.find_element_by_xpath(
+            '//a[text()="Periodic3 Inactive (3)"]'
+        )
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 3'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Periodic3 Inactive'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'P3desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == '10.23'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed()
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected() is False
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestEditStanding1(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
@@ -257,6 +292,39 @@ class TestEditStanding2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed()
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestEditStanding3(AcceptanceHelper):
+
+    def test_1_populate_modal(self, base_url, selenium):
+        selenium.get(base_url + '/budgets')
+        link = selenium.find_element_by_xpath(
+            '//a[text()="Standing3 Inactive (6)"]'
+        )
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Budget 6'
+        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+            'value') == 'Standing3 Inactive'
+        assert selenium.find_element_by_id(
+            'budget_frm_type_periodic').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_type_standing').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_description').get_attribute('value') == 'S3desc'
+        assert selenium.find_element_by_id(
+            'budget_frm_starting_balance').get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'budget_frm_group_starting_balance').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_current_balance').get_attribute('value') == '-92.29'
+        assert selenium.find_element_by_id(
+            'budget_frm_group_current_balance').is_displayed()
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected() is False
 
 
 @pytest.mark.acceptance

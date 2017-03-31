@@ -116,3 +116,7 @@ function budgetModal(id) {
 $('#modalSaveButton').click(function() {
     handleForm('modalBody', 'budgetForm', '/forms/budget');
 });
+
+$('#btn_add_budget').click(function() {
+    budgetModal();
+});

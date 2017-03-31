@@ -4,7 +4,7 @@
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
-                    <div><a href="javascript:budgetModal()">Add Budget</a></div>
+                    <div><p><button type="button" class="btn btn-primary" id="btn_add_budget">Add Budget</button></p></div>
                     <div class="panel panel-default" id="panel-periodic-budgets">
                         <div class="panel-heading">
                             Periodic Budgets
@@ -15,13 +15,15 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-periodic-budgets">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Budget</th>
                                             <th>Starting Balance</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     {% for b in periodic %}
-                                        <tr>
+                                        {% if b.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if b.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
                                             <td>{{ b.starting_balance|dollars }}</td>
                                         </tr>
@@ -44,18 +46,20 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-standing-budgets">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Budget</th>
                                             <th>Current Balance</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     {% for b in standing %}
-                                        <tr>
+                                        {% if b.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if b.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
                                             <td>
                                                 <span>{{ b.current_balance|dollars }}</span>
                                             </td>
-                                        </tr>
+                                        </td>
                                     {% endfor %}
                                     </tbody>
                                 </table>
