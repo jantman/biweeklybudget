@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, Enum, Numeric, inspect
+    Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -149,7 +149,20 @@ class Account(Base, ModelAsDict):
         :return: whether or not this account is a Budget funding source
         :rtype: bool
         """
-        return self.acct_type in [AcctType.Bank, AcctType.Cash]
+        if self.acct_type == AcctType.Bank or self.acct_type == AcctType.Cash:
+            return True
+        return False
+
+    @is_budget_source.expression
+    def is_budget_source(cls):
+        """
+        Return SQL for whether or not this account should be considered a
+        funding source for Budgets.
+        """
+        return or_(
+            cls.acct_type.__eq__(AcctType.Bank),
+            cls.acct_type.__eq__(AcctType.Cash),
+        )
 
     @hybrid_property
     def is_stale(self):
