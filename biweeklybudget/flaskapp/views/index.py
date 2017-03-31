@@ -40,6 +40,7 @@ from flask import render_template
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.db import db_session
 
 
@@ -49,6 +50,9 @@ class IndexView(MethodView):
     """
 
     def get(self):
+        standing = db_session.query(Budget).filter(
+            Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
+        ).order_by(Budget.name).all()
         return render_template(
             'index.html',
             bank_accounts=db_session.query(Account).filter(
@@ -59,7 +63,8 @@ class IndexView(MethodView):
                 Account.is_active == True).all(),  # noqa
             investment_accounts=db_session.query(Account).filter(
                 Account.acct_type == AcctType.Investment,
-                Account.is_active == True).all()  # noqa
+                Account.is_active == True).all(),  # noqa
+            standing_budgets=standing
         )
 
 app.add_url_rule('/', view_func=IndexView.as_view('index_view'))

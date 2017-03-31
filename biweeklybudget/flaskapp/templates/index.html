@@ -39,6 +39,40 @@
                         <!-- /.panel-body -->
                     </div>
                     <!-- /.panel -->
+                    <div class="col-lg-6">
+                        <div class="panel panel-default" id="panel-standing-budgets">
+                            <div class="panel-heading">
+                                Standing Budgets
+                            </div>
+                            <!-- /.panel-heading -->
+                            <div class="panel-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover table-striped" id="table-standing-budgets">
+                                        <thead>
+                                            <tr>
+                                                <th>Budget</th>
+                                                <th>Current Balance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for b in standing_budgets %}
+                                            <tr>
+                                                <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
+                                                <td>
+                                                    <span>{{ b.current_balance|dollars }}</span>
+                                                </td>
+                                            </td>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- /.table-responsive -->
+                            </div>
+                            <!-- /.panel-body -->
+                        </div>
+                        <!-- /.panel -->
+                    </div>
+                    <!-- /.col-lg-6 -->
                 </div>
                 <!-- /.col-lg-8 -->
                 <div class="col-lg-4">

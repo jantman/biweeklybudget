@@ -135,3 +135,25 @@ class TestIndexAccounts(AcceptanceHelper):
         assert links == [
             '<a href="/accounts/5">InvestmentOne</a>'
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestIndexBudgets(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/')
+
+    def test_budgets_table(self, selenium):
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        stexts = self.tbody2textlist(stable)
+        assert stexts == [
+            ['Standing1 (4)', '$1,284.23'],
+            ['Standing2 (5)', '$9,482.29']
+        ]
+        selems = self.tbody2elemlist(stable)
+        assert selems[0][0].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(4)">' \
+                            'Standing1 (4)</a>'
