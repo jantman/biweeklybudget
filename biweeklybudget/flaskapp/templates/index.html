@@ -57,7 +57,7 @@
                                         <tbody>
                                         {% for b in standing_budgets %}
                                             <tr>
-                                                <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
+                                                <td><a href="/budgets/{{ b.id }}">{{ b.name }} ({{ b.id }})</a></td>
                                                 <td>
                                                     <span>{{ b.current_balance|dollars }}</span>
                                                 </td>

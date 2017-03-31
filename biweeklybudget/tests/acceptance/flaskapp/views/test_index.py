@@ -155,5 +155,5 @@ class TestIndexBudgets(AcceptanceHelper):
         ]
         selems = self.tbody2elemlist(stable)
         assert selems[0][0].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(4)">' \
+            'innerHTML') == '<a href="/budgets/4">' \
                             'Standing1 (4)</a>'
