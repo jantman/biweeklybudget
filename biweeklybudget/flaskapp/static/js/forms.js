@@ -91,7 +91,14 @@ function handleFormSubmitted(data, container_id, form_id) {
         $('#' + container_id).append('<div class="alert alert-success">' + data.success_message + '</div>');
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
-            location.reload();
+            var oneitem_re = /\/\d+$/;
+            if (oneitem_re.test(window.location.href)) {
+                // don't reload if it will just show the modal again
+                var url = window.location.href.replace(/\/\d+$/, "");
+                window.location = url;
+            } else {
+                location.reload();
+            }
         });
     }
 }
