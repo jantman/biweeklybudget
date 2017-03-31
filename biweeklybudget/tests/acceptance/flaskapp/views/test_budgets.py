@@ -156,19 +156,22 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert x.text.strip() == 'Successfully saved Budget 1 in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'table-periodic-budgets')
+        # test that updated budget was removed from the page
+        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        pelems = self.tbody2elemlist(ptable)
+        assert pelems[0][1].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(1)">' \
+                            'EditedPeriodic1 (1)</a>'
 
     def test_3_verify_db(self, testdb):
         b = testdb.query(Budget).get(1)
-        print("3_verify: %s" % vars(b))
         assert b.name == 'EditedPeriodic1'
         assert b.is_periodic is True
         assert b.description == 'EditedP1desc'
         assert float(b.starting_balance) == 2345.6700
         assert b.is_active is False
-
-    def test_4_verify_page(self, selenium):
-        # test that updated budget was removed from the page
-        assert 'Periodic1' not in selenium.page_source
 
 
 @pytest.mark.acceptance
@@ -353,3 +356,55 @@ class TestDirectURLPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_group_current_balance').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestAddStandingBudget(AcceptanceHelper):
+
+    def test_2_update_modal(self, base_url, selenium):
+        # Fill in the form
+        selenium.get(base_url + '/budgets')
+        link = selenium.find_element_by_id('btn_add_budget')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        name = selenium.find_element_by_id('budget_frm_name')
+        name.clear()
+        name.send_keys('NewStanding')
+        standing = selenium.find_element_by_id('budget_frm_type_standing')
+        standing.click()
+        desc = selenium.find_element_by_id('budget_frm_description')
+        desc.clear()
+        desc.send_keys('Newly Added Standing')
+        sb = selenium.find_element_by_id('budget_frm_current_balance')
+        sb.clear()
+        sb.send_keys('6789.12')
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected()
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Budget 7 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'table-periodic-budgets')
+        # test that updated budget was removed from the page
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        selems = self.tbody2elemlist(stable)
+        assert selems[0][1].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(7)">' \
+                            'NewStanding (7)</a>'
+
+    def test_3_verify_db(self, testdb):
+        b = testdb.query(Budget).get(7)
+        assert b.name == 'NewStanding'
+        assert b.is_periodic is False
+        assert b.description == 'Newly Added Standing'
+        assert float(b.current_balance) == 6789.12
+        assert b.is_active is True

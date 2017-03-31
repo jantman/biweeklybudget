@@ -147,6 +147,19 @@ class AcceptanceHelper(object):
             EC.element_to_be_clickable((By.ID, 'modalLabel'))
         )
 
+    def wait_for_id(self, driver, id):
+        """
+        Wait for the element with ID ``id`` to be shown.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param id: ID of the element
+        :type id: str
+        """
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, id))
+        )
+
     def wait_for_jquery_done(self, driver, sleep_sec=0.2, tries=20):
         """
         Wait until ``jQuery.active == 0``. Tries ``tries`` times at
@@ -174,7 +187,34 @@ class AcceptanceHelper(object):
                 'jQuery did not finish after %d seconds',
                 (sleep_sec * tries)
             )
-        return True
+
+    def wait_for_load_complete(self, driver, sleep_sec=0.2, tries=20):
+        """
+        Wait until ``document.readyState == "complete"``. Tries ``tries`` times
+        at ``sleep`` second intervals; raises an exception if all tries fail.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param sleep_sec: how long to sleep between tries
+        :type sleep_sec: float
+        :param tries: how many times to try
+        :type tries: bool
+        """
+        script = 'return document.readyState == "complete"'
+        count = 0
+        while count < 20:
+            res = driver.execute_script(script)
+            if res:
+                logger.debug(
+                    'readyState complete after %d seconds', (sleep_sec * tries)
+                )
+                break
+            sleep(sleep_sec)
+        else:
+            raise RuntimeError(
+                'readyState did not reach complete after %d seconds',
+                (sleep_sec * tries)
+            )
 
     def get_modal_parts(self, selenium, wait=True):
         """
