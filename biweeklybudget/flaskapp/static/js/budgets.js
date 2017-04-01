@@ -114,7 +114,7 @@ function budgetModal(id) {
 }
 
 $('#modalSaveButton').click(function() {
-    handleForm('modalBody', 'budgetForm', '/forms/budget');
+    handleForm('modalBody', 'budgetForm', '/forms/budget', true);
 });
 
 $('#btn_add_budget').click(function() {

@@ -46,7 +46,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * @param {string} form_id - The ID of the form itself.
  * @param {string} post_url - Relative URL to post form data to.
  */
-function handleForm(container_id, form_id, post_url) {
+function handleForm(container_id, form_id, post_url, doRefresh) {
     console.log(
       'Modal form save clicked; container_id=%s form_id=%s post_url=%s',
       container_id, form_id, post_url
@@ -59,7 +59,7 @@ function handleForm(container_id, form_id, post_url) {
         url: post_url,
         data: data,
         success: function(data) {
-            handleFormSubmitted(data, container_id, form_id);
+            handleFormSubmitted(data, container_id, form_id, doRefresh);
         },
         error: function(jqXHR, textStatus, errorThrown) {
             handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
@@ -72,7 +72,7 @@ function handleForm(container_id, form_id, post_url) {
  *
  * This should either display a success message, or one or more error messages.
  */
-function handleFormSubmitted(data, container_id, form_id) {
+function handleFormSubmitted(data, container_id, form_id, doRefresh) {
     if(data.hasOwnProperty('error_message')) {
         $('#' + container_id).prepend(
             '<div class="alert alert-danger formfeedback">' +
@@ -92,12 +92,14 @@ function handleFormSubmitted(data, container_id, form_id) {
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
             var oneitem_re = /\/\d+$/;
-            if (oneitem_re.test(window.location.href)) {
-                // don't reload if it will just show the modal again
-                var url = window.location.href.replace(/\/\d+$/, "");
-                window.location = url;
-            } else {
-                location.reload();
+            if (doRefresh === true) {
+                if (oneitem_re.test(window.location.href)) {
+                    // don't reload if it will just show the modal again
+                    var url = window.location.href.replace(/\/\d+$/, "");
+                    window.location = url;
+                } else {
+                    location.reload();
+                }
             }
         });
     }
