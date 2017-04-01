@@ -39,18 +39,31 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 
 from biweeklybudget import settings
 import logging
+import os
 from copy import deepcopy
+import warnings
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from pymysql.err import Warning
 
 logger = logging.getLogger(__name__)
 
 logger.debug('Creating DB engine with connection: %s',
              settings.DB_CONNSTRING)
+
+echo = False
+if os.environ.get('SQL_ECHO', '') == 'true':
+    echo = True
+
+# For some reason, with PyMySQL, even setting sql_mode to TRADITIONAL isn't
+# raising an Exception when data is truncated. So we need to explicitly convert
+# ``pymysql.err.Warning`` to an exception...
+warnings.simplefilter('error', category=Warning)
+
 engine = create_engine(
-    settings.DB_CONNSTRING, convert_unicode=True, echo=False,
-    pool_recycle=3600, connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
+    settings.DB_CONNSTRING, convert_unicode=True, echo=echo,
+    pool_recycle=3600, connect_args={'sql_mode': 'TRADITIONAL'}
 )
 logger.debug('Creating DB session')
 db_session = scoped_session(
