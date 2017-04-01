@@ -57,17 +57,16 @@ class TestNotifications(object):
 
     def test_num_stale_accounts(self):
         accts = [
-            Mock(is_stale=True),
-            Mock(is_stale=False),
+            Mock(is_stale=True, is_active=True),
+            Mock(is_stale=False, is_active=True)
         ]
         with patch('%s.db_session' % pbm) as mock_db:
-            mock_db.query.return_value.all.return_value = accts
+            mock_db.query.return_value.filter.return_value\
+                .all.return_value = accts
             res = NotificationsController.num_stale_accounts()
         assert res == 1
-        assert mock_db.mock_calls == [
-            call.query(Account),
-            call.query().all()
-        ]
+        assert mock_db.mock_calls[0] == call.query(Account)
+        assert mock_db.mock_calls[2] == call.query().filter().all()
 
     def test_get_notifications_no_stale(self):
         with patch('%s.num_stale_accounts' % pb) as m_num_stale:

@@ -119,9 +119,11 @@ class NotificationsController(object):
                 'content': 'Combined balance of all <a href="/accounts">'
                            'budget-funding accounts</a> '
                            '(%s) is less than balance of all <a href='
-                           '"/budgets">standing budgets</a> (%s)!' % (
-                    dollars_filter(accounts_bal), dollars_filter(standing_bal)
-                )
+                           '"/budgets">standing budgets</a> (%s)!'
+                           '' % (
+                               dollars_filter(accounts_bal),
+                               dollars_filter(standing_bal)
+                           )
             })
         res.append({
             'classes': 'alert alert-warning',

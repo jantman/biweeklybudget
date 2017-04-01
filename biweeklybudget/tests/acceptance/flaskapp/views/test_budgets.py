@@ -410,7 +410,6 @@ class TestAddStandingBudget(AcceptanceHelper):
         assert b.is_active is True
 
 
-
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestBudgetOverBalanceNotification(AcceptanceHelper):
