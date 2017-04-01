@@ -94,9 +94,14 @@ class ScreenScraper(object):
         logger.info('Loading cookies from: %s', cookie_file)
         with open(cookie_file, 'r') as fh:
             cookies = json.loads(fh.read())
+        count = 0
         for c in cookies:
-            self.browser.add_cookie(c)
-        logger.debug('Loaded %d cookies', len(cookies))
+            try:
+                self.browser.add_cookie(c)
+                count += 1
+            except Exception as ex:
+                logger.info('Error loading cookie %s: %s', c, ex)
+        logger.debug('Loaded %d of %d cookies', count, len(cookies))
 
     def save_cookies(self, cookie_file):
         """
