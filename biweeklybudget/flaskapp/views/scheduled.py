@@ -39,7 +39,6 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
-from sqlalchemy import or_
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app

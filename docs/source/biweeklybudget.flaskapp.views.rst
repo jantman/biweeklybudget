@@ -20,5 +20,6 @@ Submodules
    biweeklybudget.flaskapp.views.payperiods
    biweeklybudget.flaskapp.views.reconcile
    biweeklybudget.flaskapp.views.scheduled
+   biweeklybudget.flaskapp.views.searchableajaxview
    biweeklybudget.flaskapp.views.transactions
 
