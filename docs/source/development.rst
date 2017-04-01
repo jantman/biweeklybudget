@@ -88,6 +88,12 @@ for DB migrations:
 * To see the current DB version, run ``alembic current``.
 * To see migration history, run ``alembic history``.
 
+Database Debugging
+------------------
+
+If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by
+SQLAlchemy will be logged at INFO level.
+
 Frontend / UI
 -------------
 
