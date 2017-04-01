@@ -39,12 +39,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Handle change of the "Type" radio buttons on the modal
  */
 function modalDivHandleType() {
-    if($('#sched_frm_type_standing').is(':checked')) {
-        $('#sched_frm_group_starting_balance').hide();
-        $('#sched_frm_group_current_balance').show();
+    if($('#sched_frm_type_monthly').is(':checked')) {
+        $('#sched_frm_group_monthly').show();
+        $('#sched_frm_group_num_per_period').hide();
+        $('#sched_frm_group_date').hide();
+    } else if($('#sched_frm_type_per_period').is(':checked')) {
+        $('#sched_frm_group_monthly').hide();
+        $('#sched_frm_group_num_per_period').show();
+        $('#sched_frm_group_date').hide();
     } else {
-        $('#sched_frm_group_current_balance').hide();
-        $('#sched_frm_group_starting_balance').show();
+        $('#sched_frm_group_monthly').hide();
+        $('#sched_frm_group_num_per_period').hide();
+        $('#sched_frm_group_date').show();
     }
 }
 
@@ -55,16 +61,48 @@ function modalDivForm() {
     var frm = '<form role="form" id="schedForm">';
     // id
     frm += '<input type="hidden" id="sched_frm_id" name="id" value="">\n';
-    // name
-    frm += '<div class="form-group"><label for="sched_frm_name" class="control-label">Name</label><input class="form-control" id="sched_frm_name" name="name" type="text"></div>\n';
-    // type
-    frm += '<div class="form-group"><label class="control-label">Type </label> <label class="radio-inline" for="sched_frm_type_periodic"><input type="radio" name="is_periodic" id="sched_frm_type_periodic" value="true" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline" for="sched_frm_type_standing"><input type="radio" name="is_periodic" id="sched_frm_type_standing" value="false" onchange="modalDivHandleType()">Standing</label></div>\n';
     // description
     frm += '<div class="form-group"><label for="sched_frm_description" class="control-label">Description</label><input class="form-control" id="sched_frm_description" name="description" type="text"></div>\n';
-    // starting balance (for periodic)
-    frm += '<div class="form-group" id="sched_frm_group_starting_balance"><label for="sched_frm_starting_balance" class="control-label">Starting Balance</label><input type="text" class="form-control" id="sched_frm_starting_balance" name="starting_balance"></div>\n';
-    // current balance (for standing)
-    frm += '<div class="form-group" id="sched_frm_group_current_balance" style="display: none;"><label for="sched_frm_current_balance" class="control-label">Current Balance</label><input type="text" class="form-control" id="sched_frm_current_balance" name="current_balance"></div>\n';
+    // type
+    frm += '<div class="form-group"><label class="control-label">Type </label> ';
+    frm += '<label class="radio-inline" for="sched_frm_type_monthly"><input type="radio" name="type" id="sched_frm_type_monthly" value="monthly" onchange="modalDivHandleType()" checked>Monthly</label>';
+    frm += '<label class="radio-inline" for="sched_frm_type_per_period"><input type="radio" name="type" id="sched_frm_type_per_period" value="per_period" onchange="modalDivHandleType()">Per Period</label>';
+    frm += '<label class="radio-inline" for="sched_frm_type_date"><input type="radio" name="type" id="sched_frm_type_date" value="date" onchange="modalDivHandleType()">Date</label>';
+    frm += '</div>\n';
+    // recurrence - monthly
+    frm += '<div class="form-group" id="sched_frm_group_monthly">';
+    frm += '<label for="sched_frm_day_of_month" class="control-label">Day of Month</label><input class="form-control" id="sched_frm_day_of_month" name="day_of_month" type="text" size="4" maxlength="2">';
+    frm += '</div>\n';
+    // recurrence - per period
+    frm += '<div class="form-group" id="sched_frm_group_num_per_period" style="display: none;">';
+    frm += '<label for="sched_frm_num_per_period" class="control-label">Number Per Pay Period</label><input class="form-control" id="sched_frm_num_per_period" name="num_per_period" type="text" size="4" maxlength="2">';
+    frm += '</div>\n';
+    // recurrence - date
+    frm += '<div class="form-group" id="sched_frm_group_date" style="display: none;">';
+    frm += '<label for="sched_frm_date" class="control-label">Specific Date</label><div class="input-group"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="sched_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
+    frm += '</div>\n';
+    // amount
+    frm += '<div class="form-group"><label for="sched_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="sched_frm_amount" name="amount"></div></div>\n';
+    // account
+    frm += '<div class="form-group"><label for="sched_frm_account" class="control-label">Account</label>';
+    frm += '<select id="sched_frm_account" name="account" class="form-control">';
+    frm += '<option value="None" selected="selected"></option>';
+    Object.keys(acct_names_to_id).forEach(function (key) {
+        frm += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
+    });
+    frm += '</select>';
+    frm += '</div>\n';
+    // budget
+    frm += '<div class="form-group"><label for="sched_frm_budget" class="control-label">Budget</label>';
+    frm += '<select id="sched_frm_budget" name="budget" class="form-control">';
+    frm += '<option value="None" selected="selected"></option>';
+    Object.keys(budget_names_to_id).forEach(function (key) {
+        frm += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
+    });
+    frm += '</select>';
+    frm += '</div>\n';
+    // notes
+    frm += '<div class="form-group"><label for="sched_frm_notes" class="control-label">Notes</label><input class="form-control" id="sched_frm_notes" name="notes" type="text"></div>\n';
     // is_active checkbox
     frm += '<div class="form-group"><label class="checkbox-inline control-label" for="sched_frm_active"><input type="checkbox" id="sched_frm_active" name="is_active" checked> Active?</label>\n';
     frm += '</form>\n';

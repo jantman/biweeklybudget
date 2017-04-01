@@ -62,9 +62,9 @@ function modalDivForm() {
     // description
     frm += '<div class="form-group"><label for="budget_frm_description" class="control-label">Description</label><input class="form-control" id="budget_frm_description" name="description" type="text"></div>\n';
     // starting balance (for periodic)
-    frm += '<div class="form-group" id="budget_frm_group_starting_balance"><label for="budget_frm_starting_balance" class="control-label">Starting Balance</label><input type="text" class="form-control" id="budget_frm_starting_balance" name="starting_balance"></div>\n';
+    frm += '<div class="form-group" id="budget_frm_group_starting_balance"><label for="budget_frm_starting_balance" class="control-label">Starting Balance</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budget_frm_starting_balance" name="starting_balance"></div></div>\n';
     // current balance (for standing)
-    frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label for="budget_frm_current_balance" class="control-label">Current Balance</label><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div>\n';
+    frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label for="budget_frm_current_balance" class="control-label">Current Balance</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div></div>\n';
     // is_active checkbox
     frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_active"><input type="checkbox" id="budget_frm_active" name="is_active" checked> Active?</label>\n';
     frm += '</form>\n';
