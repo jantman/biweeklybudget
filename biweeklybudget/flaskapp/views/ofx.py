@@ -45,6 +45,7 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.db import db_session
+from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +56,7 @@ class OfxView(MethodView):
     """
 
     def get(self):
-        accts = {}
-        for a in db_session.query(Account).all():
-            accts[a.name] = a.id
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
         return render_template(
             'ofx.html',
             accts=accts
@@ -71,9 +70,7 @@ class OfxTransView(MethodView):
     """
 
     def get(self, acct_id, fitid):
-        accts = {}
-        for a in db_session.query(Account).all():
-            accts[a.name] = a.id
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
         return render_template(
             'ofx.html',
             accts=accts,
@@ -99,57 +96,10 @@ class OfxTransAjax(MethodView):
         return jsonify(res)
 
 
-class OfxAjax(MethodView):
+class OfxAjax(SearchableAjaxView):
     """
     Handle GET /ajax/ofx endpoint.
     """
-
-    def _args_dict(self, args):
-        """
-        Given a 1-dimensional dict of request parameters like those used by
-        DataTables (i.e. keys like ``columns[2][search][value]``), return a
-        multidimensional dict representation of the same.
-
-        :return: deep/nested dict
-        :rtype: dict
-        """
-        d = {}
-        for k, v in args.items():
-            v = self._args_set_type(v)
-            if '[' not in k:
-                d[self._args_set_type(k)] = v
-                continue
-            k = k.replace('[', '|').replace(']', '|').replace('||', '|')
-            k = k.strip('|')
-            parts = k.split('|')
-            ptr = d
-            while len(parts) > 1:
-                subk = self._args_set_type(parts.pop(0))
-                if subk not in ptr:
-                    ptr[subk] = {}
-                ptr = ptr[subk]
-            ptr[self._args_set_type(parts[0])] = v
-        return d
-
-    def _args_set_type(self, a):
-        """
-        Given a string portion of something in the argument dict, return it
-        as the correct type.
-
-        :param a: args dict key or value
-        :type a: str
-        :return: a in the proper type
-        """
-        try:
-            if '%d' % int(a) == a:
-                return int(a)
-        except Exception:
-            pass
-        if a == 'true':
-            return True
-        if a == 'false':
-            return False
-        return a
 
     def _filterhack(self, qs, s, args):
         """
@@ -198,21 +148,6 @@ class OfxAjax(MethodView):
                 OFXTransaction.notes.like(s)
             ))
         return qs
-
-    def _have_column_search(self, args):
-        """
-        Determine if we have a column filter/search in effect, and if so,
-        should use :py:meth:`~._filterhack` as our search function.
-
-        :param args: current request arguments
-        :type args: dict
-        :return: whether or not request asks for column filtering
-        :rtype: bool
-        """
-        for col in args['columns']:
-            if args['columns'][col]['search']['value'] != '':
-                return True
-        return False
 
     def get(self):
         """
