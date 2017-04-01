@@ -17,9 +17,15 @@ biweeklybudget
    :alt: Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.
    :target: http://www.repostatus.org/#wip
 
+.. image:: https://img.shields.io/waffle/label/jantman/biweeklybudget/ready.svg
+   :target: https://waffle.io/jantman/biweeklybudget
+   :alt: 'Stories in Ready'
+
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
 **For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
+
+**For development activity**, see `https://waffle.io/jantman/biweeklybudget <https://waffle.io/jantman/biweeklybudget>`_
 
 Overview
 --------
