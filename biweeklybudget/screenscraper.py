@@ -75,6 +75,45 @@ class ScreenScraper(object):
         self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:33.0) ' \
                           'Gecko/20100101 Firefox/33.0'
 
+    def load_cookies(self, cookie_file):
+        """
+        Load cookies from a JSON cookie file on disk. This file is not the
+        format used natively by PhantomJS, but rather the JSON-serialized
+        representation of the dict returned by
+        :py:meth:`selenium.webdriver.remote.webdriver.WebDriver.get_cookies`.
+
+        Cookies are loaded via
+        :py:meth:`selenium.webdriver.remote.webdriver.WebDriver.add_cookie`
+
+        :param cookie_file: path to the cookie file on disk
+        :type cookie_file: str
+        """
+        if not os.path.exists(cookie_file):
+            logger.warning('Cookie file does not exist: %s', cookie_file)
+            return
+        logger.info('Loading cookies from: %s', cookie_file)
+        with open(cookie_file, 'r') as fh:
+            cookies = json.loads(fh.read())
+        for c in cookies:
+            self.browser.add_cookie(c)
+        logger.debug('Loaded %d cookies', len(cookies))
+
+    def save_cookies(self, cookie_file):
+        """
+        Save cookies to a JSON cookie file on disk. This file is not the
+        format used natively by PhantomJS, but rather the JSON-serialized
+        representation of the dict returned by
+        :py:meth:`selenium.webdriver.remote.webdriver.WebDriver.get_cookies`.
+
+        :param cookie_file: path to the cookie file on disk
+        :type cookie_file: str
+        """
+        cookies = self.browser.get_cookies()
+        raw = json.dumps(cookies)
+        with open(cookie_file, 'w') as fh:
+            fh.write(raw)
+        logger.info('Wrote %d cookies to: %s', len(cookies), cookie_file)
+
     def do_screenshot(self):
         """take a debug screenshot"""
         if not self._screenshot:

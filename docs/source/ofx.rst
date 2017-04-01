@@ -116,6 +116,13 @@ OFX statements should be saved. After instantiating the class, ``ofxgetter`` wil
 call the class's ``run()`` method with no arguments, and expect to receive an OFX
 statement string back.
 
+If cookies are a concern, be aware that saving and loading cookies is
+`broken in PhantomJS 2.x <https://github.com/ariya/phantomjs/issues/13115>`_.
+If you need to persist cookies across sessions, look into the
+:py:class:`~biweeklybudget.screenscraper.ScreenScraper` class'
+:py:meth:`~biweeklybudget.screenscraper.ScreenScraper.load_cookies` and
+:py:meth:`~biweeklybudget.screenscraper.ScreenScraper.save_cookies` methods.
+
 .. code-block:: json
 
     {
@@ -187,9 +194,11 @@ Here's a simple, contrived example of such a class:
             return act
 
         def do_login(self, username, password):
+            self.get_page('http://example.com')
             raise NotImplementedError("login to your bank here")
 
         def select_account(self):
+            self.get_page('http://example.com')
             logger.debug('Finding account link...')
             link = self.browser.find_element_by_xpath(
                 '//a[contains(text(), "%s")]' % self.acct_num
