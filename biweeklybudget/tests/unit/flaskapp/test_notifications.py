@@ -45,9 +45,9 @@ if (
         sys.version_info[0] < 3 or
         sys.version_info[0] == 3 and sys.version_info[1] < 4
 ):
-    from mock import Mock, patch, call  # noqa
+    from mock import Mock, patch, call, DEFAULT  # noqa
 else:
-    from unittest.mock import Mock, patch, call  # noqa
+    from unittest.mock import Mock, patch, call, DEFAULT  # noqa
 
 pbm = 'biweeklybudget.flaskapp.notifications'
 pb = '%s.NotificationsController' % pbm
@@ -69,8 +69,15 @@ class TestNotifications(object):
         assert mock_db.mock_calls[2] == call.query().filter().all()
 
     def test_get_notifications_no_stale(self):
-        with patch('%s.num_stale_accounts' % pb) as m_num_stale:
-            m_num_stale.return_value = 0
+        with patch.multiple(
+            pb,
+            num_stale_accounts=DEFAULT,
+            budget_account_sum=DEFAULT,
+            standing_budgets_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = 100
+            mocks['standing_budgets_sum'].return_value = 1
             res = NotificationsController.get_notifications()
         assert res == [
             {
@@ -82,8 +89,15 @@ class TestNotifications(object):
         ]
 
     def test_get_notifications_one_stale(self):
-        with patch('%s.num_stale_accounts' % pb) as m_num_stale:
-            m_num_stale.return_value = 1
+        with patch.multiple(
+                pb,
+                num_stale_accounts=DEFAULT,
+                budget_account_sum=DEFAULT,
+                standing_budgets_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 1
+            mocks['budget_account_sum'].return_value = 100
+            mocks['standing_budgets_sum'].return_value = 1
             res = NotificationsController.get_notifications()
         assert res == [
             {
@@ -100,8 +114,15 @@ class TestNotifications(object):
         ]
 
     def test_get_notifications_three_stale(self):
-        with patch('%s.num_stale_accounts' % pb) as m_num_stale:
-            m_num_stale.return_value = 3
+        with patch.multiple(
+                pb,
+                num_stale_accounts=DEFAULT,
+                budget_account_sum=DEFAULT,
+                standing_budgets_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 3
+            mocks['budget_account_sum'].return_value = 100
+            mocks['standing_budgets_sum'].return_value = 1
             res = NotificationsController.get_notifications()
         assert res == [
             {
