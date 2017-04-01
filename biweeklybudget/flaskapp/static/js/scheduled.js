@@ -79,7 +79,7 @@ function modalDivForm() {
     frm += '</div>\n';
     // recurrence - date
     frm += '<div class="form-group" id="sched_frm_group_date" style="display: none;">';
-    frm += '<label for="sched_frm_date" class="control-label">Specific Date</label><div class="input-group"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="sched_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
+    frm += '<label for="sched_frm_date" class="control-label">Specific Date</label><div class="input-group date" id="sched_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="sched_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
     frm += '</div>\n';
     // amount
     frm += '<div class="form-group"><label for="sched_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="sched_frm_amount" name="amount"></div></div>\n';
@@ -143,6 +143,12 @@ function modalDivFillAndShow(msg) {
 function schedModal(id) {
     $('#modalBody').empty();
     $('#modalBody').append(modalDivForm());
+    $('#sched_frm_group_date_input').datepicker({
+        todayBtn: "linked",
+        autoclose: true,
+        todayHighlight: true,
+        format: 'yyyy-mm-dd'
+    });
     $('#modalSaveButton').show();
     if(id) {
         var url = "/ajax/scheduled/" + id;
