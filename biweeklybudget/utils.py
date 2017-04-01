@@ -55,6 +55,23 @@ def dtnow():
     return datetime.utcnow().replace(tzinfo=pytz.utc)
 
 
+def date_suffix(n):
+    """
+    Given an integer day of month (1 <= n <= 31), return that number with the
+    appropriate suffix (st|nd|rd|th).
+
+    From: http://stackoverflow.com/a/5891598/211734
+
+    :param n: Integer day of month
+    :type n: int
+    :return: n with the appropriate suffix
+    :rtype: str
+    """
+    return 'th' if 11 <= n <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(
+        n % 10, 'th'
+    )
+
+
 class SecretMissingException(Exception):
 
     def __init__(self, path):
