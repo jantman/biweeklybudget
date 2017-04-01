@@ -37,10 +37,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, Date, SmallInteger, Numeric,
-    ForeignKey
+    ForeignKey, func
 )
 from sqlalchemy.orm import relationship, validates
+from sqlalchemy.sql import case
+
 from biweeklybudget.models.base import Base, ModelAsDict
+from biweeklybudget.utils import date_suffix
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class ScheduledTransaction(Base, ModelAsDict):
@@ -99,10 +103,86 @@ class ScheduledTransaction(Base, ModelAsDict):
     @validates('day_of_month')
     def validate_day_of_month(self, _, value):
         assert value > 0
-        assert value <= 31
+        assert value <= 28
         return value
 
     @validates('num_per_period')
     def validate_num_per_period(self, _, value):
         assert value > 0
         return value
+
+    @hybrid_property
+    def recurrence_str(self):
+        """
+        Return a string describing the recurrence interval. This is a string
+        of the format ``YYYY-mm-dd``, ``N per period`` or ``N(st|nd|rd|th)``
+        where ``N`` is an integer.
+
+        :return: string describing recurrence interval
+        :rtype: str
+        """
+        if self.schedule_type == 'date':
+            return self.date.strftime('%Y-%m-%d')
+        if self.schedule_type == 'monthly':
+            return '%d%s' % (
+                self.day_of_month,
+                date_suffix(self.day_of_month)
+            )
+        if self.schedule_type == 'per period':
+            return '%d per period' % self.num_per_period
+        return None
+
+    @recurrence_str.expression
+    def recurrence_str(cls):
+        """
+        SQL expression for ``recurrence_str``.
+        """
+        return case(
+            [
+                (
+                    cls.date.isnot(None),
+                    func.date_format(cls.date, '%Y-%m-%d')
+                ),
+                (
+                    cls.day_of_month.isnot(None),
+                    cls.day_of_month
+                ),
+                (
+                    cls.num_per_period.isnot(None),
+                    func.concat(cls.num_per_period, ' per period')
+                )
+            ],
+            else_=''
+        )
+
+    @hybrid_property
+    def schedule_type(self):
+        """
+        Return a string describing the type of schedule; one of ``date`` (a
+        specific Date), ``per period`` (a number per pay period)`` or
+        ``monthly`` (a given day of the month).
+
+        :return: string describing type of schedule
+        :rtype: str
+        """
+        if self.date is not None:
+            return 'date'
+        if self.day_of_month is not None:
+            return 'monthly'
+        if self.num_per_period is not None:
+            return 'per period'
+        return None
+
+    @schedule_type.expression
+    def schedule_type(cls):
+        """
+        SQL Expression for ``schedule_type``.
+        """
+        return case(
+            [
+                (cls.date.isnot(None), 'date'),
+                (cls.day_of_month.isnot(None), 'monthly'),
+                (cls.num_per_period.isnot(None), 'per period')
+            ],
+            else_=''
+        )
