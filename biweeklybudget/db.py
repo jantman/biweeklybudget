@@ -50,7 +50,7 @@ logger.debug('Creating DB engine with connection: %s',
              settings.DB_CONNSTRING)
 engine = create_engine(
     settings.DB_CONNSTRING, convert_unicode=True, echo=False,
-    connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
+    pool_recycle=3600, connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
 )
 logger.debug('Creating DB session')
 db_session = scoped_session(
