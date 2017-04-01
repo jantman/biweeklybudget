@@ -35,6 +35,94 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
+/**
+ * Handle change of the "Type" radio buttons on the modal
+ */
+function modalDivHandleType() {
+    if($('#sched_frm_type_standing').is(':checked')) {
+        $('#sched_frm_group_starting_balance').hide();
+        $('#sched_frm_group_current_balance').show();
+    } else {
+        $('#sched_frm_group_current_balance').hide();
+        $('#sched_frm_group_starting_balance').show();
+    }
+}
+
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function modalDivForm() {
+    var frm = '<form role="form" id="schedForm">';
+    // id
+    frm += '<input type="hidden" id="sched_frm_id" name="id" value="">\n';
+    // name
+    frm += '<div class="form-group"><label for="sched_frm_name" class="control-label">Name</label><input class="form-control" id="sched_frm_name" name="name" type="text"></div>\n';
+    // type
+    frm += '<div class="form-group"><label class="control-label">Type </label> <label class="radio-inline" for="sched_frm_type_periodic"><input type="radio" name="is_periodic" id="sched_frm_type_periodic" value="true" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline" for="sched_frm_type_standing"><input type="radio" name="is_periodic" id="sched_frm_type_standing" value="false" onchange="modalDivHandleType()">Standing</label></div>\n';
+    // description
+    frm += '<div class="form-group"><label for="sched_frm_description" class="control-label">Description</label><input class="form-control" id="sched_frm_description" name="description" type="text"></div>\n';
+    // starting balance (for periodic)
+    frm += '<div class="form-group" id="sched_frm_group_starting_balance"><label for="sched_frm_starting_balance" class="control-label">Starting Balance</label><input type="text" class="form-control" id="sched_frm_starting_balance" name="starting_balance"></div>\n';
+    // current balance (for standing)
+    frm += '<div class="form-group" id="sched_frm_group_current_balance" style="display: none;"><label for="sched_frm_current_balance" class="control-label">Current Balance</label><input type="text" class="form-control" id="sched_frm_current_balance" name="current_balance"></div>\n';
+    // is_active checkbox
+    frm += '<div class="form-group"><label class="checkbox-inline control-label" for="sched_frm_active"><input type="checkbox" id="sched_frm_active" name="is_active" checked> Active?</label>\n';
+    frm += '</form>\n';
+    return frm;
+}
+
+/**
+ * Ajax callback to fill in the modalDiv with data on a budget.
+ */
+function modalDivFillAndShow(msg) {
+    $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
+    /*
+    $('#sched_frm_id').val(msg['id']);
+    $('#sched_frm_name').val(msg['name']);
+    if(msg['is_periodic'] === true) {
+        $('#sched_frm_type_standing').prop('checked', false);
+        $('#sched_frm_type_periodic').prop('checked', true);
+    } else {
+        $('#sched_frm_type_periodic').prop('checked', false);
+        $('#sched_frm_type_standing').prop('checked', true);
+    }
+    modalDivHandleType();
+    $('#sched_frm_description').val(msg['description']);
+    $('#sched_frm_starting_balance').val(msg['starting_balance']);
+    $('#sched_frm_current_balance').val(msg['current_balance']);
+    if(msg['is_active'] === true) {
+        $('#sched_frm_active').prop('checked', true);
+    } else {
+        $('#sched_frm_active').prop('checked', false);
+    }
+    */
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Show the modal popup, populated with information for one ScheduledTransaction
+ */
+function schedModal(id) {
+    $('#modalBody').empty();
+    $('#modalBody').append(modalDivForm());
+    $('#modalSaveButton').show();
+    if(id) {
+        var url = "/ajax/scheduled/" + id;
+        $.ajax(url).done(modalDivFillAndShow);
+    } else {
+        $('#modalLabel').text('Add New Scheduled Transaction');
+        $("#modalDiv").modal('show');
+    }
+}
+
+$('#modalSaveButton').click(function() {
+    handleForm('modalBody', 'schedForm', '/forms/scheduled', false);
+});
+
+$('#btn_add_sched').click(function() {
+    schedModal();
+});
+
 $(document).ready(function() {
     var mytable = $('#table-scheduled-txn').dataTable({
         processing: true,
@@ -63,7 +151,12 @@ $(document).ready(function() {
                         data;
                 }
             },
-            { data: "description" },
+            {
+                data: "description",
+                "render": function(data, type, row) {
+                    return $("<div>").append($("<a/>").attr("href", "javascript:schedModal(" + row.DT_RowData.id + ")").text(data)).html();
+                }
+            },
             {
                 data: "account",
                 "render": function(data, type, row) {

@@ -144,7 +144,6 @@ class ScheduledAjax(SearchableAjaxView):
             args, ScheduledTransaction, db_session.query(ScheduledTransaction),
             [
                 'is_active',
-                'id',
                 (
                     'amount',
                     lambda a: float(a.amount)
@@ -166,11 +165,22 @@ class ScheduledAjax(SearchableAjaxView):
         )
         table.add_data(
             acct_id=lambda o: o.account_id,
-            budget_id=lambda o: o.budget_id
+            budget_id=lambda o: o.budget_id,
+            id=lambda o: o.id
         )
         if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
         return jsonify(table.json())
+
+
+class OneScheduledAjax(MethodView):
+    """
+    Handle GET /ajax/scheduled/<int:sched_trans_id> endpoint.
+    """
+
+    def get(self, sched_trans_id):
+        t = db_session.query(ScheduledTransaction).get(sched_trans_id)
+        return jsonify(t.as_dict)
 
 
 app.add_url_rule(
@@ -184,4 +194,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/scheduled',
     view_func=ScheduledAjax.as_view('scheduled_ajax')
+)
+app.add_url_rule(
+    '/ajax/scheduled/<int:sched_trans_id>',
+    view_func=OneScheduledAjax.as_view('one_scheduled_ajax')
 )
