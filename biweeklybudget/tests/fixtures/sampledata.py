@@ -60,6 +60,7 @@ class SampleDataLoader(object):
             'DisabledBank': self._disabled_bank()
         }
         self.budgets = self._budgets()
+        self.scheduled_transactions = self._scheduled_transactions()
 
     def _budgets(self):
         res = {
@@ -104,6 +105,64 @@ class SampleDataLoader(object):
         }
         for x in sorted(res.keys()):
             self.db.add(res[x])
+        return res
+
+    def _scheduled_transactions(self):
+        res = [
+            ScheduledTransaction(
+                amount=111.11,
+                description='ST1',
+                notes='notesST1',
+                account=self.accounts['BankOne']['account'],
+                budget=self.budgets['Periodic1'],
+                date=(self.dt + timedelta(days=4)).date()
+            ),
+            ScheduledTransaction(
+                amount=222.22,
+                description='ST2',
+                notes='notesST2',
+                account=self.accounts['BankOne']['account'],
+                budget=self.budgets['Periodic2'],
+                day_of_month=4
+            ),
+            ScheduledTransaction(
+                amount=-333.33,
+                description='ST3',
+                notes='notesST3',
+                account=self.accounts['BankTwoStale']['account'],
+                budget=self.budgets['Standing1'],
+                num_per_period=1
+            ),
+            ScheduledTransaction(
+                amount=444.44,
+                description='ST4',
+                notes='notesST4',
+                account=self.accounts['BankOne']['account'],
+                budget=self.budgets['Periodic1'],
+                date=(self.dt + timedelta(days=5)).date(),
+                is_active=False
+            ),
+            ScheduledTransaction(
+                amount=555.55,
+                description='ST5',
+                notes='notesST5',
+                account=self.accounts['BankOne']['account'],
+                budget=self.budgets['Periodic2'],
+                day_of_month=5,
+                is_active=False
+            ),
+            ScheduledTransaction(
+                amount=666.66,
+                description='ST6',
+                notes='notesST6',
+                account=self.accounts['BankTwoStale']['account'],
+                budget=self.budgets['Standing1'],
+                num_per_period=3,
+                is_active=False
+            )
+        ]
+        for x in res:
+            self.db.add(x)
         return res
 
     def _add_account(self, acct, statements, transactions):
