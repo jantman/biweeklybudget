@@ -17,6 +17,7 @@ Contents
    Development <development>
    Changelog <changes>
    API <modules>
+   UI JavaScript Docs <jsdoc>
 
 Indices and tables
 ==================

@@ -101,17 +101,21 @@ The UI is based on `BlackrockDigital's startbootstrap-sb-admin-2 <https://github
 currently as of the 3.3.7-1 GitHub release. It is currently not modified at all, but should it need to be rebuilt,
 this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
+Sphinx also generates documentation for the custom javascript files. This must be done manually
+on a machine with `jsdoc <http://usejsdoc.org/>`_ installed, via: ``tox -e jsdoc``.
+
 Release Checklist
 -----------------
 
 1. Open an issue for the release; cut a branch off master for that issue.
 2. Verify whether or not DB migrations are needed. If they are, ensure they've been created, tested and verified.
 3. Confirm that there are CHANGES.rst entries for all major changes.
-4. Ensure that Travis tests passing in all environments.
-5. Ensure that test coverage is no less than the last release (ideally, 100%).
-6. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
-7. Confirm that README.rst renders correctly on GitHub.
-8. Upload package to testpypi:
+4. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
+5. Ensure that Travis tests passing in all environments.
+6. Ensure that test coverage is no less than the last release (ideally, 100%).
+7. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
+8. Confirm that README.rst renders correctly on GitHub.
+9. Upload package to testpypi:
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
@@ -120,14 +124,14 @@ Release Checklist
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
 
-9. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
-10. Tag the release in Git, push tag to GitHub:
+10. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
+11. Tag the release in Git, push tag to GitHub:
 
    * tag the release. for now the message is quite simple: ``git tag -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
    * push the tag to GitHub: ``git push origin X.Y.Z``
 
-11. Upload package to live pypi:
+12. Upload package to live pypi:
 
     * ``twine upload dist/*``
 
-12. make sure any GH issues fixed in the release were closed.
+13. make sure any GH issues fixed in the release were closed.

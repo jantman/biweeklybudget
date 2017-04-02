@@ -52,6 +52,10 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
+if os.environ.get('JSDOC', '') == 'true':
+    extensions.append('sphinx_js')
+    js_source_path = 'biweeklybudget/flaskapp/static/js'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -317,7 +321,14 @@ nitpick_ignore = [
     ('py:class', 'sqlalchemy.ext.declarative.api.Base'),
     ('py:class', 'enum.Enum'),
     ('py:class', 'Exception'),
-    ('py:class', 'json.encoder.JSONEncoder')
+    ('py:class', 'json.encoder.JSONEncoder'),
+    ('js:func', 'null'),
+    ('js:func', 'Object'),
+    ('js:func', 'Object|null'),
+    ('js:func', 'Object|string'),
+    ('js:func', 'string'),
+    ('js:func', 'Integer'),
+    ('js:func', 'number')
 ]
 
 todo_include_todos = True

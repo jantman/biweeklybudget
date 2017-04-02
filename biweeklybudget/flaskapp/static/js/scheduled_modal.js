@@ -149,9 +149,9 @@ function schedModalDivFillAndShow(msg) {
 /**
  * Show the modal popup, populated with information for one ScheduledTransaction
  *
- * @param {Integer} id - the ID of the ScheduledTransaction to show a modal for,
+ * @param {number} id - the ID of the ScheduledTransaction to show a modal for,
  *   or null to show modal to add a new ScheduledTransaction.
- * @param {Object} dataTableObj - passed on to ``handleForm()``
+ * @param {(Object|null)} dataTableObj - passed on to ``handleForm()``
  */
 function schedModal(id, dataTableObj) {
     $('#modalBody').empty();

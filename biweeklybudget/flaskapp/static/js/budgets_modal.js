@@ -100,9 +100,9 @@ function budgetModalDivFillAndShow(msg) {
 /**
  * Show the modal popup, populated with information for one Budget.
  *
- * @param {Integer} id - the ID of the Budget to show modal for, or null to
+ * @param {number} id - the ID of the Budget to show modal for, or null to
  *   show a modal to add a new Budget.
- * @param {Object} dataTableObj - passed on to ``handleForm()``
+ * @param {(Object|null)} dataTableObj - passed on to ``handleForm()``
  */
 function budgetModal(id, dataTableObj) {
     $('#modalBody').empty();
