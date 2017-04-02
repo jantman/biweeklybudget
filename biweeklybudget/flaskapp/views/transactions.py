@@ -123,17 +123,15 @@ class TransactionsAjax(SearchableAjaxView):
         :rtype: ``sqlalchemy.orm.query.Query``
         """
         # Ok, build our filter...
-        type_filter = args['columns'][1]['search']['value']
-        if type_filter != '' and type_filter != 'None':
-            qs = qs.filter(
-                ScheduledTransaction.schedule_type.__eq__(type_filter)
-            )
+        acct_filter = args['columns'][3]['search']['value']
+        if acct_filter != '' and acct_filter != 'None':
+            qs = qs.filter(Transaction.account_id == acct_filter)
         # search
         if s != '' and s != 'FILTERHACK':
             if len(s) < 3:
                 return qs
             s = '%' + s + '%'
-            qs = qs.filter(ScheduledTransaction.description.like(s))
+            qs = qs.filter(Transaction.description.like(s))
         return qs
 
     def get(self):

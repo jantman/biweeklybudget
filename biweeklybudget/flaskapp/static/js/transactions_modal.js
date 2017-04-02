@@ -157,7 +157,7 @@ function schedModalDivFillAndShow(msg) {
  *   or null to show modal to add a new ScheduledTransaction.
  * @param {(Object|null)} dataTableObj - passed on to :js:func:`handleForm`
  */
-function schedModal(id, dataTableObj) {
+function transModal(id, dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(schedModalDivForm());
     $('#sched_frm_group_date_input').datepicker({

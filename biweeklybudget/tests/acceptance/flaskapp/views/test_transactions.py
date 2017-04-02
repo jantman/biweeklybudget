@@ -45,16 +45,16 @@ from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 
 
 @pytest.mark.acceptance
-class DONOTTestSchedTrans(AcceptanceHelper):
+class TestTransactions(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        selenium.get(base_url + '/transactions')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'Scheduled Transactions - BiweeklyBudget'
+        assert heading.text == 'Transactions - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')
@@ -69,180 +69,142 @@ class DONOTTestSchedTrans(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestSchedTransDefault(AcceptanceHelper):
+class TestTransactionsDefault(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         self.dt = dtnow()
-        selenium.get(base_url + '/scheduled')
+        selenium.get(base_url + '/transactions')
 
     def test_table(self, selenium):
-        table = selenium.find_element_by_id('table-scheduled-txn')
+        table = selenium.find_element_by_id('table-transactions')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
         assert texts == [
             [
-                'yes',
-                'per period',
-                '1 per period',
-                '$-333.33',
-                'ST3',
-                'BankTwoStale (2)',
-                'Standing1 (4)'
-            ],
-            [
-                'yes',
-                'monthly',
-                '4th',
-                '$222.22',
-                'ST2',
-                'BankOne (1)',
-                'Periodic2 (2)'
-            ],
-            [
-                'yes',
-                'date',
                 (self.dt + timedelta(days=4)).date().strftime('%Y-%m-%d'),
-                '$111.11',
-                'ST1',
+                '$111.13',
+                'T1foo',
                 'BankOne (1)',
-                'Periodic1 (1)'
+                'Periodic1 (1)',
+                'Yes (1)',
+                '$111.11'
             ],
             [
-                'NO',
-                'per period',
-                '3 per period',
-                '$666.66',
-                'ST6',
+                self.dt.date().strftime('%Y-%m-%d'),
+                '$-333.33',
+                'T2',
                 'BankTwoStale (2)',
-                'Standing1 (4)'
+                'Standing1 (4)',
+                'Yes (3)',
+                ''
             ],
             [
-                'NO',
-                'monthly',
-                '5th',
-                '$555.55',
-                'ST5',
-                'BankOne (1)',
-                'Periodic2 (2)'
-            ],
-            [
-                'NO',
-                'date',
-                (self.dt + timedelta(days=5)).date().strftime('%Y-%m-%d'),
-                '$444.44',
-                'ST4',
-                'BankOne (1)',
-                'Periodic1 (1)'
+                (self.dt - timedelta(days=2)).date().strftime('%Y-%m-%d'),
+                '$222.22',
+                'T3',
+                'CreditOne (3)',
+                'Periodic2 (2)',
+                '',
+                ''
             ]
         ]
         linkcols = [
             [
+                c[2].get_attribute('innerHTML'),
+                c[3].get_attribute('innerHTML'),
                 c[4].get_attribute('innerHTML'),
-                c[5].get_attribute('innerHTML'),
-                c[6].get_attribute('innerHTML')
+                c[5].get_attribute('innerHTML')
             ]
             for c in elems
         ]
         assert linkcols[0] == [
-            '<a href="javascript:schedModal(3, mytable)">ST3</a>',
-            '<a href="/accounts/2">BankTwoStale (2)</a>',
-            '<a href="/budgets/4">Standing1 (4)</a>'
+            '<a href="javascript:transModal(1, mytable)">T1foo</a>',
+            '<a href="/accounts/1">BankOne (1)</a>',
+            '<a href="/budgets/1">Periodic1 (1)</a>',
+            '<a href="/scheduled/1">Yes (1)</a>'
         ]
         assert linkcols[1] == [
-            '<a href="javascript:schedModal(2, mytable)">ST2</a>',
-            '<a href="/accounts/1">BankOne (1)</a>',
-            '<a href="/budgets/2">Periodic2 (2)</a>'
+            '<a href="javascript:transModal(2, mytable)">T2</a>',
+            '<a href="/accounts/2">BankTwoStale (2)</a>',
+            '<a href="/budgets/4">Standing1 (4)</a>',
+            '<a href="/scheduled/3">Yes (3)</a>'
         ]
         assert linkcols[2] == [
-            '<a href="javascript:schedModal(1, mytable)">ST1</a>',
-            '<a href="/accounts/1">BankOne (1)</a>',
-            '<a href="/budgets/1">Periodic1 (1)</a>'
-        ]
-        assert linkcols[3] == [
-            '<a href="javascript:schedModal(6, mytable)">ST6</a>',
-            '<a href="/accounts/2">BankTwoStale (2)</a>',
-            '<a href="/budgets/4">Standing1 (4)</a>'
-        ]
-        assert linkcols[4] == [
-            '<a href="javascript:schedModal(5, mytable)">ST5</a>',
-            '<a href="/accounts/1">BankOne (1)</a>',
-            '<a href="/budgets/2">Periodic2 (2)</a>'
-        ]
-        assert linkcols[5] == [
-            '<a href="javascript:schedModal(4, mytable)">ST4</a>',
-            '<a href="/accounts/1">BankOne (1)</a>',
-            '<a href="/budgets/1">Periodic1 (1)</a>'
+            '<a href="javascript:transModal(3, mytable)">T3</a>',
+            '<a href="/accounts/3">CreditOne (3)</a>',
+            '<a href="/budgets/2">Periodic2 (2)</a>',
+            '&nbsp;'
         ]
 
     def test_filter_opts(self, selenium):
-        selenium.get(self.baseurl + '/scheduled')
-        acct_filter = Select(selenium.find_element_by_id('type_filter'))
+        selenium.get(self.baseurl + '/transactions')
+        acct_filter = Select(selenium.find_element_by_id('account_filter'))
         # find the options
         opts = []
         for o in acct_filter.options:
             opts.append([o.get_attribute('value'), o.text])
         assert opts == [
             ['None', ''],
-            ['date', 'Date'],
-            ['monthly', 'Monthly'],
-            ['per period', 'Per Period']
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
         ]
 
     def test_filter(self, selenium):
         p1trans = [
-            'ST3',
-            'ST2',
-            'ST1',
-            'ST6',
-            'ST5',
-            'ST4'
+            'T1foo',
+            'T2',
+            'T3'
         ]
-        selenium.get(self.baseurl + '/scheduled')
+        selenium.get(self.baseurl + '/transactions')
         table = self.retry_stale(
             selenium.find_element_by_id,
-            'table-scheduled-txn'
+            'table-transactions'
         )
         texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
+        trans = [t[2] for t in texts]
         # check sanity
         assert trans == p1trans
-        type_filter = Select(selenium.find_element_by_id('type_filter'))
+        acct_filter = Select(selenium.find_element_by_id('account_filter'))
         # select Monthly
-        type_filter.select_by_value('monthly')
+        acct_filter.select_by_value('1')
         table = self.retry_stale(
             selenium.find_element_by_id,
-            'table-scheduled-txn'
+            'table-transactions'
         )
         texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
-        assert trans == ['ST2', 'ST5']
+        trans = [t[2] for t in texts]
+        assert trans == ['T1foo']
         # select back to all
-        type_filter.select_by_value('None')
+        acct_filter.select_by_value('None')
         table = self.retry_stale(
             selenium.find_element_by_id,
-            'table-scheduled-txn'
+            'table-transactions'
         )
         texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
+        trans = [t[2] for t in texts]
         assert trans == p1trans
 
     def test_search(self, selenium):
-        selenium.get(self.baseurl + '/scheduled')
+        selenium.get(self.baseurl + '/transactions')
         search = self.retry_stale(
             selenium.find_element_by_xpath,
             '//input[@type="search"]'
         )
-        search.send_keys('ST3')
+        search.send_keys('foo')
         table = self.retry_stale(
             selenium.find_element_by_id,
-            'table-scheduled-txn'
+            'table-transactions'
         )
         texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
+        trans = [t[2] for t in texts]
         # check sanity
-        assert trans == ['ST3']
+        assert trans == ['T1foo']
 
 
 @pytest.mark.acceptance

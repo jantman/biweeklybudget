@@ -174,7 +174,7 @@ class SampleDataLoader(object):
                 date=(self.dt + timedelta(days=4)).date(),
                 actual_amount=111.13,
                 budgeted_amount=111.11,
-                description='T1',
+                description='T1foo',
                 notes='notesT1',
                 account=self.accounts['BankOne']['account'],
                 scheduled_trans=self.scheduled_transactions[0],

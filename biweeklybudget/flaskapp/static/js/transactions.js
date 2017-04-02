@@ -56,7 +56,7 @@ $(document).ready(function() {
             {
                 data: "description",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "javascript:schedModal(" + row.DT_RowData.id + ", mytable)").text(data)).html();
+                    return $("<div>").append($("<a/>").attr("href", "javascript:transModal(" + row.DT_RowData.id + ", mytable)").text(data)).html();
                 }
             },
             {
@@ -100,19 +100,19 @@ $(document).ready(function() {
         bInfo: true
     });
 
-    $('#table-scheduled-txn_length').parent().removeClass('col-sm-6');
-    $('#table-scheduled-txn_length').parent().addClass('col-sm-4');
-    $('#table-scheduled-txn_filter').parent().removeClass('col-sm-6');
-    $('#table-scheduled-txn_filter').parent().addClass('col-sm-4');
-    var acctsel = '<div class="col-sm-4"><div id="table-scheduled-txn_acct_filter" class="dataTables_length"><label>Type: <select name="type_filter" id="type_filter" class="form-control input-sm" aria-controls="table-scheduled-txn"><option value="None" selected="selected"></option><option value="date">Date</option><option value="monthly">Monthly</option><option value="per period">Per Period</option>';
-    acctsel += '</select></label></div></div>';
-    $(acctsel).insertAfter($('#table-scheduled-txn_length').parent());
-    $('#type_filter').on('change', function() {
-        var selectedVal = $(this).val();
-        mytable.fnFilter(selectedVal, 1, false);
+    $('#table-transactions_length').parent().removeClass('col-sm-6');
+    $('#table-transactions_length').parent().addClass('col-sm-4');
+    $('#table-transactions_filter').parent().removeClass('col-sm-6');
+    $('#table-transactions_filter').parent().addClass('col-sm-4');
+    var acctsel = '<div class="col-sm-4"><div id="table-transactions_acct_filter" class="dataTables_length"><label>Account: <select name="account_filter" id="account_filter" class="form-control input-sm" aria-controls="table-transactions">';
+    acctsel += '<option value="None" selected="selected"></option>';
+    Object.keys(acct_names_to_id).forEach(function (key) {
+        acctsel += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
     });
-
-    $('#btn_add_sched').click(function() {
-        schedModal(null, mytable);
+    acctsel += '</select></label></div></div>';
+    $(acctsel).insertAfter($('#table-transactions_length').parent());
+    $('#account_filter').on('change', function() {
+        var selectedVal = $(this).val();
+        mytable.fnFilter(selectedVal, 3, false);
     });
 });
