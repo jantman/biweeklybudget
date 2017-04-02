@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import timedelta
+from datetime import timedelta, date
 from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
@@ -251,6 +251,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(3)
+        assert t is not None
         assert t.description == 'ST3'
         assert t.num_per_period == 1
         assert t.date is None
@@ -320,6 +321,7 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(2)
+        assert t is not None
         assert t.description == 'ST2'
         assert t.num_per_period is None
         assert t.date is None
@@ -363,6 +365,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(4)
+        assert t is not None
         assert t.description == 'ST4'
         assert t.num_per_period is None
         assert t.date == (
@@ -412,9 +415,9 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         desc.send_keys('edited')
         _type = body.find_element_by_id('sched_frm_type_date')
         _type.click()
-        date = body.find_element_by_id('sched_frm_date')
-        date.clear()
-        date.send_keys((dtnow() + timedelta(days=1)).strftime('%Y-%m-%d'))
+        date_input = body.find_element_by_id('sched_frm_date')
+        date_input.clear()
+        date_input.send_keys((dtnow() + timedelta(days=1)).strftime('%Y-%m-%d'))
         amt = body.find_element_by_id('sched_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
@@ -446,6 +449,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
 
     def test_3_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(4)
+        assert t is not None
         assert t.description == 'ST4edited'
         assert t.num_per_period is None
         assert t.date == (
@@ -456,4 +460,192 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         assert t.account_id == 2
         assert t.budget_id == 4
         assert t.notes == 'notesST4'
+        assert t.is_active is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransAddDate(AcceptanceHelper):
+
+    def test_1_modal_on_click(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/scheduled')
+        link = selenium.find_element_by_id('btn_add_sched')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Scheduled Transaction'
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('NewST7')
+        _type = body.find_element_by_id('sched_frm_type_date')
+        _type.click()
+        date_input = body.find_element_by_id('sched_frm_date')
+        # BEGIN select the 15th of this month from the popup
+        dnow = dtnow()
+        expected_date = date(year=dnow.year, month=dnow.month, day=15)
+        date_input.click()
+        date_number = body.find_element_by_xpath(
+            '//td[@class="day" and text()="15"]'
+        )
+        date_number.click()
+        # END date chooser popup
+        assert date_input.get_attribute(
+            'value') == expected_date.strftime('%Y-%m-%d')
+        amt = body.find_element_by_id('sched_frm_amount')
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        acct_sel.select_by_value('1')
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        budget_sel.select_by_value('1')
+        is_active = selenium.find_element_by_id('sched_frm_active')
+        assert is_active.is_selected()
+        notes = body.find_element_by_id('sched_frm_notes')
+        notes.send_keys('foo bar baz')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('table-scheduled-txn')
+        texts = [x[4] for x in self.tbody2textlist(table)]
+        assert 'NewST7' in texts
+
+    def test_3_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'NewST7'
+        assert t.num_per_period is None
+        dnow = dtnow()
+        assert t.date == date(year=dnow.year, month=dnow.month, day=15)
+        assert t.day_of_month is None
+        assert float(t.amount) == 123.45
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes == 'foo bar baz'
+        assert t.is_active is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransAddMonthly(AcceptanceHelper):
+
+    def test_1_modal_on_click(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/scheduled')
+        link = selenium.find_element_by_id('btn_add_sched')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Scheduled Transaction'
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('NewST7Monthly')
+        _type = body.find_element_by_id('sched_frm_type_monthly')
+        _type.click()
+        day_input = body.find_element_by_id('sched_frm_day_of_month')
+        day_input.send_keys('4')
+        amt = body.find_element_by_id('sched_frm_amount')
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        acct_sel.select_by_value('2')
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        budget_sel.select_by_value('2')
+        is_active = selenium.find_element_by_id('sched_frm_active')
+        assert is_active.is_selected()
+        notes = body.find_element_by_id('sched_frm_notes')
+        notes.send_keys('foo bar baz')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('table-scheduled-txn')
+        texts = [x[4] for x in self.tbody2textlist(table)]
+        assert 'NewST7Monthly' in texts
+
+    def test_3_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'NewST7Monthly'
+        assert t.num_per_period is None
+        assert t.date is None
+        assert t.day_of_month == 4
+        assert float(t.amount) == 123.45
+        assert t.account_id == 2
+        assert t.budget_id == 2
+        assert t.notes == 'foo bar baz'
+        assert t.is_active is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransAddPerPeriod(AcceptanceHelper):
+
+    def test_1_modal_on_click(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/scheduled')
+        link = selenium.find_element_by_id('btn_add_sched')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Scheduled Transaction'
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('NewST7PerPeriod')
+        _type = body.find_element_by_id('sched_frm_type_per_period')
+        _type.click()
+        date_input = body.find_element_by_id('sched_frm_num_per_period')
+        date_input.send_keys('2')
+        amt = body.find_element_by_id('sched_frm_amount')
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        acct_sel.select_by_value('1')
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        budget_sel.select_by_value('1')
+        is_active = selenium.find_element_by_id('sched_frm_active')
+        assert is_active.is_selected()
+        notes = body.find_element_by_id('sched_frm_notes')
+        notes.send_keys('foo bar baz')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('table-scheduled-txn')
+        texts = [x[4] for x in self.tbody2textlist(table)]
+        assert 'NewST7PerPeriod' in texts
+
+    def test_3_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'NewST7PerPeriod'
+        assert t.num_per_period == 2
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == 123.45
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes == 'foo bar baz'
         assert t.is_active is True
