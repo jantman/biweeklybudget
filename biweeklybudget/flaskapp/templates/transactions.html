@@ -1,12 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Transactions - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- DataTables CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = {{ accts[name] }};
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for name in budgets.keys()|sort %}
+        budget_names_to_id["{{ name }}"] = {{ budgets[name] }};
+        {% endfor %}
+    </script>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Transactions</h1>
+                    <div><p><button type="button" class="btn btn-primary" id="btn_add_trans">Add Transaction</button></p></div>
+                    <table id="table-transactions" class="table table-striped table-bordered table-hover" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Account</th>
+                            <th>Budget</th>
+                            <th>Scheduled?</th>
+                            <th>Budgeted Amount</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Account</th>
+                            <th>Budget</th>
+                            <th>Scheduled?</th>
+                            <th>Budgeted Amount</th>
+                        </tr>
+                        </tfoot>
+                    </table>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- DataTables JavaScript -->
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/transactions.js"></script>
+<script src="/static/js/transactions_modal.js"></script>
+<script>
+/* BEGIN conditional default modal for /transactions/<id> */
+{% if trans_id is defined and trans_id is not none %}
+transactionModal({{ trans_id }}, mytable);
+{% endif %}
+/* END conditional default modal for /transactions/<id> */
+</script>
 {% endblock %}

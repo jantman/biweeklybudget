@@ -47,6 +47,8 @@ class SampleDataLoader(object):
         self.db = db_session
         self.accounts = {}
         self.statements = {}
+        self.budgets = {}
+        self.scheduled_transactions = []
         self.transactions = {}
         self.dt = dtnow()
 
@@ -61,6 +63,7 @@ class SampleDataLoader(object):
         }
         self.budgets = self._budgets()
         self.scheduled_transactions = self._scheduled_transactions()
+        self.transactions = self._transactions()
 
     def _budgets(self):
         res = {
@@ -159,6 +162,41 @@ class SampleDataLoader(object):
                 budget=self.budgets['Standing1'],
                 num_per_period=3,
                 is_active=False
+            )
+        ]
+        for x in res:
+            self.db.add(x)
+        return res
+
+    def _transactions(self):
+        res = [
+            Transaction(
+                date=(self.dt + timedelta(days=4)).date(),
+                actual_amount=111.13,
+                budgeted_amount=111.11,
+                description='T1',
+                notes='notesT1',
+                account=self.accounts['BankOne']['account'],
+                scheduled_trans=self.scheduled_transactions[0],
+                budget=self.budgets['Periodic1']
+            ),
+            Transaction(
+                date=self.dt.date(),
+                actual_amount=-333.33,
+                budgeted_amount=-333.33,
+                description='T2',
+                notes='notesT2',
+                account=self.accounts['BankTwoStale']['account'],
+                scheduled_trans=self.scheduled_transactions[2],
+                budget=self.budgets['Standing1']
+            ),
+            Transaction(
+                date=(self.dt - timedelta(days=2)).date(),
+                actual_amount=222.22,
+                description='T3',
+                notes='notesT3',
+                account=self.accounts['CreditOne']['account'],
+                budget=self.budgets['Periodic2']
             )
         ]
         for x in res:
