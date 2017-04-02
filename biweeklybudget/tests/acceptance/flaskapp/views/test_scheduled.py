@@ -515,7 +515,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
         self.wait_for_jquery_done(selenium)
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
-        texts = [x[4] for x in self.tbody2textlist(table)]
+        texts = [y[4] for y in self.tbody2textlist(table)]
         assert 'NewST7' in texts
 
     def test_3_verify_db(self, testdb):
@@ -575,7 +575,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         self.wait_for_jquery_done(selenium)
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
-        texts = [x[4] for x in self.tbody2textlist(table)]
+        texts = [y[4] for y in self.tbody2textlist(table)]
         assert 'NewST7Monthly' in texts
 
     def test_3_verify_db(self, testdb):
@@ -634,7 +634,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         self.wait_for_jquery_done(selenium)
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
-        texts = [x[4] for x in self.tbody2textlist(table)]
+        texts = [y[4] for y in self.tbody2textlist(table)]
         assert 'NewST7PerPeriod' in texts
 
     def test_3_verify_db(self, testdb):
