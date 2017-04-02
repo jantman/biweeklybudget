@@ -313,12 +313,6 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
         assert selenium.find_element_by_id('sched_frm_active').is_selected()
 
-    def test_2_modal_edit(self, base_url, selenium):
-        pass
-
-    def test_3_verify_db(self, testdb):
-        pass
-
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
@@ -361,12 +355,6 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
         budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
         assert selenium.find_element_by_id('sched_frm_active').is_selected()
-
-    def test_2_modal_edit(self, base_url, selenium):
-        pass
-
-    def test_3_verify_db(self, testdb):
-        pass
 
 
 @pytest.mark.acceptance
@@ -416,7 +404,56 @@ class TestSchedTransDateInactive(AcceptanceHelper):
             'sched_frm_active').is_selected() is False
 
     def test_2_modal_edit(self, base_url, selenium):
-        pass
+        self.baseurl = base_url
+        selenium.get(base_url + '/scheduled/4')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('edited')
+        _type = body.find_element_by_id('sched_frm_type_date')
+        _type.click()
+        date = body.find_element_by_id('sched_frm_date')
+        date.clear()
+        date.send_keys((dtnow() + timedelta(days=1)).strftime('%Y-%m-%d'))
+        amt = body.find_element_by_id('sched_frm_amount')
+        amt.clear()
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        acct_sel.select_by_value('2')
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        budget_sel.select_by_value('4')
+        is_active = selenium.find_element_by_id('sched_frm_active')
+        is_active.click()
+        assert is_active.is_selected()
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 4 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('table-scheduled-txn')
+        texts = self.tbody2textlist(table)
+        # sort order changes when we make this active
+        assert texts[2][0] == 'yes'
+        assert texts[2][4] == 'ST4edited'
 
     def test_3_verify_db(self, testdb):
-        pass
+        t = testdb.query(ScheduledTransaction).get(4)
+        assert t.description == 'ST4edited'
+        assert t.num_per_period is None
+        assert t.date == (
+            dtnow() + timedelta(days=1)
+        ).date()
+        assert t.day_of_month is None
+        assert float(t.amount) == 123.45
+        assert t.account_id == 2
+        assert t.budget_id == 4
+        assert t.notes == 'notesST4'
+        assert t.is_active is True

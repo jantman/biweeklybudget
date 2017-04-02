@@ -40,6 +40,7 @@ from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
 from copy import copy
+from datetime import datetime
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
@@ -205,8 +206,17 @@ class SchedTransFormHandler(FormHandlerView):
         """
         have_errors = False
         errors = {k: [] for k in data.keys()}
-        if data.get('name', '').strip() == '':
-            errors['name'].append('Name cannot be empty')
+        if data.get('description', '').strip() == '':
+            errors['description'].append('Description cannot be empty')
+            have_errors = True
+        if float(data['amount']) == 0:
+            errors['amount'].append('Amount cannot be zero')
+            have_errors = True
+        if data['account'] == 'None':
+            errors['account'].append('Transactions must have an account')
+            have_errors = True
+        if data['budget'] == 'None':
+            errors['budget'].append('Transactions must have a budget')
             have_errors = True
         if have_errors:
             return errors
@@ -224,29 +234,35 @@ class SchedTransFormHandler(FormHandlerView):
         """
         if 'id' in data and data['id'].strip() != '':
             # updating an existing budget
-            budget = db_session.query(Budget).get(int(data['id']))
-            if budget is None:
-                raise RuntimeError("Error: no Budget with ID %s" % data['id'])
-            action = 'updating Budget ' + data['id']
+            trans = db_session.query(ScheduledTransaction).get(int(data['id']))
+            if trans is None:
+                raise RuntimeError("Error: no ScheduledTransaction with ID "
+                                   "%s" % data['id'])
+            action = 'updating ScheduledTransaction ' + data['id']
         else:
-            budget = Budget()
-            action = 'creating new Budget'
-        budget.name = data['name'].strip()
-        budget.description = data['description'].strip()
-        if data['is_periodic'] == 'true':
-            budget.is_periodic = True
-            budget.starting_balance = data['starting_balance']
+            trans = ScheduledTransaction()
+            action = 'creating new ScheduledTransaction'
+        trans.description = data['description'].strip()
+        if data['type'] == 'monthly':
+            trans.day_of_month = int(data['day_of_month'])
+        elif data['type'] == 'per_period':
+            trans.num_per_period = int(data['num_per_period'])
         else:
-            budget.is_periodic = False
-            budget.current_balance = data['current_balance']
+            # date
+            trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        trans.amount = float(data['amount'])
+        trans.account_id = int(data['account'])
+        trans.budget_id = int(data['budget'])
+        trans.notes = data['notes'].strip()
         if data['is_active'] == 'true':
-            budget.is_active = True
+            trans.is_active = True
         else:
-            budget.is_active = False
-        logger.info('%s: %s', action, budget.as_dict)
-        db_session.add(budget)
+            trans.is_active = False
+        logger.info('%s: %s', action, trans.as_dict)
+        db_session.add(trans)
         db_session.commit()
-        return 'Successfully saved Budget %d in database.' % budget.id
+        return 'Successfully saved ScheduledTransaction' \
+               ' %d in database.' % trans.id
 
 
 app.add_url_rule(

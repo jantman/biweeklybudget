@@ -45,12 +45,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  *  be emptied and replaced with a success message.
  * @param {string} form_id - The ID of the form itself.
  * @param {string} post_url - Relative URL to post form data to.
+ * @param {Object} dataTableObj - passed on to ``handleFormSubmitted()``
  */
-function handleForm(container_id, form_id, post_url, doRefresh) {
-    console.log(
-      'Modal form save clicked; container_id=%s form_id=%s post_url=%s',
-      container_id, form_id, post_url
-    );
+function handleForm(container_id, form_id, post_url, dataTableObj) {
+    console.log(dataTableObj);
     var data = serializeForm(form_id);
     $('.formfeedback').remove();
     $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
@@ -59,7 +57,7 @@ function handleForm(container_id, form_id, post_url, doRefresh) {
         url: post_url,
         data: data,
         success: function(data) {
-            handleFormSubmitted(data, container_id, form_id, doRefresh);
+            handleFormSubmitted(data, container_id, form_id, dataTableObj);
         },
         error: function(jqXHR, textStatus, errorThrown) {
             handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
@@ -71,8 +69,14 @@ function handleForm(container_id, form_id, post_url, doRefresh) {
  * Handle the response from the API URL that the form data is POSTed to.
  *
  * This should either display a success message, or one or more error messages.
+ *
+ * @param {Object} data - response data
+ * @param {string} container_id - the ID of the modal container on the page
+ * @param {string} form_id - the ID of the form on the page
+ * @param {Object} dataTableObj - A reference to the DataTable on the page, that
+ *   needs to be refreshed. If null, reload the whole page.
  */
-function handleFormSubmitted(data, container_id, form_id, doRefresh) {
+function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
     if(data.hasOwnProperty('error_message')) {
         $('#' + container_id).prepend(
             '<div class="alert alert-danger formfeedback">' +
@@ -92,7 +96,10 @@ function handleFormSubmitted(data, container_id, form_id, doRefresh) {
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
             var oneitem_re = /\/\d+$/;
-            if (doRefresh === true) {
+            if (dataTableObj) {
+                dataTableObj.api().ajax.reload();
+            } else {
+                // dataTableObj is null, refresh the page
                 if (oneitem_re.test(window.location.href)) {
                     // don't reload if it will just show the modal again
                     var url = window.location.href.replace(/\/\d+$/, "");

@@ -58,6 +58,8 @@ class FormHandlerView(MethodView):
         data = request.form.to_dict()
         res = self.validate(data)
         if res is not None:
+            logger.info('Form validation failed. data=%s errors=%s',
+                        data, res)
             return jsonify({
                 'success': False,
                 'errors': res
@@ -65,6 +67,8 @@ class FormHandlerView(MethodView):
         try:
             res = self.submit(data)
         except Exception as ex:
+            logger.warning('Form submission failed. data=%s', data,
+                           exc_info=True)
             return jsonify({
                 'success': False,
                 'error_message': str(ex)

@@ -35,6 +35,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
+// for the DataTable
+var mytable;
+
 /**
  * Handle change of the "Type" radio buttons on the modal
  */
@@ -113,7 +116,6 @@ function modalDivForm() {
  * Ajax callback to fill in the modalDiv with data on a budget.
  */
 function modalDivFillAndShow(msg) {
-    console.log(msg);
     $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
     $('#sched_frm_id').val(msg['id']);
     $('#sched_frm_description').val(msg['description']);
@@ -170,7 +172,7 @@ function schedModal(id) {
 }
 
 $('#modalSaveButton').click(function() {
-    handleForm('modalBody', 'schedForm', '/forms/scheduled', false);
+    handleForm('modalBody', 'schedForm', '/forms/scheduled', mytable);
 });
 
 $('#btn_add_sched').click(function() {
@@ -178,7 +180,7 @@ $('#btn_add_sched').click(function() {
 });
 
 $(document).ready(function() {
-    var mytable = $('#table-scheduled-txn').dataTable({
+    mytable = $('#table-scheduled-txn').dataTable({
         processing: true,
         serverSide: true,
         ajax: "/ajax/scheduled",
