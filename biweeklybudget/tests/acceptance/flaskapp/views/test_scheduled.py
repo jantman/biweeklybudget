@@ -41,6 +41,7 @@ from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 
 
 @pytest.mark.acceptance
@@ -245,51 +246,76 @@ class TestSchedTransDefault(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestSchedTransTransModal(AcceptanceHelper):
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def test_0_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(3)
+        assert t.description == 'ST3'
+        assert t.num_per_period == 1
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == -333.33
+        assert t.account_id == 2
+        assert t.budget_id == 4
+        assert t.notes == 'notesST3'
+        assert t.is_active is True
+
+    def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/ofx')
-
-    def test_modal_on_click(self, selenium):
-        link = selenium.find_element_by_xpath('//a[text()="T1"]')
+        selenium.get(base_url + '/scheduled')
+        link = selenium.find_element_by_xpath('//a[text()="ST3"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'OFXTransaction Account=3 FITID=T1'
-        texts = self.tbody2textlist(body)
-        elems = self.tbody2elemlist(body)
-        pdate = (dtnow() - timedelta(hours=22))
-        fdate = (dtnow() - timedelta(hours=13))
-        assert texts == [
-            ['Account', 'CreditOne (3)'],
-            ['FITID', 'T1'],
-            ['Date Posted', pdate.strftime('%Y-%m-%d')],
-            ['Amount', '$123.81'],
-            ['Name', '123.81 Credit Purchase T1'],
-            ['Memo', '38328'],
-            ['Type', 'Purchase'],
-            ['Description', 'CreditOneT1Desc'],
-            ['Notes', ''],
-            ['Checknum', '123'],
-            ['MCC', 'T1mcc'],
-            ['SIC', 'T1sic'],
-            ['OFX Statement'],
-            ['ID', '4'],
-            ['Date', fdate.strftime('%Y-%m-%d')],
-            ['Filename', '/stmt/CreditOne/0'],
-            ['File mtime', fdate.strftime('%Y-%m-%d')],
-            ['Ledger Balance', '$952.06']
+        assert title.text == 'Edit Scheduled Transaction 3'
+        assert body.find_element_by_id(
+            'sched_frm_id').get_attribute('value') == '3'
+        assert body.find_element_by_id(
+            'sched_frm_description').get_attribute('value') == 'ST3'
+        assert body.find_element_by_id(
+            'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_date').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_per_period').is_selected()
+        assert body.find_element_by_id(
+            'sched_frm_num_per_period').get_attribute('value') == '1'
+        assert body.find_element_by_id(
+            'sched_frm_amount').get_attribute('value') == '-333.33'
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
         ]
-        assert elems[0][1].get_attribute(
-            'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
-        assert selenium.find_element_by_id(
-            'modalSaveButton').is_displayed() is False
+        assert acct_sel.first_selected_option.get_attribute('value') == '2'
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '2'
+        assert selenium.find_element_by_id('sched_frm_active').is_selected()
 
 
 @pytest.mark.acceptance
-class DONOTTestSchedTransTransURL(AcceptanceHelper):
+class DONOTTestSchedTransURL(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa

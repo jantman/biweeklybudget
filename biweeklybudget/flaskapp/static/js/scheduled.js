@@ -114,26 +114,35 @@ function modalDivForm() {
  */
 function modalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
-    /*
     $('#sched_frm_id').val(msg['id']);
-    $('#sched_frm_name').val(msg['name']);
-    if(msg['is_periodic'] === true) {
-        $('#sched_frm_type_standing').prop('checked', false);
-        $('#sched_frm_type_periodic').prop('checked', true);
+    $('#sched_frm_description').val(msg['description']);
+    if(msg['date'] != null) {
+        $('#sched_frm_type_monthly').prop('checked', false);
+        $('#sched_frm_type_per_period').prop('checked', false);
+        $('#sched_frm_type_date').prop('checked', true);
+        $('#sched_frm_date').val(msg['date']);
+    } else if(msg['day_of_month'] != null) {
+        $('#sched_frm_type_per_period').prop('checked', false);
+        $('#sched_frm_type_date').prop('checked', false);
+        $('#sched_frm_type_monthly').prop('checked', true);
+        $('#sched_frm_day_of_month').val(msg['day_of_month']);
     } else {
-        $('#sched_frm_type_periodic').prop('checked', false);
-        $('#sched_frm_type_standing').prop('checked', true);
+        // num_per_period
+        $('#sched_frm_type_monthly').prop('checked', false);
+        $('#sched_frm_type_date').prop('checked', false);
+        $('#sched_frm_type_per_period').prop('checked', true);
+        $('#sched_frm_num_per_period').val(msg['num_per_period']);
     }
     modalDivHandleType();
-    $('#sched_frm_description').val(msg['description']);
-    $('#sched_frm_starting_balance').val(msg['starting_balance']);
-    $('#sched_frm_current_balance').val(msg['current_balance']);
+    $('#sched_frm_amount').val(msg['amount']);
+    $('#sched_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
+    $('#sched_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
+    $('#sched_frm_notes').val(msg['notes']);
     if(msg['is_active'] === true) {
         $('#sched_frm_active').prop('checked', true);
     } else {
         $('#sched_frm_active').prop('checked', false);
     }
-    */
     $("#modalDiv").modal('show');
 }
 

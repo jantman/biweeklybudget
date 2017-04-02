@@ -39,6 +39,7 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
+from copy import copy
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
@@ -180,7 +181,10 @@ class OneScheduledAjax(MethodView):
 
     def get(self, sched_trans_id):
         t = db_session.query(ScheduledTransaction).get(sched_trans_id)
-        return jsonify(t.as_dict)
+        d = copy(t.as_dict)
+        d['account_name'] = t.account.name
+        d['budget_name'] = t.budget.name
+        return jsonify(d)
 
 
 app.add_url_rule(
