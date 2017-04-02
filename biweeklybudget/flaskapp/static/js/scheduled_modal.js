@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 /**
  * Handle change of the "Type" radio buttons on the modal
  */
-function modalDivHandleType() {
+function schedModalDivHandleType() {
     if($('#sched_frm_type_monthly').is(':checked')) {
         $('#sched_frm_group_monthly').show();
         $('#sched_frm_group_num_per_period').hide();
@@ -57,7 +57,7 @@ function modalDivHandleType() {
 /**
  * Generate the HTML for the form on the Modal
  */
-function modalDivForm() {
+function schedModalDivForm() {
     var frm = '<form role="form" id="schedForm">';
     // id
     frm += '<input type="hidden" id="sched_frm_id" name="id" value="">\n';
@@ -65,9 +65,9 @@ function modalDivForm() {
     frm += '<div class="form-group"><label for="sched_frm_description" class="control-label">Description</label><input class="form-control" id="sched_frm_description" name="description" type="text"></div>\n';
     // type
     frm += '<div class="form-group"><label class="control-label">Type </label> ';
-    frm += '<label class="radio-inline" for="sched_frm_type_monthly"><input type="radio" name="type" id="sched_frm_type_monthly" value="monthly" onchange="modalDivHandleType()" checked>Monthly</label>';
-    frm += '<label class="radio-inline" for="sched_frm_type_per_period"><input type="radio" name="type" id="sched_frm_type_per_period" value="per_period" onchange="modalDivHandleType()">Per Period</label>';
-    frm += '<label class="radio-inline" for="sched_frm_type_date"><input type="radio" name="type" id="sched_frm_type_date" value="date" onchange="modalDivHandleType()">Date</label>';
+    frm += '<label class="radio-inline" for="sched_frm_type_monthly"><input type="radio" name="type" id="sched_frm_type_monthly" value="monthly" onchange="schedModalDivHandleType()" checked>Monthly</label>';
+    frm += '<label class="radio-inline" for="sched_frm_type_per_period"><input type="radio" name="type" id="sched_frm_type_per_period" value="per_period" onchange="schedModalDivHandleType()">Per Period</label>';
+    frm += '<label class="radio-inline" for="sched_frm_type_date"><input type="radio" name="type" id="sched_frm_type_date" value="date" onchange="schedModalDivHandleType()">Date</label>';
     frm += '</div>\n';
     // recurrence - monthly
     frm += '<div class="form-group" id="sched_frm_group_monthly">';
@@ -112,7 +112,7 @@ function modalDivForm() {
 /**
  * Ajax callback to fill in the modalDiv with data on a budget.
  */
-function modalDivFillAndShow(msg) {
+function schedModalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
     $('#sched_frm_id').val(msg['id']);
     $('#sched_frm_description').val(msg['description']);
@@ -133,7 +133,7 @@ function modalDivFillAndShow(msg) {
         $('#sched_frm_type_per_period').prop('checked', true);
         $('#sched_frm_num_per_period').val(msg['num_per_period']);
     }
-    modalDivHandleType();
+    schedModalDivHandleType();
     $('#sched_frm_amount').val(msg['amount']);
     $('#sched_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#sched_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
@@ -155,7 +155,7 @@ function modalDivFillAndShow(msg) {
  */
 function schedModal(id, dataTableObj) {
     $('#modalBody').empty();
-    $('#modalBody').append(modalDivForm());
+    $('#modalBody').append(schedModalDivForm());
     $('#sched_frm_group_date_input').datepicker({
         todayBtn: "linked",
         autoclose: true,
@@ -167,7 +167,7 @@ function schedModal(id, dataTableObj) {
     }).show();
     if(id) {
         var url = "/ajax/scheduled/" + id;
-        $.ajax(url).done(modalDivFillAndShow);
+        $.ajax(url).done(schedModalDivFillAndShow);
     } else {
         $('#modalLabel').text('Add New Scheduled Transaction');
         $("#modalDiv").modal('show');

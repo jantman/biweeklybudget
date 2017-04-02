@@ -142,6 +142,7 @@ class TestEditPeriodic1(AcceptanceHelper):
         desc.clear()
         desc.send_keys('EditedP1desc')
         sb = selenium.find_element_by_id('budget_frm_starting_balance')
+        assert sb.is_displayed()
         sb.clear()
         sb.send_keys('2345.67')
         selenium.find_element_by_id('budget_frm_active').click()
@@ -380,6 +381,7 @@ class TestAddStandingBudget(AcceptanceHelper):
         desc.clear()
         desc.send_keys('Newly Added Standing')
         sb = selenium.find_element_by_id('budget_frm_current_balance')
+        assert sb.is_displayed()
         sb.clear()
         sb.send_keys('6789.12')
         assert selenium.find_element_by_id(

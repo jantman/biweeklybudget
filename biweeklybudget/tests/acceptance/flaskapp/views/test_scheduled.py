@@ -480,6 +480,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
         _type = body.find_element_by_id('sched_frm_type_date')
         _type.click()
         date_input = body.find_element_by_id('sched_frm_date')
+        assert date_input.is_displayed()
         # BEGIN select the 15th of this month from the popup
         dnow = dtnow()
         expected_date = date(year=dnow.year, month=dnow.month, day=15)
@@ -550,6 +551,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         _type = body.find_element_by_id('sched_frm_type_monthly')
         _type.click()
         day_input = body.find_element_by_id('sched_frm_day_of_month')
+        assert day_input.is_displayed()
         day_input.send_keys('4')
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')
@@ -609,6 +611,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         _type = body.find_element_by_id('sched_frm_type_per_period')
         _type.click()
         date_input = body.find_element_by_id('sched_frm_num_per_period')
+        assert date_input.is_displayed()
         date_input.send_keys('2')
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')

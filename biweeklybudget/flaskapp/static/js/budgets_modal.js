@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 /**
  * Handle change of the "Type" radio buttons on the modal
  */
-function modalDivHandleType() {
+function budgetModalDivHandleType() {
     if($('#budget_frm_type_standing').is(':checked')) {
         $('#budget_frm_group_starting_balance').hide();
         $('#budget_frm_group_current_balance').show();
@@ -51,14 +51,14 @@ function modalDivHandleType() {
 /**
  * Generate the HTML for the form on the Modal
  */
-function modalDivForm() {
+function budgetModalDivForm() {
     var frm = '<form role="form" id="budgetForm">';
     // id
     frm += '<input type="hidden" id="budget_frm_id" name="id" value="">\n';
     // name
     frm += '<div class="form-group"><label for="budget_frm_name" class="control-label">Name</label><input class="form-control" id="budget_frm_name" name="name" type="text"></div>\n';
     // type
-    frm += '<div class="form-group"><label class="control-label">Type </label> <label class="radio-inline" for="budget_frm_type_periodic"><input type="radio" name="is_periodic" id="budget_frm_type_periodic" value="true" onchange="modalDivHandleType()" checked>Periodic</label><label class="radio-inline" for="budget_frm_type_standing"><input type="radio" name="is_periodic" id="budget_frm_type_standing" value="false" onchange="modalDivHandleType()">Standing</label></div>\n';
+    frm += '<div class="form-group"><label class="control-label">Type </label> <label class="radio-inline" for="budget_frm_type_periodic"><input type="radio" name="is_periodic" id="budget_frm_type_periodic" value="true" onchange="budgetModalDivHandleType()" checked>Periodic</label><label class="radio-inline" for="budget_frm_type_standing"><input type="radio" name="is_periodic" id="budget_frm_type_standing" value="false" onchange="budgetModalDivHandleType()">Standing</label></div>\n';
     // description
     frm += '<div class="form-group"><label for="budget_frm_description" class="control-label">Description</label><input class="form-control" id="budget_frm_description" name="description" type="text"></div>\n';
     // starting balance (for periodic)
@@ -74,7 +74,7 @@ function modalDivForm() {
 /**
  * Ajax callback to fill in the modalDiv with data on a budget.
  */
-function modalDivFillAndShow(msg) {
+function budgetModalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Budget ' + msg['id']);
     $('#budget_frm_id').val(msg['id']);
     $('#budget_frm_name').val(msg['name']);
@@ -85,7 +85,7 @@ function modalDivFillAndShow(msg) {
         $('#budget_frm_type_periodic').prop('checked', false);
         $('#budget_frm_type_standing').prop('checked', true);
     }
-    modalDivHandleType();
+    budgetModalDivHandleType();
     $('#budget_frm_description').val(msg['description']);
     $('#budget_frm_starting_balance').val(msg['starting_balance']);
     $('#budget_frm_current_balance').val(msg['current_balance']);
@@ -106,13 +106,13 @@ function modalDivFillAndShow(msg) {
  */
 function budgetModal(id, dataTableObj) {
     $('#modalBody').empty();
-    $('#modalBody').append(modalDivForm());
+    $('#modalBody').append(budgetModalDivForm());
     $('#modalSaveButton').click(function() {
         handleForm('modalBody', 'budgetForm', '/forms/budget', dataTableObj);
     }).show();
     if(id) {
         var url = "/ajax/budget/" + id;
-        $.ajax(url).done(modalDivFillAndShow);
+        $.ajax(url).done(budgetModalDivFillAndShow);
     } else {
         $('#modalLabel').text('Add New Budget');
         $("#modalDiv").modal('show');
