@@ -83,10 +83,10 @@ class TestBudgets(AcceptanceHelper):
         pelems = self.tbody2elemlist(ptable)
         selems = self.tbody2elemlist(stable)
         assert pelems[1][1].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(2)">' \
+            'innerHTML') == '<a href="javascript:budgetModal(2, null)">' \
                             'Periodic2 (2)</a>'
         assert selems[0][1].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(4)">' \
+            'innerHTML') == '<a href="javascript:budgetModal(4, null)">' \
                             'Standing1 (4)</a>'
 
 
@@ -96,6 +96,7 @@ class TestEditPeriodic1(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
         b = testdb.query(Budget).get(1)
+        assert b is not None
         assert b.name == 'Periodic1'
         assert b.is_periodic is True
         assert b.description == 'P1desc'
@@ -162,11 +163,12 @@ class TestEditPeriodic1(AcceptanceHelper):
         ptable = selenium.find_element_by_id('table-periodic-budgets')
         pelems = self.tbody2elemlist(ptable)
         assert pelems[0][1].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(1)">' \
+            'innerHTML') == '<a href="javascript:budgetModal(1, null)">' \
                             'EditedPeriodic1 (1)</a>'
 
     def test_3_verify_db(self, testdb):
         b = testdb.query(Budget).get(1)
+        assert b is not None
         assert b.name == 'EditedPeriodic1'
         assert b.is_periodic is True
         assert b.description == 'EditedP1desc'
@@ -398,11 +400,14 @@ class TestAddStandingBudget(AcceptanceHelper):
         stable = selenium.find_element_by_id('table-standing-budgets')
         selems = self.tbody2elemlist(stable)
         assert selems[0][1].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(7)">' \
+            'innerHTML') == '<a href="javascript:budgetModal(7, null)">' \
                             'NewStanding (7)</a>'
 
     def test_3_verify_db(self, testdb):
+        for budg in testdb.query(Budget).all():
+            print('Budget %d: %s' % (budg.id, budg.name))
         b = testdb.query(Budget).get(7)
+        assert b is not None
         assert b.name == 'NewStanding'
         assert b.is_periodic is False
         assert b.description == 'Newly Added Standing'

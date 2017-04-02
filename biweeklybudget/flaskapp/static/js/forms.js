@@ -48,7 +48,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * @param {Object} dataTableObj - passed on to ``handleFormSubmitted()``
  */
 function handleForm(container_id, form_id, post_url, dataTableObj) {
-    console.log(dataTableObj);
+    console.log(
+        "handleForm(%s, %s, %s, %o)",
+        container_id, form_id, post_url, dataTableObj
+    );
     var data = serializeForm(form_id);
     $('.formfeedback').remove();
     $('.has-error').each(function(index) { $(this).removeClass('has-error'); });

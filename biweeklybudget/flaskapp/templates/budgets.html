@@ -24,7 +24,7 @@
                                     {% for b in periodic %}
                                         {% if b.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
                                             {% if b.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
-                                            <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
+                                            <td><a href="javascript:budgetModal({{ b.id }}, null)">{{ b.name }} ({{ b.id }})</a></td>
                                             <td>{{ b.starting_balance|dollars }}</td>
                                         </tr>
                                     {% endfor %}
@@ -55,7 +55,7 @@
                                     {% for b in standing %}
                                         {% if b.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
                                             {% if b.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
-                                            <td><a href="javascript:budgetModal({{ b.id }})">{{ b.name }} ({{ b.id }})</a></td>
+                                            <td><a href="javascript:budgetModal({{ b.id }}, null)">{{ b.name }} ({{ b.id }})</a></td>
                                             <td>
                                                 <span>{{ b.current_balance|dollars }}</span>
                                             </td>
@@ -78,10 +78,11 @@
 {% block extra_foot_script %}
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/budgets.js"></script>
+<script src="/static/js/budgets_modal.js"></script>
 <script>
 /* BEGIN conditional default modal for /budgets/<id> */
 {% if budget_id is defined and budget_id is not none %}
-budgetModal({{ budget_id }});
+budgetModal({{ budget_id }}, null);
 {% endif %}
 /* END conditional default modal for /budgets/<id> */
 </script>

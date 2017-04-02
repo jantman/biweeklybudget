@@ -146,32 +146,32 @@ class TestSchedTransDefault(AcceptanceHelper):
             for c in elems
         ]
         assert linkcols[0] == [
-            '<a href="javascript:schedModal(3)">ST3</a>',
+            '<a href="javascript:schedModal(3, mytable)">ST3</a>',
             '<a href="/accounts/2">BankTwoStale (2)</a>',
             '<a href="/budgets/4">Standing1 (4)</a>'
         ]
         assert linkcols[1] == [
-            '<a href="javascript:schedModal(2)">ST2</a>',
+            '<a href="javascript:schedModal(2, mytable)">ST2</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
             '<a href="/budgets/2">Periodic2 (2)</a>'
         ]
         assert linkcols[2] == [
-            '<a href="javascript:schedModal(1)">ST1</a>',
+            '<a href="javascript:schedModal(1, mytable)">ST1</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
             '<a href="/budgets/1">Periodic1 (1)</a>'
         ]
         assert linkcols[3] == [
-            '<a href="javascript:schedModal(6)">ST6</a>',
+            '<a href="javascript:schedModal(6, mytable)">ST6</a>',
             '<a href="/accounts/2">BankTwoStale (2)</a>',
             '<a href="/budgets/4">Standing1 (4)</a>'
         ]
         assert linkcols[4] == [
-            '<a href="javascript:schedModal(5)">ST5</a>',
+            '<a href="javascript:schedModal(5, mytable)">ST5</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
             '<a href="/budgets/2">Periodic2 (2)</a>'
         ]
         assert linkcols[5] == [
-            '<a href="javascript:schedModal(4)">ST4</a>',
+            '<a href="javascript:schedModal(4, mytable)">ST4</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
             '<a href="/budgets/1">Periodic1 (1)</a>'
         ]
