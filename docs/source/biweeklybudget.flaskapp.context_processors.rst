@@ -1,5 +1,5 @@
-biweeklybudget.flaskapp.context_processors module
-=================================================
+biweeklybudget\.flaskapp\.context\_processors module
+====================================================
 
 .. automodule:: biweeklybudget.flaskapp.context_processors
     :members:

@@ -1,5 +1,5 @@
-biweeklybudget.screenscraper module
-===================================
+biweeklybudget\.screenscraper module
+====================================
 
 .. automodule:: biweeklybudget.screenscraper
     :members:

@@ -1,5 +1,5 @@
-biweeklybudget.flaskapp.views package
-=====================================
+biweeklybudget\.flaskapp\.views package
+=======================================
 
 .. automodule:: biweeklybudget.flaskapp.views
     :members:

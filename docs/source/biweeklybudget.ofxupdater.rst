@@ -1,5 +1,5 @@
-biweeklybudget.ofxupdater module
-================================
+biweeklybudget\.ofxupdater module
+=================================
 
 .. automodule:: biweeklybudget.ofxupdater
     :members:

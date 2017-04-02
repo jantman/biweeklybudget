@@ -1,5 +1,5 @@
-biweeklybudget.flaskapp.notifications module
-============================================
+biweeklybudget\.flaskapp\.notifications module
+==============================================
 
 .. automodule:: biweeklybudget.flaskapp.notifications
     :members:

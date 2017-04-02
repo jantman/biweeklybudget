@@ -1,5 +1,5 @@
-biweeklybudget.load_data module
-===============================
+biweeklybudget\.load\_data module
+=================================
 
 .. automodule:: biweeklybudget.load_data
     :members:

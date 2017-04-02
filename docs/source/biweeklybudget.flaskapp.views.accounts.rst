@@ -1,5 +1,5 @@
-biweeklybudget.flaskapp.views.accounts module
-=============================================
+biweeklybudget\.flaskapp\.views\.accounts module
+================================================
 
 .. automodule:: biweeklybudget.flaskapp.views.accounts
     :members:

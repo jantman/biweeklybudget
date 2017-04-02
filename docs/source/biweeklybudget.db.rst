@@ -1,5 +1,5 @@
-biweeklybudget.db module
-========================
+biweeklybudget\.db module
+=========================
 
 .. automodule:: biweeklybudget.db
     :members:

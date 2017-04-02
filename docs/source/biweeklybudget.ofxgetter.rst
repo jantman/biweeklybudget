@@ -1,5 +1,5 @@
-biweeklybudget.ofxgetter module
-===============================
+biweeklybudget\.ofxgetter module
+================================
 
 .. automodule:: biweeklybudget.ofxgetter
     :members:

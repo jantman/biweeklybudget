@@ -1,5 +1,5 @@
-biweeklybudget.flaskapp.cli_commands module
-===========================================
+biweeklybudget\.flaskapp\.cli\_commands module
+==============================================
 
 .. automodule:: biweeklybudget.flaskapp.cli_commands
     :members:

@@ -1,5 +1,5 @@
-biweeklybudget.models.transaction module
-========================================
+biweeklybudget\.models\.transaction module
+==========================================
 
 .. automodule:: biweeklybudget.models.transaction
     :members:
