@@ -88,3 +88,14 @@ to make use of un-merged pull requests that fix bugs; since
     source bin/activate
     pip install -r requirements.txt
     python setup.py develop
+
+License
+-------
+
+biweeklybudget itself is licensed under the
+`GNU Affero General Public License, version 3 <https://www.gnu.org/licenses/agpl-3.0.en.html>`_.
+This is specifically intended to extend to anyone who uses the software remotely
+over a network, the same rights as those who download and install it locally.
+biweeklybudget makes use of various third party software, especially in the UI and
+frontend, that is distributed under other licenses. Please see
+``biweeklybudget/flaskapp/static`` in the source tree for further information.
