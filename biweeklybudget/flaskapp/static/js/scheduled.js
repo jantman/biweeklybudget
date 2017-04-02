@@ -113,6 +113,7 @@ function modalDivForm() {
  * Ajax callback to fill in the modalDiv with data on a budget.
  */
 function modalDivFillAndShow(msg) {
+    console.log(msg);
     $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
     $('#sched_frm_id').val(msg['id']);
     $('#sched_frm_description').val(msg['description']);
@@ -120,7 +121,7 @@ function modalDivFillAndShow(msg) {
         $('#sched_frm_type_monthly').prop('checked', false);
         $('#sched_frm_type_per_period').prop('checked', false);
         $('#sched_frm_type_date').prop('checked', true);
-        $('#sched_frm_date').val(msg['date']);
+        $('#sched_frm_date').val(msg['date']['str']);
     } else if(msg['day_of_month'] != null) {
         $('#sched_frm_type_per_period').prop('checked', false);
         $('#sched_frm_type_date').prop('checked', false);

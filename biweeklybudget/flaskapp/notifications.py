@@ -85,10 +85,13 @@ class NotificationsController(object):
         :return: sum of current balances of all standing budgets
         :rtype: float
         """
-        return float(db_session.query(func.sum(Budget.current_balance)).filter(
+        res = db_session.query(func.sum(Budget.current_balance)).filter(
             Budget.is_periodic.__eq__(False),
             Budget.is_active.__eq__(True)
-        ).all()[0][0])
+        ).all()[0][0]
+        if res is None:
+            return 0
+        return float(res)
 
     @staticmethod
     def get_notifications():

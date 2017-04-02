@@ -47,6 +47,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
+from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +188,67 @@ class OneScheduledAjax(MethodView):
         return jsonify(d)
 
 
+class SchedTransFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/scheduled
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('name', '').strip() == '':
+            errors['name'].append('Name cannot be empty')
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing budget
+            budget = db_session.query(Budget).get(int(data['id']))
+            if budget is None:
+                raise RuntimeError("Error: no Budget with ID %s" % data['id'])
+            action = 'updating Budget ' + data['id']
+        else:
+            budget = Budget()
+            action = 'creating new Budget'
+        budget.name = data['name'].strip()
+        budget.description = data['description'].strip()
+        if data['is_periodic'] == 'true':
+            budget.is_periodic = True
+            budget.starting_balance = data['starting_balance']
+        else:
+            budget.is_periodic = False
+            budget.current_balance = data['current_balance']
+        if data['is_active'] == 'true':
+            budget.is_active = True
+        else:
+            budget.is_active = False
+        logger.info('%s: %s', action, budget.as_dict)
+        db_session.add(budget)
+        db_session.commit()
+        return 'Successfully saved Budget %d in database.' % budget.id
+
+
 app.add_url_rule(
     '/scheduled',
     view_func=ScheduledView.as_view('scheduled_view')
@@ -202,4 +264,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/scheduled/<int:sched_trans_id>',
     view_func=OneScheduledAjax.as_view('one_scheduled_ajax')
+)
+app.add_url_rule(
+    '/forms/scheduled',
+    view_func=SchedTransFormHandler.as_view('scheduled_form')
 )

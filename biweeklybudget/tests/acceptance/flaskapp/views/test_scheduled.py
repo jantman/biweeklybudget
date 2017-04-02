@@ -310,47 +310,113 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
             ['5', 'Standing2'],
             ['6', 'Standing3 Inactive']
         ]
-        assert acct_sel.first_selected_option.get_attribute('value') == '2'
+        assert budget_sel.first_selected_option.get_attribute('value') == '4'
         assert selenium.find_element_by_id('sched_frm_active').is_selected()
+
+    def test_2_modal_edit(self, base_url, selenium):
+        pass
+
+    def test_3_verify_db(self, testdb):
+        pass
 
 
 @pytest.mark.acceptance
-class DONOTTestSchedTransURL(AcceptanceHelper):
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransMonthlyURL(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def test_0_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(2)
+        assert t.description == 'ST2'
+        assert t.num_per_period is None
+        assert t.date is None
+        assert t.day_of_month == 4
+        assert float(t.amount) == 222.22
+        assert t.account_id == 1
+        assert t.budget_id == 2
+        assert t.notes == 'notesST2'
+        assert t.is_active is True
+
+    def test_1_modal_from_url(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/ofx/3/T1')
-
-    def test_modal_auto_displayed(self, selenium):
+        selenium.get(base_url + '/scheduled/2')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'OFXTransaction Account=3 FITID=T1'
-        texts = self.tbody2textlist(body)
-        elems = self.tbody2elemlist(body)
-        pdate = (dtnow() - timedelta(hours=22))
-        fdate = (dtnow() - timedelta(hours=13))
-        assert texts == [
-            ['Account', 'CreditOne (3)'],
-            ['FITID', 'T1'],
-            ['Date Posted', pdate.strftime('%Y-%m-%d')],
-            ['Amount', '$123.81'],
-            ['Name', '123.81 Credit Purchase T1'],
-            ['Memo', '38328'],
-            ['Type', 'Purchase'],
-            ['Description', 'CreditOneT1Desc'],
-            ['Notes', ''],
-            ['Checknum', '123'],
-            ['MCC', 'T1mcc'],
-            ['SIC', 'T1sic'],
-            ['OFX Statement'],
-            ['ID', '4'],
-            ['Date', fdate.strftime('%Y-%m-%d')],
-            ['Filename', '/stmt/CreditOne/0'],
-            ['File mtime', fdate.strftime('%Y-%m-%d')],
-            ['Ledger Balance', '$952.06']
-        ]
-        assert elems[0][1].get_attribute(
-            'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
+        assert title.text == 'Edit Scheduled Transaction 2'
+        assert body.find_element_by_id(
+            'sched_frm_id').get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'sched_frm_description').get_attribute('value') == 'ST2'
+        assert body.find_element_by_id(
+            'sched_frm_type_monthly').is_selected()
+        assert body.find_element_by_id(
+            'sched_frm_type_date').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_per_period').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_day_of_month').get_attribute('value') == '4'
+        assert body.find_element_by_id(
+            'sched_frm_amount').get_attribute('value') == '222.22'
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '2'
+        assert selenium.find_element_by_id('sched_frm_active').is_selected()
+
+    def test_2_modal_edit(self, base_url, selenium):
+        pass
+
+    def test_3_verify_db(self, testdb):
+        pass
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSchedTransDateInactive(AcceptanceHelper):
+
+    def test_0_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(4)
+        assert t.description == 'ST4'
+        assert t.num_per_period is None
+        assert t.date == (
+            dtnow() + timedelta(days=5)
+        ).date()
+        assert t.day_of_month is None
+        assert float(t.amount) == 444.44
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes == 'notesST4'
+        assert t.is_active is False
+
+    def test_1_modal_from_url(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/scheduled/4')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Scheduled Transaction 4'
+        assert body.find_element_by_id(
+            'sched_frm_id').get_attribute('value') == '4'
+        assert body.find_element_by_id(
+            'sched_frm_description').get_attribute('value') == 'ST4'
+        assert body.find_element_by_id(
+            'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_date').is_selected()
+        assert body.find_element_by_id(
+            'sched_frm_type_per_period').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_date').get_attribute('value') == (
+            dtnow() + timedelta(days=5)).strftime('%Y-%m-%d')
+        assert body.find_element_by_id(
+            'sched_frm_amount').get_attribute('value') == '444.44'
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '1'
         assert selenium.find_element_by_id(
-            'modalSaveButton').is_displayed() is False
+            'sched_frm_active').is_selected() is False
+
+    def test_2_modal_edit(self, base_url, selenium):
+        pass
+
+    def test_3_verify_db(self, testdb):
+        pass
