@@ -46,7 +46,6 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
