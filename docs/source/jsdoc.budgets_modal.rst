@@ -1,13 +1,39 @@
 jsdoc.budgets\_modal
 ====================
 
-File: ``/biweeklybudget/flaskapp/static/js/budgets_modal.js``
+File: ``biweeklybudget/flaskapp/static/js/budgets_modal.js``
 
-.. js:autofunction:: budgetModalDivHandleType
+.. js:function:: budgetModal(id, dataTableObj)
 
-.. js:autofunction:: budgetModalDivForm
+   Show the modal popup, populated with information for one Budget.
 
-.. js:autofunction:: budgetModalDivFillAndShow
+   :param number id: the ID of the Budget to show modal for, or null to show a modal to add a new Budget.
+   :param Object|null dataTableObj: passed on to ``handleForm()``
+   
 
-.. js:autofunction:: budgetModal
+   
+
+.. js:function:: budgetModalDivFillAndShow(msg)
+
+   Ajax callback to fill in the modalDiv with data on a budget.
+
+   
+
+   
+
+.. js:function:: budgetModalDivForm()
+
+   Generate the HTML for the form on the Modal
+
+   
+
+   
+
+.. js:function:: budgetModalDivHandleType()
+
+   Handle change of the "Type" radio buttons on the modal
+
+   
+
+   
 

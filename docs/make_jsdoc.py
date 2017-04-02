@@ -3,6 +3,9 @@
 import sys
 import os
 import re
+from sphinx_js.jsdoc import run_jsdoc
+from sphinx_js.renderers import AutoFunctionRenderer
+from collections import defaultdict
 
 index_head = """UI JavaScript Docs
 ==================
@@ -14,9 +17,14 @@ Files
 
 """
 
+
 class JSDocumenter(object):
     """
-    Generate .rst files for javascript documentation.
+    Generate .rst files for javascript documentation. The ``sphinx-jsdoc``
+    package does this nicely, but requires ``jsdoc`` to be available at
+    build time, which rules out readthedocs.org. So... we hack apart that
+    package to get it to generate static rST files on-demand, which we then save
+    in the source directory.
     """
 
     func_re = re.compile(r'^function ([^\(]+)\([^\)]*\) {')
@@ -35,30 +43,39 @@ class JSDocumenter(object):
         self.srcdir = os.path.join(
             toxinidir, 'docs', 'source'
         )
+        self.app = FakeApp()
+        self.app.config.js_source_path = self.jsdir
 
     def run(self):
         """
         Main entry point to build jsdoc
         """
         self._cleanup()
-        jsfiles = self._find_js_files()
+        run_jsdoc(self.app)
+        # build a dict of files to the list of function longnames in them
+        funcs_per_file = defaultdict(type([]))
+        for longname in self.app._sphinxjs_doclets_by_longname.keys():
+            d = self.app._sphinxjs_doclets_by_longname[longname]
+            if d['kind'] != 'function':
+                continue
+            funcs_per_file[d['meta']['filename']].append(longname)
         index = index_head
-        for fname in sorted(jsfiles.keys()):
-            refname = self._docs_for_file(fname, jsfiles[fname])
+        for fname in sorted(funcs_per_file.keys()):
+            refname = self._docs_for_file(fname, funcs_per_file[fname])
             index += "   %s\n" % refname
         with open(os.path.join(self.srcdir, 'jsdoc.rst'), 'w') as fh:
             fh.write(index)
         print('Wrote: jsdoc.rst')
 
-    def _docs_for_file(self, fname, path):
+    def _docs_for_file(self, fname, func_longnames):
         """
         Generate and write documentation for a given JS file. Return the
         sphinx reference name for the file.
 
         :param fname: name of the file
         :type fname: str
-        :param path: full path to the file
-        :type path: str
+        :param func_longnames: list of function longnames to document
+        :type func_longnames: list
         :return: sphinx reference name for file
         :rtype: str
         """
@@ -66,51 +83,22 @@ class JSDocumenter(object):
         shortname = fname.split('.')[0]
         refname = 'jsdoc.%s' % shortname
         refname_esc = refname.replace('_', '\_')
+        doclet = self.app._sphinxjs_doclets_by_longname[func_longnames[0]]
+        path = os.path.join(doclet['meta']['path'], fname)
         body = "%s\n" % refname_esc
         body += ('=' * len(refname_esc)) + "\n\n"
-        body += "File: ``%s``\n\n" % path.replace(self.toxinidir, '')
-        for d in self._directives_for_file(path):
-            body += "%s\n\n" % d
+        body += "File: ``%s``\n\n" % path.replace(
+            os.path.realpath(self.toxinidir) + '/', ''
+        )
+        for funcname in sorted(func_longnames):
+            r = AutoFunctionRenderer(None, self.app, arguments=[funcname])
+            doclet = self.app._sphinxjs_doclets_by_longname.get(funcname)
+            body += r.rst(funcname, doclet)
         docpath = os.path.join(self.srcdir, '%s.rst' % refname)
         with open(docpath, 'w') as fh:
             fh.write(body)
         print("\tWritten to: %s" % docpath)
         return refname
-
-    def _directives_for_file(self, fpath):
-        """
-        Return a list of Sphinx rST directives for all document-able items
-        in the specified JS file.
-
-        :param fpath: path to the file
-        :type fpath: str
-        :return: sphinx directives for the file
-        :rtype: list
-        """
-        res = []
-        with open(fpath, 'r') as fh:
-            for line in fh.readlines():
-                line = line.strip()
-                m = self.func_re.match(line)
-                if m:
-                    res.append('.. js:autofunction:: %s' % m.group(1))
-        return res
-
-    def _find_js_files(self):
-        """
-        Return a dict of JS files, filename to full path.
-
-        :return: dict of JS files
-        :rtype: dict
-        """
-        files = {}
-        for f in os.listdir(self.jsdir):
-            p = os.path.join(self.jsdir, f)
-            if not os.path.isfile(p):
-                continue
-            if f.endswith('.js'):
-                files[f] = p
-        return files
 
     def _cleanup(self):
         """
@@ -125,6 +113,18 @@ class JSDocumenter(object):
                 continue
             print("\t%s" % p)
             os.unlink(p)
+
+
+class Config(object):
+    jsdoc_config_path = None
+    js_source_path = None
+
+
+class FakeApp(object):
+    config = Config()
+    _sphinxjs_doclets_by_class = None
+    _sphinxjs_doclets_by_longname = None
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

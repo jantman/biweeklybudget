@@ -52,10 +52,6 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
-if os.environ.get('JSDOC', '') == 'true':
-    extensions.append('sphinx_js')
-    js_source_path = 'biweeklybudget/flaskapp/static/js'
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

@@ -147,11 +147,15 @@ function schedModalDivFillAndShow(msg) {
 }
 
 /**
- * Show the modal popup, populated with information for one ScheduledTransaction
+ * Show the ScheduledTransaction modal popup, optionally populated with
+ * information for one ScheduledTransaction. This function calls
+ * :js:func:`schedModalDivForm` to generate the form HTML,
+ * :js:func:`schedModalDivFillAndShow` to populate the form for editing,
+ * and :js:func:`handleForm` to handle the Submit action.
  *
  * @param {number} id - the ID of the ScheduledTransaction to show a modal for,
  *   or null to show modal to add a new ScheduledTransaction.
- * @param {(Object|null)} dataTableObj - passed on to ``handleForm()``
+ * @param {(Object|null)} dataTableObj - passed on to :js:func:`handleForm`
  */
 function schedModal(id, dataTableObj) {
     $('#modalBody').empty();
