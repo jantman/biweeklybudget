@@ -221,3 +221,18 @@ class BiweeklyPayPeriod(object):
             db_session.query(ScheduledTransaction),
             ScheduledTransaction.date
         )
+
+    def scheduled_transactions_per_period(self, db_session):
+        """
+        Return a Query for all :py:class:`~.ScheduledTransaction` defined by
+        number per period (schedule_type == "per period") for this pay period.
+
+        :param db_session: DB Session to run query with
+        :type db_session: sqlalchemy.orm.session.Session
+        :return: Query matching all ScheduledTransactions defined by number
+          per period, for this pay period.
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return db_session.query(ScheduledTransaction).filter(
+            ScheduledTransaction.schedule_type.__eq__('per period')
+        )

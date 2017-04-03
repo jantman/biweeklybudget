@@ -39,6 +39,7 @@ import sys
 import pytest
 from datetime import datetime, date, timedelta
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.expression import BindParameter
 
 from biweeklybudget.payperiods import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
@@ -170,3 +171,16 @@ class TestBiweeklyPayPeriod(object):
         assert mock_sess.mock_calls == [
             call.query(ScheduledTransaction)
         ]
+
+    def test_scheduled_transactions_per_period(self):
+        mock_sess = Mock(spec_set=Session)
+        res = self.cls.scheduled_transactions_per_period(mock_sess)
+        assert res == mock_sess.query.return_value.filter.return_value
+        assert mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
+        kall = mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = ScheduledTransaction.schedule_type.__eq__('per period')
+        actual = kall[1][0]
+        assert str(expected) == str(actual)
+        assert isinstance(actual.right, BindParameter)
+        assert actual.right.value == 'per period'
