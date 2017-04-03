@@ -197,6 +197,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             '//input[@type="search"]'
         )
         search.send_keys('foo')
+        self.wait_for_jquery_done()
         table = self.retry_stale(
             selenium.find_element_by_id,
             'table-transactions'
