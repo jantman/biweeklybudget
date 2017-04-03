@@ -39,13 +39,18 @@ import logging
 
 
 def set_log_info(logger):
-    """set logger level to INFO"""
+    """
+    set logger level to INFO via :py:func:`~.set_log_level_format`.
+    """
     set_log_level_format(logger, logging.INFO,
                          '%(asctime)s %(levelname)s:%(name)s:%(message)s')
 
 
 def set_log_debug(logger):
-    """set logger level to DEBUG, and debug-level output format"""
+    """
+    set logger level to DEBUG, and debug-level output format,
+    via :py:func:`~.set_log_level_format`.
+    """
     set_log_level_format(
         logger,
         logging.DEBUG,

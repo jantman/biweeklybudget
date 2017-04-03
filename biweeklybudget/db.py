@@ -70,9 +70,13 @@ engine_args = {
 if settings.DB_CONNSTRING.startswith('mysql'):
     engine_args['connect_args'] = {'sql_mode': 'TRADITIONAL'}
 
+#: The database engine object; return value of
+#: :py:func:`sqlalchemy.create_engine`.
 engine = create_engine(settings.DB_CONNSTRING, **engine_args)
 
 logger.debug('Creating DB session')
+
+#: :py:class:`sqlalchemy.orm.scoping.scoped_session` session
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
@@ -84,6 +88,10 @@ Base.query = db_session.query_property()
 
 
 def init_db():
+    """
+    Initialize the database; call
+    :py:meth:`sqlalchemy.schema.MetaData.create_all` on the metadata object.
+    """
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
@@ -115,10 +123,10 @@ def upsert_record(model_class, key_fields, **kwargs):
     committed. If not, a new one will be inserted. Either way, the record is
     returned.
 
-    ``db_session.commit()`` is NOT called.
+    :py:meth:`sqlalchemy.orm.session.Session.commit` is **NOT** called.
 
     :param model_class: the class of model to insert/update
-    :type model_class: ``biweeklybudget.models.base.Base``
+    :type model_class: biweeklybudget.models.base.ModelAsDict
     :param key_fields: The field name(s) (keys in ``kwargs``) that make up the
       primary key. This can be a single string, or a list or tuple of strings
       for compound keys. The values for these key fields MUST be included in

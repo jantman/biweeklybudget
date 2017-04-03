@@ -57,6 +57,9 @@ logger = logging.getLogger(__name__)
 
 
 class OfxBackfiller(object):
+    """
+    Class to backfill OFX in database from files on disk.
+    """
 
     def __init__(self, savedir):
         logger.info('Initializing OfxBackfiller with savedir=%s', savedir)
@@ -68,6 +71,9 @@ class OfxBackfiller(object):
         logger.debug('Database initialized')
 
     def run(self):
+        """
+        Main entry point - run the backfill.
+        """
         logger.debug('Checking for Accounts with statement directories')
         for acct in db_session.query(Account).all():
             p = os.path.join(settings.STATEMENTS_SAVE_PATH, acct.name)
@@ -151,6 +157,9 @@ class OfxBackfiller(object):
 
 
 def parse_args():
+    """
+    Parse command-line arguments.
+    """
     p = argparse.ArgumentParser(description='Backfill OFX from disk')
     p.add_argument('-v', '--verbose', dest='verbose', action='count', default=0,
                    help='verbose output. specify twice for debug-level output.')
@@ -159,6 +168,9 @@ def parse_args():
 
 
 def main():
+    """
+    Main entry point - instantiate and run :py:class:`~.OfxBackfiller`.
+    """
     global logger
     format = "[%(asctime)s %(levelname)s] %(message)s"
     logging.basicConfig(level=logging.WARNING, format=format)
