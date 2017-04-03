@@ -43,6 +43,7 @@ from sqlalchemy.orm.session import Session
 from biweeklybudget.payperiods import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -150,4 +151,22 @@ class TestBiweeklyPayPeriod(object):
         ]
         assert mock_sess.mock_calls == [
             call.query(Transaction)
+        ]
+
+    def test_scheduled_transactions_date(self):
+        mock_sess = Mock(spec_set=Session)
+        mock_res = Mock()
+        with patch('%s.filter_query' % pb, autospec=True) as mock_filter:
+            mock_filter.return_value = mock_res
+            res = self.cls.scheduled_transactions_date(mock_sess)
+        assert res == mock_res
+        assert mock_filter.mock_calls == [
+            call(
+                self.cls,
+                mock_sess.query.return_value,
+                ScheduledTransaction.date
+            )
+        ]
+        assert mock_sess.mock_calls == [
+            call.query(ScheduledTransaction)
         ]

@@ -39,7 +39,7 @@ from datetime import timedelta, datetime
 from functools import total_ordering
 
 from biweeklybudget import settings
-from biweeklybudget.models import Transaction
+from biweeklybudget.models import Transaction, ScheduledTransaction
 
 
 @total_ordering
@@ -194,7 +194,7 @@ class BiweeklyPayPeriod(object):
 
     def transactions(self, db_session):
         """
-        Return a Query for all :py:class:`~.Transaction`s for this pay period.
+        Return a Query for all :py:class:`~.Transaction` for this pay period.
 
         :param db_session: DB Session to run query with
         :type db_session: sqlalchemy.orm.session.Session
@@ -204,4 +204,20 @@ class BiweeklyPayPeriod(object):
         return self.filter_query(
             db_session.query(Transaction),
             Transaction.date
+        )
+
+    def scheduled_transactions_date(self, db_session):
+        """
+        Return a Query for all :py:class:`~.ScheduledTransaction` defined by
+        date (schedule_type == "date") for this pay period.
+
+        :param db_session: DB Session to run query with
+        :type db_session: sqlalchemy.orm.session.Session
+        :return: Query matching all ScheduledTransactions defined by date, for
+          this pay period.
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return self.filter_query(
+            db_session.query(ScheduledTransaction),
+            ScheduledTransaction.date
         )
