@@ -29,8 +29,8 @@ from docutils.utils import get_source_line
 is_rtd = os.environ.get('READTHEDOCS', None) != 'True'
 readthedocs_version = os.environ.get('READTHEDOCS_VERSION', '')
 
-if not is_rtd:
-    os.environ['SETTINGS_MODULE'] = 'biweeklybudget.settings_example'
+os.environ['SETTINGS_MODULE'] = 'biweeklybudget.settings_example'
+os.environ['DB_CONNSTRING'] = 'sqlite:///:memory:'
 
 rtd_version = VERSION
 
