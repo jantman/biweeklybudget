@@ -73,3 +73,19 @@ function fmt_dtdict_ymd(d) {
     if (ms.length < 2) { ms = '0' + ms; }
     return d['year'] + '-' + ms + '-' + ds;
 }
+
+/**
+ * Format a javascript Date as ISO8601 YYYY-MM-DD
+ *
+ * @param {Date} d - the date to format
+ * @returns {string} YYYY-MM-DD
+ */
+function isoformat(d) {
+  var mm = d.getMonth() + 1; // getMonth() is zero-based
+  var dd = d.getDate();
+
+  return [d.getFullYear(),
+          (mm>9 ? '' : '0') + mm,
+          (dd>9 ? '' : '0') + dd
+         ].join('-');
+}

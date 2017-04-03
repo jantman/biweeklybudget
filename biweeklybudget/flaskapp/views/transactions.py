@@ -40,6 +40,7 @@ from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
 from copy import copy
+from datetime import datetime
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
@@ -211,7 +212,33 @@ class TransactionFormHandler(FormHandlerView):
         :return: None if no errors, or hash of field name to errors for that
           field
         """
-        raise NotImplementedError()
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('description', '').strip() == '':
+            errors['description'].append('Description cannot be empty')
+            have_errors = True
+        if float(data['amount']) == 0:
+            errors['amount'].append('Amount cannot be zero')
+            have_errors = True
+        if data['account'] == 'None':
+            errors['account'].append('Transactions must have an account')
+            have_errors = True
+        if data['budget'] == 'None':
+            errors['budget'].append('Transactions must have a budget')
+            have_errors = True
+        if data['date'].strip() == '':
+            errors['date'].append('Transactions must have a date')
+            have_errors = True
+        try:
+            datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except Exception:
+            errors['date'].append(
+                'Date "%s" is not valid (YYYY-MM-DD)' % data['date']
+            )
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
 
     def submit(self, data):
         """
@@ -223,7 +250,27 @@ class TransactionFormHandler(FormHandlerView):
         :return: message describing changes to DB (i.e. link to created record)
         :rtype: str
         """
-        raise NotImplementedError()
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing budget
+            trans = db_session.query(Transaction).get(int(data['id']))
+            if trans is None:
+                raise RuntimeError("Error: no Transaction with ID "
+                                   "%s" % data['id'])
+            action = 'updating Transaction ' + data['id']
+        else:
+            trans = Transaction()
+            action = 'creating new Transaction'
+        trans.description = data['description'].strip()
+        trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        trans.actual_amount = float(data['amount'])
+        trans.account_id = int(data['account'])
+        trans.budget_id = int(data['budget'])
+        trans.notes = data['notes'].strip()
+        logger.info('%s: %s', action, trans.as_dict)
+        db_session.add(trans)
+        db_session.commit()
+        return 'Successfully saved Transaction' \
+               ' %d in database.' % trans.id
 
 
 app.add_url_rule(

@@ -115,4 +115,8 @@ $(document).ready(function() {
         var selectedVal = $(this).val();
         mytable.fnFilter(selectedVal, 3, false);
     });
+
+    $('#btn_add_trans').click(function() {
+        transModal(null, mytable);
+    });
 });

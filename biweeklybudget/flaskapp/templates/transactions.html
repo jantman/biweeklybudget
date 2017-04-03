@@ -71,7 +71,7 @@
 <script>
 /* BEGIN conditional default modal for /transactions/<id> */
 {% if trans_id is defined and trans_id is not none %}
-transactionModal({{ trans_id }}, mytable);
+transModal({{ trans_id }}, mytable);
 {% endif %}
 /* END conditional default modal for /transactions/<id> */
 </script>

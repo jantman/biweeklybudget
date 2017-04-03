@@ -35,3 +35,13 @@ File: ``biweeklybudget/flaskapp/static/js/custom.js``
 
    
 
+.. js:function:: isoformat(d)
+
+   Format a javascript Date as ISO8601 YYYY-MM-DD
+
+   :param Date d: the date to format
+   :returns: **string** -- YYYY-MM-DD
+   
+
+   
+

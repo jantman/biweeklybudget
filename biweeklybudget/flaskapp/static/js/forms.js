@@ -48,10 +48,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * @param {Object} dataTableObj - passed on to ``handleFormSubmitted()``
  */
 function handleForm(container_id, form_id, post_url, dataTableObj) {
-    console.log(
-        "handleForm(%s, %s, %s, %o)",
-        container_id, form_id, post_url, dataTableObj
-    );
     var data = serializeForm(form_id);
     $('.formfeedback').remove();
     $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
@@ -120,9 +116,10 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
  */
 function handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id) {
     console.log("Form submission error: %s (%s)", textStatus, errorThrown);
-    $('#' + container_id).prepend(
+    if($('#formStatus').length == 0) { $('#' + container_id).prepend('<div id="formStatus"></div>'); }
+    $('#formStatus').html(
         '<div class="alert alert-danger formfeedback"><strong>Error submitting ' +
-        'form:</strong> ' + textStatus + ' ' + errorThrown + '</div>'
+        'form:</strong> ' + textStatus + ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
     );
 }
 

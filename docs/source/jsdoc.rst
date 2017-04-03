@@ -11,3 +11,4 @@ Files
    jsdoc.forms
    jsdoc.ofx
    jsdoc.scheduled_modal
+   jsdoc.transactions_modal
