@@ -37,7 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from datetime import timedelta, datetime
 from functools import total_ordering
+
 from biweeklybudget import settings
+from biweeklybudget.models import Transaction
 
 
 @total_ordering
@@ -55,7 +57,8 @@ class BiweeklyPayPeriod(object):
         Create a new BiweeklyPayPeriod instance.
 
         :param start_date: starting date of the pay period
-        :type start_date: datetime.date
+        :type start_date: :py:class:`datetime.date` or
+          :py:class:`datetime.datetime`
         """
         if isinstance(start_date, datetime):
             start_date = start_date.date()
@@ -188,3 +191,17 @@ class BiweeklyPayPeriod(object):
         if not isinstance(other, BiweeklyPayPeriod):
             return NotImplemented
         return self.start_date < other.start_date
+
+    def transactions(self, db_session):
+        """
+        Return a Query for all :py:class:`~.Transaction`s for this pay period.
+
+        :param db_session: DB Session to run query with
+        :type db_session: sqlalchemy.orm.session.Session
+        :return: Query matching all Transactions for this pay period
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return self.filter_query(
+            db_session.query(Transaction),
+            Transaction.date
+        )

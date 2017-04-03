@@ -38,8 +38,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 import pytest
 from datetime import datetime, date, timedelta
+from sqlalchemy.orm.session import Session
+
 from biweeklybudget.payperiods import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.transaction import Transaction
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -47,9 +50,12 @@ if (
         sys.version_info[0] < 3 or
         sys.version_info[0] == 3 and sys.version_info[1] < 4
 ):
-    from mock import Mock
+    from mock import Mock, patch, call
 else:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch, call
+
+pbm = 'biweeklybudget.payperiods'
+pb = '%s.BiweeklyPayPeriod' % pbm
 
 
 class TestBiweeklyPayPeriod(object):
@@ -131,3 +137,17 @@ class TestBiweeklyPayPeriod(object):
         assert kall[1][0].compare(a) is True
         assert kall[1][1].compare(b) is True
         assert res == q.filter.return_value
+
+    def test_transactions(self):
+        mock_sess = Mock(spec_set=Session)
+        mock_res = Mock()
+        with patch('%s.filter_query' % pb, autospec=True) as mock_filter:
+            mock_filter.return_value = mock_res
+            res = self.cls.transactions(mock_sess)
+        assert res == mock_res
+        assert mock_filter.mock_calls == [
+            call(self.cls, mock_sess.query.return_value, Transaction.date)
+        ]
+        assert mock_sess.mock_calls == [
+            call.query(Transaction)
+        ]
