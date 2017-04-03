@@ -61,10 +61,17 @@ if os.environ.get('SQL_ECHO', '') == 'true':
 # ``pymysql.err.Warning`` to an exception...
 warnings.simplefilter('error', category=Warning)
 
-engine = create_engine(
-    settings.DB_CONNSTRING, convert_unicode=True, echo=echo,
-    pool_recycle=3600, connect_args={'sql_mode': 'TRADITIONAL'}
-)
+engine_args = {
+    'convert_unicode': True,
+    'echo': echo,
+    'pool_recycle': 3600
+}
+
+if settings.DB_CONNSTRING.startswith('mysql'):
+    engine_args['connect_args'] = {'sql_mode': 'TRADITIONAL'}
+
+engine = create_engine(settings.DB_CONNSTRING, **engine_args)
+
 logger.debug('Creating DB session')
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
