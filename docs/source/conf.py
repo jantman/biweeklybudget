@@ -29,7 +29,7 @@ from docutils.utils import get_source_line
 is_rtd = os.environ.get('READTHEDOCS', None) != 'True'
 readthedocs_version = os.environ.get('READTHEDOCS_VERSION', '')
 
-if is_rtd:
+if not is_rtd:
     os.environ['SETTINGS_MODULE'] = 'biweeklybudget.settings_example'
 
 rtd_version = VERSION
