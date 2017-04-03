@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-from datetime import timedelta, date, datetime
+from datetime import timedelta, datetime
 
 #: Address to connect to Vault at, for OFX credentials
 VAULT_ADDR = 'http://127.0.0.1:8200'
