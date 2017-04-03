@@ -155,10 +155,6 @@ class Account(Base, ModelAsDict):
 
     @is_budget_source.expression
     def is_budget_source(cls):
-        """
-        Return SQL for whether or not this account should be considered a
-        funding source for Budgets.
-        """
         return or_(
             cls.acct_type.__eq__(AcctType.Bank),
             cls.acct_type.__eq__(AcctType.Cash),

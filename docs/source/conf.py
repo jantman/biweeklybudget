@@ -296,7 +296,7 @@ texinfo_documents = [
 intersphinx_mapping = {
     'https://docs.python.org/3/': None,
     'sqlalchemy': (
-        'http://docs.sqlalchemy.org/en/latest/objects.inv', None
+        'http://docs.sqlalchemy.org/en/latest/', None
     ),
     'selenium': ('http://selenium-python.readthedocs.io/', None)
 }

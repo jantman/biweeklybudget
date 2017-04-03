@@ -134,9 +134,6 @@ class ScheduledTransaction(Base, ModelAsDict):
 
     @recurrence_str.expression
     def recurrence_str(cls):
-        """
-        SQL expression for ``recurrence_str``.
-        """
         return case(
             [
                 (
@@ -175,9 +172,6 @@ class ScheduledTransaction(Base, ModelAsDict):
 
     @schedule_type.expression
     def schedule_type(cls):
-        """
-        SQL Expression for ``schedule_type``.
-        """
         return case(
             [
                 (cls.date.isnot(None), 'date'),
