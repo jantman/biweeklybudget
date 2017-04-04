@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from datetime import timedelta, datetime
 from functools import total_ordering
+from sqlalchemy import or_
 
 from biweeklybudget import settings
 from biweeklybudget.models import Transaction, ScheduledTransaction
@@ -235,4 +236,31 @@ class BiweeklyPayPeriod(object):
         """
         return db_session.query(ScheduledTransaction).filter(
             ScheduledTransaction.schedule_type.__eq__('per period')
+        )
+
+    def scheduled_transactions_monthly(self, db_session):
+        """
+        Return a Query for all :py:class:`~.ScheduledTransaction` defined by
+        day of month (schedule_type == "monthly") for this pay period.
+
+        :param db_session: DB Session to run query with
+        :type db_session: sqlalchemy.orm.session.Session
+        :return: Query matching all ScheduledTransactions defined by day of
+          month (monthly) for this period.
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        if self.start_date.day < self.end_date.day:
+            # start and end dates are contiguous, in the same month
+            return db_session.query(ScheduledTransaction).filter(
+                ScheduledTransaction.schedule_type.__eq__('monthly'),
+                ScheduledTransaction.day_of_month <= self.end_date.day,
+                ScheduledTransaction.day_of_month >= self.start_date.day
+            )
+        # else we span two months
+        return db_session.query(ScheduledTransaction).filter(
+            ScheduledTransaction.schedule_type.__eq__('monthly'),
+            or_(
+                ScheduledTransaction.day_of_month <= self.end_date.day,
+                ScheduledTransaction.day_of_month >= self.start_date.day
+            )
         )

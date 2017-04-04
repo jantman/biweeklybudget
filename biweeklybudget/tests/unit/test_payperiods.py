@@ -39,12 +39,12 @@ import sys
 import pytest
 from datetime import datetime, date, timedelta
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql.expression import BindParameter
 
 from biweeklybudget.payperiods import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
+from biweeklybudget.tests.unit_helpers import binexp_to_dict
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -180,7 +180,43 @@ class TestBiweeklyPayPeriod(object):
         kall = mock_sess.mock_calls[1]
         assert kall[0] == 'query().filter'
         expected = ScheduledTransaction.schedule_type.__eq__('per period')
-        actual = kall[1][0]
-        assert str(expected) == str(actual)
-        assert isinstance(actual.right, BindParameter)
-        assert actual.right.value == 'per period'
+        assert binexp_to_dict(expected) == binexp_to_dict(kall[1][0])
+
+    def test_scheduled_transactions_monthly_contiguous(self):
+        cls = BiweeklyPayPeriod(date(2017, 3, 2))
+        mock_sess = Mock(spec_set=Session)
+        res = cls.scheduled_transactions_monthly(mock_sess)
+        assert res == mock_sess.query.return_value.filter.return_value
+        assert mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
+        kall = mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = [
+            ScheduledTransaction.schedule_type.__eq__('monthly'),
+            ScheduledTransaction.day_of_month.__le__(15),
+            ScheduledTransaction.day_of_month.__ge__(2)
+        ]
+        for idx, exp in enumerate(expected):
+            assert binexp_to_dict(kall[1][idx]) == binexp_to_dict(exp)
+
+    def test_scheduled_transactions_monthly_crossmonth(self):
+        cls = BiweeklyPayPeriod(date(2017, 3, 24))
+        mock_sess = Mock(spec_set=Session)
+        mock_or_result = Mock()
+        with patch('%s.or_' % pbm) as mock_or:
+            mock_or.return_value = mock_or_result
+            res = cls.scheduled_transactions_monthly(mock_sess)
+        assert res == mock_sess.query.return_value.filter.return_value
+        assert mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
+        kall = mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = ScheduledTransaction.schedule_type.__eq__('monthly')
+        assert binexp_to_dict(kall[1][0]) == binexp_to_dict(expected)
+        assert kall[1][1] == mock_or_result
+        kall = mock_or.mock_calls[0]
+        assert len(mock_or.mock_calls) == 1
+        expected = [
+            ScheduledTransaction.day_of_month.__le__(6),
+            ScheduledTransaction.day_of_month.__ge__(24)
+        ]
+        for idx, exp in enumerate(expected):
+            assert binexp_to_dict(kall[1][idx]) == binexp_to_dict(exp)
