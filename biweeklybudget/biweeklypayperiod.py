@@ -388,7 +388,7 @@ class BiweeklyPayPeriod(object):
         :return: common-format dict describing ``t``
         :rtype: dict
         """
-        return {
+        res = {
             'type': 'Transaction',
             'id': t.id,
             'date': t.date,
@@ -396,12 +396,16 @@ class BiweeklyPayPeriod(object):
             'sched_trans_id': t.scheduled_trans_id,
             'description': t.description,
             'amount': float(t.actual_amount),
-            'budgeted_amount': float(t.budgeted_amount),
             'account_id': t.account_id,
             'account_name': t.account.name,
             'budget_id': t.budget_id,
             'budget_name': t.budget.name
         }
+        if t.budgeted_amount is None:
+            res['budgeted_amount'] = None
+        else:
+            res['budgeted_amount'] = float(t.budgeted_amount)
+        return res
 
     def _dict_for_sched_trans(self, t):
         """

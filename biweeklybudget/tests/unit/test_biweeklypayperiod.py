@@ -512,6 +512,39 @@ class TestDictForTrans(object):
             'budget_name': 'bar'
         }
 
+    def test_budgeted_amount_none(self):
+        m_account = Mock(name='foo')
+        type(m_account).name = 'foo'
+        m_budget = Mock(name='bar')
+        type(m_budget).name = 'bar'
+        m = Mock(
+            spec_set=Transaction,
+            id=123,
+            date=date(year=2017, month=7, day=15),
+            scheduled_trans_id=567,
+            description='desc',
+            actual_amount=Decimal(123.45),
+            budgeted_amount=None,
+            account_id=2,
+            account=m_account,
+            budget_id=3,
+            budget=m_budget
+        )
+        assert self.cls._dict_for_trans(m) == {
+            'type': 'Transaction',
+            'id': 123,
+            'date': date(year=2017, month=7, day=15),
+            'sched_type': None,
+            'sched_trans_id': 567,
+            'description': 'desc',
+            'amount': 123.45,
+            'budgeted_amount': None,
+            'account_id': 2,
+            'account_name': 'foo',
+            'budget_id': 3,
+            'budget_name': 'bar'
+        }
+
 
 class TestDictForSchedTrans(object):
 
