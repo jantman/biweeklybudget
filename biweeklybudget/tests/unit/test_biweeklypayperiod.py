@@ -303,7 +303,7 @@ class TestSTMonthly(object):
             assert binexp_to_dict(kall[1][idx]) == binexp_to_dict(exp)
 
 
-class TestDictForTrans(object):
+class TestTransactionsList(object):
 
     def setup(self):
         self.mock_sess = Mock(spec_set=Session)
