@@ -35,8 +35,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import sys
 import pytest
 from datetime import date
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
@@ -44,18 +46,23 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
-from biweeklybudget import settings
+
+# https://code.google.com/p/mock/issues/detail?id=249
+# py>=3.4 should use unittest.mock not the mock package on pypi
+if (
+        sys.version_info[0] < 3 or
+        sys.version_info[0] == 3 and sys.version_info[1] < 4
+):
+    from mock import patch
+else:
+    from unittest.mock import patch
+
+pbm = 'biweeklybudget.biweeklypayperiod'
 
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
-
-    def setup(self):
-        self._orig_start_date = settings.PAY_PERIOD_START_DATE
-
-    def teardown(self):
-        settings.PAY_PERIOD_START_DATE = self._orig_start_date
 
     def test_0_clean_transactions(self, testdb):
         testdb.query(Transaction).delete(synchronize_session='fetch')
@@ -65,25 +72,14 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_1_set_pay_period_start(self):
-        settings.PAY_PERIOD_START_DATE = date(2017, 4, 7)
-        """
-        Pay period start dates will be:
-        2017-03-10
-        2017-03-24
-        2017-04-07
-        2017-04-21
-        2017-05-05
-        2017-05-19
-        """
-
-    def test_2_confirm_pay_period_start(self, testdb):
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_1_confirm_pay_period_start(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
         )
         assert pp.start_date == date(2017, 4, 7)
 
-    def test_3_add_data(self, testdb):
+    def test_2_add_data(self, testdb):
         acct = testdb.query(Account).get(1)
         budg = testdb.query(Budget).get(1)
         for daynum in range(1, 29):
@@ -97,12 +93,13 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_4_previous_pay_period(self, testdb):
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_3_previous_pay_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 1), testdb
         )
         assert pp.start_date == date(2017, 3, 24)
-        all_trans = pp._data['all_trans_list']
+        all_trans = pp.transactions_list
         all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
         assert len(all_monthly) == 11
         # note monthly scheduled must have a day number <= 28
@@ -118,12 +115,13 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[9]['date'] == date(2017, 4, 5)
         assert all_monthly[10]['date'] == date(2017, 4, 6)
 
-    def test_5_current_pay_period(self, testdb):
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_4_current_pay_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 13), testdb
         )
         assert pp.start_date == date(2017, 4, 7)
-        all_trans = pp._data['all_trans_list']
+        all_trans = pp.transactions_list
         all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
         assert len(all_monthly) == 14
         assert all_monthly[0]['date'] == date(2017, 4, 7)
@@ -141,12 +139,13 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[12]['date'] == date(2017, 4, 19)
         assert all_monthly[13]['date'] == date(2017, 4, 20)
 
-    def test_6_next_pay_period(self, testdb):
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_5_next_pay_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 5, 4), testdb
         )
         assert pp.start_date == date(2017, 4, 21)
-        all_trans = pp._data['all_trans_list']
+        all_trans = pp.transactions_list
         all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
         assert len(all_monthly) == 12
         # note monthly scheduled must have a day number <= 28
@@ -166,7 +165,237 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodSums(AcceptanceHelper):
+class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
-        pass
+        testdb.query(Transaction).delete(synchronize_session='fetch')
+        num_rows = testdb.query(
+            ScheduledTransaction).delete(synchronize_session='fetch')
+        assert num_rows == 6
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_1_confirm_pay_period_start(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 10), testdb
+        )
+        assert pp.start_date == date(2017, 4, 7)
+
+    def test_2_add_data(self, testdb):
+        acct = testdb.query(Account).get(1)
+        budg = testdb.query(Budget).get(1)
+        st_daynum = ScheduledTransaction(
+            amount=111.11,
+            description='ST_day_9',
+            account=acct,
+            budget=budg,
+            day_of_month=9
+        )
+        testdb.add(st_daynum)
+        t_daynum = Transaction(
+            actual_amount=111.33,
+            budgeted_amount=111.11,
+            date=date(2017, 4, 9),
+            description='Trans_ST_day_9',
+            account=acct,
+            budget=budg,
+            scheduled_trans=st_daynum,
+        )
+        testdb.add(t_daynum)
+        st_pp1 = ScheduledTransaction(
+            amount=222.22,
+            description='ST_pp_1',
+            account=acct,
+            budget=budg,
+            num_per_period=1
+        )
+        testdb.add(st_pp1)
+        st_pp3 = ScheduledTransaction(
+            amount=333.33,
+            description='ST_pp_3',
+            account=acct,
+            budget=budg,
+            num_per_period=3
+        )
+        testdb.add(st_pp3)
+        t_pp3A = Transaction(
+            actual_amount=333.33,
+            budgeted_amount=333.33,
+            date=date(2017, 4, 14),
+            description='Trans_ST_pp_3_A',
+            account=acct,
+            budget=budg,
+            scheduled_trans=st_pp3,
+        )
+        testdb.add(t_pp3A)
+        t_pp3B = Transaction(
+            actual_amount=333.33,
+            budgeted_amount=333.33,
+            date=date(2017, 4, 15),
+            description='Trans_ST_pp_3_B',
+            account=acct,
+            budget=budg,
+            scheduled_trans=st_pp3
+        )
+        testdb.add(t_pp3B)
+        st_date = ScheduledTransaction(
+            amount=444.44,
+            description='ST_date',
+            account=acct,
+            budget=budg,
+            date=date(2017, 4, 12)
+        )
+        testdb.add(st_date)
+        t_date = Transaction(
+            actual_amount=444.44,
+            budgeted_amount=444.44,
+            date=date(2017, 4, 12),
+            description='Trans_ST_date',
+            account=acct,
+            budget=budg,
+            scheduled_trans=st_date
+        )
+        testdb.add(t_date)
+        t_foo = Transaction(
+            actual_amount=555.55,
+            date=date(2017, 4, 8),
+            description='Trans_foo',
+            account=acct,
+            budget=budg
+        )
+        testdb.add(t_foo)
+        t_bar = Transaction(
+            actual_amount=666.66,
+            date=date(2017, 4, 16),
+            description='Trans_bar',
+            account=acct,
+            budget=budg
+        )
+        testdb.add(t_bar)
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_3_ignore_scheduled_converted_to_real_trans(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 7), testdb
+        )
+        assert pp.start_date == date(2017, 4, 7)
+        all_trans = pp.transactions_list
+        assert all_trans == [
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': Decimal('222.2200'),
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': None,
+                'date': None,
+                'description': 'ST_pp_1',
+                'id': 8,
+                'sched_trans_id': None,
+                'sched_type': 'per period',
+                'type': 'ScheduledTransaction'
+            },
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': Decimal('333.3300'),
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': None,
+                'date': None,
+                'description': 'ST_pp_3',
+                'id': 9,
+                'sched_trans_id': None,
+                'sched_type': 'per period',
+                'type': 'ScheduledTransaction'
+            },
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 555.55,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': None,
+                'date': date(2017, 4, 8),
+                'description': 'Trans_foo',
+                'id': 8,
+                'sched_trans_id': None,
+                'sched_type': None,
+                'type': 'Transaction'
+            },
+            # ST7 (ST_day_9)
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 111.33,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': 111.11,
+                'date': date(2017, 4, 9),
+                'description': 'Trans_ST_day_9',
+                'id': 4,
+                'sched_trans_id': 7,
+                'sched_type': None,
+                'type': 'Transaction'
+            },
+            # ST10 (ST_date)
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 444.44,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': 444.44,
+                'date': date(2017, 4, 12),
+                'description': 'Trans_ST_date',
+                'id': 7,
+                'sched_trans_id': 10,
+                'sched_type': None,
+                'type': 'Transaction'
+            },
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 333.33,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': 333.33,
+                'date': date(2017, 4, 14),
+                'description': 'Trans_ST_pp_3_A',
+                'id': 5,
+                'sched_trans_id': 9,
+                'sched_type': None,
+                'type': 'Transaction'
+            },
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 333.33,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': 333.33,
+                'date': date(2017, 4, 15),
+                'description': 'Trans_ST_pp_3_B',
+                'id': 6,
+                'sched_trans_id': 9,
+                'sched_type': None,
+                'type': 'Transaction'
+            },
+            {
+                'account_id': 1,
+                'account_name': 'BankOne',
+                'amount': 666.66,
+                'budget_id': 1,
+                'budget_name': 'Periodic1',
+                'budgeted_amount': None,
+                'date': date(2017, 4, 16),
+                'description': 'Trans_bar',
+                'id': 9,
+                'sched_trans_id': None,
+                'sched_type': None,
+                'type': 'Transaction'
+            }
+        ]
