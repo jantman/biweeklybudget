@@ -46,6 +46,7 @@ from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
+from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
 
 # https://code.google.com/p/mock/issues/detail?id=249
@@ -72,11 +73,15 @@ class TestInit(object):
         cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
         assert cls._start_date == date(2017, 3, 17)
         assert cls._end_date == date(2017, 3, 30)
+        assert cls._db == self.mock_sess
+        assert cls._data_cache == {}
 
     def test_init_datetime(self):
         cls = BiweeklyPayPeriod(datetime(2017, 3, 17), self.mock_sess)
         assert cls._start_date == date(2017, 3, 17)
         assert cls._end_date == date(2017, 3, 30)
+        assert cls._db == self.mock_sess
+        assert cls._data_cache == {}
 
 
 class TestProperties(object):
@@ -192,7 +197,7 @@ class TestTransactions(object):
         mock_res = Mock()
         with patch('%s.filter_query' % pb, autospec=True) as mock_filter:
             mock_filter.return_value = mock_res
-            res = self.cls.transactions()
+            res = self.cls._transactions()
         assert res == mock_res
         assert mock_filter.mock_calls == [
             call(self.cls, self.mock_sess.query.return_value, Transaction.date)
@@ -212,7 +217,7 @@ class TestSTDate(object):
         mock_res = Mock()
         with patch('%s.filter_query' % pb, autospec=True) as mock_filter:
             mock_filter.return_value = mock_res
-            res = self.cls.scheduled_transactions_date()
+            res = self.cls._scheduled_transactions_date()
         assert res == mock_res
         assert mock_filter.mock_calls == [
             call(
@@ -237,7 +242,7 @@ class TestSTPeriod(object):
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
     def test_scheduled_transactions_per_period(self):
-        res = self.cls.scheduled_transactions_per_period()
+        res = self.cls._scheduled_transactions_per_period()
         frv = self.mock_sess.query.return_value.filter.return_value
         assert res == frv.order_by.return_value
         assert len(self.mock_sess.mock_calls) == 3
@@ -259,7 +264,7 @@ class TestSTMonthly(object):
 
     def test_contiguous(self):
         cls = BiweeklyPayPeriod(date(2017, 3, 2), self.mock_sess)
-        res = cls.scheduled_transactions_monthly()
+        res = cls._scheduled_transactions_monthly()
         assert res == self.mock_sess.query.return_value.filter.return_value
         assert len(self.mock_sess.mock_calls) == 2
         assert self.mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
@@ -281,7 +286,7 @@ class TestSTMonthly(object):
         mock_or_result = Mock()
         with patch('%s.or_' % pbm) as mock_or:
             mock_or.return_value = mock_or_result
-            res = cls.scheduled_transactions_monthly()
+            res = cls._scheduled_transactions_monthly()
         assert res == self.mock_sess.query.return_value.filter.return_value
         assert len(self.mock_sess.mock_calls) == 2
         assert self.mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
@@ -326,42 +331,52 @@ class TestData(object):
         mock_std = Mock()
         mock_stpp = Mock()
         mock_stm = Mock()
+        mock_mct = Mock()
+        mock_mbs = Mock()
         with patch.multiple(
             pb,
             autospec=True,
-            transactions=DEFAULT,
-            scheduled_transactions_date=DEFAULT,
-            scheduled_transactions_per_period=DEFAULT,
-            scheduled_transactions_monthly=DEFAULT,
-            _make_combined_transactions=DEFAULT
+            _transactions=DEFAULT,
+            _scheduled_transactions_date=DEFAULT,
+            _scheduled_transactions_per_period=DEFAULT,
+            _scheduled_transactions_monthly=DEFAULT,
+            _make_combined_transactions=DEFAULT,
+            _make_budget_sums=DEFAULT
         ) as mocks:
-            mocks['transactions'].return_value.all.return_value = mock_t
-            mocks['scheduled_transactions_date'
+            mocks['_transactions'].return_value.all.return_value = mock_t
+            mocks['_scheduled_transactions_date'
                   ''].return_value.all.return_value = mock_std
-            mocks['scheduled_transactions_per_period'
+            mocks['_scheduled_transactions_per_period'
                   ''].return_value.all.return_value = mock_stpp
-            mocks['scheduled_transactions_monthly'
+            mocks['_scheduled_transactions_monthly'
                   ''].return_value.all.return_value = mock_stm
+            mocks['_make_combined_transactions'].return_value = mock_mct
+            mocks['_make_budget_sums'].return_value = mock_mbs
             res = self.cls._data
         assert res == {
             'transactions': mock_t,
             'st_date': mock_std,
             'st_per_period': mock_stpp,
-            'st_monthly': mock_stm
+            'st_monthly': mock_stm,
+            'all_trans_list': mock_mct,
+            'budget_sums': mock_mbs
         }
-        assert mocks['transactions'].mock_calls == [
+        assert mocks['_transactions'].mock_calls == [
             call(self.cls), call().all()
         ]
-        assert mocks['scheduled_transactions_date'].mock_calls == [
+        assert mocks['_scheduled_transactions_date'].mock_calls == [
             call(self.cls), call().all()
         ]
-        assert mocks['scheduled_transactions_per_period'].mock_calls == [
+        assert mocks['_scheduled_transactions_per_period'].mock_calls == [
             call(self.cls), call().all()
         ]
-        assert mocks['scheduled_transactions_monthly'].mock_calls == [
+        assert mocks['_scheduled_transactions_monthly'].mock_calls == [
             call(self.cls), call().all()
         ]
         assert mocks['_make_combined_transactions'].mock_calls == [
+            call(self.cls)
+        ]
+        assert mocks['_make_budget_sums'].mock_calls == [
             call(self.cls)
         ]
 
@@ -370,30 +385,36 @@ class TestData(object):
         mock_std = Mock()
         mock_stpp = Mock()
         mock_stm = Mock()
+        mock_mct = Mock()
+        mock_mbs = Mock()
         with patch.multiple(
             pb,
             autospec=True,
-            transactions=DEFAULT,
-            scheduled_transactions_date=DEFAULT,
-            scheduled_transactions_per_period=DEFAULT,
-            scheduled_transactions_monthly=DEFAULT,
-            _make_combined_transactions=DEFAULT
+            _transactions=DEFAULT,
+            _scheduled_transactions_date=DEFAULT,
+            _scheduled_transactions_per_period=DEFAULT,
+            _scheduled_transactions_monthly=DEFAULT,
+            _make_combined_transactions=DEFAULT,
+            _make_budget_sums=DEFAULT
         ) as mocks:
-            mocks['transactions'].return_value.all.return_value = mock_t
-            mocks['scheduled_transactions_date'
+            mocks['_transactions'].return_value.all.return_value = mock_t
+            mocks['_scheduled_transactions_date'
                   ''].return_value.all.return_value = mock_std
-            mocks['scheduled_transactions_per_period'
+            mocks['_scheduled_transactions_per_period'
                   ''].return_value.all.return_value = mock_stpp
-            mocks['scheduled_transactions_monthly'
+            mocks['_scheduled_transactions_monthly'
                   ''].return_value.all.return_value = mock_stm
+            mocks['_make_combined_transactions'].return_value = mock_mct
+            mocks['_make_budget_sums'].return_value = mock_mbs
             self.cls._data_cache = {'foo': 'bar'}
             res = self.cls._data
         assert res == {'foo': 'bar'}
-        assert mocks['transactions'].mock_calls == []
-        assert mocks['scheduled_transactions_date'].mock_calls == []
-        assert mocks['scheduled_transactions_per_period'].mock_calls == []
-        assert mocks['scheduled_transactions_monthly'].mock_calls == []
+        assert mocks['_transactions'].mock_calls == []
+        assert mocks['_scheduled_transactions_date'].mock_calls == []
+        assert mocks['_scheduled_transactions_per_period'].mock_calls == []
+        assert mocks['_scheduled_transactions_monthly'].mock_calls == []
         assert mocks['_make_combined_transactions'].mock_calls == []
+        assert mocks['_make_budget_sums'].mock_calls == []
 
 
 class TestMakeCombinedTransactions(object):
@@ -416,15 +437,28 @@ class TestMakeCombinedTransactions(object):
         mock_per_periodA = Mock(num_per_period=1, name='per_period_A')
         mock_per_periodB = Mock(num_per_period=3, name='per_period_B')
         self.cls._data_cache = {
-            'transactions': [Mock(name='t1', day=1), Mock(name='t2', day=4)],
-            'st_date': [Mock(name='std1', day=2), Mock(name='std2', day=5)],
-            'st_monthly': [Mock(name='stm1', day=3)],
-            'st_per_period': [mock_per_periodA, mock_per_periodB]
+            'transactions': [
+                Mock(name='t1', day=1, scheduled_trans_id=1),
+                Mock(name='t2', day=4, scheduled_trans_id=None),
+                Mock(name='t3', day=6, scheduled_trans_id=2)
+            ],
+            'st_date': [
+                Mock(name='std1', day=2, id=1),
+                Mock(name='std2', day=5)
+            ],
+            'st_monthly': [
+                Mock(name='stm1', day=3),
+                Mock(name='stm2', day=6, id=2)
+            ],
+            'st_per_period': [
+                mock_per_periodA,
+                mock_per_periodB
+            ]
         }
         with patch('%s._trans_dict' % pb, autospec=True) as mock_t_dict:
             mock_t_dict.side_effect = se_trans_dict
-            self.cls._make_combined_transactions()
-        assert self.cls._data_cache['all_trans_list'] == [
+            res = self.cls._make_combined_transactions()
+        assert res == [
             {'name': 'per_period_A'},
             {'name': 'per_period_B'},
             {'name': 'per_period_B'},
@@ -432,10 +466,6 @@ class TestMakeCombinedTransactions(object):
             {
                 'name': 't1',
                 'date': date(year=2017, month=3, day=1)
-            },
-            {
-                'name': 'std1',
-                'date': date(year=2017, month=3, day=2)
             },
             {
                 'name': 'stm1',
@@ -448,8 +478,85 @@ class TestMakeCombinedTransactions(object):
             {
                 'name': 'std2',
                 'date': date(year=2017, month=3, day=5)
+            },
+            {
+                'name': 't3',
+                'date': date(2017, 3, 6)
             }
         ]
+
+
+class TestMakeBudgetSums(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+
+    def test_simple(self):
+        self.cls._data_cache = {
+            'all_trans_list': [
+                {
+                    'type': 'ScheduledTransaction',
+                    'amount': 11.11,
+                    'budgeted_amount': None,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 22.22,
+                    'budgeted_amount': None,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 22.22,
+                    'budgeted_amount': 20.20,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 33.33,
+                    'budgeted_amount': 33.33,
+                    'budget_id': 2
+                }
+            ]
+        }
+        budgets = [
+            Mock(spec_set=Budget, starting_balance=123.45, id=1),
+            Mock(spec_set=Budget, starting_balance=456.78, id=2),
+            Mock(spec_set=Budget, starting_balance=789.10, id=3)
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all.return_value \
+            = budgets
+        res = self.cls._make_budget_sums()
+        assert res == {
+            1: {
+                'budget_amount': 123.45,
+                'allocated': 53.53,
+                'spent': 44.44
+            },
+            2: {
+                'budget_amount': 456.78,
+                'allocated': 33.33,
+                'spent': 33.33
+            },
+            3: {
+                'budget_amount': 789.10,
+                'allocated': 0.0,
+                'spent': 0.0
+            }
+        }
+        assert len(self.mock_sess.mock_calls) == 3
+        assert self.mock_sess.mock_calls[0] == call.query(Budget)
+        kall = self.mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = [
+            Budget.is_active.__eq__(True),
+            Budget.is_periodic.__eq__(True)
+        ]
+        for idx, exp in enumerate(expected):
+            assert str(kall[1][idx]) == str(expected[idx])
+        assert self.mock_sess.mock_calls[2] == call.query().filter().all()
 
 
 class TestTransDict(object):

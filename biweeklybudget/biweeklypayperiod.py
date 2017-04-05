@@ -39,9 +39,10 @@ from datetime import timedelta, datetime, date
 from functools import total_ordering
 from sqlalchemy import or_, asc
 from dateutil import relativedelta
+from collections import defaultdict
 
 from biweeklybudget import settings
-from biweeklybudget.models import Transaction, ScheduledTransaction
+from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
 
 
 @total_ordering
@@ -206,7 +207,7 @@ class BiweeklyPayPeriod(object):
             date_prop >= self.start_date, date_prop <= self.end_date
         )
 
-    def transactions(self):
+    def _transactions(self):
         """
         Return a Query for all :py:class:`~.Transaction` for this pay period.
 
@@ -218,7 +219,7 @@ class BiweeklyPayPeriod(object):
             Transaction.date
         )
 
-    def scheduled_transactions_date(self):
+    def _scheduled_transactions_date(self):
         """
         Return a Query for all :py:class:`~.ScheduledTransaction` defined by
         date (schedule_type == "date") for this pay period.
@@ -233,7 +234,7 @@ class BiweeklyPayPeriod(object):
             ScheduledTransaction.date
         )
 
-    def scheduled_transactions_per_period(self):
+    def _scheduled_transactions_per_period(self):
         """
         Return a Query for all :py:class:`~.ScheduledTransaction` defined by
         number per period (schedule_type == "per period") for this pay period.
@@ -250,7 +251,7 @@ class BiweeklyPayPeriod(object):
             asc(ScheduledTransaction.amount)
         )
 
-    def scheduled_transactions_monthly(self):
+    def _scheduled_transactions_monthly(self):
         """
         Return a Query for all :py:class:`~.ScheduledTransaction` defined by
         day of month (schedule_type == "monthly") for this pay period.
@@ -301,36 +302,85 @@ class BiweeklyPayPeriod(object):
         if len(self._data_cache) > 0:
             return self._data_cache
         self._data_cache = {
-            'transactions': self.transactions().all(),
-            'st_date': self.scheduled_transactions_date().all(),
-            'st_per_period': self.scheduled_transactions_per_period().all(),
-            'st_monthly': self.scheduled_transactions_monthly().all()
+            'transactions': self._transactions().all(),
+            'st_date': self._scheduled_transactions_date().all(),
+            'st_per_period': self._scheduled_transactions_per_period().all(),
+            'st_monthly': self._scheduled_transactions_monthly().all()
         }
-        self._make_combined_transactions()
+        self._data_cache['all_trans_list'] = self._make_combined_transactions()
+        self._data_cache['budget_sums'] = self._make_budget_sums()
         return self._data_cache
 
     def _make_combined_transactions(self):
         """
         Combine all Transactions and ScheduledTransactions from
         ``self._data_cache`` into one ordered list of similar dicts, adding
-        dates to the monthly ScheduledTransactions as appropriate. Store the
-        finished list back into ``self._data_cache``.
+        dates to the monthly ScheduledTransactions as appropriate and excluding
+        ScheduledTransactions that have been converted to real Transactions.
+        Store the finished list back into ``self._data_cache``.
         """
         unordered = []
+        # ScheduledTransaction ID to count of real trans for each
+        st_ids = defaultdict(int)
         for t in self._data_cache['transactions']:
             unordered.append(self._trans_dict(t))
+            if t.scheduled_trans_id is not None:
+                st_ids[t.scheduled_trans_id] += 1
         for t in self._data_cache['st_date']:
-            unordered.append(self._trans_dict(t))
+            if t.id not in st_ids:
+                unordered.append(self._trans_dict(t))
         for t in self._data_cache['st_monthly']:
-            unordered.append(self._trans_dict(t))
+            if t.id not in st_ids:
+                unordered.append(self._trans_dict(t))
         ordered = []
         for t in self._data_cache['st_per_period']:
             d = self._trans_dict(t)
-            for _ in range(0, t.num_per_period):
+            for _ in range(0, (t.num_per_period - st_ids[t.id])):
                 ordered.append(d)
         for t in sorted(unordered, key=lambda k: k['date']):
             ordered.append(t)
-        self._data_cache['all_trans_list'] = ordered
+        return ordered
+
+    def _make_budget_sums(self):
+        """
+        Find the sums of all transactions per periodic budget ID ; return a dict
+        where keys are budget IDs and values are per-budget dicts containing:
+
+        - ``budget_amount`` *(float)* - the periodic budget
+          :py:attr:`~.Budget.starting_balance`.
+        - ``allocated`` *(float)* - sum of all
+          :py:class:`~.ScheduledTransaction` and :py:class:`~.Transaction`
+          amounts against the budget this period. For actual transactions, we
+          use the :py:attr:`~.Transaction.budgeted_amount` if present (not
+          None).
+        - ``spent`` *(float)* - the sum of all actual :py:class:`~.Transaction`
+          amounts against the budget this period.
+
+        :return: dict of dicts, transaction sums and amounts per budget
+        :rtype: dict
+        """
+        res = {}
+        for b in self._db.query(Budget).filter(
+            Budget.is_active.__eq__(True),
+            Budget.is_periodic.__eq__(True)
+        ).all():
+            res[b.id] = {
+                'budget_amount': b.starting_balance,
+                'allocated': 0.0,
+                'spent': 0.0
+            }
+        for t in self.transactions_list:
+            if t['type'] == 'ScheduledTransaction':
+                res[t['budget_id']]['allocated'] += t['amount']
+                continue
+            # t['type'] == 'Transaction'
+            if t['budgeted_amount'] is None:
+                res[t['budget_id']]['allocated'] += t['amount']
+                res[t['budget_id']]['spent'] += t['amount']
+            else:
+                res[t['budget_id']]['allocated'] += t['budgeted_amount']
+                res[t['budget_id']]['spent'] += t['amount']
+        return res
 
     def _trans_dict(self, t):
         """
