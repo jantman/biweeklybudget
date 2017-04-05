@@ -278,6 +278,18 @@ class BiweeklyPayPeriod(object):
         )
 
     @property
+    def transactions_list(self):
+        """
+        Return an ordered list of dicts, each representing a transaction for
+        this pay period. Dicts have keys and values as described in
+        :py:meth:`~._trans_dict`.
+
+        :return: ordered list of transaction dicts
+        :rtype: list
+        """
+        return self._data['all_trans_list']
+
+    @property
     def _data(self):
         """
         Return the object-local data cache dict. Built it if not already

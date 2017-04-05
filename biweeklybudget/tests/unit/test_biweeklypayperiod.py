@@ -303,6 +303,18 @@ class TestSTMonthly(object):
             assert binexp_to_dict(kall[1][idx]) == binexp_to_dict(exp)
 
 
+class TestDictForTrans(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+
+    def test_simple(self):
+        m = Mock()
+        self.cls._data_cache = {'all_trans_list': m}
+        assert self.cls.transactions_list == m
+
+
 class TestData(object):
 
     def setup(self):
