@@ -51,6 +51,12 @@ from biweeklybudget import settings
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
+    def setup(self):
+        self._orig_start_date = settings.PAY_PERIOD_START_DATE
+
+    def teardown(self):
+        settings.PAY_PERIOD_START_DATE = self._orig_start_date
+
     def test_0_clean_transactions(self, testdb):
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
@@ -156,3 +162,11 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[9]['date'] == date(2017, 5, 2)
         assert all_monthly[10]['date'] == date(2017, 5, 3)
         assert all_monthly[11]['date'] == date(2017, 5, 4)
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestPayPeriodSums(AcceptanceHelper):
+
+    def test_0_clean_transactions(self, testdb):
+        pass
