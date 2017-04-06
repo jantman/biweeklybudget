@@ -730,7 +730,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
             'Income (income) (7)'
         ]
         assert elems[1][4].get_attribute('innerHTML') == '' \
-            '<a href="javascript:schedModal(7, mytable)">ST3</a>'
+            '<a href="javascript:schedModal(7, mytable)">NewST8PerPeriod</a>'
         assert elems[1][5].get_attribute('innerHTML') == '' \
             '<a href="/accounts/1">BankOne (1)</a>'
         assert elems[1][6].get_attribute('innerHTML') == '' \
