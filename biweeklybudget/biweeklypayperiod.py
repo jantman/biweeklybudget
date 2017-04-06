@@ -309,6 +309,7 @@ class BiweeklyPayPeriod(object):
         }
         self._data_cache['all_trans_list'] = self._make_combined_transactions()
         self._data_cache['budget_sums'] = self._make_budget_sums()
+        self._data_cache['overall_sums'] = self._make_overall_sums()
         return self._data_cache
 
     def _make_combined_transactions(self):
@@ -380,6 +381,30 @@ class BiweeklyPayPeriod(object):
             else:
                 res[t['budget_id']]['allocated'] += t['budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
+        return res
+
+    def _make_overall_sums(self):
+        """
+        Return a dict describing the overall sums for this pay period, namely:
+
+        - ``allocated`` *(float)* total amount allocated via
+          :py:class:`~.ScheduledTransaction <ScheduledTransactions>`,
+          :py:class:`~.Transaction <Transactions>` (counting the
+          :py:attr:`~.Transaction.budgeted_amount` for Transactions that have
+          one), or :py:class:`~.Budget <Budgets>`.
+        - ``spent`` *(float)* total amount actually spent via
+          :py:class:`~.Transaction <Transactions>`.
+
+        :return: dict describing sums for the pay period
+        :rtype: dict
+        """
+        res = {'allocated': 0.0, 'spent': 0.0}
+        for _, b in self._data_cache['budget_sums'].items():
+            if b['allocated'] > b['budget_amount']:
+                res['allocated'] += b['allocated']
+            else:
+                res['allocated'] += b['budget_amount']
+            res['spent'] += b['spent']
         return res
 
     def _trans_dict(self, t):

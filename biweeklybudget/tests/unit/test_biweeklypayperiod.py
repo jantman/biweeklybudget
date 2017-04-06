@@ -333,6 +333,7 @@ class TestData(object):
         mock_stm = Mock()
         mock_mct = Mock()
         mock_mbs = Mock()
+        mock_mos = Mock()
         with patch.multiple(
             pb,
             autospec=True,
@@ -341,7 +342,8 @@ class TestData(object):
             _scheduled_transactions_per_period=DEFAULT,
             _scheduled_transactions_monthly=DEFAULT,
             _make_combined_transactions=DEFAULT,
-            _make_budget_sums=DEFAULT
+            _make_budget_sums=DEFAULT,
+            _make_overall_sums=DEFAULT
         ) as mocks:
             mocks['_transactions'].return_value.all.return_value = mock_t
             mocks['_scheduled_transactions_date'
@@ -352,6 +354,7 @@ class TestData(object):
                   ''].return_value.all.return_value = mock_stm
             mocks['_make_combined_transactions'].return_value = mock_mct
             mocks['_make_budget_sums'].return_value = mock_mbs
+            mocks['_make_overall_sums'].return_value = mock_mos
             res = self.cls._data
         assert res == {
             'transactions': mock_t,
@@ -359,7 +362,8 @@ class TestData(object):
             'st_per_period': mock_stpp,
             'st_monthly': mock_stm,
             'all_trans_list': mock_mct,
-            'budget_sums': mock_mbs
+            'budget_sums': mock_mbs,
+            'overall_sums': mock_mos
         }
         assert mocks['_transactions'].mock_calls == [
             call(self.cls), call().all()
@@ -379,6 +383,9 @@ class TestData(object):
         assert mocks['_make_budget_sums'].mock_calls == [
             call(self.cls)
         ]
+        assert mocks['_make_overall_sums'].mock_calls == [
+            call(self.cls)
+        ]
 
     def test_cached(self):
         mock_t = Mock()
@@ -387,6 +394,7 @@ class TestData(object):
         mock_stm = Mock()
         mock_mct = Mock()
         mock_mbs = Mock()
+        mock_mos = Mock()
         with patch.multiple(
             pb,
             autospec=True,
@@ -395,7 +403,8 @@ class TestData(object):
             _scheduled_transactions_per_period=DEFAULT,
             _scheduled_transactions_monthly=DEFAULT,
             _make_combined_transactions=DEFAULT,
-            _make_budget_sums=DEFAULT
+            _make_budget_sums=DEFAULT,
+            _make_overall_sums=DEFAULT
         ) as mocks:
             mocks['_transactions'].return_value.all.return_value = mock_t
             mocks['_scheduled_transactions_date'
@@ -406,6 +415,7 @@ class TestData(object):
                   ''].return_value.all.return_value = mock_stm
             mocks['_make_combined_transactions'].return_value = mock_mct
             mocks['_make_budget_sums'].return_value = mock_mbs
+            mocks['_make_overall_sums'].return_value = mock_mos
             self.cls._data_cache = {'foo': 'bar'}
             res = self.cls._data
         assert res == {'foo': 'bar'}
@@ -415,6 +425,7 @@ class TestData(object):
         assert mocks['_scheduled_transactions_monthly'].mock_calls == []
         assert mocks['_make_combined_transactions'].mock_calls == []
         assert mocks['_make_budget_sums'].mock_calls == []
+        assert mocks['_make_overall_sums'].mock_calls == []
 
 
 class TestMakeCombinedTransactions(object):
@@ -557,6 +568,41 @@ class TestMakeBudgetSums(object):
         for idx, exp in enumerate(expected):
             assert str(kall[1][idx]) == str(expected[idx])
         assert self.mock_sess.mock_calls[2] == call.query().filter().all()
+
+
+class TestMakeOverallSums(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+
+    def test_simple(self):
+        self.cls._data_cache['budget_sums'] = {
+            1: {
+                'budget_amount': 123.45,
+                'allocated': 53.53,
+                'spent': 44.44
+            },
+            2: {
+                'budget_amount': 456.78,
+                'allocated': 33.33,
+                'spent': 33.33
+            },
+            3: {
+                'budget_amount': 789.10,
+                'allocated': 0.0,
+                'spent': 0.0
+            },
+            4: {
+                'budget_amount': 789.10,
+                'allocated': 1823.94,
+                'spent': 102.34
+            }
+        }
+        assert self.cls._make_overall_sums() == {
+            'allocated': 3193.27,
+            'spent': 180.11
+        }
 
 
 class TestTransDict(object):
