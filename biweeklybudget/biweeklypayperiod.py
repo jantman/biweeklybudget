@@ -71,6 +71,7 @@ class BiweeklyPayPeriod(object):
         self._start_date = start_date
         self._end_date = start_date + self.period_length
         self._data_cache = {}
+        self._income_budget_id_list = None
 
     @property
     def period_interval(self):
@@ -291,6 +292,21 @@ class BiweeklyPayPeriod(object):
         return self._data['all_trans_list']
 
     @property
+    def _income_budget_ids(self):
+        """
+        Return a list of all :py:class:`~.Budget` IDs for Income budgets.
+
+        :return: list of income budget IDs
+        :rtype: list
+        """
+        if self._income_budget_id_list is None:
+            self._income_budget_id_list = [
+                b.id for b in self._db.query(
+                    Budget).filter(Budget.is_income.__eq__(True)).all()
+            ]
+        return self._income_budget_id_list
+
+    @property
     def _data(self):
         """
         Return the object-local data cache dict. Built it if not already
@@ -356,6 +372,8 @@ class BiweeklyPayPeriod(object):
           None).
         - ``spent`` *(float)* - the sum of all actual :py:class:`~.Transaction`
           amounts against the budget this period.
+        - ``trans_total`` *(float)* - the sum of spent amounts for Transactions
+          that have them, or allocated amounts for ScheduledTransactions.
 
         :return: dict of dicts, transaction sums and amounts per budget
         :rtype: dict
@@ -368,13 +386,17 @@ class BiweeklyPayPeriod(object):
             res[b.id] = {
                 'budget_amount': float(b.starting_balance),
                 'allocated': 0.0,
-                'spent': 0.0
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': b.is_income
             }
         for t in self.transactions_list:
             if t['type'] == 'ScheduledTransaction':
                 res[t['budget_id']]['allocated'] += t['amount']
+                res[t['budget_id']]['trans_total'] += t['amount']
                 continue
             # t['type'] == 'Transaction'
+            res[t['budget_id']]['trans_total'] += t['amount']
             if t['budgeted_amount'] is None:
                 res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['spent'] += t['amount']
@@ -391,20 +413,27 @@ class BiweeklyPayPeriod(object):
           :py:class:`~.ScheduledTransaction`,
           :py:class:`~.Transaction` (counting the
           :py:attr:`~.Transaction.budgeted_amount` for Transactions that have
-          one), or :py:class:`~.Budget`.
+          one), or :py:class:`~.Budget` (not counting income budgets).
         - ``spent`` *(float)* total amount actually spent via
           :py:class:`~.Transaction`.
+        - ``income`` *(float)* total amount of income allocated this pay period.
+          Calculated value (from :py:meth:`~._make_budget_sums` /
+          ``self._data_cache['budget_sums']``) should be negative, but is
+          returned as its positive inverse (absolute value).
 
         :return: dict describing sums for the pay period
         :rtype: dict
         """
-        res = {'allocated': 0.0, 'spent': 0.0}
+        res = {'allocated': 0.0, 'spent': 0.0, 'income': 0.0}
         for _, b in self._data_cache['budget_sums'].items():
-            if b['allocated'] > b['budget_amount']:
-                res['allocated'] += b['allocated']
+            if b['is_income']:
+                res['income'] += (-1.0 * b['trans_total'])
             else:
-                res['allocated'] += b['budget_amount']
-            res['spent'] += b['spent']
+                if b['allocated'] > b['budget_amount']:
+                    res['allocated'] += b['allocated']
+                else:
+                    res['allocated'] += b['budget_amount']
+                res['spent'] += b['spent']
         return res
 
     def _trans_dict(self, t):

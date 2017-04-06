@@ -63,6 +63,11 @@ pbm = 'biweeklybudget.biweeklypayperiod'
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
+    def find_income_trans_id(self, db):
+        return db.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description.__eq__('Income')
+        ).one().id
+
     def test_0_clean_transactions(self, testdb):
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
@@ -81,6 +86,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
     def test_2_add_data(self, testdb):
         acct = testdb.query(Account).get(1)
         budg = testdb.query(Budget).get(1)
+        inc_budg = testdb.query(Budget).get(7)
         for daynum in range(1, 29):
             testdb.add(ScheduledTransaction(
                 amount=123.45,
@@ -89,6 +95,13 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
                 budget=budg,
                 day_of_month=daynum
             ))
+        testdb.add(ScheduledTransaction(
+            amount=-1000.00,
+            description='Income',
+            account=acct,
+            budget=inc_budg,
+            num_per_period=1
+        ))
         testdb.flush()
         testdb.commit()
 
@@ -115,7 +128,17 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[10]['date'] == date(2017, 4, 6)
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_4_current_pay_period(self, testdb):
+    def test_4_income_trans_is_first_previous_period(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 1), testdb
+        )
+        all_trans = pp.transactions_list
+        income_id = self.find_income_trans_id(testdb)
+        assert income_id is not None
+        assert all_trans[0]['id'] == income_id
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_5_current_pay_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 13), testdb
         )
@@ -139,7 +162,17 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[13]['date'] == date(2017, 4, 20)
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_5_next_pay_period(self, testdb):
+    def test_6_income_trans_is_first_current_period(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 13), testdb
+        )
+        all_trans = pp.transactions_list
+        income_id = self.find_income_trans_id(testdb)
+        assert income_id is not None
+        assert all_trans[0]['id'] == income_id
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_7_next_pay_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 5, 4), testdb
         )
@@ -160,6 +193,16 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         assert all_monthly[9]['date'] == date(2017, 5, 2)
         assert all_monthly[10]['date'] == date(2017, 5, 3)
         assert all_monthly[11]['date'] == date(2017, 5, 4)
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_8_income_trans_is_first_next_period(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 5, 4), testdb
+        )
+        all_trans = pp.transactions_list
+        income_id = self.find_income_trans_id(testdb)
+        assert income_id is not None
+        assert all_trans[0]['id'] == income_id
 
 
 @pytest.mark.acceptance

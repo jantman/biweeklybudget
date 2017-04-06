@@ -320,6 +320,44 @@ class TestTransactionsList(object):
         assert self.cls.transactions_list == m
 
 
+class TestIncomeBudgetIDs(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+
+    def test_no_cache(self):
+        self.cls._income_budget_id_list = None
+        budgets = [
+            Mock(spec_set=Budget, is_income=True, id=2),
+            Mock(spec_set=Budget, is_income=True, id=4)
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all.return_value \
+            = budgets
+        assert self.cls._income_budget_ids == [2, 4]
+        assert self.cls._income_budget_id_list == [2, 4]
+        assert len(self.mock_sess.mock_calls) == 3
+        assert self.mock_sess.mock_calls[0] == call.query(Budget)
+        kall = self.mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        assert str(kall[1][0]) == str(Budget.is_income.__eq__(True))
+        assert self.mock_sess.mock_calls[2] == call.query().filter().all()
+
+    def test_cache(self):
+        self.cls._income_budget_id_list = [1, 2]
+        budgets = [
+            Mock(spec_set=Budget, is_income=False, id=1),
+            Mock(spec_set=Budget, is_income=True, id=2),
+            Mock(spec_set=Budget, is_income=False, id=3),
+            Mock(spec_set=Budget, is_income=True, id=4)
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all.return_value \
+            = budgets
+        assert self.cls._income_budget_ids == [1, 2]
+        assert self.cls._income_budget_id_list == [1, 2]
+        assert len(self.mock_sess.mock_calls) == 0
+
+
 class TestData(object):
 
     def setup(self):
@@ -503,7 +541,7 @@ class TestMakeBudgetSums(object):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
 
-    def test_simple(self):
+    def test_scheduled_income(self):
         self.cls._data_cache = {
             'all_trans_list': [
                 {
@@ -529,13 +567,32 @@ class TestMakeBudgetSums(object):
                     'amount': 33.33,
                     'budgeted_amount': 33.33,
                     'budget_id': 2
+                },
+                {
+                    'type': 'ScheduledTransaction',
+                    'amount': -1234.56,
+                    'budgeted_amount': -1234.56,
+                    'budget_id': 4
                 }
             ]
         }
         budgets = [
-            Mock(spec_set=Budget, starting_balance=123.45, id=1),
-            Mock(spec_set=Budget, starting_balance=456.78, id=2),
-            Mock(spec_set=Budget, starting_balance=789.10, id=3)
+            Mock(
+                spec_set=Budget, starting_balance=123.45, id=1,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=456.78, id=2,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=789.10, id=3,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=0, id=4,
+                is_income=True
+            )
         ]
         self.mock_sess.query.return_value.filter.return_value.all.return_value \
             = budgets
@@ -544,17 +601,128 @@ class TestMakeBudgetSums(object):
             1: {
                 'budget_amount': 123.45,
                 'allocated': 53.53,
-                'spent': 44.44
+                'spent': 44.44,
+                'trans_total': 55.55,
+                'is_income': False
             },
             2: {
                 'budget_amount': 456.78,
                 'allocated': 33.33,
-                'spent': 33.33
+                'spent': 33.33,
+                'trans_total': 33.33,
+                'is_income': False
             },
             3: {
                 'budget_amount': 789.10,
                 'allocated': 0.0,
-                'spent': 0.0
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': False
+            },
+            4: {
+                'budget_amount': 0.0,
+                'allocated': -1234.56,
+                'spent': 0.0,
+                'trans_total': -1234.56,
+                'is_income': True
+            }
+        }
+        assert len(self.mock_sess.mock_calls) == 3
+        assert self.mock_sess.mock_calls[0] == call.query(Budget)
+        kall = self.mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = [
+            Budget.is_active.__eq__(True),
+            Budget.is_periodic.__eq__(True)
+        ]
+        for idx, exp in enumerate(expected):
+            assert str(kall[1][idx]) == str(expected[idx])
+        assert self.mock_sess.mock_calls[2] == call.query().filter().all()
+
+    def test_actual_income(self):
+        self.cls._data_cache = {
+            'all_trans_list': [
+                {
+                    'type': 'ScheduledTransaction',
+                    'amount': 11.11,
+                    'budgeted_amount': None,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 22.22,
+                    'budgeted_amount': None,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 22.22,
+                    'budgeted_amount': 20.20,
+                    'budget_id': 1
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': 33.33,
+                    'budgeted_amount': 33.33,
+                    'budget_id': 2
+                },
+                {
+                    'type': 'Transaction',
+                    'amount': -1234.56,
+                    'budgeted_amount': -1234.56,
+                    'budget_id': 4
+                }
+            ]
+        }
+        budgets = [
+            Mock(
+                spec_set=Budget, starting_balance=123.45, id=1,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=456.78, id=2,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=789.10, id=3,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=0, id=4,
+                is_income=True
+            )
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all.return_value \
+            = budgets
+        res = self.cls._make_budget_sums()
+        assert res == {
+            1: {
+                'budget_amount': 123.45,
+                'allocated': 53.53,
+                'spent': 44.44,
+                'trans_total': 55.55,
+                'is_income': False
+            },
+            2: {
+                'budget_amount': 456.78,
+                'allocated': 33.33,
+                'spent': 33.33,
+                'trans_total': 33.33,
+                'is_income': False
+            },
+            3: {
+                'budget_amount': 789.10,
+                'allocated': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': False
+            },
+            4: {
+                'budget_amount': 0.0,
+                'allocated': -1234.56,
+                'spent': -1234.56,
+                'trans_total': -1234.56,
+                'is_income': True
             }
         }
         assert len(self.mock_sess.mock_calls) == 3
@@ -581,27 +749,36 @@ class TestMakeOverallSums(object):
             1: {
                 'budget_amount': 123.45,
                 'allocated': 53.53,
-                'spent': 44.44
+                'spent': 44.44,
+                'trans_total': 55.55,
+                'is_income': False
             },
             2: {
-                'budget_amount': 456.78,
+                'budget_amount': 10.00,
                 'allocated': 33.33,
-                'spent': 33.33
+                'spent': 33.33,
+                'trans_total': 33.33,
+                'is_income': False
             },
             3: {
                 'budget_amount': 789.10,
                 'allocated': 0.0,
-                'spent': 0.0
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': False
             },
             4: {
-                'budget_amount': 789.10,
-                'allocated': 1823.94,
-                'spent': 102.34
+                'budget_amount': 0.0,
+                'allocated': -1192.56,
+                'spent': -254.38,
+                'trans_total': -1234.56,
+                'is_income': True
             }
         }
         assert self.cls._make_overall_sums() == {
-            'allocated': 3193.27,
-            'spent': 180.11
+            'allocated': 945.88,
+            'spent': 77.77,
+            'income': 1234.56
         }
 
 
