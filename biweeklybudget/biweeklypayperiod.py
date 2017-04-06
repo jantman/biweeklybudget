@@ -420,11 +420,13 @@ class BiweeklyPayPeriod(object):
           Calculated value (from :py:meth:`~._make_budget_sums` /
           ``self._data_cache['budget_sums']``) should be negative, but is
           returned as its positive inverse (absolute value).
+        - ``remaining`` *(float)* income minus the greater of ``allocated`` or
+          ``spent``
 
         :return: dict describing sums for the pay period
         :rtype: dict
         """
-        res = {'allocated': 0.0, 'spent': 0.0, 'income': 0.0}
+        res = {'allocated': 0.0, 'spent': 0.0, 'income': 0.0, 'remaining': 0.0}
         for _, b in self._data_cache['budget_sums'].items():
             if b['is_income']:
                 res['income'] += (-1.0 * b['trans_total'])
@@ -434,6 +436,10 @@ class BiweeklyPayPeriod(object):
                 else:
                     res['allocated'] += b['budget_amount']
                 res['spent'] += b['spent']
+        if res['allocated'] > res['spent']:
+            res['remaining'] = res['income'] - res['allocated']
+        else:
+            res['remaining'] = res['income'] - res['spent']
         return res
 
     def _trans_dict(self, t):

@@ -778,7 +778,8 @@ class TestMakeOverallSums(object):
         assert self.cls._make_overall_sums() == {
             'allocated': 945.88,
             'spent': 77.77,
-            'income': 1234.56
+            'income': 1234.56,
+            'remaining': 1234.56 - 945.88
         }
 
 
