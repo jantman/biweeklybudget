@@ -67,6 +67,8 @@ function budgetModalDivForm() {
     frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label for="budget_frm_current_balance" class="control-label">Current Balance</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div></div>\n';
     // is_active checkbox
     frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_active"><input type="checkbox" id="budget_frm_active" name="is_active" checked> Active?</label>\n';
+    // is_income checkbox
+    frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_income"><input type="checkbox" id="budget_frm_income" name="is_income"> Income?</label>\n';
     frm += '</form>\n';
     return frm;
 }
@@ -93,6 +95,11 @@ function budgetModalDivFillAndShow(msg) {
         $('#budget_frm_active').prop('checked', true);
     } else {
         $('#budget_frm_active').prop('checked', false);
+    }
+    if(msg['is_income'] === true) {
+        $('#budget_frm_income').prop('checked', true);
+    } else {
+        $('#budget_frm_income').prop('checked', false);
     }
     $("#modalDiv").modal('show');
 }

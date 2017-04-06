@@ -68,6 +68,9 @@ class Budget(Base, ModelAsDict):
     #: whether active or historical
     is_active = Column(Boolean, default=True)
 
+    #: whether this is an Income budget (True) or expense (False).
+    is_income = Column(Boolean, default=False)
+
     def __repr__(self):
         return "<Budget(id=%d)>" % (
             self.id

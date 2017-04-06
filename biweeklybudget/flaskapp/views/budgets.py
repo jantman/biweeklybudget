@@ -117,6 +117,22 @@ class BudgetFormHandler(FormHandlerView):
         if data.get('name', '').strip() == '':
             errors['name'].append('Name cannot be empty')
             have_errors = True
+        if (
+            data['is_periodic'] == 'true' and
+            data['starting_balance'].strip() == ''
+        ):
+            errors['starting_balances'].append(
+                'Starting balance must be specified for periodic budgets.'
+            )
+            have_errors = True
+        if (
+            data['is_periodic'] == 'false' and
+            data['current_balance'].strip() == ''
+        ):
+            errors['current_balances'].append(
+                'Current balance must be specified for standing budgets.'
+            )
+            have_errors = True
         if have_errors:
             return errors
         return None
@@ -152,6 +168,10 @@ class BudgetFormHandler(FormHandlerView):
             budget.is_active = True
         else:
             budget.is_active = False
+        if data['is_income'] == 'true':
+            budget.is_income = True
+        else:
+            budget.is_income = False
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()

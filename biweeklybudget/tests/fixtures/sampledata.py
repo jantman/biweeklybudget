@@ -104,9 +104,20 @@ class SampleDataLoader(object):
                 description='S3desc',
                 current_balance=-92.29,
                 is_active=False
+            ),
+            'Income': Budget(
+                name='Income',
+                is_periodic=True,
+                description='IncomeDesc',
+                starting_balance=2345.67,
+                is_income=True
             )
         }
-        for x in sorted(res.keys()):
+        for x in [
+            'Periodic1', 'Periodic2', 'Periodic3 Inactive',
+            'Standing1', 'Standing2', 'Standing3 Inactive',
+            'Income'
+        ]:
             self.db.add(res[x])
         return res
 
