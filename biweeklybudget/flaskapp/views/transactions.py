@@ -61,7 +61,12 @@ class TransactionsView(MethodView):
         template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
-        budgets = {b.name: b.id for b in db_session.query(Budget).all()}
+        budgets = {}
+        for b in db_session.query(Budget).all():
+            if b.is_income:
+                budgets['%s (income)' % b.name] = b.id
+            else:
+                budgets[b.name] = b.id
         return render_template(
             'transactions.html',
             accts=accts,
@@ -77,7 +82,12 @@ class OneTransactionView(MethodView):
         ``transactions.html`` template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
-        budgets = {b.name: b.id for b in db_session.query(Budget).all()}
+        budgets = {}
+        for b in db_session.query(Budget).all():
+            if b.is_income:
+                budgets['%s (income)' % b.name] = b.id
+            else:
+                budgets[b.name] = b.id
         return render_template(
             'transactions.html',
             accts=accts,
@@ -163,7 +173,11 @@ class TransactionsAjax(SearchableAjaxView):
                 (
                     'budget',
                     'budget.name',
-                    lambda i: "{} ({})".format(i.name, i.id)
+                    lambda i: "{} {}({})".format(
+                        i.name,
+                        '(income) ' if i.is_income else '',
+                        i.id
+                    )
                 ),
                 (
                     'scheduled',

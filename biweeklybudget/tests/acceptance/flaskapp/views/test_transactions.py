@@ -261,6 +261,7 @@ class TestTransModal(AcceptanceHelper):
             opts.append([o.get_attribute('value'), o.text])
         assert opts == [
             ['None', ''],
+            ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
             ['3', 'Periodic3 Inactive'],
@@ -379,6 +380,7 @@ class TestTransModalByURL(AcceptanceHelper):
             opts.append([o.get_attribute('value'), o.text])
         assert opts == [
             ['None', ''],
+            ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
             ['3', 'Periodic3 Inactive'],
