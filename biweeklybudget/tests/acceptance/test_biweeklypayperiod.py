@@ -38,7 +38,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 import pytest
 from datetime import date
-from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
@@ -287,7 +286,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('222.2200'),
+                'amount': 222.22,
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,
@@ -301,7 +300,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.3300'),
+                'amount': 333.33,
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,

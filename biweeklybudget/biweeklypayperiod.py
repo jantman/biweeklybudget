@@ -366,7 +366,7 @@ class BiweeklyPayPeriod(object):
             Budget.is_periodic.__eq__(True)
         ).all():
             res[b.id] = {
-                'budget_amount': b.starting_balance,
+                'budget_amount': float(b.starting_balance),
                 'allocated': 0.0,
                 'spent': 0.0
             }
@@ -388,12 +388,12 @@ class BiweeklyPayPeriod(object):
         Return a dict describing the overall sums for this pay period, namely:
 
         - ``allocated`` *(float)* total amount allocated via
-          :py:class:`~.ScheduledTransaction <ScheduledTransactions>`,
-          :py:class:`~.Transaction <Transactions>` (counting the
+          :py:class:`~.ScheduledTransaction`,
+          :py:class:`~.Transaction` (counting the
           :py:attr:`~.Transaction.budgeted_amount` for Transactions that have
-          one), or :py:class:`~.Budget <Budgets>`.
+          one), or :py:class:`~.Budget`.
         - ``spent`` *(float)* total amount actually spent via
-          :py:class:`~.Transaction <Transactions>`.
+          :py:class:`~.Transaction`.
 
         :return: dict describing sums for the pay period
         :rtype: dict
@@ -531,7 +531,7 @@ class BiweeklyPayPeriod(object):
             'sched_type': t.schedule_type,
             'sched_trans_id': None,
             'description': t.description,
-            'amount': t.amount,
+            'amount': float(t.amount),
             'budgeted_amount': None,
             'account_id': t.account_id,
             'account_name': t.account.name,
