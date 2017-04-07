@@ -153,6 +153,7 @@ def testdb():
     # yield the session
     yield(sess)
     sess.close()
+    conn.close()
 
 
 @pytest.fixture(scope="session")
