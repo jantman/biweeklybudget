@@ -63,7 +63,7 @@ pbm = 'biweeklybudget.biweeklypayperiod'
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
+class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
     def find_income_trans_id(self, db):
         return db.query(ScheduledTransaction).filter(
@@ -209,7 +209,7 @@ class DONOTTestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestTransFromSchedTrans(AcceptanceHelper):
+class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
         testdb.query(Transaction).delete(synchronize_session='fetch')
