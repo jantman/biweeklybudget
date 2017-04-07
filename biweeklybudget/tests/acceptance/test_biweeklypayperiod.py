@@ -452,7 +452,6 @@ class TestSums(AcceptanceHelper):
     def test_0_clean_db(self, testdb):
         # clean the database
         biweeklybudget.models.base.Base.metadata.reflect(engine)
-        t = biweeklybudget.models.base.Base.metadata.tables
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
 
