@@ -429,13 +429,16 @@ class BiweeklyPayPeriod(object):
         res = {'allocated': 0.0, 'spent': 0.0, 'income': 0.0, 'remaining': 0.0}
         for _, b in self._data_cache['budget_sums'].items():
             if b['is_income']:
-                res['income'] += (-1.0 * b['trans_total'])
-            else:
-                if b['allocated'] > b['budget_amount']:
-                    res['allocated'] += b['allocated']
+                if abs(b['trans_total']) > abs(b['budget_amount']):
+                    res['income'] += abs(b['trans_total'])
                 else:
-                    res['allocated'] += b['budget_amount']
-                res['spent'] += b['spent']
+                    res['income'] += abs(b['budget_amount'])
+                continue
+            if b['allocated'] > b['budget_amount']:
+                res['allocated'] += b['allocated']
+            else:
+                res['allocated'] += b['budget_amount']
+            res['spent'] += b['spent']
         if res['allocated'] > res['spent']:
             res['remaining'] = res['income'] - res['allocated']
         else:

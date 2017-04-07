@@ -42,9 +42,11 @@ from datetime import date
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.account import Account
+from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+import biweeklybudget.models.base  # noqa
+from biweeklybudget.tests.conftest import engine
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -61,7 +63,7 @@ pbm = 'biweeklybudget.biweeklypayperiod'
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
+class DONOTTestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
     def find_income_trans_id(self, db):
         return db.query(ScheduledTransaction).filter(
@@ -207,7 +209,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestTransFromSchedTrans(AcceptanceHelper):
+class DONOTTestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
         testdb.query(Transaction).delete(synchronize_session='fetch')
@@ -441,3 +443,240 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'type': 'Transaction'
             }
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestSums(AcceptanceHelper):
+
+    def test_0_clean_db(self, testdb):
+        # clean the database
+        biweeklybudget.models.base.Base.metadata.reflect(engine)
+        t = biweeklybudget.models.base.Base.metadata.tables
+        biweeklybudget.models.base.Base.metadata.drop_all(engine)
+        biweeklybudget.models.base.Base.metadata.create_all(engine)
+
+    def test_1_add_account(self, testdb):
+        testdb.add(Account(
+            description='First Bank Account',
+            name='BankOne',
+            ofx_cat_memo_to_name=True,
+            ofxgetter_config_json='{"foo": "bar"}',
+            vault_creds_path='secret/foo/bar/BankOne',
+            acct_type=AcctType.Bank
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_add_budgets(self, testdb):
+        testdb.add(Budget(
+            name='1Standing',
+            is_periodic=False,
+            description='1Standing',
+            current_balance=987.65
+        ))
+        testdb.add(Budget(
+            name='2Income',
+            is_periodic=True,
+            description='2Income',
+            starting_balance=123.45,
+            is_income=True
+        ))
+        testdb.add(Budget(
+            name='3Income',
+            is_periodic=True,
+            description='2Income',
+            starting_balance=0.0,
+            is_income=True
+        ))
+        testdb.add(Budget(
+            name='4Periodic',
+            is_periodic=True,
+            description='4Periodic',
+            starting_balance=500.00
+        ))
+        testdb.add(Budget(
+            name='5Periodic',
+            is_periodic=True,
+            description='5Periodic',
+            starting_balance=100.00
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_3_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        budgets = {x.id: x for x in testdb.query(Budget).all()}
+        # Budget 3 Income Transaction
+        testdb.add(Transaction(
+            date=date(2017, 4, 7),
+            actual_amount=100.00,
+            budgeted_amount=100.00,
+            description='B3 Income',
+            account=acct,
+            budget=budgets[3]
+        ))
+        # Budget 3 Income ST
+        testdb.add(ScheduledTransaction(
+            amount=99.00,
+            description='B3 Income ST',
+            account=acct,
+            budget=budgets[3],
+            num_per_period=1
+        ))
+        # Budget 4 allocated greater than budgeted (500.00)
+        testdb.add(ScheduledTransaction(
+            amount=250.00,
+            description='B4 ST',
+            account=acct,
+            budget=budgets[4],
+            date=date(2017, 4, 10)
+        ))
+        testdb.add(Transaction(
+            date=date(2017, 4, 11),
+            actual_amount=250.00,
+            description='B4 T no budgeted',
+            account=acct,
+            budget=budgets[4]
+        ))
+        testdb.add(Transaction(
+            date=date(2017, 4, 12),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='B4 T budgeted',
+            account=acct,
+            budget=budgets[4]
+        ))
+        # Budget 5 budgeted greater than allocated (100)
+        testdb.add(ScheduledTransaction(
+            amount=2.00,
+            description='B5 ST',
+            account=acct,
+            budget=budgets[5],
+            day_of_month=9
+        ))
+        testdb.add(Transaction(
+            date=date(2017, 4, 13),
+            description='B5 T',
+            actual_amount=3.00,
+            budgeted_amount=1.00,
+            account=acct,
+            budget=budgets[5]
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_4_budget_sums(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 10), testdb
+        )
+        assert pp._data['budget_sums'] == {
+            2: {
+                'budget_amount': 123.45,
+                'allocated': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': True
+            },
+            3: {
+                'budget_amount': 0.0,
+                'allocated': 199.0,
+                'spent': 100.0,
+                'trans_total': 199.0,
+                'is_income': True
+            },
+            4: {
+                'budget_amount': 500.00,
+                'allocated': 1000.0,
+                'spent': 850.0,
+                'trans_total': 1100.0,
+                'is_income': False
+            },
+            5: {
+                'budget_amount': 100.0,
+                'allocated': 3.0,
+                'spent': 3.0,
+                'trans_total': 5.0,
+                'is_income': False
+            }
+        }
+
+    def test_5_overall_sums(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 10), testdb
+        )
+        assert pp._data['overall_sums'] == {
+            'allocated': 1100.0,
+            'spent': 853.0,
+            'income': 322.45,
+            'remaining': -777.55
+        }
+
+    def test_6_transaction_list_ordering(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 10), testdb
+        )
+        type_id = [[x['type'], x['id']] for x in pp.transactions_list]
+        assert type_id == [
+            ['ScheduledTransaction', 1],
+            ['Transaction', 1],
+            ['ScheduledTransaction', 3],
+            ['ScheduledTransaction', 2],
+            ['Transaction', 2],
+            ['Transaction', 3],
+            ['Transaction', 4]
+        ]
+
+    def test_7_spent_greater_than_allocated(self, testdb):
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(5)
+        testdb.add(Transaction(
+            date=date(2017, 4, 13),
+            description='B6 T',
+            actual_amount=2032.0,
+            budgeted_amount=32.0,
+            account=acct,
+            budget=budget
+        ))
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2017, 4, 10), testdb
+        )
+        assert pp._data['budget_sums'] == {
+            2: {
+                'budget_amount': 123.45,
+                'allocated': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': True
+            },
+            3: {
+                'budget_amount': 0.0,
+                'allocated': 199.0,
+                'spent': 100.0,
+                'trans_total': 199.0,
+                'is_income': True
+            },
+            4: {
+                'budget_amount': 500.00,
+                'allocated': 1000.0,
+                'spent': 850.0,
+                'trans_total': 1100.0,
+                'is_income': False
+            },
+            5: {
+                'budget_amount': 100.0,
+                'allocated': 35.0,
+                'spent': 2035.0,
+                'trans_total': 2037.0,
+                'is_income': False
+            }
+        }
+        assert pp._data['overall_sums'] == {
+            'allocated': 1100.0,
+            'spent': 2885.0,
+            'income': 322.45,
+            'remaining': -2562.55
+        }
