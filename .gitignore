@@ -87,6 +87,8 @@ venv/
 ENV/
 bin/*
 !bin/db_tester.py
+!bin/t
+!bin/ta
 
 # Spyder project settings
 .spyderproject
