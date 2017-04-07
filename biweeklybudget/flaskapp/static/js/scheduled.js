@@ -85,7 +85,7 @@ $(document).ready(function() {
                 }
             }
         ],
-        order: [[ 0, "desc"], [ 1, "desc"], [2, "asc"]],
+        order: [[ 0, "desc"], [ 1, "desc"], [2, "asc"], [3, "asc"]],
         bInfo: true,
         "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             if(aData.is_active === false) {
