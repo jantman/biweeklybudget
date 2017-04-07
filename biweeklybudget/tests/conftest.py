@@ -61,7 +61,8 @@ from biweeklybudget.flaskapp.app import app  # noqa
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
-    connect_args={'sql_mode': 'STRICT_ALL_TABLES'}
+    connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
+    pool_size=10, pool_timeout=120
 )
 
 logger = logging.getLogger(__name__)
