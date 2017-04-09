@@ -58,6 +58,12 @@ Testing is done via `pytest <http://pytest.org/latest/>`_, driven by `tox <http:
 
 * If you want to pass additional arguments to pytest, add them to the tox command line after "--". i.e., for verbose pytext output on py27 tests: ``tox -e py27 -- -v``
 
+For rapid iteration on tests, you can either use my
+`toxit <https://github.com/jantman/misc-scripts/blob/master/toxit.py>`_ script
+to re-run the test commands in an existing tox environment, or you can use
+the ``bin/t`` and ``bin/ta`` scripts to run unit or acceptance tests,
+respectively, on only one module.
+
 Unit Tests
 ++++++++++
 

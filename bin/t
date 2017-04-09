@@ -1,27 +1,45 @@
 #!/usr/bin/env python
 """
-toxit.py - script to parse a tox.ini file in cwd and run the test commands
-for a specified environment against the already-existing virtualenv (i.e. just
-re-run only the test commands).
+The latest version of this package is available at:
+<http://github.com/jantman/biweeklybudget>
 
-If you have ideas for improvements, or want the latest version, it's at:
+################################################################################
+Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+
+    This file is part of biweeklybudget, also known as biweeklybudget.
+
+    biweeklybudget is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    biweeklybudget is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with biweeklybudget.  If not, see <http://www.gnu.org/licenses/>.
+
+The Copyright and Authors attributions contained herein may not be removed or
+otherwise altered, except to add the Author attribution of a contributor to
+this work. (Additional Terms pursuant to Section 7b of the AGPL v3)
+################################################################################
+While not legally required, I sincerely request that anyone who finds
+bugs please submit them at <https://github.com/jantman/biweeklybudget> or
+to me via email, and that you send any contributions or improvements
+either as a pull request on GitHub, or to me via email.
+################################################################################
+
+AUTHORS:
+Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+################################################################################
+
+Test helper to run unit or acceptance tests for only one module.
+
+Based off of:
 <https://github.com/jantman/misc-scripts/blob/master/toxit.py>
-
-Copyright 2016-2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
-Free for any use provided that patches are submitted back to me.
-
-CHANGELOG:
-2017-03-22 Jason Antman <jason@jasonantman.com>:
-  - support passenv and setenv
-  - major internal refactor
-2016-10-28 Jason Antman <jason@jasonantman.com>:
-  - ignore 'env' in commands
-2016-07-05 Jason Antman <jason@jasonantman.com>:
-  - gut the whole script and use tox's own parseconfig()
-2016-07-05 Jason Antman <jason@jasonantman.com>:
-  - bug fixes
-2016-07-03 Jason Antman <jason@jasonantman.com>:
-  - initial version of script
+2017-03-22 version (426801d)
 """
 
 import sys
@@ -35,7 +53,8 @@ except ImportError:
     sys.stderr.write("ERROR: Could not import tox - is it installed?\n")
     raise SystemExit(1)
 
-FORMAT = "[%(levelname)s %(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+FORMAT = "[%(levelname)s %(filename)s:%(lineno)s - %(funcName)20s() ] " \
+         "%(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
@@ -87,6 +106,9 @@ class ToxIt(object):
     def run_env(self, env_config):
         """run a single env; return True (success) or False (failure)"""
         for cmd in env_config['commands']:
+            if 'py.test' not in cmd:
+                logger.info('Skipping non-pytest command: %s', cmd)
+                continue
             logger.info('Running command: %s', cmd)
             rcode = subprocess.call(cmd, env=self._make_env(env_config))
             logger.info('Command exited %s', rcode)
@@ -116,21 +138,102 @@ class ToxIt(object):
         print('All commands succeeded.')
         raise SystemExit(0)
 
+    def _find_test_mod_for_module(self, module_name, acceptance=False):
+        """
+        Given the name or path to a module within biweeklybudget,
+        find the path to the test module for it.
+
+        :param module_name: module name/path
+        :type module_name: str
+        :param acceptance: if True, return acceptance test module; otherwise
+          unit test module
+        :type acceptance: bool
+        :return: test module path
+        :rtype: str
+        """
+        rootdir = os.path.realpath(
+            os.path.join(
+                os.path.dirname(__file__),
+                '..',
+                'biweeklybudget'
+            )
+        )
+        logger.debug('Project root directory: %s', rootdir)
+        realmod = os.path.realpath(module_name)
+        rel_mod = realmod.replace(rootdir, '')
+        if rel_mod[0] == '/':
+            rel_mod = rel_mod[1:]
+        codedir = os.path.dirname(rel_mod)
+        codemod = os.path.basename(rel_mod)
+        logger.debug('Relative module path: %s (dirname=%s basename=%s)',
+                     rel_mod, codedir, codemod)
+        test_dir = os.path.join(rootdir, 'tests', 'unit')
+        if acceptance:
+            test_dir = os.path.join(rootdir, 'tests', 'acceptance')
+        testpath = os.path.join(
+            test_dir,
+            codedir,
+            'test_%s' % codemod
+        )
+        logger.debug('Test module: %s', testpath)
+        return testpath
+
+    def run_one_module(self, script_name, module_name):
+        """run one module"""
+        if 'tests/unit' in module_name:
+            env = 'py36'
+            mod = module_name
+            logger.debug('Directly-specified unit test module; env=%s mod=%s',
+                         env, mod)
+        elif 'tests/acceptance' in module_name:
+            env = 'acceptance36'
+            mod = module_name
+            logger.debug(
+                'Directly-specified acceptance test module; env=%s mod=%s',
+                env, mod
+            )
+        elif script_name.endswith('t'):
+            env = 'py36'
+            mod = self._find_test_mod_for_module(module_name)
+            logger.debug('Discovered unit test module; env=%s mod=%s',
+                         env, mod)
+        elif script_name.endswith('ta'):
+            env = 'acceptance36'
+            mod = self._find_test_mod_for_module(module_name, True)
+            logger.debug('Discovered acceptnace test module; env=%s mod=%s',
+                     env, mod)
+        # run it
+        env_config = self.env_config[env]
+        for cmd in env_config['commands']:
+            if not cmd[0].endswith('py.test'):
+                logger.info('Skipping non-pytest command: %s', cmd)
+                continue
+            cmd[-1] = mod
+            logger.info('Running command: %s', cmd)
+            rcode = subprocess.call(cmd, env=self._make_env(env_config))
+            logger.info('Command exited %s', rcode)
+            if rcode != 0:
+                print('Command failed: %s' % cmd)
+                raise SystemExit(1)
+        print('All commands succeeded.')
+        raise SystemExit(0)
+
 
 def parse_args(argv):
     """
     parse arguments/options
-
-    this uses the new argparse module instead of optparse
-    see: <https://docs.python.org/2/library/argparse.html>
     """
-    p = argparse.ArgumentParser(description='Re-run tox test commands for a '
-                                'given environment against the '
-                                'already-existing and installed virtualenv.')
+    p = argparse.ArgumentParser(
+        description='Re-run tox test command for a given code module or test'
+                    'module. Use "t" for unit tests and "ta" for acceptance'
+                    'tests.'
+    )
     p.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                    default=False,
                    help='verbose output')
-    p.add_argument('TOXENV', type=str, nargs='+', help='Tox environment name')
+    p.add_argument('MODULE', type=str,
+                   help='Module to run; can be either a code module or a '
+                        'test module.')
     return p.parse_args(argv)
 
 
@@ -138,5 +241,6 @@ if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+    script_name = sys.argv[0].split('/')[-1]
     script = ToxIt()
-    script.run(args.TOXENV)
+    script.run_one_module(script_name, args.MODULE)
