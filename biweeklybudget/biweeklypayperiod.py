@@ -172,6 +172,8 @@ class BiweeklyPayPeriod(object):
         :rtype: :py:class:`~.BiweeklyPayPeriod`
         """
         p = BiweeklyPayPeriod(settings.PAY_PERIOD_START_DATE, db_session)
+        if isinstance(dt, datetime):
+            dt = dt.date()
         if dt < p.start_date:
             while True:
                 if p.end_date >= dt >= p.start_date:
@@ -358,6 +360,17 @@ class BiweeklyPayPeriod(object):
             ordered.append(t)
         return ordered
 
+    @property
+    def budget_sums(self):
+        """
+        Return a dict of budget sums; the return value of
+        :py:meth:`~._make_budget_sums`.
+
+        :return: dict of dicts, transaction sums and amounts per budget
+        :rtype: dict
+        """
+        return self._data['budget_sums']
+
     def _make_budget_sums(self):
         """
         Find the sums of all transactions per periodic budget ID ; return a dict
@@ -404,6 +417,17 @@ class BiweeklyPayPeriod(object):
                 res[t['budget_id']]['allocated'] += t['budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
         return res
+
+    @property
+    def overall_sums(self):
+        """
+        Return a dict of overall sums; the return value of
+        :py:meth:`~._make_overall_sums`.
+
+        :return: dict describing sums for the pay period
+        :rtype: dict
+        """
+        return self._data['overall_sums']
 
     def _make_overall_sums(self):
         """
@@ -455,22 +479,22 @@ class BiweeklyPayPeriod(object):
         * ``type`` (**str**) "Transaction" or "ScheduledTransaction"
         * ``id`` (**int**) the id of the object
         * ``date`` (**date**) the date of the transaction, or None for
-           per-period ScheduledTransactions
+          per-period ScheduledTransactions
         * ``sched_type`` (**str**) for ScheduledTransactions, the schedule
-           type ("monthly", "date", or "per period")
+          type ("monthly", "date", or "per period")
         * ``sched_trans_id`` (**int**) for Transactions, the
-           ScheduledTransaction ``id`` that it was created from, or None.
+          ScheduledTransaction ``id`` that it was created from, or None.
         * ``description`` (**str**) the transaction description
         * ``amount`` (**float**) the transaction amount
         * ``budgeted_amount`` (**float**) the budgeted amount. This may be None.
         * ``account_id`` (**int**) the id of the Account the transaction is
-           against.
+          against.
         * ``account_name`` (**str**) the name of the Account the transaction is
-           against.
+          against.
         * ``budget_id`` (**int**) the id of the Budget the transaction is
-           against.
+          against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
-           against.
+          against.
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
@@ -491,22 +515,22 @@ class BiweeklyPayPeriod(object):
         * ``type`` (**str**) "Transaction" or "ScheduledTransaction"
         * ``id`` (**int**) the id of the object
         * ``date`` (**date**) the date of the transaction, or None for
-           per-period ScheduledTransactions
+          per-period ScheduledTransactions
         * ``sched_type`` (**str**) for ScheduledTransactions, the schedule
-           type ("monthly", "date", or "per period")
+          type ("monthly", "date", or "per period")
         * ``sched_trans_id`` (**int**) for Transactions, the
-           ScheduledTransaction ``id`` that it was created from, or None.
+          ScheduledTransaction ``id`` that it was created from, or None.
         * ``description`` (**str**) the transaction description
         * ``amount`` (**float**) the transaction amount
         * ``budgeted_amount`` (**float**) the budgeted amount. This may be None.
         * ``account_id`` (**int**) the id of the Account the transaction is
-           against.
+          against.
         * ``account_name`` (**str**) the name of the Account the transaction is
-           against.
+          against.
         * ``budget_id`` (**int**) the id of the Budget the transaction is
-           against.
+          against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
-           against.
+          against.
 
         :param t: transaction to describe
         :type t: Transaction
@@ -542,21 +566,21 @@ class BiweeklyPayPeriod(object):
         * ``type`` (**str**) "Transaction" or "ScheduledTransaction"
         * ``id`` (**int**) the id of the object
         * ``date`` (**date**) the date of the transaction, or None for
-           per-period ScheduledTransactions
+          per-period ScheduledTransactions
         * ``sched_type`` (**str**) for ScheduledTransactions, the schedule
-           type ("monthly", "date", or "per period")
+          type ("monthly", "date", or "per period")
         * ``sched_trans_id`` **None**
         * ``description`` (**str**) the transaction description
         * ``amount`` (**float**) the transaction amount
         * ``budgeted_amount`` **None**
         * ``account_id`` (**int**) the id of the Account the transaction is
-           against.
+          against.
         * ``account_name`` (**str**) the name of the Account the transaction is
-           against.
+          against.
         * ``budget_id`` (**int**) the id of the Budget the transaction is
-           against.
+          against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
-           against.
+          against.
 
         :param t: ScheduledTransaction to describe
         :type t: ScheduledTransaction

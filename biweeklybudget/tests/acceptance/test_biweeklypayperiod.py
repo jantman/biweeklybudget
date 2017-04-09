@@ -679,3 +679,44 @@ class TestSums(AcceptanceHelper):
             'income': 322.45,
             'remaining': -2562.55
         }
+
+    def test_8_sums_for_empty_period(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2020, 4, 10), testdb
+        )
+        assert pp._data['budget_sums'] == {
+            2: {
+                'budget_amount': 123.45,
+                'allocated': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': True
+            },
+            3: {
+                'budget_amount': 0.0,
+                'allocated': 99.0,
+                'spent': 0.0,
+                'trans_total': 99.0,
+                'is_income': True
+            },
+            4: {
+                'budget_amount': 500.00,
+                'allocated': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0,
+                'is_income': False
+            },
+            5: {
+                'budget_amount': 100.0,
+                'allocated': 2.0,
+                'spent': 0.0,
+                'trans_total': 2.0,
+                'is_income': False
+            }
+        }
+        assert pp._data['overall_sums'] == {
+            'allocated': 600.0,
+            'income': 222.45,
+            'remaining': -377.55,
+            'spent': 0.0
+        }

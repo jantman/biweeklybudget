@@ -321,6 +321,30 @@ class TestTransactionsList(object):
         assert self.cls.transactions_list == m
 
 
+class TestBudgetSums(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+
+    def test_simple(self):
+        m = Mock()
+        self.cls._data_cache = {'budget_sums': m}
+        assert self.cls.budget_sums == m
+
+
+class TestOverallSums(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+
+    def test_simple(self):
+        m = Mock()
+        self.cls._data_cache = {'overall_sums': m}
+        assert self.cls.overall_sums == m
+
+
 class TestIncomeBudgetIDs(object):
 
     def setup(self):
