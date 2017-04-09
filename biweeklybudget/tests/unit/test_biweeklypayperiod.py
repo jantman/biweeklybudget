@@ -144,6 +144,7 @@ class TestForDate(object):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 3, 17))
     def test_period_for_date(self):
         assert BiweeklyPayPeriod.period_for_date(
             date(2017, 3, 16), self.mock_sess) == BiweeklyPayPeriod(
