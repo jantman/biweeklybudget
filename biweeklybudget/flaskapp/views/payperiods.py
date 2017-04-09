@@ -34,19 +34,70 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
+from datetime import datetime
+import logging
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, request, redirect
 
 from biweeklybudget.flaskapp.app import app
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.db import db_session
+
+logger = logging.getLogger(__name__)
 
 
 class PayPeriodsView(MethodView):
+    """
+    Render the top-level GET /payperiods view using ``payperiods.html`` template
+    """
 
     def get(self):
         return render_template('payperiods.html')
 
+
+class PayPeriodView(MethodView):
+    """
+    Render the single PayPeriod GET /payperiod/YYYY-MM-DD view using the
+    ``payperiod.html`` template.
+    """
+
+    def get(self, period_date):
+        d = datetime.strptime(period_date, '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        return render_template(
+            'payperiod.html',
+            pp=pp
+        )
+
+
+class PeriodForDateView(MethodView):
+    """
+    Render a redirect from a given date to the pay period for that date
+    """
+
+    def get(self):
+        d_str = request.args.get('date')
+        d = datetime.strptime(d_str, '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        logger.debug('Found period for %s (%s): %s', d_str, d, pp)
+        return redirect(
+            '/payperiod/%s' % pp.start_date.strftime('%Y-%m-%d'),
+            code=301
+        )
+
+
 app.add_url_rule(
     '/payperiods',
     view_func=PayPeriodsView.as_view('payperiods_view')
+)
+
+app.add_url_rule(
+    '/payperiod/<period_date>',
+    view_func=PayPeriodView.as_view('payperiod_view')
+)
+
+app.add_url_rule(
+    '/pay_period_for',
+    view_func=PeriodForDateView.as_view('pay_period_for_view')
 )

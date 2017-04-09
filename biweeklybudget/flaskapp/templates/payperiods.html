@@ -1,12 +1,103 @@
 {% extends "base.html" %}
-{% block title %}Calendar - BiweeklyBudget{% endblock %}
+{% block title %}Pay Periods - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <style>
+        .calendar, .datepicker { display: inline-block; }
+    </style>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
-            <div class="row" id="content-row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Calendar</h1>
+            <div class="row" id="totals-row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-green">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>Remaining this period</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#">
+                            <div class="panel-footer">
+                                <span class="pull-left">View YYYY-MM-DD Pay Period</span>
+                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                                <div class="clearfix"></div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
-                <!-- /.col-lg-12 -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-yellow">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$X,XXX.XX</div>
+                                    <div>Remaining next period</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#">
+                            <div class="panel-footer">
+                                <span class="pull-left">View YYYY-MM-DD Pay Period</span>
+                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                                <div class="clearfix"></div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-red">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>Remaining following period</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#">
+                            <div class="panel-footer">
+                                <span class="pull-left">View YYYY-MM-DD Pay Period</span>
+                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                                <div class="clearfix"></div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
             </div>
             <!-- /.row -->
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Pay Periods</div>
+                        Table of previous, current, next 3 periods, each with date/link, income, allocated, spent, remaining
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Find Pay Period</div>
+                        <form role="form" id="payperiod_date_form">
+                            <div class="form-group" id="payperiod_date_form_group" style="padding-top: 1em; padding-left: 1em;">
+                                <label for="payperiod_date_input" class="control-label" style="padding-right: 1em;">Date</label>
+                                <input id="payperiod_date_input" name="date" type="text" value="YYYY-mm-dd" size="10">
+                                <button type="button" class="btn btn-primary" id="payperiod-go-button">Go</button>
+                            </div>
+                        </form>
+                        <div class="calendar" id="cal1"></div>
+                        <div class="calendar" id="cal2"></div>
+                        <div class="calendar" id="cal3"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.row -->
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="/static/js/custom.js"></script>
+    <script src="/static/js/payperiods.js"></script>
 {% endblock %}

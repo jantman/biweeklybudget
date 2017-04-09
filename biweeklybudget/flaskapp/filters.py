@@ -45,6 +45,19 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.account import AcctType
 
 
+@app.template_filter('dateymd')
+def dateymd_filter(dt):
+    """
+    Format a datetime using %Y-%m-%d
+
+    :param dt: datetime to format
+    :type dt: datetime.datetime
+    :return: formatted date
+    :rtype: str
+    """
+    return dt.strftime('%Y-%m-%d')
+
+
 @app.template_filter('isodate')
 def isodate_filter(dt):
     """
