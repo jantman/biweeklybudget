@@ -90,7 +90,6 @@ class TestFindPayPeriod(AcceptanceHelper):
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + timedelta(days=4)
-        cal = selenium.find_element_by_id('cal2')
         daysdiv = selenium.find_element_by_xpath(
             '//div[@id="cal2"]//div[@class="datepicker-days"]'
         )
@@ -126,7 +125,6 @@ class TestFindPayPeriod(AcceptanceHelper):
         send_date = start_date + relativedelta(months=3)
         send_date = send_date.replace(day=3)
         send_pp = BiweeklyPayPeriod.period_for_date(send_date, None)
-        cal = selenium.find_element_by_id('cal2')
         daysdiv = selenium.find_element_by_xpath(
             '//div[@id="cal2"]//div[@class="datepicker-days"]'
         )
