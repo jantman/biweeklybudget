@@ -2,11 +2,167 @@
 {% block title %}{{ pp.start_date|dateymd }} to {{ pp.end_date|dateymd }} Pay Period - BiweeklyBudget{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
-            <div class="row" id="content-row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">{{ pp.start_date|dateymd }} to {{ pp.end_date|dateymd }} Pay Period</h1>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Remaining Balances</div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="pay-period-table">
+                                    <thead>
+                                        <tr>
+                                            <th>YYYY-mm-dd <em>(prev.)</em></th>
+                                            <th class="info">YYYY-mm-dd <em>(curr.)</em></th>
+                                            <th>YYYY-mm-dd <em>(next)</em></th>
+                                            <th>YYYY-mm-dd</th>
+                                            <th>YYYY-mm-dd</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>$XXX.XX</td>
+                                            <td class="info">$XXX.XX</td>
+                                            <td>$XXX.XX</td>
+                                            <td>$XXX.XX</td>
+                                            <td>$XXX.XX</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div>
                 </div>
-                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>Income</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /panel -->
+                </div> <!-- /col -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>allocated</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /panel -->
+                </div> <!-- /col -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>spent</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /panel -->
+                </div> <!-- /col -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-green">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-12 text-right">
+                                    <div class="huge">$XXX.XX</div>
+                                    <div>remaining</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /panel -->
+                </div> <!-- /col -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">Periodic Budgets</div>
+                        <div class="table-responsive">
+                                <table class="table table-bordered" id="pb-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Budget</th>
+                                            <th>Allocated</th>
+                                            <th>Spent</th>
+                                            <th>Remaining</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><a href="#">BName</a></td>
+                                            <td>$XXX.XX</td>
+                                            <td>$XXX.XX</td>
+                                            <td>$XXX.XX</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div> <!-- /.panel -->
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">Standing Budgets</div>
+                        <div class="table-responsive">
+                                <table class="table table-bordered" id="sb-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Budget</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><a href="#">BName</a></td>
+                                            <td>$XXX.XX</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div> <!-- /.panel panel-default -->
+                </div> <!-- /.col -->
+                <div class="col-lg-9 col-md-6">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">Transactions</div>
+                        <div class="table-responsive">
+                                <table class="table table-bordered" id="trans-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Description</th>
+                                            <th>Account</th>
+                                            <th>Budget</th>
+                                            <th>Scheduled?</th>
+                                            <th>Reconciled?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>YYYY-mm-dd</td>
+                                            <td>$XXX.XX</td>
+                                            <td>Description Here</td>
+                                            <td><a href="#">Account</a></td>
+                                            <td><a href="#">Budget</a></td>
+                                            <td><a href="#">add txn</a> (<a href="#">5</a>)</td>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div> <!-- /.panel panel-default -->
+                </div> <!-- /.col -->
             </div>
             <!-- /.row -->
 {% endblock %}
