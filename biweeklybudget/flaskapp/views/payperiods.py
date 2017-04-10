@@ -41,6 +41,7 @@ from flask.views import MethodView
 from flask import render_template, request, redirect
 
 from biweeklybudget.flaskapp.app import app
+from biweeklybudget.utils import dtnow
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.db import db_session
 
@@ -53,7 +54,18 @@ class PayPeriodsView(MethodView):
     """
 
     def get(self):
-        return render_template('payperiods.html')
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        return render_template(
+            'payperiods.html',
+            pp_prev_date=pp.previous.start_date,
+            pp_prev_sums=pp.previous.overall_sums,
+            pp_curr_date=pp.start_date,
+            pp_curr_sums=pp.overall_sums,
+            pp_next_date=pp.next.start_date,
+            pp_next_sums=pp.next.overall_sums,
+            pp_following_date=pp.next.next.start_date,
+            pp_following_sums=pp.next.next.overall_sums
+        )
 
 
 class PayPeriodView(MethodView):

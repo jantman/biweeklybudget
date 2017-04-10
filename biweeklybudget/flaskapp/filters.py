@@ -45,6 +45,24 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.account import AcctType
 
 
+@app.template_filter('period_panel_color')
+def period_panel_color_filter(x):
+    """
+    Given the remaining amount for a pay period, return "red" if less than
+    zero, "yellow" if less than 100, or otherwise "green".
+
+    :param x: PayPeriod remaining amount
+    :type x: float
+    :return: "red", "yellow" or "green"
+    :rtype: str
+    """
+    if x <= 0:
+        return "red"
+    if x < 100:
+        return "yellow"
+    return "green"
+
+
 @app.template_filter('dateymd')
 def dateymd_filter(dt):
     """
@@ -98,6 +116,22 @@ def dollars_filter(x):
     if x == '' or x is None or isinstance(x, Undefined):
         return ''
     return currency(x, grouping=True)
+
+
+@app.template_filter('reddollars')
+def reddollars_filter(x):
+    """
+    Return a string similar to :py:func:`~.dollars_filter` but in red text
+    if negative.
+
+    :param x: dollar amount, int, float, decimal, etc.
+    :return: formatted currency
+    :rtype: str
+    """
+    s = dollars_filter(x)
+    if x < 0:
+        s = '<span class="text-danger">%s</span>' % s
+    return s
 
 
 @app.template_filter('pluralize')

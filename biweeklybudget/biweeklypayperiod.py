@@ -404,6 +404,9 @@ class BiweeklyPayPeriod(object):
                 'is_income': b.is_income
             }
         for t in self.transactions_list:
+            if t['budget_id'] not in res:
+                # inactive budget
+                continue
             if t['type'] == 'ScheduledTransaction':
                 res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['trans_total'] += t['amount']

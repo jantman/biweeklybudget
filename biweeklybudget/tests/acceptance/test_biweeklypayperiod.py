@@ -37,7 +37,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import sys
 import pytest
-from datetime import date
+from datetime import date, datetime
+from pytz import UTC
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
@@ -456,14 +457,20 @@ class TestSums(AcceptanceHelper):
         biweeklybudget.models.base.Base.metadata.create_all(engine)
 
     def test_1_add_account(self, testdb):
-        testdb.add(Account(
+        a = Account(
             description='First Bank Account',
             name='BankOne',
             ofx_cat_memo_to_name=True,
             ofxgetter_config_json='{"foo": "bar"}',
             vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank
-        ))
+        )
+        testdb.add(a)
+        a.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
         testdb.flush()
         testdb.commit()
 
