@@ -387,6 +387,9 @@ class BiweeklyPayPeriod(object):
           amounts against the budget this period.
         - ``trans_total`` *(float)* - the sum of spent amounts for Transactions
           that have them, or allocated amounts for ScheduledTransactions.
+        - ``remaining`` *(float)* - the remaining amount in the budget. This is
+          ``budget_amount`` minus the greater of ``allocated`` or
+          ``trans_total``. For income budgets, this is always positive.
 
         :return: dict of dicts, transaction sums and amounts per budget
         :rtype: dict
@@ -419,6 +422,15 @@ class BiweeklyPayPeriod(object):
             else:
                 res[t['budget_id']]['allocated'] += t['budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
+        for b in res.keys():
+            if res[b]['trans_total'] > res[b]['allocated']:
+                res[b]['remaining'] = res[
+                    b]['budget_amount'] - res[b]['trans_total']
+            else:
+                res[b]['remaining'] = res[
+                    b]['budget_amount'] - res[b]['allocated']
+            if res[b]['is_income']:
+                res[b]['remaining'] = abs(res[b]['remaining'])
         return res
 
     @property

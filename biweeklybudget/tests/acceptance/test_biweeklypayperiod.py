@@ -583,28 +583,32 @@ class TestSums(AcceptanceHelper):
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 123.45
             },
             3: {
                 'budget_amount': 0.0,
                 'allocated': 199.0,
                 'spent': 100.0,
                 'trans_total': 199.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 199.0
             },
             4: {
                 'budget_amount': 500.00,
                 'allocated': 1000.0,
                 'spent': 850.0,
                 'trans_total': 1100.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': -600.0
             },
             5: {
                 'budget_amount': 100.0,
                 'allocated': 3.0,
                 'spent': 3.0,
                 'trans_total': 5.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': 95.0
             }
         }
 
@@ -656,28 +660,32 @@ class TestSums(AcceptanceHelper):
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 123.45
             },
             3: {
                 'budget_amount': 0.0,
                 'allocated': 199.0,
                 'spent': 100.0,
                 'trans_total': 199.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 199.0
             },
             4: {
                 'budget_amount': 500.00,
                 'allocated': 1000.0,
                 'spent': 850.0,
                 'trans_total': 1100.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': -600.0
             },
             5: {
                 'budget_amount': 100.0,
                 'allocated': 35.0,
                 'spent': 2035.0,
                 'trans_total': 2037.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': -1937.0
             }
         }
         assert pp._data['overall_sums'] == {
@@ -697,28 +705,32 @@ class TestSums(AcceptanceHelper):
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 123.45
             },
             3: {
                 'budget_amount': 0.0,
                 'allocated': 99.0,
                 'spent': 0.0,
                 'trans_total': 99.0,
-                'is_income': True
+                'is_income': True,
+                'remaining': 99.0
             },
             4: {
                 'budget_amount': 500.00,
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': 500.0
             },
             5: {
                 'budget_amount': 100.0,
                 'allocated': 2.0,
                 'spent': 0.0,
                 'trans_total': 2.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': 98.0
             }
         }
         assert pp._data['overall_sums'] == {

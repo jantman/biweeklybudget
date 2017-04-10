@@ -628,28 +628,32 @@ class TestMakeBudgetSums(object):
                 'allocated': 53.53,
                 'spent': 44.44,
                 'trans_total': 55.55,
-                'is_income': False
+                'is_income': False,
+                'remaining': 67.90
             },
             2: {
                 'budget_amount': 456.78,
                 'allocated': 33.33,
                 'spent': 33.33,
                 'trans_total': 33.33,
-                'is_income': False
+                'is_income': False,
+                'remaining': 423.45
             },
             3: {
                 'budget_amount': 789.10,
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': 789.10
             },
             4: {
                 'budget_amount': 0.0,
                 'allocated': -1234.56,
                 'spent': 0.0,
                 'trans_total': -1234.56,
-                'is_income': True
+                'is_income': True,
+                'remaining': 1234.56
             }
         }
         assert len(self.mock_sess.mock_calls) == 3
@@ -726,28 +730,32 @@ class TestMakeBudgetSums(object):
                 'allocated': 53.53,
                 'spent': 44.44,
                 'trans_total': 55.55,
-                'is_income': False
+                'is_income': False,
+                'remaining': 67.90
             },
             2: {
                 'budget_amount': 456.78,
                 'allocated': 33.33,
                 'spent': 33.33,
                 'trans_total': 33.33,
-                'is_income': False
+                'is_income': False,
+                'remaining': 423.45
             },
             3: {
                 'budget_amount': 789.10,
                 'allocated': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0,
-                'is_income': False
+                'is_income': False,
+                'remaining': 789.10
             },
             4: {
                 'budget_amount': 0.0,
                 'allocated': -1234.56,
                 'spent': -1234.56,
                 'trans_total': -1234.56,
-                'is_income': True
+                'is_income': True,
+                'remaining': 1234.56
             }
         }
         assert len(self.mock_sess.mock_calls) == 3
