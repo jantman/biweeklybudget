@@ -76,6 +76,23 @@ class AcceptanceHelper(object):
             cells.append(th.text.strip())
         return cells
 
+    def thead2elemlist(self, elem):
+        """
+        Given a webdriver table element, return the WebElements of each
+        ``th`` within the ``thead``, left to right.
+
+        :param elem: table element
+        :type elem: selenium.webdriver.remote.webelement.WebElement
+        :return: list of table heading WebElements in order left to right
+        :rtype: list
+        """
+        thead = elem.find_element_by_tag_name('thead')
+        tr = thead.find_element_by_tag_name('tr')
+        cells = []
+        for th in tr.find_elements_by_tag_name('th'):
+            cells.append(th)
+        return cells
+
     def tbody2textlist(self, elem):
         """
         Given a webdriver ``table`` element, return a list of table rows, top to

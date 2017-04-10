@@ -50,16 +50,16 @@ from biweeklybudget.tests.conftest import engine
 
 
 @pytest.mark.acceptance
-class TestPayPeriods(AcceptanceHelper):
+class DONOTTestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        selenium.get(base_url + '/payperiods')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'Scheduled Transactions - BiweeklyBudget'
+        assert heading.text == 'Pay Periods - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')
@@ -74,7 +74,7 @@ class TestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriodFor(AcceptanceHelper):
+class DONOTTestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -97,7 +97,7 @@ class TestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestFindPayPeriod(AcceptanceHelper):
+class DONOTTestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         selenium.get(base_url + '/payperiods')
@@ -191,7 +191,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodsIndex(AcceptanceHelper):
+class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -469,3 +469,301 @@ class TestPayPeriodsIndex(AcceptanceHelper):
         assert following_panel.find_element_by_class_name('panel-footer')\
             .text == 'View ' + periods['following'].start_date.strftime(
             '%Y-%m-%d') + ' Pay Period'
+
+
+@pytest.mark.acceptance
+class DONOTTestPayPeriod(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+
+    def test_heading(self, selenium, testdb):
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        assert heading.text == '%s to %s Pay Period - BiweeklyBudget' % (
+            pp.start_date.strftime('%Y-%m-%d'),
+            pp.end_date.strftime('%Y-%m-%d')
+        )
+
+    def test_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
+
+    def test_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+
+    def test_0_clean_db(self, testdb):
+        # clean the database
+        biweeklybudget.models.base.Base.metadata.reflect(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(engine)
+        biweeklybudget.models.base.Base.metadata.create_all(engine)
+
+    def test_1_add_account(self, testdb):
+        a = Account(
+            description='First Bank Account',
+            name='BankOne',
+            ofx_cat_memo_to_name=True,
+            ofxgetter_config_json='{"foo": "bar"}',
+            vault_creds_path='secret/foo/bar/BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(a)
+        a.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_add_budgets(self, testdb):
+        testdb.add(Budget(
+            name='1Income',
+            is_periodic=True,
+            description='1Income',
+            starting_balance=1000.00,
+            is_income=True
+        ))
+        testdb.add(Budget(
+            name='2Periodic',
+            is_periodic=True,
+            description='2Periodic',
+            starting_balance=500.00
+        ))
+        testdb.add(Budget(
+            name='3Periodic',
+            is_periodic=True,
+            description='3Periodic',
+            starting_balance=0.00
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def pay_periods(self, db):
+        return {
+            'prev': BiweeklyPayPeriod.period_for_date(
+                (PAY_PERIOD_START_DATE - timedelta(days=2)), db),
+            'curr': BiweeklyPayPeriod.period_for_date(
+                PAY_PERIOD_START_DATE, db),
+            'next': BiweeklyPayPeriod.period_for_date(
+                (PAY_PERIOD_START_DATE + timedelta(days=15)), db),
+            'following': BiweeklyPayPeriod.period_for_date(
+                (PAY_PERIOD_START_DATE + timedelta(days=29)), db),
+            'last': BiweeklyPayPeriod.period_for_date(
+                (PAY_PERIOD_START_DATE + timedelta(days=43)), db)
+        }
+
+    def test_3_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        ibudget = testdb.query(Budget).get(1)
+        e1budget = testdb.query(Budget).get(2)
+        e2budget = testdb.query(Budget).get(3)
+        periods = self.pay_periods(testdb)
+        # previous pay period
+        ppdate = periods['prev'].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=100.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=250.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods['curr'].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=1850.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods['next'].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=788.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods['following'].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=2.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods['last'].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='last income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=2.00,
+            description='last trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=550.00,
+            budgeted_amount=550.00,
+            description='last trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_4_confirm_sums(self, testdb):
+        periods = self.pay_periods(testdb)
+        assert periods['prev'].overall_sums == {
+            'allocated': 750.0,
+            'spent': 850.0,
+            'income': 1000.0,
+            'remaining': 150.0
+        }
+        assert periods['curr'].overall_sums == {
+            'allocated': 2350.0,
+            'spent': 2450.0,
+            'income': 1400.0,
+            'remaining': -1050.0
+        }
+        assert periods['next'].overall_sums == {
+            'allocated': 1288.0,
+            'spent': 1388.0,
+            'income': 1400.0,
+            'remaining': 12.0
+        }
+        assert periods['following'].overall_sums == {
+            'allocated': 502.0,
+            'spent': 602.0,
+            'income': 1400.0,
+            'remaining': 798.0
+        }
+        assert periods['last'].overall_sums == {
+            'allocated': 552.0,
+            'spent': 552.0,
+            'income': 1400.0,
+            'remaining': 848.0
+        }
+
+    def test_5_other_periods_table(self, base_url, selenium, testdb):
+        periods = self.pay_periods(testdb)
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        table = selenium.find_element_by_id('pay-period-table')
+        assert self.thead2list(table) == [
+            '%s (prev.)' % pp.previous.start_date.strftime('%Y-%m-%d'),
+            '%s (curr.)' % pp.start_date.strftime('%Y-%m-%d'),
+            '%s (next)' % pp.next.start_date.strftime('%Y-%m-%d'),
+            '%s' % pp.next.next.start_date.strftime('%Y-%m-%d'),
+            '%s' % pp.next.next.next.start_date.strftime('%Y-%m-%d')
+        ]
+        assert self.tbody2textlist(table) == [[
+            '$150.00',
+            '-$1,050.00',
+            '$12.00',
+            '$798.00',
+            '$848.00'
+        ]]
+        contents = [
+            x.get_attribute('innerHTML') for x in self.thead2elemlist(table)
+        ]
+        assert contents == [
+            '<a href="/payperiod/{d}">{d} <em>(prev.)</em></a>'.format(
+                d=pp.previous.start_date.strftime('%Y-%m-%d')),
+            '{d} <em>(curr.)</em>'.format(
+                d=pp.start_date.strftime('%Y-%m-%d')),
+            '<a href="/payperiod/{d}">{d} <em>(next)</em></a>'.format(
+                d=pp.next.start_date.strftime('%Y-%m-%d')),
+            '<a href="/payperiod/{d}">{d}</a>'.format(
+                d=pp.next.next.start_date.strftime('%Y-%m-%d')),
+            '<a href="/payperiod/{d}">{d}</a>'.format(
+                d=pp.next.next.next.start_date.strftime('%Y-%m-%d'))
+        ]

@@ -79,7 +79,17 @@ class PayPeriodView(MethodView):
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         return render_template(
             'payperiod.html',
-            pp=pp
+            pp=pp,
+            pp_prev_date=pp.previous.start_date,
+            pp_prev_sums=pp.previous.overall_sums,
+            pp_curr_date=pp.start_date,
+            pp_curr_sums=pp.overall_sums,
+            pp_next_date=pp.next.start_date,
+            pp_next_sums=pp.next.overall_sums,
+            pp_following_date=pp.next.next.start_date,
+            pp_following_sums=pp.next.next.overall_sums,
+            pp_last_date=pp.next.next.next.start_date,
+            pp_last_sums=pp.next.next.next.overall_sums
         )
 
 

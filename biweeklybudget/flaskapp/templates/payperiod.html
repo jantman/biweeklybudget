@@ -10,20 +10,20 @@
                                 <table class="table table-bordered" id="pay-period-table">
                                     <thead>
                                         <tr>
-                                            <th>YYYY-mm-dd <em>(prev.)</em></th>
-                                            <th class="info">YYYY-mm-dd <em>(curr.)</em></th>
-                                            <th>YYYY-mm-dd <em>(next)</em></th>
-                                            <th>YYYY-mm-dd</th>
-                                            <th>YYYY-mm-dd</th>
+                                            <th><a href="/payperiod/{{ pp_prev_date|dateymd }}">{{ pp_prev_date|dateymd }} <em>(prev.)</em></a></th>
+                                            <th class="info">{{ pp_curr_date|dateymd }} <em>(curr.)</em></th>
+                                            <th><a href="/payperiod/{{ pp_next_date|dateymd }}">{{ pp_next_date|dateymd }} <em>(next)</em></a></th>
+                                            <th><a href="/payperiod/{{ pp_following_date|dateymd }}">{{ pp_following_date|dateymd }}</a></th>
+                                            <th><a href="/payperiod/{{ pp_last_date|dateymd }}">{{ pp_last_date|dateymd }}</a></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>$XXX.XX</td>
-                                            <td class="info">$XXX.XX</td>
-                                            <td>$XXX.XX</td>
-                                            <td>$XXX.XX</td>
-                                            <td>$XXX.XX</td>
+                                            <td>{{ pp_prev_sums['remaining']|reddollars|safe }}</td>
+                                            <td class="info">{{ pp_curr_sums['remaining']|reddollars|safe }}</td>
+                                            <td>{{ pp_next_sums['remaining']|reddollars|safe }}</td>
+                                            <td>{{ pp_following_sums['remaining']|reddollars|safe }}</td>
+                                            <td>{{ pp_last_sums['remaining']|reddollars|safe }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -133,7 +133,7 @@
                 </div> <!-- /.col -->
                 <div class="col-lg-9 col-md-6">
                     <div class="panel panel-info">
-                        <div class="panel-heading">Transactions</div>
+                        <div class="panel-heading">Transactions - <button type="button" class="btn btn-xs btn-primary" id="btn-add-txn">Add Transaction</button></div>
                         <div class="table-responsive">
                                 <table class="table table-bordered" id="trans-table">
                                     <thead>
