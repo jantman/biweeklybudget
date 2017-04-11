@@ -50,7 +50,7 @@ from biweeklybudget.tests.conftest import engine
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriods(AcceptanceHelper):
+class TestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -74,7 +74,7 @@ class DONOTTestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriodFor(AcceptanceHelper):
+class TestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -97,7 +97,7 @@ class DONOTTestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestFindPayPeriod(AcceptanceHelper):
+class TestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         selenium.get(base_url + '/payperiods')
@@ -191,7 +191,7 @@ class DONOTTestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestPayPeriodsIndex(AcceptanceHelper):
+class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -472,7 +472,7 @@ class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriod(AcceptanceHelper):
+class TestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -731,7 +731,6 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         }
 
     def test_5_other_periods_table(self, base_url, selenium, testdb):
-        periods = self.pay_periods(testdb)
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -767,3 +766,232 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             '<a href="/payperiod/{d}">{d}</a>'.format(
                 d=pp.next.next.next.start_date.strftime('%Y-%m-%d'))
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestCurrentPayPeriod(AcceptanceHelper):
+
+    def test_0_inactivate_scheduled(self, testdb):
+        for s in testdb.query(
+                ScheduledTransaction).filter(
+            ScheduledTransaction.is_active.__eq__(True)
+        ).all():
+            s.is_active = False
+            testdb.add(s)
+        testdb.flush()
+        testdb.commit()
+
+    def test_1_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        e1budget = testdb.query(Budget).get(1)
+        e2budget = testdb.query(Budget).get(2)
+        pp = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        )
+        ppdate = pp.start_date
+        st = ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=11.11,
+            num_per_period=2,
+            description='ST7 per_period'
+        )
+        testdb.add(st)
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=22.22,
+            day_of_month=(ppdate + timedelta(days=5)).day,
+            description='ST8 day_of_month'
+        ))
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e2budget,
+            amount=33.33,
+            date=(ppdate + timedelta(days=6)),
+            description='ST9 date'
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=8)),
+            actual_amount=12.00,
+            budgeted_amount=11.11,
+            description='Txn From ST7',
+            account=acct,
+            budget=e1budget,
+            scheduled_trans=st
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_3_info_panels(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.67'
+        assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$345.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+
+    def test_4_periodic_budgets(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$155.55',
+                '$123.13',
+                '<span class="text-danger">-$56.46</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$255.55',
+                '$222.22',
+                '<span class="text-danger">-$21.55</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.67',
+                '$0.00',
+                '$0.00',
+                '$2,345.67'
+            ]
+        ]
+
+    def test_5_standing_budgets(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('sb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/4">Standing1</a>',
+                '$1,284.23'
+            ],
+            [
+                '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29'
+            ]
+        ]
+
+    """
+    def DONOTtest_6_add_trans_button(self, base_url, selenium, testdb):
+        raise NotImplementedError()
+    """
+
+    def test_7_transaction_table(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('trans-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '',
+                '$11.11',
+                '<em>(sched)</em> <a href="javascript:schedModal(7, null);">'
+                'ST7 per_period (7)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="#">make trans.</a>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=2)).strftime('%Y-%m-%d'),
+                '$222.22',
+                '<a href="javascript:transModal(3, null);">T3 (3)</a>',
+                '<a href="/accounts/3">CreditOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '&nbsp;',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=4)).strftime('%Y-%m-%d'),
+                '-$333.33',
+                '<a href="javascript:transModal(2, null);">T2 (2)</a>',
+                '<a href="/accounts/2">BankTwoStale</a>',
+                '<a href="/budgets/4">Standing1</a>',
+                '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                '$22.22',
+                '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
+                'ST8 day_of_month (8)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="#">make trans.</a>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$33.33',
+                '<em>(sched)</em> <a href="javascript:schedModal(9, null);">'
+                'ST9 date (9)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="#">make trans.</a>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$111.13',
+                '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$12.00',
+                '<a href="javascript:transModal(4, null);">Txn From ST7'
+                ' (4)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '&nbsp;'
+            ]
+        ]
+
+    """
+    def DONOTtest_8_transaction_popup(self, base_url, selenium, testdb):
+        raise NotImplementedError()
+
+    def DONOTtest_9_schedtrans_popup(self, base_url, selenium, testdb):
+        raise NotImplementedError()
+
+    def DONOTtest_10_make_trans_popup(self, base_url, selenium, testdb):
+        raise NotImplementedError()
+    """

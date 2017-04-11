@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ pp.start_date|dateymd }} to {{ pp.end_date|dateymd }} Pay Period - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for id in budgets.keys()|sort %}
+        budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
+    </script>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row">
@@ -39,7 +54,7 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">$XXX.XX</div>
+                                    <div class="huge" id="amt-income">{{ pp_curr_sums['income']|dollars }}</div>
                                     <div>Income</div>
                                 </div>
                             </div>
@@ -51,7 +66,7 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">$XXX.XX</div>
+                                    <div class="huge" id="amt-allocated">{{ pp_curr_sums['allocated']|dollars }}</div>
                                     <div>allocated</div>
                                 </div>
                             </div>
@@ -63,7 +78,7 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">$XXX.XX</div>
+                                    <div class="huge" id="amt-spent">{{ pp_curr_sums['spent']|dollars }}</div>
                                     <div>spent</div>
                                 </div>
                             </div>
@@ -71,11 +86,11 @@
                     </div> <!-- /panel -->
                 </div> <!-- /col -->
                 <div class="col-lg-3 col-md-6">
-                    <div class="panel panel-green">
+                    <div class="panel panel-{{ pp_curr_sums['remaining']|period_panel_color }}">
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">$XXX.XX</div>
+                                    <div class="huge" id="amt-remaining">{{ pp_curr_sums['remaining']|dollars }}</div>
                                     <div>remaining</div>
                                 </div>
                             </div>
@@ -85,7 +100,7 @@
             </div>
             <!-- /.row -->
             <div class="row">
-                <div class="col-lg-3 col-md-6">
+                <div class="col-lg-4 col-md-6">
                     <div class="panel panel-warning">
                         <div class="panel-heading">Periodic Budgets</div>
                         <div class="table-responsive">
@@ -93,18 +108,23 @@
                                     <thead>
                                         <tr>
                                             <th>Budget</th>
+                                            <th>Amount</th>
                                             <th>Allocated</th>
                                             <th>Spent</th>
                                             <th>Remaining</th>
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {% for k in periodic.keys()|sort %}
                                         <tr>
-                                            <td><a href="#">BName</a></td>
-                                            <td>$XXX.XX</td>
-                                            <td>$XXX.XX</td>
-                                            <td>$XXX.XX</td>
+                                            <!-- {{ budgets[k] }} -->
+                                            <td><a href="/budgets/{{ k }}">{{ budgets[k] }}</a></td>
+                                            <td>{{ budget_sums[k]['budget_amount']|dollars }}</td>
+                                            <td>{{ budget_sums[k]['allocated']|dollars }}</td>
+                                            <td>{{ budget_sums[k]['spent']|dollars }}</td>
+                                            <td>{{ budget_sums[k]['remaining']|reddollars|safe }}</td>
                                         </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
@@ -121,17 +141,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {% for k in standing.keys()|sort %}
                                         <tr>
-                                            <td><a href="#">BName</a></td>
-                                            <td>$XXX.XX</td>
+                                            <td><a href="/budgets/{{ k }}">{{ budgets[k] }}</a></td>
+                                            <td>{{ standing[k]|reddollars|safe }}</td>
                                         </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
                             <!-- /.table-responsive -->
                     </div> <!-- /.panel panel-default -->
                 </div> <!-- /.col -->
-                <div class="col-lg-9 col-md-6">
+                <div class="col-lg-8 col-md-6">
                     <div class="panel panel-info">
                         <div class="panel-heading">Transactions - <button type="button" class="btn btn-xs btn-primary" id="btn-add-txn">Add Transaction</button></div>
                         <div class="table-responsive">
@@ -148,15 +170,29 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {% for t in transactions %}
                                         <tr>
-                                            <td>YYYY-mm-dd</td>
-                                            <td>$XXX.XX</td>
-                                            <td>Description Here</td>
-                                            <td><a href="#">Account</a></td>
-                                            <td><a href="#">Budget</a></td>
-                                            <td><a href="#">add txn</a> (<a href="#">5</a>)</td>
+                                            <td>{{ t['date']|dateymd }}</td>
+                                            <td>{{ t['amount']|dollars }}</td>
+                                            {% if t['type'] == 'Transaction' %}
+                                            <td><a href="javascript:transModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a></td>
+                                            {% else %}
+                                            <td><em>(sched)</em> <a href="javascript:schedModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a></td>
+                                            {% endif %}
+                                            <td><a href="/accounts/{{ t['account_id'] }}">{{ t['account_name'] }}</a></td>
+                                            <td><a href="/budgets/{{ t['budget_id'] }}">{{ t['budget_name'] }}</a></td>
+                                            {% if t['type'] == 'Transaction' %}
+                                                {% if t['sched_trans_id'] != None %}
+                                            <td><em>(from <a href="javascript:schedModal({{ t['sched_trans_id'] }}, null);">{{ t['sched_trans_id'] }}</a>)</em></td>
+                                                {% else %}
+                                                <td>&nbsp;</td>
+                                                {% endif %}
+                                            {% else %}
+                                            <td><a href="#">make trans.</a></td>
+                                            {% endif %}
                                             <td>&nbsp;</td>
                                         </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
@@ -165,4 +201,13 @@
                 </div> <!-- /.col -->
             </div>
             <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/transactions_modal.js"></script>
+<script src="/static/js/scheduled_modal.js"></script>
 {% endblock %}

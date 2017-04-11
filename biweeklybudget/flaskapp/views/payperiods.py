@@ -43,6 +43,8 @@ from flask import render_template, request, redirect
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import dtnow
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account
 from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,27 @@ class PayPeriodView(MethodView):
     def get(self, period_date):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        budgets = {}
+        for b in db_session.query(Budget).all():
+            k = b.name
+            if b.is_income:
+                k = '%s (i)' % b.name
+            budgets[b.id] = k
+        standing = {
+            b.id: b.current_balance
+            for b in db_session.query(Budget).filter(
+                Budget.is_periodic.__eq__(False),
+                Budget.is_active.__eq__(True)
+            ).all()
+        }
+        periodic = {
+            b.id: b.current_balance
+            for b in db_session.query(Budget).filter(
+                Budget.is_periodic.__eq__(True),
+                Budget.is_active.__eq__(True)
+            ).all()
+        }
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
         return render_template(
             'payperiod.html',
             pp=pp,
@@ -89,7 +112,13 @@ class PayPeriodView(MethodView):
             pp_following_date=pp.next.next.start_date,
             pp_following_sums=pp.next.next.overall_sums,
             pp_last_date=pp.next.next.next.start_date,
-            pp_last_sums=pp.next.next.next.overall_sums
+            pp_last_sums=pp.next.next.next.overall_sums,
+            budget_sums=pp.budget_sums,
+            budgets=budgets,
+            standing=standing,
+            periodic=periodic,
+            transactions=pp.transactions_list,
+            accts=accts
         )
 
 

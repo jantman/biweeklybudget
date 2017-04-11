@@ -73,7 +73,10 @@ def dateymd_filter(dt):
     :return: formatted date
     :rtype: str
     """
-    return dt.strftime('%Y-%m-%d')
+    try:
+        return dt.strftime('%Y-%m-%d')
+    except AttributeError:
+        return ''
 
 
 @app.template_filter('isodate')
@@ -86,7 +89,10 @@ def isodate_filter(dt):
     :return: formatted date
     :rtype: str
     """
-    return dt.strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    except AttributeError:
+        return ''
 
 
 @app.template_filter('ago')
@@ -121,7 +127,7 @@ def dollars_filter(x):
 @app.template_filter('reddollars')
 def reddollars_filter(x):
     """
-    Return a string similar to :py:func:`~.dollars_filter` but in red text
+    Return a string similar to ``dollars_filter`` but in red text
     if negative.
 
     :param x: dollar amount, int, float, decimal, etc.

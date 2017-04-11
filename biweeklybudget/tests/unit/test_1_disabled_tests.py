@@ -61,7 +61,8 @@ def find_tests():
 def find_mod_disabled_tests(path, testdir):
     tests = []
     mname = 'biweeklybudget.tests.'
-    mname += path.replace(testdir + '/', '').replace('.py', '').replace('/', '.')
+    mname += path.replace(testdir + '/', '').replace(
+        '.py', '').replace('/', '.')
     spec = importlib.util.spec_from_file_location(mname, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -83,7 +84,6 @@ def find_mod_disabled_tests(path, testdir):
                 if 'donot' in methname.lower():
                     tests.append('%s.%s.%s' % (mname, x, methname))
     return tests
-
 
 
 @pytest.mark.skipif(sys.version_info[0:2] != (3, 6), reason='py36 only')
