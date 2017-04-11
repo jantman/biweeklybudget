@@ -125,6 +125,8 @@ def class_refresh_db():
     # yield the session
     yield(sess)
     sess.close()
+    if 'NO_CLASS_REFRESH_DB' in os.environ:
+        return
     logger.info('Refreshing DB (class-scoped)')
     # clean the database
     biweeklybudget.models.base.Base.metadata.reflect(engine)
