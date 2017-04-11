@@ -39,6 +39,7 @@ import pytest
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
+from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -50,7 +51,7 @@ from biweeklybudget.tests.conftest import engine
 
 
 @pytest.mark.acceptance
-class TestPayPeriods(AcceptanceHelper):
+class DONOTTestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -74,7 +75,7 @@ class TestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriodFor(AcceptanceHelper):
+class DONOTTestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -97,7 +98,7 @@ class TestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestFindPayPeriod(AcceptanceHelper):
+class DONOTTestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         selenium.get(base_url + '/payperiods')
@@ -191,7 +192,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodsIndex(AcceptanceHelper):
+class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -472,7 +473,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriod(AcceptanceHelper):
+class DONOTTestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -504,7 +505,7 @@ class TestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -770,9 +771,9 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestCurrentPayPeriod(AcceptanceHelper):
+class DONOTTestCurrentPayPeriod(AcceptanceHelper):
 
-    def test_0_inactivate_scheduled(self, testdb):
+    def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
                 ScheduledTransaction).filter(
             ScheduledTransaction.is_active.__eq__(True)
@@ -782,7 +783,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_1_add_transactions(self, testdb):
+    def test_01_add_transactions(self, testdb):
         acct = testdb.query(Account).get(1)
         e1budget = testdb.query(Budget).get(1)
         e2budget = testdb.query(Budget).get(2)
@@ -824,7 +825,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_3_info_panels(self, base_url, selenium, testdb):
+    def test_03_info_panels(self, base_url, selenium, testdb):
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -835,7 +836,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert selenium.find_element_by_id('amt-spent').text == '$345.35'
         assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
 
-    def test_4_periodic_budgets(self, base_url, selenium, testdb):
+    def test_04_periodic_budgets(self, base_url, selenium, testdb):
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -871,7 +872,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ]
         ]
 
-    def test_5_standing_budgets(self, base_url, selenium, testdb):
+    def test_05_standing_budgets(self, base_url, selenium, testdb):
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -894,12 +895,18 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ]
         ]
 
-    """
-    def DONOTtest_6_add_trans_button(self, base_url, selenium, testdb):
-        raise NotImplementedError()
-    """
+    def test_06_add_trans_button(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        btn = selenium.find_element_by_id('btn-add-txn')
+        btn.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title == 'Add New Transaction'
 
-    def test_7_transaction_table(self, base_url, selenium, testdb):
+    def test_07_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         selenium.get(
             base_url + '/payperiod/' +
@@ -920,7 +927,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="#">make trans.</a>',
+                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
                 '&nbsp;'
             ],
             [
@@ -949,7 +956,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST8 day_of_month (8)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="#">make trans.</a>',
+                '<a href="javascript:schedToTransModal(8);">make trans.</a>',
                 '&nbsp;'
             ],
             [
@@ -959,7 +966,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST9 date (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
-                '<a href="#">make trans.</a>',
+                '<a href="javascript:schedToTransModal(9);">make trans.</a>',
                 '&nbsp;'
             ],
             [
@@ -985,13 +992,292 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ]
         ]
 
-    """
-    def DONOTtest_8_transaction_popup(self, base_url, selenium, testdb):
-        raise NotImplementedError()
+    def test_08_transaction_modal(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_xpath('//a[text()="T1foo (1)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 1'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '1'
+        assert body.find_element_by_id(
+            'trans_frm_date').get_attribute('value') == (
+                   dtnow() + timedelta(days=4)).date().strftime('%Y-%m-%d')
+        assert body.find_element_by_id(
+            'trans_frm_amount').get_attribute('value') == '111.13'
+        assert body.find_element_by_id(
+            'trans_frm_description').get_attribute('value') == 'T1foo'
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == '1'
+        assert selenium.find_element_by_id(
+            'trans_frm_notes').get_attribute('value') == 'notesT1'
 
-    def DONOTtest_9_schedtrans_popup(self, base_url, selenium, testdb):
-        raise NotImplementedError()
+    def test_09_transaction_modal_edit(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_xpath('//a[text()="T1foo (1)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 1'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '1'
+        desc = body.find_element_by_id('trans_frm_description')
+        desc.send_keys('edited')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 1 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = [y[2] for y in self.tbody2textlist(table)]
+        assert 'T1fooedited (1)' in texts
 
-    def DONOTtest_10_make_trans_popup(self, base_url, selenium, testdb):
-        raise NotImplementedError()
-    """
+    def test_10_transaction_modal_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(1)
+        assert t is not None
+        assert t.description == 'T1fooedited'
+        assert t.date == (dtnow() + timedelta(days=4)).date()
+        assert float(t.actual_amount) == 111.13
+        assert float(t.budgeted_amount) == 111.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.scheduled_trans_id == 1
+        assert t.notes == 'notesT1'
+
+    def test_11_sched_trans_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'ST7 per_period'
+        assert t.num_per_period == 2
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == 11.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes is None
+        assert t.is_active is True
+
+    def test_12_sched_trans_modal(self, base_url, selenium):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_xpath(
+            '//a[text()="ST7 per_period (7)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Scheduled Transaction 7'
+        assert body.find_element_by_id(
+            'sched_frm_id').get_attribute('value') == '7'
+        assert body.find_element_by_id(
+            'sched_frm_description').get_attribute('value') == 'ST7 per_period'
+        assert body.find_element_by_id(
+            'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_date').is_selected() is False
+        assert body.find_element_by_id(
+            'sched_frm_type_per_period').is_selected()
+        assert body.find_element_by_id(
+            'sched_frm_num_per_period').get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'sched_frm_amount').get_attribute('value') == '11.11'
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '1'
+        assert selenium.find_element_by_id(
+            'sched_frm_active').is_selected()
+
+    def test_13_sched_trans_modal_edit(self, base_url, selenium):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_xpath(
+            '//a[text()="ST7 per_period (7)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('edited')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = self.tbody2textlist(table)
+        # sort order changes when we make this active
+        assert texts[0][2] == '(sched) ST7 per_periodedited (7)'
+
+    def test_14_sched_trans_modal_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'ST7 per_periodedited'
+        assert t.num_per_period == 2
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == 11.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes == ''
+        assert t.is_active is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestMakeTransModal(AcceptanceHelper):
+
+    def test_00_inactivate_scheduled(self, testdb):
+        for s in testdb.query(
+                ScheduledTransaction).filter(
+            ScheduledTransaction.is_active.__eq__(True)
+        ).all():
+            s.is_active = False
+            testdb.add(s)
+        testdb.flush()
+        testdb.commit()
+
+    def test_01_add_sched_transaction(self, testdb):
+        acct = testdb.query(Account).get(1)
+        e1budget = testdb.query(Budget).get(1)
+        pp = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        )
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=11.11,
+            num_per_period=2,
+            description='ST7 per_period'
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_transaction_table(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('trans-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '',
+                '$11.11',
+                '<em>(sched)</em> <a href="javascript:schedModal(7, null);">'
+                'ST7 per_period (7)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
+                '&nbsp;'
+            ],
+            [
+                '',
+                '$11.11',
+                '<em>(sched)</em> <a href="javascript:schedModal(7, null);">'
+                'ST7 per_period (7)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=2)).strftime('%Y-%m-%d'),
+                '$222.22',
+                '<a href="javascript:transModal(3, null);">T3 (3)</a>',
+                '<a href="/accounts/3">CreditOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '&nbsp;',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=4)).strftime('%Y-%m-%d'),
+                '-$333.33',
+                '<a href="javascript:transModal(2, null);">T2 (2)</a>',
+                '<a href="/accounts/2">BankTwoStale</a>',
+                '<a href="/budgets/4">Standing1</a>',
+                '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$111.13',
+                '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
+                '</em>',
+                '&nbsp;'
+            ]
+        ]
+
+    def test_03_make_trans_modal(self, base_url, selenium, testdb):
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_elements_by_xpath(
+            '//a[@href="javascript:schedToTransModal(7);"]')[0]
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title == 'ScheduledTransaction 7 to Transaction'

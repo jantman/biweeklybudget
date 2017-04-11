@@ -188,7 +188,7 @@
                                                 <td>&nbsp;</td>
                                                 {% endif %}
                                             {% else %}
-                                            <td><a href="#">make trans.</a></td>
+                                            <td><a href="javascript:schedToTransModal({{ t['id'] }});">make trans.</a></td>
                                             {% endif %}
                                             <td>&nbsp;</td>
                                         </tr>
@@ -210,4 +210,7 @@
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/transactions_modal.js"></script>
 <script src="/static/js/scheduled_modal.js"></script>
+<script>
+    $('#btn-add-txn').click(function() { transModal(null, null); });
+</script>
 {% endblock %}
