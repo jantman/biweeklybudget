@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 import pytest
 import os
-import importlib.util
+import importlib
 import types
 from inspect import isclass
 
