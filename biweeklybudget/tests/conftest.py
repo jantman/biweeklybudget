@@ -190,7 +190,7 @@ def selenium(selenium):
     Per pytest-selenium docs, use this to override the selenium fixture to
     provide global common setup.
     """
-    selenium.set_window_size(1200, 800)
+    selenium.set_window_size(1920, 1080)
     selenium.implicitly_wait(2)
     # from http://stackoverflow.com/a/13853684/211734
     selenium.set_script_timeout(120)
