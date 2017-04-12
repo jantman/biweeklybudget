@@ -45,7 +45,10 @@ from biweeklybudget.utils import dtnow
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.db import db_session
+from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +141,72 @@ class PeriodForDateView(MethodView):
         )
 
 
+class SchedToTransFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/scheduled
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        _id = int(data['id'])
+        # make sure the ID is valid
+        db_session.query(ScheduledTransaction).get(_id)
+        d = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('description', '').strip() == '':
+            errors['description'].append('Description cannot be empty')
+            have_errors = True
+        if float(data['amount']) == 0:
+            errors['amount'].append('Amount cannot be zero')
+            have_errors = True
+        if d < pp.start_date or d > pp.end_date:
+            errors['date'].append('Date must be in current pay period')
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        st_id = int(data['id'])
+        st = db_session.query(ScheduledTransaction).get(st_id)
+        d = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        t = Transaction(
+            date=d,
+            actual_amount=float(data['amount']),
+            budgeted_amount=st.amount,
+            description=data['description'],
+            notes=data['notes'],
+            account=st.account,
+            budget=st.budget,
+            scheduled_trans=st
+        )
+        db_session.add(t)
+        db_session.commit()
+        logger.debug('Created Transaction %d for ScheduledTransaction %d',
+                     t.id, st.id)
+        return 'Successfully created Transaction %d for ' \
+               'ScheduledTransaction %d.' % (t.id, st.id)
+
+
 app.add_url_rule(
     '/payperiods',
     view_func=PayPeriodsView.as_view('payperiods_view')
@@ -151,4 +220,9 @@ app.add_url_rule(
 app.add_url_rule(
     '/pay_period_for',
     view_func=PeriodForDateView.as_view('pay_period_for_view')
+)
+
+app.add_url_rule(
+    '/forms/sched_to_trans',
+    view_func=SchedToTransFormHandler.as_view('sched_to_trans_form')
 )

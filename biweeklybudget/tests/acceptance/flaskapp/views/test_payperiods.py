@@ -927,7 +927,8 @@ class DONOTTestCurrentPayPeriod(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
+                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
                 '&nbsp;'
             ],
             [
@@ -956,7 +957,8 @@ class DONOTTestCurrentPayPeriod(AcceptanceHelper):
                 'ST8 day_of_month (8)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(8);">make trans.</a>',
+                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
                 '&nbsp;'
             ],
             [
@@ -966,7 +968,8 @@ class DONOTTestCurrentPayPeriod(AcceptanceHelper):
                 'ST9 date (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
-                '<a href="javascript:schedToTransModal(9);">make trans.</a>',
+                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
                 '&nbsp;'
             ],
             [
@@ -1192,9 +1195,6 @@ class TestMakeTransModal(AcceptanceHelper):
     def test_01_add_sched_transaction(self, testdb):
         acct = testdb.query(Account).get(1)
         e1budget = testdb.query(Budget).get(1)
-        pp = BiweeklyPayPeriod.period_for_date(
-            PAY_PERIOD_START_DATE, testdb
-        )
         testdb.add(ScheduledTransaction(
             account=acct,
             budget=e1budget,
@@ -1226,7 +1226,8 @@ class TestMakeTransModal(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
+                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
                 '&nbsp;'
             ],
             [
@@ -1236,7 +1237,8 @@ class TestMakeTransModal(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7);">make trans.</a>',
+                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
                 '&nbsp;'
             ],
             [
@@ -1270,14 +1272,112 @@ class TestMakeTransModal(AcceptanceHelper):
             ]
         ]
 
-    def test_03_make_trans_modal(self, base_url, selenium, testdb):
+    def test_03_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'ST7 per_period'
+        assert t.num_per_period == 2
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == 11.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes is None
+        assert t.is_active is True
+
+    def test_04_make_trans_modal_num_per(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_elements_by_xpath(
-            '//a[@href="javascript:schedToTransModal(7);"]')[0]
+            '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
+            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title == 'ScheduledTransaction 7 to Transaction'
+        assert title.text == 'Scheduled Transaction 7 to Transaction'
+        assert body.find_element_by_id(
+            'schedtotrans_frm_id').get_attribute('value') == '7'
+        assert body.find_element_by_id(
+            'schedtotrans_frm_pp_date').get_attribute(
+            'value') == pp.start_date.strftime('%Y-%m-%d')
+        # if a num_per_period scheduled transaction, default to today
+        assert body.find_element_by_id(
+            'schedtotrans_frm_date').get_attribute(
+            'value') == dtnow().strftime('%Y-%m-%d')
+        assert body.find_element_by_id(
+            'schedtotrans_frm_amount').get_attribute('value') == '11.11'
+        assert body.find_element_by_id(
+            'schedtotrans_frm_description').get_attribute(
+            'value') == 'ST7 per_period'
+        assert body.find_element_by_id(
+            'schedtotrans_frm_notes').get_attribute(
+            'value') == ''
+
+    def test_05_edit_modal(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        selenium.get(
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_elements_by_xpath(
+            '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
+            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        body.find_element_by_id('schedtotrans_frm_date').clear()
+        body.find_element_by_id('schedtotrans_frm_date').send_keys(
+            (pp.start_date + timedelta(days=2)).strftime('%Y-%m-%d')
+        )
+        body.find_element_by_id('schedtotrans_frm_amount').clear()
+        body.find_element_by_id('schedtotrans_frm_amount').send_keys('22.22')
+        body.find_element_by_id('schedtotrans_frm_description').send_keys(
+            ' Trans'
+        )
+        body.find_element_by_id('schedtotrans_frm_notes').clear()
+        body.find_element_by_id('schedtotrans_frm_notes').send_keys('T4notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully created Transaction 4 for ' \
+                                 'ScheduledTransaction 7.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = self.tbody2textlist(table)
+        # sort order changes when we make this active
+        assert texts[0][2] == '(sched) ST7 per_period (7)'
+        assert texts[1][2] == 'ST7 per_period Trans (4)'
+
+    def test_06_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(7)
+        assert t is not None
+        assert t.description == 'ST7 per_period'
+        assert t.num_per_period == 2
+        assert t.date is None
+        assert t.day_of_month is None
+        assert float(t.amount) == 11.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.notes is None
+        assert t.is_active is True
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        t = testdb.query(Transaction).get(4)
+        assert t is not None
+        assert t.description == 'ST7 per_period Trans'
+        assert t.date == (pp.start_date + timedelta(days=2))
+        assert float(t.actual_amount) == 22.22
+        assert float(t.budgeted_amount) == 11.11
+        assert t.account_id == 1
+        assert t.budget_id == 1
+        assert t.scheduled_trans_id == 7
+        assert t.notes == 'T4notes'
