@@ -904,7 +904,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         btn.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title == 'Add New Transaction'
+        assert title.text == 'Add New Transaction'
 
     def test_07_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
@@ -932,7 +932,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=2)).strftime('%Y-%m-%d'),
+                (pp.start_date + timedelta(days=3)).strftime('%Y-%m-%d'),
                 '$222.22',
                 '<a href="javascript:transModal(3, null);">T3 (3)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
@@ -941,7 +941,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=4)).strftime('%Y-%m-%d'),
+                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
                 '-$333.33',
                 '<a href="javascript:transModal(2, null);">T2 (2)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
@@ -974,22 +974,22 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ],
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
-                '$111.13',
-                '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
-                '<a href="/accounts/1">BankOne</a>',
-                '<a href="/budgets/1">Periodic1</a>',
-                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
-                '</em>',
-                '&nbsp;'
-            ],
-            [
-                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
                 '<a href="javascript:transModal(4, null);">Txn From ST7'
                 ' (4)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=9)).strftime('%Y-%m-%d'),
+                '$111.13',
+                '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
                 '</em>',
                 '&nbsp;'
             ]
