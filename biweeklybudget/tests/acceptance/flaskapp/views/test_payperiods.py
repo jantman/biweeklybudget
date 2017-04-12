@@ -51,7 +51,7 @@ from biweeklybudget.tests.conftest import engine
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriods(AcceptanceHelper):
+class TestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -75,7 +75,7 @@ class DONOTTestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriodFor(AcceptanceHelper):
+class TestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -98,7 +98,7 @@ class DONOTTestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestFindPayPeriod(AcceptanceHelper):
+class TestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         selenium.get(base_url + '/payperiods')
@@ -192,7 +192,7 @@ class DONOTTestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestPayPeriodsIndex(AcceptanceHelper):
+class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -473,7 +473,7 @@ class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriod(AcceptanceHelper):
+class TestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -505,7 +505,7 @@ class DONOTTestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -771,7 +771,7 @@ class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestCurrentPayPeriod(AcceptanceHelper):
+class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1242,7 +1242,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=2)).strftime('%Y-%m-%d'),
+                (pp.start_date + timedelta(days=3)).strftime('%Y-%m-%d'),
                 '$222.22',
                 '<a href="javascript:transModal(3, null);">T3 (3)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
@@ -1251,7 +1251,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=4)).strftime('%Y-%m-%d'),
+                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
                 '-$333.33',
                 '<a href="javascript:transModal(2, null);">T2 (2)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
@@ -1261,7 +1261,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                (pp.start_date + timedelta(days=9)).strftime('%Y-%m-%d'),
                 '$111.13',
                 '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
                 '<a href="/accounts/1">BankOne</a>',
