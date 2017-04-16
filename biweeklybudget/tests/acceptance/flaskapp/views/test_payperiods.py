@@ -1228,8 +1228,16 @@ class TestMakeTransModal(AcceptanceHelper):
             testdb.add(s)
         testdb.flush()
         testdb.commit()
+        # delete existing transactions
+        for idx in [1, 2, 3]:
+            t = testdb.query(Transaction).get(idx)
+            testdb.delete(t)
+        testdb.flush()
+        testdb.commit()
 
     def test_01_add_sched_transaction(self, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        ppdate = pp.start_date
         acct = testdb.query(Account).get(1)
         e1budget = testdb.query(Budget).get(1)
         testdb.add(ScheduledTransaction(
@@ -1241,9 +1249,38 @@ class TestMakeTransModal(AcceptanceHelper):
         ))
         testdb.flush()
         testdb.commit()
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=6)),
+            actual_amount=111.13,
+            budgeted_amount=111.11,
+            description='T1foo',
+            notes='notesT1',
+            account=acct,
+            scheduled_trans=testdb.query(ScheduledTransaction).get(1),
+            budget=e1budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=-333.33,
+            budgeted_amount=-333.33,
+            description='T2',
+            notes='notesT2',
+            account=testdb.query(Account).get(2),
+            scheduled_trans=testdb.query(ScheduledTransaction).get(3),
+            budget=testdb.query(Budget).get(4)
+        ))
+        testdb.add(Transaction(
+            date=ppdate,
+            actual_amount=222.22,
+            description='T3',
+            notes='notesT3',
+            account=testdb.query(Account).get(3),
+            budget=testdb.query(Budget).get(2)
+        ))
 
     def test_02_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        ppdate = pp.start_date
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -1276,35 +1313,6 @@ class TestMakeTransModal(AcceptanceHelper):
                 '<a href="/budgets/1">Periodic1</a>',
                 '<a href="javascript:schedToTransModal(7, \'%s\');">make '
                 'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
-                '&nbsp;'
-            ],
-            [
-                (dt - timedelta(days=2)).strftime('%Y-%m-%d'),
-                '$222.22',
-                '<a href="javascript:transModal(3, null);">T3 (3)</a>',
-                '<a href="/accounts/3">CreditOne</a>',
-                '<a href="/budgets/2">Periodic2</a>',
-                '&nbsp;',
-                '&nbsp;'
-            ],
-            [
-                dt.strftime('%Y-%m-%d'),
-                '-$333.33',
-                '<a href="javascript:transModal(2, null);">T2 (2)</a>',
-                '<a href="/accounts/2">BankTwoStale</a>',
-                '<a href="/budgets/4">Standing1</a>',
-                '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
-                '</em>',
-                '&nbsp;'
-            ],
-            [
-                (dt + timedelta(days=4)).strftime('%Y-%m-%d'),
-                '$111.13',
-                '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
-                '<a href="/accounts/1">BankOne</a>',
-                '<a href="/budgets/1">Periodic1</a>',
-                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
-                '</em>',
                 '&nbsp;'
             ]
         ]
@@ -1383,7 +1391,7 @@ class TestMakeTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully created Transaction 4 for ' \
+        assert x.text.strip() == 'Successfully created Transaction 6 for ' \
                                  'ScheduledTransaction 7.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -1393,7 +1401,7 @@ class TestMakeTransModal(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         # sort order changes when we make this active
         assert texts[0][2] == '(sched) ST7 per_period (7)'
-        assert texts[1][2] == 'ST7 per_period Trans (4)'
+        assert texts[1][2] == 'ST7 per_period Trans (6)'
 
     def test_06_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(7)
@@ -1408,7 +1416,7 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t.notes is None
         assert t.is_active is True
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        t = testdb.query(Transaction).get(4)
+        t = testdb.query(Transaction).get(6)
         assert t is not None
         assert t.description == 'ST7 per_period Trans'
         assert t.date == (pp.start_date + timedelta(days=2))

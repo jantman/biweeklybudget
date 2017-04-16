@@ -702,7 +702,7 @@ class TestSums(AcceptanceHelper):
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_8_sums_for_empty_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
-            date(2020, 4, 10), testdb
+            date(2020, 4, 9), testdb
         )
         assert pp._data['budget_sums'] == {
             2: {
