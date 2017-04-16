@@ -1280,7 +1280,6 @@ class TestMakeTransModal(AcceptanceHelper):
 
     def test_02_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        ppdate = pp.start_date
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
