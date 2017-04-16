@@ -573,6 +573,7 @@ class TestSums(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_4_budget_sums(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
@@ -612,6 +613,7 @@ class TestSums(AcceptanceHelper):
             }
         }
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_5_overall_sums(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
@@ -623,6 +625,7 @@ class TestSums(AcceptanceHelper):
             'remaining': -777.55
         }
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_6_transaction_list_ordering(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
@@ -638,6 +641,7 @@ class TestSums(AcceptanceHelper):
             ['Transaction', 4]
         ]
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_7_spent_greater_than_allocated(self, testdb):
         acct = testdb.query(Account).get(1)
         budget = testdb.query(Budget).get(5)
@@ -695,6 +699,7 @@ class TestSums(AcceptanceHelper):
             'remaining': -2562.55
         }
 
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_8_sums_for_empty_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2020, 4, 10), testdb

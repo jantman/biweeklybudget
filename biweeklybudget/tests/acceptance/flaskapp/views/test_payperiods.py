@@ -27,7 +27,7 @@ this work. (Additional Terms pursuant to Section 7b of the AGPL v3)
 While not legally required, I sincerely request that anyone who finds
 bugs please submit them at <https://github.com/jantman/biweeklybudget> or
 to me via email, and that you send any contributions or improvements
-either as a pull request on GitHub, or to me via email.
+either as a pull request on GitHub, or to me ia email.
 ################################################################################
 
 AUTHORS:
@@ -48,6 +48,8 @@ from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models import *
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
+
+dt = dtnow()
 
 
 @pytest.mark.acceptance
@@ -604,14 +606,14 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
-            description='prev income',
+            description='curr income',
             account=acct,
             budget=ibudget
         ))
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=1850.00,
-            description='prev trans 1',
+            description='curr trans 1',
             account=acct,
             budget=e2budget
         ))
@@ -619,7 +621,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
-            description='prev trans 2',
+            description='curr trans 2',
             account=acct,
             budget=e1budget
         ))
@@ -628,14 +630,14 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
-            description='prev income',
+            description='next income',
             account=acct,
             budget=ibudget
         ))
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=788.00,
-            description='prev trans 1',
+            description='next trans 1',
             account=acct,
             budget=e2budget
         ))
@@ -643,7 +645,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
-            description='prev trans 2',
+            description='next trans 2',
             account=acct,
             budget=e1budget
         ))
@@ -652,14 +654,14 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
-            description='prev income',
+            description='following income',
             account=acct,
             budget=ibudget
         ))
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=2.00,
-            description='prev trans 1',
+            description='following trans 1',
             account=acct,
             budget=e2budget
         ))
@@ -667,7 +669,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
-            description='prev trans 2',
+            description='following trans 2',
             account=acct,
             budget=e1budget
         ))
@@ -932,7 +934,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=3)).strftime('%Y-%m-%d'),
+                (dt - timedelta(days=2)).strftime('%Y-%m-%d'),
                 '$222.22',
                 '<a href="javascript:transModal(3, null);">T3 (3)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
@@ -941,7 +943,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                dt.strftime('%Y-%m-%d'),
                 '-$333.33',
                 '<a href="javascript:transModal(2, null);">T2 (2)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
@@ -984,7 +986,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=9)).strftime('%Y-%m-%d'),
+                (dt + timedelta(days=4)).strftime('%Y-%m-%d'),
                 '$111.13',
                 '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
                 '<a href="/accounts/1">BankOne</a>',
@@ -1242,7 +1244,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=3)).strftime('%Y-%m-%d'),
+                (dt - timedelta(days=2)).strftime('%Y-%m-%d'),
                 '$222.22',
                 '<a href="javascript:transModal(3, null);">T3 (3)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
@@ -1251,7 +1253,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                dt.strftime('%Y-%m-%d'),
                 '-$333.33',
                 '<a href="javascript:transModal(2, null);">T2 (2)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
@@ -1261,7 +1263,7 @@ class TestMakeTransModal(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=9)).strftime('%Y-%m-%d'),
+                (dt + timedelta(days=4)).strftime('%Y-%m-%d'),
                 '$111.13',
                 '<a href="javascript:transModal(1, null);">T1foo (1)</a>',
                 '<a href="/accounts/1">BankOne</a>',
