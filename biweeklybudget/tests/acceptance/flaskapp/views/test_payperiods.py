@@ -1033,6 +1033,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         ]
 
     def test_08_transaction_modal(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         selenium.get(
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
@@ -1046,7 +1047,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'trans_frm_id').get_attribute('value') == '5'
         assert body.find_element_by_id(
             'trans_frm_date').get_attribute('value') == (
-                   dtnow() + timedelta(days=4)).date().strftime('%Y-%m-%d')
+            pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d')
         assert body.find_element_by_id(
             'trans_frm_amount').get_attribute('value') == '111.13'
         assert body.find_element_by_id(
@@ -1115,10 +1116,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert 'T1fooedited (5)' in texts
 
     def test_10_transaction_modal_verify_db(self, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         t = testdb.query(Transaction).get(5)
         assert t is not None
         assert t.description == 'T1fooedited'
-        assert t.date == (dtnow() + timedelta(days=4)).date()
+        assert t.date == (pp.start_date + timedelta(days=6))
         assert float(t.actual_amount) == 111.13
         assert float(t.budgeted_amount) == 111.11
         assert t.account_id == 1
