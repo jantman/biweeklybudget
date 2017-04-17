@@ -1,5 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Reconcile - BiweeklyBudget{% endblock %}
+{% block title %}Reconcile Transactions - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for id in budgets.keys()|sort %}
+        budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
+    </script>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
@@ -9,4 +24,14 @@
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/transactions_modal.js"></script>
+<script src="/static/js/scheduled_modal.js"></script>
+<script src="/static/js/reconcile.js"></script>
 {% endblock %}

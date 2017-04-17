@@ -35,39 +35,33 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import logging
+import pytest
+from datetime import timedelta, date
+from selenium.webdriver.support.ui import Select
 
-from flask.views import MethodView
-from flask import render_template
-
-from biweeklybudget.flaskapp.app import app
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.account import Account
-from biweeklybudget.db import db_session
-
-logger = logging.getLogger(__name__)
+from biweeklybudget.utils import dtnow
+from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
-class ReconcileView(MethodView):
-    """
-    Render the top-level GET /reconcile view using ``reconcile.html`` template.
-    """
+@pytest.mark.acceptance
+class TestReconcile(AcceptanceHelper):
 
-    def get(self):
-        budgets = {}
-        for b in db_session.query(Budget).all():
-            k = b.name
-            if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
-        return render_template(
-            'reconcile.html',
-            budgets=budgets,
-            accts=accts
-        )
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+        self.baseurl = base_url
+        selenium.get(base_url + '/reconcile')
 
-app.add_url_rule(
-    '/reconcile',
-    view_func=ReconcileView.as_view('reconcile_view')
-)
+    def test_heading(self, selenium):
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        assert heading.text == 'Reconcile Transactions - BiweeklyBudget'
+
+    def test_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
+
+    def test_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'

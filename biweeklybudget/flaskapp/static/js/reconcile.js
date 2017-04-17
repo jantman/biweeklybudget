@@ -1,4 +1,4 @@
-"""
+/*
 The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
@@ -33,41 +33,4 @@ either as a pull request on GitHub, or to me via email.
 AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
-"""
-
-import logging
-
-from flask.views import MethodView
-from flask import render_template
-
-from biweeklybudget.flaskapp.app import app
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.account import Account
-from biweeklybudget.db import db_session
-
-logger = logging.getLogger(__name__)
-
-
-class ReconcileView(MethodView):
-    """
-    Render the top-level GET /reconcile view using ``reconcile.html`` template.
-    """
-
-    def get(self):
-        budgets = {}
-        for b in db_session.query(Budget).all():
-            k = b.name
-            if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
-        return render_template(
-            'reconcile.html',
-            budgets=budgets,
-            accts=accts
-        )
-
-app.add_url_rule(
-    '/reconcile',
-    view_func=ReconcileView.as_view('reconcile_view')
-)
+*/
