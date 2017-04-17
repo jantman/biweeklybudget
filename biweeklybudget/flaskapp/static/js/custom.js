@@ -55,6 +55,7 @@ function fmt_null(o) {
  * @returns {string} The number formatted as currency
  */
 function fmt_currency(value) {
+    if (value === null) { return '&nbsp;'; }
     return '$' + value.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
 }
 
