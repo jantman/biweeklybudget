@@ -145,7 +145,7 @@ class OfxBackfiller(object):
         """
         logger.debug('Handle file %s for %s (%d)', path, updater.acct_name,
                      updater.acct_id)
-        with open(path, 'r') as fh:
+        with open(path, 'rb') as fh:
             ofx_str = fh.read()
         ofx = OfxParser.parse(BytesIO(ofx_str))
         logger.debug('Parsed OFX')
