@@ -74,7 +74,8 @@ class NotificationsController(object):
                 Account.is_budget_source.__eq__(True),
                 Account.is_active.__eq__(True)
         ):
-            sum += float(acct.balance.ledger)
+            if acct.balance is not None:
+                sum += float(acct.balance.ledger)
         return sum
 
     @staticmethod
