@@ -82,7 +82,7 @@ function schedModalDivForm() {
     frm += '<label for="sched_frm_date" class="control-label">Specific Date</label><div class="input-group date" id="sched_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="sched_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
     frm += '</div>\n';
     // amount
-    frm += '<div class="form-group"><label for="sched_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="sched_frm_amount" name="amount"></div></div>\n';
+    frm += '<div class="form-group"><label for="sched_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="sched_frm_amount" name="amount"></div><p class="help-block">Transaction amount (positive for expenses, negative for income).</p></div>\n';
     // account
     frm += '<div class="form-group"><label for="sched_frm_account" class="control-label">Account</label>';
     frm += '<select id="sched_frm_account" name="account" class="form-control">';

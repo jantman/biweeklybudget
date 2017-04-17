@@ -47,7 +47,7 @@ function transModalDivForm() {
     frm += '<label for="trans_frm_date" class="control-label">Date</label><div class="input-group date" id="trans_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="trans_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
     frm += '</div>\n';
     // amount
-    frm += '<div class="form-group"><label for="trans_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="trans_frm_amount" name="amount"></div></div>\n';
+    frm += '<div class="form-group"><label for="trans_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="trans_frm_amount" name="amount"></div><p class="help-block">Transaction amount (positive for expenses, negative for income).</p></div>\n';
     // description
     frm += '<div class="form-group"><label for="trans_frm_description" class="control-label">Description</label><input class="form-control" id="trans_frm_description" name="description" type="text"></div>\n';
     // account
