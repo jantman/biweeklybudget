@@ -94,6 +94,9 @@ $(document).ready(function() {
                         return data;
                     }
                 }
+            },
+            {
+                data: "reconcile_id"
             }
         ],
         order: [[ 0, "desc"], [ 1, "asc"]],
