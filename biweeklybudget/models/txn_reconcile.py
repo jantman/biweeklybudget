@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 from biweeklybudget.utils import dtnow
 from sqlalchemy import Column, Integer, String, ForeignKey, ForeignKeyConstraint
 from sqlalchemy_utc import UtcDateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from biweeklybudget.models.base import Base, ModelAsDict
 
 
@@ -61,7 +61,7 @@ class TxnReconcile(Base, ModelAsDict):
 
     #: Relationship - :py:class:`~.Transaction`
     transaction = relationship(
-        "Transaction", backref="reconcile", uselist=False,
+        "Transaction", backref=backref("reconcile", uselist=False),
         foreign_keys=[txn_id]
     )
 
@@ -73,7 +73,7 @@ class TxnReconcile(Base, ModelAsDict):
 
     #: Relationship - :py:class:`~.OFXTransaction`
     ofx_trans = relationship(
-        "OFXTransaction", backref="reconcile", uselist=False,
+        "OFXTransaction", backref=backref("reconcile", uselist=False),
         foreign_keys=[ofx_fitid, ofx_account_id]
     )
 

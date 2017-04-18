@@ -185,6 +185,11 @@ class TransactionsAjax(SearchableAjaxView):
                 ),
                 (
                     'budgeted_amount'
+                ),
+                (
+                    'reconcile_id',
+                    'reconcile',
+                    lambda i: '' if i.reconcile is None else i.reconcile.id
                 )
             ]
         )
