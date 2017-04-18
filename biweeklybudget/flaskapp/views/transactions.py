@@ -189,7 +189,7 @@ class TransactionsAjax(SearchableAjaxView):
                 (
                     'reconcile_id',
                     'reconcile',
-                    lambda i: '' if i.reconcile is None else i.reconcile.id
+                    lambda i: None if i.reconcile is None else i.reconcile.id
                 )
             ]
         )
@@ -275,6 +275,11 @@ class TransactionFormHandler(FormHandlerView):
             if trans is None:
                 raise RuntimeError("Error: no Transaction with ID "
                                    "%s" % data['id'])
+            if trans.reconcile is not None:
+                raise RuntimeError(
+                    "Transaction %d is already reconciled; cannot be edited."
+                    "" % trans.id
+                )
             action = 'updating Transaction ' + data['id']
         else:
             trans = Transaction()

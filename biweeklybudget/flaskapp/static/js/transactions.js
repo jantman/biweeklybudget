@@ -96,7 +96,14 @@ $(document).ready(function() {
                 }
             },
             {
-                data: "reconcile_id"
+                data: "reconcile_id",
+                "render": function(data, type, row) {
+                    if(data != null) {
+                        return $("<div>").append($("<a/>").attr("href", "javascript:txnReconcileModal(" + data + ")").text("Yes (" + data + ")")).html();
+                    } else {
+                        return '&nbsp;';
+                    }
+                }
             }
         ],
         order: [[ 0, "desc"], [ 1, "asc"]],

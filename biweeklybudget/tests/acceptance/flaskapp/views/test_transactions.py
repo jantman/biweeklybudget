@@ -89,7 +89,8 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'BankOne (1)',
                 'Periodic1 (1)',
                 'Yes (1)',
-                '$111.11'
+                '$111.11',
+                'Yes (1)'
             ],
             [
                 self.dt.date().strftime('%Y-%m-%d'),
@@ -98,6 +99,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'BankTwoStale (2)',
                 'Standing1 (4)',
                 'Yes (3)',
+                '',
                 ''
             ],
             [
@@ -107,6 +109,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'CreditOne (3)',
                 'Periodic2 (2)',
                 '',
+                '',
                 ''
             ]
         ]
@@ -115,7 +118,8 @@ class TestTransactionsDefault(AcceptanceHelper):
                 c[2].get_attribute('innerHTML'),
                 c[3].get_attribute('innerHTML'),
                 c[4].get_attribute('innerHTML'),
-                c[5].get_attribute('innerHTML')
+                c[5].get_attribute('innerHTML'),
+                c[7].get_attribute('innerHTML')
             ]
             for c in elems
         ]
@@ -123,18 +127,21 @@ class TestTransactionsDefault(AcceptanceHelper):
             '<a href="javascript:transModal(1, mytable)">T1foo</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
             '<a href="/budgets/1">Periodic1 (1)</a>',
-            '<a href="/scheduled/1">Yes (1)</a>'
+            '<a href="/scheduled/1">Yes (1)</a>',
+            '<a href="javascript:txnReconcileModal(1)">Yes (1)</a>'
         ]
         assert linkcols[1] == [
             '<a href="javascript:transModal(2, mytable)">T2</a>',
             '<a href="/accounts/2">BankTwoStale (2)</a>',
             '<a href="/budgets/4">Standing1 (4)</a>',
-            '<a href="/scheduled/3">Yes (3)</a>'
+            '<a href="/scheduled/3">Yes (3)</a>',
+            '&nbsp;'
         ]
         assert linkcols[2] == [
             '<a href="javascript:transModal(3, mytable)">T3</a>',
             '<a href="/accounts/3">CreditOne (3)</a>',
             '<a href="/budgets/2">Periodic2 (2)</a>',
+            '&nbsp;',
             '&nbsp;'
         ]
 
@@ -210,7 +217,7 @@ class TestTransactionsDefault(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestTransModal(AcceptanceHelper):
+class TestTransModalCantEditReconciled(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
         t = testdb.query(Transaction).get(1)
@@ -283,6 +290,95 @@ class TestTransModal(AcceptanceHelper):
         assert title.text == 'Edit Transaction 1'
         assert body.find_element_by_id(
             'trans_frm_id').get_attribute('value') == '1'
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-danger' in x.get_attribute('class')
+        assert x.text.strip() == 'Server Error: Transaction 1 is already ' \
+                                 'reconciled; cannot be edited.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestTransModal(AcceptanceHelper):
+
+    def test_0_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(2)
+        assert t is not None
+        assert t.description == 'T2'
+        assert t.date == dtnow().date()
+        assert float(t.actual_amount) == -333.33
+        assert float(t.budgeted_amount) == -333.33
+        assert t.account_id == 2
+        assert t.budget_id == 4
+        assert t.scheduled_trans_id == 3
+        assert t.notes == 'notesT2'
+
+    def test_1_modal_on_click(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="T2"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 2'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'trans_frm_date').get_attribute('value') == dtnow().date(
+        ).strftime('%Y-%m-%d')
+        assert body.find_element_by_id(
+            'trans_frm_amount').get_attribute('value') == '-333.33'
+        assert body.find_element_by_id(
+            'trans_frm_description').get_attribute('value') == 'T2'
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '2'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == '4'
+        assert selenium.find_element_by_id(
+            'trans_frm_notes').get_attribute('value') == 'notesT2'
+
+    def test_2_modal_edit(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="T2"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 2'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '2'
         d = body.find_element_by_id('trans_frm_date')
         d.clear()
         d.send_keys(
@@ -306,7 +402,7 @@ class TestTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 1 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 2 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -314,19 +410,19 @@ class TestTransModal(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'T1fooedited' in texts
+        assert 'T2edited' in texts
 
     def test_3_verify_db(self, testdb):
-        t = testdb.query(Transaction).get(1)
+        t = testdb.query(Transaction).get(2)
         assert t is not None
-        assert t.description == 'T1fooedited'
+        assert t.description == 'T2edited'
         assert t.date == (dtnow() - timedelta(days=3)).date()
         assert float(t.actual_amount) == -123.45
-        assert float(t.budgeted_amount) == 111.11
+        assert float(t.budgeted_amount) == -333.33
         assert t.account_id == 4
         assert t.budget_id == 5
-        assert t.scheduled_trans_id == 1
-        assert t.notes == 'notesT1edited'
+        assert t.scheduled_trans_id == 3
+        assert t.notes == 'notesT2edited'
 
 
 @pytest.mark.acceptance
