@@ -64,6 +64,12 @@ class SampleDataLoader(object):
         self.budgets = self._budgets()
         self.scheduled_transactions = self._scheduled_transactions()
         self.transactions = self._transactions()
+        self.db.add(TxnReconcile(
+            ofx_trans=self.accounts['BankOne']['transactions'][0][1],
+            transaction=self.transactions[0]
+        ))
+        self.db.flush()
+        self.db.commit()
 
     def _budgets(self):
         res = {
