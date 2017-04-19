@@ -45,6 +45,7 @@ from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
@@ -72,6 +73,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
         ).one().id
 
     def test_0_clean_transactions(self, testdb):
+        testdb.query(TxnReconcile).delete(synchronize_session='fetch')
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
             ScheduledTransaction).delete(synchronize_session='fetch')
@@ -213,6 +215,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
+        testdb.query(TxnReconcile).delete(synchronize_session='fetch')
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
             ScheduledTransaction).delete(synchronize_session='fetch')
