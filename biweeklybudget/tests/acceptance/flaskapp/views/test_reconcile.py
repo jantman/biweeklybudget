@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import timedelta, datetime, date
+from datetime import datetime, date
 from pytz import UTC
 
 from biweeklybudget.utils import dtnow
@@ -46,6 +46,7 @@ import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
 
 dnow = dtnow()
+
 
 @pytest.mark.acceptance
 class TestReconcile(AcceptanceHelper):
