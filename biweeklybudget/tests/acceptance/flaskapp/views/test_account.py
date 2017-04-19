@@ -99,6 +99,7 @@ class TestAccountBankOne(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', '{"foo": "bar"}'],
+            ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'True'],
             [
                 'Interest Charge regex',
@@ -148,6 +149,7 @@ class TestAccountBankTwoStale(AcceptanceHelper):
         assert texts[4:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', '{"foo": "baz"}'],
+            ['negate_ofx_amounts', 'True'],
             ['ofx_cat_memo_to_name', 'False'],
             [
                 'Interest Charge regex',
@@ -198,6 +200,7 @@ class TestAccountCreditOne(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', 'None'],
+            ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [
                 'Interest Charge regex',
@@ -248,6 +251,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
+            ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [
                 'Interest Charge regex',
@@ -297,6 +301,7 @@ class TestAccountInvestmentOne(AcceptanceHelper):
         assert texts[4:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
+            ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [
                 'Interest Charge regex',

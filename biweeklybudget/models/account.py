@@ -87,6 +87,13 @@ class Account(Base, ModelAsDict):
     #: JSON-encoded ofxgetter configuration
     ofxgetter_config_json = Column(Text)
 
+    #: For use in reconciling our :py:class:`~.Transaction` entries with
+    #: the account's :py:class:`~.OfxTransaction` entries, whether or not to
+    #: negate the OfxTransaction amount. We enter Transactions with income
+    #: as negative amounts and expenses as positive amounts, but most bank
+    #: OFX statements will show the opposite.
+    negate_ofx_amounts = Column(Boolean, default=False)
+
     #: Type of account (Enum :py:class:`~.AcctType` )
     acct_type = Column(Enum(AcctType))
 

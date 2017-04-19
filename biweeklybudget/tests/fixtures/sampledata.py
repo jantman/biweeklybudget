@@ -333,7 +333,8 @@ class SampleDataLoader(object):
             ofxgetter_config_json='{"foo": "baz"}',
             vault_creds_path='secret/foo/bar/BankTwo',
             acct_type=AcctType.Bank,
-            is_active=True
+            is_active=True,
+            negate_ofx_amounts=True
         )
         statements = [
             OFXStatement(
