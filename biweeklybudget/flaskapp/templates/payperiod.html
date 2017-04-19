@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ pp.start_date|dateymd }} to {{ pp.end_date|dateymd }} Pay Period - BiweeklyBudget{% endblock %}
 {% block extra_head_css %}
+    <!-- DataTables CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
 
@@ -190,7 +196,11 @@
                                             {% else %}
                                             <td><a href="javascript:schedToTransModal({{ t['id'] }}, '{{ pp.start_date|dateymd }}');">make trans.</a></td>
                                             {% endif %}
+                                            {% if t['reconcile_id'] != None %}
+                                            <td><a href="javascript:txnReconcileModal({{ t['reconcile_id'] }})">Yes ({{ t['reconcile_id'] }})</a></td>
+                                            {% else %}
                                             <td>&nbsp;</td>
+                                            {% endif %}
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -206,11 +216,14 @@
 {% block extra_foot_script %}
     <!-- BootStrap DatePicker JS -->
     <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
 
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/transactions_modal.js"></script>
 <script src="/static/js/scheduled_modal.js"></script>
 <script src="/static/js/payperiod_modal.js"></script>
+<script src="/static/js/reconcile_modal.js"></script>
 <script>
     $('#btn-add-txn').click(function() { transModal(null, null); });
 </script>

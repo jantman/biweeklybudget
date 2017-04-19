@@ -824,7 +824,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             date=(ppdate + timedelta(days=6)),
             description='ST9 date'
         ))
-        testdb.add(Transaction(
+        t = Transaction(
             date=(ppdate + timedelta(days=8)),
             actual_amount=12.00,
             budgeted_amount=11.11,
@@ -832,7 +832,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             account=acct,
             budget=e1budget,
             scheduled_trans=st
-        ))
+        )
+        testdb.add(t)
+        testdb.add(TxnReconcile(note='foo', transaction=t))
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=6)),
             actual_amount=111.13,
@@ -1031,7 +1033,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
                 '</em>',
-                '&nbsp;'
+                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
         ]
 
