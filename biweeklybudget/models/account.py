@@ -88,7 +88,7 @@ class Account(Base, ModelAsDict):
     ofxgetter_config_json = Column(Text)
 
     #: For use in reconciling our :py:class:`~.Transaction` entries with
-    #: the account's :py:class:`~.OfxTransaction` entries, whether or not to
+    #: the account's :py:class:`~.OFXTransaction` entries, whether or not to
     #: negate the OfxTransaction amount. We enter Transactions with income
     #: as negative amounts and expenses as positive amounts, but most bank
     #: OFX statements will show the opposite.
