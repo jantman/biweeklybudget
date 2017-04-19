@@ -103,7 +103,16 @@ $(document).ready(function() {
             },
             { data: "last_stmt" },
             { data: "last_stmt_date" },
-            { data: "reconciled" }
+            {
+                data: "reconcile_id",
+                "render": function(data, type, row) {
+                    if(data != null) {
+                        return $("<div>").append($("<a/>").attr("href", "javascript:txnReconcileModal(" + data + ")").text("Yes (" + data + ")")).html();
+                    } else {
+                        return '&nbsp;';
+                    }
+                }
+            }
         ],
         order: [[ 0, "desc"]],
         bInfo: true

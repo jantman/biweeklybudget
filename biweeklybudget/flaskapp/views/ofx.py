@@ -184,7 +184,11 @@ class OfxAjax(SearchableAjaxView):
                     'statement.as_of',
                     lambda i: i.as_of.strftime('%Y-%m-%d')
                 ),
-                ('reconciled', 'reconcile_id')
+                (
+                    'reconcile_id',
+                    'reconcile',
+                    lambda i: None if i.reconcile is None else i.reconcile.id
+                )
             ]
         )
         table.add_data(acct_id=lambda o: o.account_id)
