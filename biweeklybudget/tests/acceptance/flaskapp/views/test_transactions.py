@@ -36,12 +36,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
+from pytz import UTC
 from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 
 @pytest.mark.acceptance
@@ -553,3 +555,84 @@ class TestTransAddModal(AcceptanceHelper):
         assert t.budget_id == 2
         assert t.scheduled_trans_id is None
         assert t.notes == 'NewTransNotes'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestTransReconciledModal(AcceptanceHelper):
+
+    def test_0_verify_db(self, testdb):
+        t = testdb.query(TxnReconcile).get(1)
+        assert t.ofx_account_id == 1
+        assert t.ofx_fitid == 'BankOne.0.1'
+        assert t.txn_id == 1
+        assert t.rule_id is None
+        assert t.note == 'reconcile notes'
+        assert t.reconciled_at == datetime(2017, 4, 10, 8, 9, 11, tzinfo=UTC)
+
+    def test_1_modal(self, base_url, selenium):
+        self.baseurl = base_url
+        selenium.get(base_url + '/transactions')
+        link = selenium.find_element_by_xpath(
+            '//a[@href="javascript:txnReconcileModal(1)"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Transaction Reconcile 1'
+        dl = body.find_element_by_tag_name('dl')
+        assert dl.get_attribute('innerHTML') == '\n' \
+            '<dt>Date Reconciled</dt><dd>2017-04-10 08:09:11 UTC</dd>\n' \
+            '<dt>Note</dt><dd>reconcile notes</dd>\n' \
+            '<dt>Rule</dt><dd>null</dd>\n'
+        trans_tbl = body.find_element_by_id('txnReconcileModal-trans')
+        trans_texts = self.tbody2textlist(trans_tbl)
+        assert trans_texts == [
+            ['Transaction'],
+            [
+                'Date',
+                (dtnow() + timedelta(days=4)).strftime('%Y-%m-%d')
+            ],
+            ['Amount', '$111.13'],
+            ['Budgeted Amount', '$111.11'],
+            ['Description', 'T1foo'],
+            ['Account', 'BankOne (1)'],
+            ['Budget', 'Periodic1 (1)'],
+            ['Notes', 'notesT1'],
+            ['Scheduled?', 'Yes (1)']
+        ]
+        trans_elems = self.tbody2elemlist(trans_tbl)
+        assert trans_elems[5][1].get_attribute('innerHTML') == '<a href=' \
+            '"/accounts/1">BankOne (1)</a>'
+        assert trans_elems[6][1].get_attribute('innerHTML') == '<a href=' \
+            '"/budgets/1">Periodic1 (1)</a>'
+        assert trans_elems[8][1].get_attribute('innerHTML') == '<a href=' \
+            '"/scheduled/1">Yes (1)</a>'
+        ofx_tbl = body.find_element_by_id('txnReconcileModal-ofx')
+        ofx_texts = self.tbody2textlist(ofx_tbl)
+        assert ofx_texts == [
+            ['OFX Transaction'],
+            ['Account', 'BankOne (1)'],
+            ['FITID', 'BankOne.0.1'],
+            ['Date Posted', (dtnow() - timedelta(days=6)).strftime('%Y-%m-%d')],
+            ['Amount', '$-20.00'],
+            ['Name', 'Late Fee'],
+            ['Memo', ''],
+            ['Type', 'Debit'],
+            ['Description', ''],
+            ['Notes', ''],
+            ['Checknum', ''],
+            ['MCC', ''],
+            ['SIC', ''],
+            ['OFX Statement'],
+            ['ID', '1'],
+            ['Date', (dtnow() - timedelta(hours=46)).strftime('%Y-%m-%d')],
+            ['Filename', '/stmt/BankOne/0'],
+            [
+                'File mtime',
+                (dtnow() - timedelta(hours=46)).strftime('%Y-%m-%d')
+            ],
+            ['Ledger Balance', '$12,345.67']
+        ]
+        ofx_elems = self.tbody2elemlist(ofx_tbl)
+        assert ofx_elems[1][1].get_attribute('innerHTML') == '<a href=' \
+            '"/accounts/1">BankOne (1)</a>'

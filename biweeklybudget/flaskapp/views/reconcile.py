@@ -38,11 +38,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, jsonify
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,38 @@ class ReconcileView(MethodView):
             accts=accts
         )
 
+
+class TxnReconcileAjax(MethodView):
+    """
+    Handle GET /ajax/reconcile/<int:reconcile_id> endpoint.
+    """
+
+    def get(self, reconcile_id):
+        rec = db_session.query(TxnReconcile).get(reconcile_id)
+
+        res = {
+            'reconcile': rec.as_dict,
+            'transaction': rec.transaction.as_dict,
+            'budget_name': rec.transaction.budget.name
+        }
+        if rec.ofx_trans is not None:
+            res['ofx_trans'] = rec.ofx_trans.as_dict
+            res['ofx_stmt'] = rec.ofx_trans.statement.as_dict
+            res['acct_id'] = rec.ofx_trans.account_id
+            res['acct_name'] = rec.ofx_trans.account.name
+        else:
+            res['ofx_trans'] = None
+            res['ofx_stmt'] = None
+            res['acct_id'] = rec.transaction.account_id
+            res['acct_name'] = rec.transaction.account.name
+        return jsonify(res)
+
 app.add_url_rule(
     '/reconcile',
     view_func=ReconcileView.as_view('reconcile_view')
+)
+
+app.add_url_rule(
+    '/ajax/reconcile/<int:reconcile_id>',
+    view_func=TxnReconcileAjax.as_view('txn_reconcile_ajax')
 )

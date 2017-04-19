@@ -38,24 +38,75 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 /**
  * Ajax callback to generate the modal HTML with reconcile information.
  */
-function txmReconcileModalDiv(msg) {
-    var frm = '<form role="form" id="schedToTransForm">';
-    // id
-    frm += '<input type="hidden" id="schedtotrans_frm_id" name="id" value="">\n';
-    // payperiod
-    frm += '<input type="hidden" id="schedtotrans_frm_pp_date" name="payperiod_start_date" value="">\n';
-    // date
-    frm += '<div class="form-group" id="schedtotrans_frm_group_date">';
-    frm += '<label for="schedtotrans_frm_date" class="control-label">Date</label><div class="input-group date" id="schedtotrans_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="schedtotrans_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
-    frm += '</div>\n';
-    // amount
-    frm += '<div class="form-group"><label for="schedtotrans_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="schedtotrans_frm_amount" name="amount"></div></div>\n';
-    // description
-    frm += '<div class="form-group"><label for="schedtotrans_frm_description" class="control-label">Description</label><input class="form-control" id="schedtotrans_frm_description" name="description" type="text"></div>\n';
-    // notes
-    frm += '<div class="form-group"><label for="schedtotrans_frm_notes" class="control-label">Notes</label><input class="form-control" id="schedtotrans_frm_notes" name="notes" type="text"></div>\n';
-    frm += '</form>\n';
-    return frm;
+function txnReconcileModalDiv(msg) {
+    console.log(msg)
+    var frm = '<div>';
+    // TxnReconcile info
+    frm += '<div class="row"><div class="col-lg-12">\n'
+    frm += '<dl class="dl-horizontal">\n';
+    frm += '<dt>Date Reconciled</dt><dd>' + msg['reconcile']['reconciled_at']['str'] + ' ' + msg['reconcile']['reconciled_at']['tzname'] + '</dd>\n';
+    frm += '<dt>Note</dt><dd>' + msg['reconcile']['note'] + '</dd>\n';
+    frm += '<dt>Rule</dt><dd>' + msg['reconcile']['rule_id'] + '</dd>\n'
+    frm += '</dl>\n';
+    frm += '</div><!-- /col-lg-12 --></div><!-- /row -->\n';
+    frm += '<div class="row">\n';
+    // Transaction info
+    frm += '<div class="col-lg-6">\n';
+    frm += '<div class="table-responsive">\n<table class="table table-bordered table-hover" id="txnReconcileModal-trans">\n<tbody>\n';
+    frm += '<tr><th colspan="2" style="text-align: center;">Transaction</th></tr>\n';
+    frm += '<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['transaction']['date']) + '</td></tr>\n';
+    frm += '<tr><th>Amount</th><td>' + fmt_currency(msg['transaction']['actual_amount']) + '</td></tr>\n';
+    frm += '<tr><th>Budgeted Amount</th><td>' + fmt_currency(msg['transaction']['budgeted_amount']) + '</td></tr>\n';
+    frm += '<tr><th>Description</th><td>' + msg['transaction']['description'] + '</td></tr>\n';
+    frm += '<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>\n';
+    frm += '<tr><th>Budget</th><td><a href="/budgets/' + msg['transaction']['budget_id'] + '">' + msg['budget_name'] + ' (' + msg['transaction']['budget_id'] + ')</a></td></tr>\n';
+    frm += '<tr><th>Notes</th><td>' + msg['transaction']['notes'] + '</td></tr>\n';
+    frm += '<tr><th>Scheduled?</th><td>';
+    if (msg['transaction']['scheduled_trans_id'] !== null) {
+        frm += '<a href="/scheduled/' + msg['transaction']['scheduled_trans_id'] + '">Yes (' + msg['transaction']['scheduled_trans_id'] + ')</a>';
+    } else {
+        frm += '&nbsp;';
+    }
+    frm += '</td></tr>\n';
+    frm += '</tbody>\n</table>\n</div><!-- /.table-responsive -->\n';
+    frm += '</div><!-- /col-lg-6 -->\n';
+    if (msg['ofx_trans'] !== null) {
+        // OFXTransaction and OFXStatement info
+        frm += '<div class="col-lg-6">\n';
+        frm += '<div class="table-responsive">\n<table class="table table-bordered table-hover" id="txnReconcileModal-ofx">\n<tbody>\n';
+        frm += '<tr><th colspan="2" style="text-align: center;">OFX Transaction</th></tr>\n';
+        frm += '<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>\n';
+        frm += '<tr><th>FITID</th><td>' + msg['ofx_trans']['fitid'] + '</td></tr>\n';
+        frm += '<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['ofx_trans']['date_posted']) + '</td></tr>\n';
+        frm += '<tr><th>Amount</th><td>' + fmt_currency(msg['ofx_trans']['amount']) + '</td></tr>\n';
+        frm += '<tr><th>Name</th><td>' + msg['ofx_trans']['name'] + '</td></tr>\n';
+        frm += '<tr><th>Memo</th><td>' + fmt_null(msg['ofx_trans']['memo']) + '</td></tr>\n';
+        frm += '<tr><th>Type</th><td>' + fmt_null(msg['ofx_trans']['trans_type']) + '</td></tr>\n';
+        frm += '<tr><th>Description</th><td>' + fmt_null(msg['ofx_trans']['description']) + '</td></tr>\n';
+        frm += '<tr><th>Notes</th><td>' + fmt_null(msg['ofx_trans']['notes']) + '</td></tr>\n';
+        frm += '<tr><th>Checknum</th><td>' + fmt_null(msg['ofx_trans']['checknum']) + '</td></tr>\n';
+        frm += '<tr><th>MCC</th><td>' + fmt_null(msg['ofx_trans']['mcc']) + '</td></tr>\n';
+        frm += '<tr><th>SIC</th><td>' + fmt_null(msg['ofx_trans']['sic']) + '</td></tr>\n';
+        frm += '<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>\n';
+        frm += '<tr><th>ID</th><td>' + fmt_null(msg['ofx_stmt']['id']) + '</td></tr>\n';
+        frm += '<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['ofx_stmt']['as_of']) + '</td></tr>\n';
+        frm += '<tr><th>Filename</th><td>' + fmt_null(msg['ofx_stmt']['filename']) + '</td></tr>\n';
+        frm += '<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['ofx_stmt']['file_mtime']) + '</td></tr>\n';
+        frm += '<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['ofx_stmt']['ledger_bal']) + '</td></tr>\n';
+        frm += '</tbody>\n</table>\n</div><!-- /.table-responsive -->\n';
+        frm += '</div><!-- /col-lg-6 -->\n';
+    } else {
+        frm += '<div class="col-lg-6">\n';
+        frm += '<p>No OFX Transaction</p>';
+        frm += '</div><!-- /col-lg-6 -->\n';
+    }
+    frm += '</div><!-- /row -->\n';
+    frm += '</div><!-- modal content opening div -->\n';
+    $('#modalBody').empty();
+    $('#modalBody').append(frm);
+    $('#modalLabel').text('Transaction Reconcile ' + msg['reconcile']['id']);
+    $('#modalSaveButton').hide();
+    $("#modalDiv").modal('show');
 }
 
 /**

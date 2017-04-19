@@ -4,6 +4,9 @@
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
 
+    <!-- DataTables Responsive CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+
     <script>
         var acct_names_to_id = {};
         {% for name in accts.keys()|sort %}
@@ -29,6 +32,11 @@
 {% block extra_foot_script %}
     <!-- BootStrap DatePicker JS -->
     <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+    <!-- DataTables JavaScript -->
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
 
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/transactions_modal.js"></script>

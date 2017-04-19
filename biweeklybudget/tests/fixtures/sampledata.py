@@ -38,7 +38,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 from biweeklybudget.models import *
 from biweeklybudget.models.account import AcctType
 from biweeklybudget.utils import dtnow
-from datetime import timedelta
+from datetime import timedelta, datetime
+from pytz import UTC
 
 
 class SampleDataLoader(object):
@@ -66,7 +67,9 @@ class SampleDataLoader(object):
         self.transactions = self._transactions()
         self.db.add(TxnReconcile(
             ofx_trans=self.accounts['BankOne']['transactions'][0][1],
-            transaction=self.transactions[0]
+            transaction=self.transactions[0],
+            note='reconcile notes',
+            reconciled_at=datetime(2017, 4, 10, 8, 9, 11, tzinfo=UTC)
         ))
         self.db.flush()
         self.db.commit()
