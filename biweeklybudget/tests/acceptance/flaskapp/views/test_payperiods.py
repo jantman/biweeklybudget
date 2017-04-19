@@ -132,7 +132,10 @@ class TestFindPayPeriod(AcceptanceHelper):
         tbody = tbl.find_elements_by_tag_name('tbody')[0]
         print('Looking for datepicker TD for date %s' % send_date)
         for e in tbody.find_elements_by_tag_name('td'):
-            if e.get_attribute('class') != 'day':
+            if (
+                e.get_attribute('class') != 'day' and
+                e.get_attribute('class') != 'today day'
+            ):
                 continue
             if e.text.strip() == str(send_date.day):
                 parent = e.find_element_by_xpath('..')
@@ -1350,9 +1353,10 @@ class TestMakeTransModal(AcceptanceHelper):
             'schedtotrans_frm_pp_date').get_attribute(
             'value') == pp.start_date.strftime('%Y-%m-%d')
         # if a num_per_period scheduled transaction, default to today
+        # this default is populated by JS, which will use localtime
         assert body.find_element_by_id(
             'schedtotrans_frm_date').get_attribute(
-            'value') == dtnow().strftime('%Y-%m-%d')
+            'value') == datetime.now().strftime('%Y-%m-%d')
         assert body.find_element_by_id(
             'schedtotrans_frm_amount').get_attribute('value') == '11.11'
         assert body.find_element_by_id(
