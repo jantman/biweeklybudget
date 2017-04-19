@@ -510,6 +510,7 @@ class BiweeklyPayPeriod(object):
           against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
+        * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
@@ -546,6 +547,7 @@ class BiweeklyPayPeriod(object):
           against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
+        * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
 
         :param t: transaction to describe
         :type t: Transaction
@@ -565,6 +567,10 @@ class BiweeklyPayPeriod(object):
             'budget_id': t.budget_id,
             'budget_name': t.budget.name
         }
+        if t.reconcile is None:
+            res['reconcile_id'] = None
+        else:
+            res['reconcile_id'] = t.reconcile.id
         if t.budgeted_amount is None:
             res['budgeted_amount'] = None
         else:
@@ -596,6 +602,7 @@ class BiweeklyPayPeriod(object):
           against.
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
+        * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
 
         :param t: ScheduledTransaction to describe
         :type t: ScheduledTransaction
@@ -613,7 +620,8 @@ class BiweeklyPayPeriod(object):
             'account_id': t.account_id,
             'account_name': t.account.name,
             'budget_id': t.budget_id,
-            'budget_name': t.budget.name
+            'budget_name': t.budget.name,
+            'reconcile_id': None
         }
         if t.schedule_type == 'date':
             res['date'] = t.date

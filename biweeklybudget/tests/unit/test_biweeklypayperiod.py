@@ -873,6 +873,7 @@ class TestDictForTrans(object):
             budget_id=3,
             budget=m_budget
         )
+        type(m).reconcile = None
         assert self.cls._dict_for_trans(m) == {
             'type': 'Transaction',
             'id': 123,
@@ -885,7 +886,43 @@ class TestDictForTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
+        }
+
+    def test_reconciled(self):
+        m_account = Mock(name='foo')
+        type(m_account).name = 'foo'
+        m_budget = Mock(name='bar')
+        type(m_budget).name = 'bar'
+        m = Mock(
+            spec_set=Transaction,
+            id=123,
+            date=date(year=2017, month=7, day=15),
+            scheduled_trans_id=567,
+            description='desc',
+            actual_amount=Decimal(123.45),
+            budgeted_amount=Decimal(120.00),
+            account_id=2,
+            account=m_account,
+            budget_id=3,
+            budget=m_budget
+        )
+        type(m).reconcile = Mock(id=2)
+        assert self.cls._dict_for_trans(m) == {
+            'type': 'Transaction',
+            'id': 123,
+            'date': date(year=2017, month=7, day=15),
+            'sched_type': None,
+            'sched_trans_id': 567,
+            'description': 'desc',
+            'amount': 123.45,
+            'budgeted_amount': 120.00,
+            'account_id': 2,
+            'account_name': 'foo',
+            'budget_id': 3,
+            'budget_name': 'bar',
+            'reconcile_id': 2
         }
 
     def test_budgeted_amount_none(self):
@@ -906,6 +943,7 @@ class TestDictForTrans(object):
             budget_id=3,
             budget=m_budget
         )
+        type(m).reconcile = None
         assert self.cls._dict_for_trans(m) == {
             'type': 'Transaction',
             'id': 123,
@@ -918,7 +956,8 @@ class TestDictForTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }
 
 
@@ -957,7 +996,8 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }
 
     def test_per_period(self):
@@ -974,7 +1014,8 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }
 
     def test_day_of_month_single_month(self):
@@ -992,7 +1033,8 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }
 
     def test_day_of_month_cross_month_before(self):
@@ -1011,7 +1053,8 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }
 
     def test_day_of_month_cross_month_after(self):
@@ -1030,5 +1073,6 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
-            'budget_name': 'bar'
+            'budget_name': 'bar',
+            'reconcile_id': None
         }

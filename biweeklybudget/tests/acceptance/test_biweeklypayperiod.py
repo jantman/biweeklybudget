@@ -251,6 +251,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             scheduled_trans=st_daynum,
         )
         testdb.add(t_daynum)
+        testdb.add(TxnReconcile(
+            note='foo',
+            transaction=t_daynum
+        ))
         st_pp1 = ScheduledTransaction(
             amount=222.22,
             description='ST_pp_1',
@@ -344,7 +348,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 8,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction'
+                'type': 'ScheduledTransaction',
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -358,7 +363,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 9,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction'
+                'type': 'ScheduledTransaction',
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -372,7 +378,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 8,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': None
             },
             # ST7 (ST_day_9)
             {
@@ -387,7 +394,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 4,
                 'sched_trans_id': 7,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': 2
             },
             # ST10 (ST_date)
             {
@@ -402,7 +410,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 7,
                 'sched_trans_id': 10,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -416,7 +425,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 5,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -430,7 +440,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 6,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -444,7 +455,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 9,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction'
+                'type': 'Transaction',
+                'reconcile_id': None
             }
         ]
 
