@@ -36,11 +36,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from sqlalchemy import func
+from locale import currency
 
 from biweeklybudget.db import db_session
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.flaskapp.filters import dollars_filter
 
 
 class NotificationsController(object):
@@ -125,8 +125,8 @@ class NotificationsController(object):
                            '(%s) is less than balance of all <a href='
                            '"/budgets">standing budgets</a> (%s)!'
                            '' % (
-                               dollars_filter(accounts_bal),
-                               dollars_filter(standing_bal)
+                               currency(accounts_bal, grouping=True),
+                               currency(standing_bal, grouping=True)
                            )
             })
         res.append({
