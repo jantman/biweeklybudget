@@ -43,6 +43,7 @@ from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship
 from pytz import UTC
 import logging
+from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
 
@@ -175,3 +176,17 @@ class OFXTransaction(Base, ModelAsDict):
             if val is not None and val != '':
                 kwargs[x] = val
         return kwargs
+
+    @property
+    def account_amount(self):
+        """
+        Return the amount of the transaction, appropriately negated if the
+        :py:class:`~.Account` for this transaction has
+        :py:attr:`~.Account.negate_ofx_amounts` True.
+
+        :return: amount, negated as appropriate
+        :rtype: decimal.Decimal
+        """
+        if not self.account.negate_ofx_amounts:
+            return self.amount
+        return self.amount * Decimal(-1.0)
