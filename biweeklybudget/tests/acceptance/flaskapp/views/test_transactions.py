@@ -52,7 +52,7 @@ class TestTransactions(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -77,7 +77,7 @@ class TestTransactionsDefault(AcceptanceHelper):
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         self.dt = dtnow()
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
 
     def test_table(self, selenium):
         table = selenium.find_element_by_id('table-transactions')
@@ -148,7 +148,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         ]
 
     def test_filter_opts(self, selenium):
-        selenium.get(self.baseurl + '/transactions')
+        self.get(selenium, self.baseurl + '/transactions')
         acct_filter = Select(selenium.find_element_by_id('account_filter'))
         # find the options
         opts = []
@@ -170,7 +170,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             'T2',
             'T3'
         ]
-        selenium.get(self.baseurl + '/transactions')
+        self.get(selenium, self.baseurl + '/transactions')
         table = self.retry_stale(
             selenium.find_element_by_id,
             'table-transactions'
@@ -200,7 +200,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         assert trans == p1trans
 
     def test_search(self, selenium):
-        selenium.get(self.baseurl + '/transactions')
+        self.get(selenium, self.baseurl + '/transactions')
         search = self.retry_stale(
             selenium.find_element_by_xpath,
             '//input[@type="search"]'
@@ -235,7 +235,7 @@ class TestTransModalCantEditReconciled(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -284,7 +284,7 @@ class TestTransModalCantEditReconciled(AcceptanceHelper):
 
     def test_2_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -324,7 +324,7 @@ class TestTransModal(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T2"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -373,7 +373,7 @@ class TestTransModal(AcceptanceHelper):
 
     def test_2_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T2"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -445,7 +445,7 @@ class TestTransModalByURL(AcceptanceHelper):
 
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions/3')
+        self.get(selenium, base_url + '/transactions/3')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
@@ -497,7 +497,7 @@ class TestTransAddModal(AcceptanceHelper):
 
     def test_2_modal_add(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_id('btn_add_trans')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -572,7 +572,7 @@ class TestTransReconciledModal(AcceptanceHelper):
 
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath(
             '//a[@href="javascript:txnReconcileModal(1)"]')
         link.click()

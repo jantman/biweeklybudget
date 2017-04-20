@@ -48,7 +48,7 @@ class TestBudgets(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -110,7 +110,7 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert b.is_income is False
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -138,7 +138,7 @@ class TestEditPeriodic1(AcceptanceHelper):
 
     def test_2_update_modal(self, base_url, selenium):
         # Fill in the form
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -193,7 +193,7 @@ class TestEditPeriodic1(AcceptanceHelper):
 class TestEditPeriodic2(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -225,7 +225,7 @@ class TestEditPeriodic2(AcceptanceHelper):
 class TestEditPeriodic3(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath(
             '//a[text()="Periodic3 Inactive (3)"]'
         )
@@ -260,7 +260,7 @@ class TestEditPeriodic3(AcceptanceHelper):
 class TestEditStanding1(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -292,7 +292,7 @@ class TestEditStanding1(AcceptanceHelper):
 class TestEditStanding2(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -324,7 +324,7 @@ class TestEditStanding2(AcceptanceHelper):
 class TestEditStanding3(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath(
             '//a[text()="Standing3 Inactive (6)"]'
         )
@@ -369,7 +369,7 @@ class TestEditIncome(AcceptanceHelper):
         assert b.is_income is True
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -396,7 +396,7 @@ class TestEditIncome(AcceptanceHelper):
 
     def test_2_update_modal(self, base_url, selenium):
         # Fill in the form
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -451,7 +451,7 @@ class TestEditIncome(AcceptanceHelper):
 class TestDirectURLPeriodic1(AcceptanceHelper):
 
     def test_1_populate_modal(self, base_url, selenium):
-        selenium.get(base_url + '/budgets/1')
+        self.get(selenium, base_url + '/budgets/1')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
@@ -482,7 +482,7 @@ class TestAddStandingBudget(AcceptanceHelper):
 
     def test_2_update_modal(self, base_url, selenium):
         # Fill in the form
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -539,7 +539,7 @@ class TestAddIncomeBudget(AcceptanceHelper):
 
     def test_2_update_modal(self, base_url, selenium):
         # Fill in the form
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -606,7 +606,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
     def test_1_notification(self, base_url, selenium):
         self.baseurl = base_url
         # Fill in the form
-        selenium.get(base_url + '/budgets')
+        self.get(selenium, base_url + '/budgets')
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts[0] == ['yes', 'Standing1 (4)', '$123,456.78']

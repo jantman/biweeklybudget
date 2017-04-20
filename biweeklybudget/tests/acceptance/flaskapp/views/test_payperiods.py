@@ -58,7 +58,7 @@ class TestPayPeriods(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -82,7 +82,7 @@ class TestPayPeriodFor(AcceptanceHelper):
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
-        selenium.get(base_url + '/pay_period_for?date=' + start_date.strftime(
+        self.get(selenium, base_url + '/pay_period_for?date=' + start_date.strftime(
             '%Y-%m-%d'))
         self.wait_for_load_complete(selenium)
         assert selenium.current_url == \
@@ -92,7 +92,7 @@ class TestPayPeriodFor(AcceptanceHelper):
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + timedelta(days=10)
-        selenium.get(base_url + '/pay_period_for?date=' + send_date.strftime(
+        self.get(selenium, base_url + '/pay_period_for?date=' + send_date.strftime(
             '%Y-%m-%d'))
         self.wait_for_load_complete(selenium)
         assert selenium.current_url == \
@@ -103,7 +103,7 @@ class TestPayPeriodFor(AcceptanceHelper):
 class TestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
         i = selenium.find_element_by_id('payperiod_date_input')
         i.clear()
         start_date = PAY_PERIOD_START_DATE
@@ -116,7 +116,7 @@ class TestFindPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' + start_date.strftime('%Y-%m-%d')
 
     def test_input_calendar(self, base_url, selenium):
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + timedelta(days=4)
@@ -152,7 +152,7 @@ class TestFindPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' + start_date.strftime('%Y-%m-%d')
 
     def test_input_calendar_future(self, base_url, selenium):
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + relativedelta(months=3)
@@ -393,7 +393,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_5_pay_periods_table(self, base_url, selenium, testdb):
         periods = self.pay_periods(testdb)
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
         table = selenium.find_element_by_id('pay-period-table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
@@ -444,7 +444,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_6_notification_panels(self, base_url, selenium, testdb):
         periods = self.pay_periods(testdb)
-        selenium.get(base_url + '/payperiods')
+        self.get(selenium, base_url + '/payperiods')
         this_panel = selenium.find_element_by_id('panel-period-current')
         assert this_panel.get_attribute('class') == 'panel panel-red'
         assert this_panel.find_element_by_class_name('panel-heading').text\
@@ -483,7 +483,7 @@ class TestPayPeriod(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -737,7 +737,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         }
 
     def test_5_other_periods_table(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -867,7 +867,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.commit()
 
     def test_03_info_panels(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -878,7 +878,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -914,7 +914,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         ]
 
     def test_05_standing_budgets(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -937,7 +937,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         ]
 
     def test_06_add_trans_button(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -950,7 +950,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
     def test_07_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1039,7 +1039,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_08_transaction_modal(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1090,7 +1090,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'trans_frm_notes').get_attribute('value') == 'notesT1'
 
     def test_09_transaction_modal_edit(self, base_url, selenium, testdb):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1147,7 +1147,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t.is_active is True
 
     def test_12_sched_trans_modal(self, base_url, selenium):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1179,7 +1179,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'sched_frm_active').is_selected()
 
     def test_13_sched_trans_modal_edit(self, base_url, selenium):
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1287,7 +1287,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
     def test_02_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1338,7 +1338,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
     def test_04_make_trans_modal_num_per(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
@@ -1370,7 +1370,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
     def test_05_edit_modal(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        selenium.get(
+        self.get(selenium, 
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )

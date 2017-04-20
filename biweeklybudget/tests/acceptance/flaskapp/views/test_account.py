@@ -45,7 +45,7 @@ class TestAccount(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/1')
+        self.get(selenium, base_url + '/accounts/1')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -69,7 +69,7 @@ class TestAccountBankOne(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/1')
+        self.get(selenium, base_url + '/accounts/1')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -120,7 +120,7 @@ class TestAccountBankTwoStale(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/2')
+        self.get(selenium, base_url + '/accounts/2')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -170,7 +170,7 @@ class TestAccountCreditOne(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/3')
+        self.get(selenium, base_url + '/accounts/3')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -221,7 +221,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/4')
+        self.get(selenium, base_url + '/accounts/4')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -272,7 +272,7 @@ class TestAccountInvestmentOne(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts/5')
+        self.get(selenium, base_url + '/accounts/5')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')

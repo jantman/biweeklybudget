@@ -51,7 +51,7 @@ class TestOFX(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/ofx')
+        self.get(selenium, base_url + '/ofx')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -76,7 +76,7 @@ class TestOFXDefault(AcceptanceHelper):
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         self.dt = dtnow()
-        selenium.get(base_url + '/ofx')
+        self.get(selenium, base_url + '/ofx')
 
     def test_table(self, selenium):
         table = selenium.find_element_by_id('table-ofx-txn')
@@ -130,7 +130,7 @@ class TestOFXDefault(AcceptanceHelper):
             'href="javascript:txnReconcileModal(1)">Yes (1)</a>'
 
     def test_paginate(self, selenium):
-        selenium.get(self.baseurl + '/ofx')
+        self.get(selenium, self.baseurl + '/ofx')
         table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
@@ -167,7 +167,7 @@ class TestOFXDefault(AcceptanceHelper):
         ]
 
     def test_filter_opts(self, selenium):
-        selenium.get(self.baseurl + '/ofx')
+        self.get(selenium, self.baseurl + '/ofx')
         acct_filter = Select(selenium.find_element_by_id('account_filter'))
         # find the options
         opts = []
@@ -196,7 +196,7 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankOne (1)', 'BankOne.1.5'],
             ['BankOne (1)', 'BankOne.1.6']
         ]
-        selenium.get(self.baseurl + '/ofx')
+        self.get(selenium, self.baseurl + '/ofx')
         table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
@@ -225,7 +225,7 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankTwoStale (2)', '1'],
             ['DisabledBank (6)', '001']
         ]
-        selenium.get(self.baseurl + '/ofx')
+        self.get(selenium, self.baseurl + '/ofx')
         search = self.retry_stale(
             selenium.find_element_by_xpath,
             '//input[@type="search"]'
@@ -253,7 +253,7 @@ class TestOFXTransModal(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/ofx')
+        self.get(selenium, base_url + '/ofx')
 
     def test_modal_on_click(self, selenium):
         link = selenium.find_element_by_xpath('//a[text()="T1"]')
@@ -297,7 +297,7 @@ class TestOFXTransURL(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/ofx/3/T1')
+        self.get(selenium, base_url + '/ofx/3/T1')
 
     def test_modal_auto_displayed(self, selenium):
         modal, title, body = self.get_modal_parts(selenium)
@@ -348,7 +348,7 @@ class TestTransReconciledModal(AcceptanceHelper):
 
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/transactions')
+        self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath(
             '//a[@href="javascript:txnReconcileModal(1)"]')
         link.click()

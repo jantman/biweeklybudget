@@ -45,7 +45,7 @@ class TestAccountsNavigation(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts')
+        self.get(selenium, base_url + '/accounts')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -69,7 +69,7 @@ class TestAccountsMainPage(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/accounts')
+        self.get(selenium, base_url + '/accounts')
 
     def test_bank_table(self, selenium):
         table = selenium.find_element_by_xpath(

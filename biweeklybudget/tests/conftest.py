@@ -193,7 +193,7 @@ def selenium(selenium):
     selenium.set_window_size(1920, 1080)
     selenium.implicitly_wait(2)
     # from http://stackoverflow.com/a/13853684/211734
-    selenium.set_script_timeout(120)
+    selenium.set_script_timeout(30)
     # from http://stackoverflow.com/a/17536547/211734
-    selenium.set_page_load_timeout(120)
+    selenium.set_page_load_timeout(30)
     return selenium

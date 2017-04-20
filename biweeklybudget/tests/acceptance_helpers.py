@@ -37,7 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from time import sleep
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import (
+    StaleElementReferenceException, TimeoutException
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -270,3 +272,25 @@ class AcceptanceHelper(object):
         assert title.is_enabled()
         assert body.is_displayed()
         assert body.is_enabled()
+
+    def selenium_get(self, _selenium, url):
+        """
+        Wrapper around ``selenium`` fixture's ``get()`` method to retry up to
+        4 times on TimeoutException.
+
+        :param _selenium: selenium fixture instance
+        :param url: URL to get
+        :type url: str
+        """
+        count = 0
+        while True:
+            count += 1
+            try:
+                _selenium.get(url)
+                return
+            except TimeoutError as ex:
+                if count > 4:
+                    raise
+                print('selenium.get(%s) timed out; trying again', url)
+            except Exception:
+                raise

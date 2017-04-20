@@ -45,7 +45,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url)
+        self.get(selenium, base_url)
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -89,7 +89,7 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url)
+        self.get(selenium, base_url)
 
     def test_notifications(self, selenium):
         div = selenium.find_element_by_id('notifications-row')

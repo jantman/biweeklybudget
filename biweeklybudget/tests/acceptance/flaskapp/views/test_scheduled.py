@@ -50,7 +50,7 @@ class TestSchedTrans(AcceptanceHelper):
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
 
     def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
@@ -75,7 +75,7 @@ class TestSchedTransDefault(AcceptanceHelper):
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
         self.baseurl = base_url
         self.dt = dtnow()
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
 
     def test_table(self, selenium):
         table = selenium.find_element_by_id('table-scheduled-txn')
@@ -177,7 +177,7 @@ class TestSchedTransDefault(AcceptanceHelper):
         ]
 
     def test_filter_opts(self, selenium):
-        selenium.get(self.baseurl + '/scheduled')
+        self.get(selenium, self.baseurl + '/scheduled')
         acct_filter = Select(selenium.find_element_by_id('type_filter'))
         # find the options
         opts = []
@@ -199,7 +199,7 @@ class TestSchedTransDefault(AcceptanceHelper):
             'ST5',
             'ST4'
         ]
-        selenium.get(self.baseurl + '/scheduled')
+        self.get(selenium, self.baseurl + '/scheduled')
         table = self.retry_stale(
             selenium.find_element_by_id,
             'table-scheduled-txn'
@@ -229,7 +229,7 @@ class TestSchedTransDefault(AcceptanceHelper):
         assert trans == p1trans
 
     def test_search(self, selenium):
-        selenium.get(self.baseurl + '/scheduled')
+        self.get(selenium, self.baseurl + '/scheduled')
         search = self.retry_stale(
             selenium.find_element_by_xpath,
             '//input[@type="search"]'
@@ -264,7 +264,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_xpath('//a[text()="ST3"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -335,7 +335,7 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
 
     def test_1_modal_from_url(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled/2')
+        self.get(selenium, base_url + '/scheduled/2')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 2'
@@ -381,7 +381,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
 
     def test_1_modal_from_url(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled/4')
+        self.get(selenium, base_url + '/scheduled/4')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 4'
@@ -409,7 +409,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
 
     def test_2_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled/4')
+        self.get(selenium, base_url + '/scheduled/4')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         desc = body.find_element_by_id('sched_frm_description')
@@ -470,7 +470,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -541,7 +541,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -601,7 +601,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -661,7 +661,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -716,7 +716,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
 
     def test_4_table(self, base_url, selenium):
         self.baseurl = base_url
-        selenium.get(base_url + '/scheduled')
+        self.get(selenium, base_url + '/scheduled')
         table = selenium.find_element_by_id('table-scheduled-txn')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
