@@ -42,10 +42,15 @@ import logging
 import os
 from copy import deepcopy
 import warnings
+import pkg_resources
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from pymysql.err import Warning
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from alembic.runtime.environment import EnvironmentContext
+from alembic import command
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +92,30 @@ from biweeklybudget.models.base import Base  # noqa
 Base.query = db_session.query_property()
 
 
+def _alembic_get_current_rev(config, script):
+    """
+    Works sorta like alembic.command.current
+
+    :param config: alembic Config
+    :return: current revision
+    :rtype: str
+    """
+    config._curr_rev = None
+
+    def display_version(rev, _):
+        for rev in script.get_all_current(rev):
+            config._curr_rev = rev.cmd_format(False)
+        return []
+
+    with EnvironmentContext(
+        config,
+        script,
+        fn=display_version
+    ):
+        script.run_env()
+    return config._curr_rev
+
+
 def init_db():
     """
     Initialize the database; call
@@ -95,8 +124,28 @@ def init_db():
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
-    logger.debug('Creating all models')
-    Base.metadata.create_all(engine)
+    alembic_ini = pkg_resources.resource_filename(
+        pkg_resources.Requirement.parse('biweeklybudget'),
+        'alembic.ini'
+    )
+    alembic_config = Config(alembic_ini)
+    script = ScriptDirectory.from_config(alembic_config)
+    curr_rev = _alembic_get_current_rev(alembic_config, script)
+    head_rev = script.get_revision("head").revision
+    if curr_rev is None:
+        # alembic not initialized at all; stamp with current version
+        logger.warning('Alembic not setup; creating all models and stamping')
+        logger.debug('Creating all models')
+        Base.metadata.create_all(engine)
+        command.stamp(alembic_config, "head")
+        logger.debug("DB stamped at %s", head_rev)
+    elif curr_rev != head_rev:
+        logger.warning("Alembic head is %s but this DB is at %s; "
+                       "running migrations",head_rev, curr_rev)
+        command.upgrade(alembic_config, "head")
+        logger.info("Migrations complete")
+    else:
+        logger.debug('Alembic is at the correct head version (%s)', curr_rev)
     logger.debug('Done initializing DB')
 
 

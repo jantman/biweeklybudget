@@ -40,7 +40,8 @@ Upgrading
 ---------
 
 This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
-for DB migrations:
+for DB migrations. The migrations should be applied automatically as needed, but if
+that fails:
 
 * To apply migrations, run ``alembic upgrade head``.
 * To see the current DB version, run ``alembic current``.
