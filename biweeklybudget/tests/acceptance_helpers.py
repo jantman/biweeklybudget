@@ -273,7 +273,7 @@ class AcceptanceHelper(object):
         assert body.is_displayed()
         assert body.is_enabled()
 
-    def selenium_get(self, _selenium, url):
+    def get(self, _selenium, url):
         """
         Wrapper around ``selenium`` fixture's ``get()`` method to retry up to
         4 times on TimeoutException.
@@ -288,7 +288,7 @@ class AcceptanceHelper(object):
             try:
                 _selenium.get(url)
                 return
-            except TimeoutException as ex:
+            except TimeoutException:
                 if count > 4:
                     raise
                 print('selenium.get(%s) timed out; trying again', url)
