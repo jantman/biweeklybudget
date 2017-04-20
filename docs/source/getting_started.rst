@@ -43,9 +43,9 @@ This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html
 for DB migrations. The migrations should be applied automatically as needed, but if
 that fails:
 
-* To apply migrations, run ``alembic upgrade head``.
-* To see the current DB version, run ``alembic current``.
-* To see migration history, run ``alembic history``.
+* To apply migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``.
+* To see the current DB version, run ``alembic -c biweeklybudget/alembic/alembic.ini current``.
+* To see migration history, run ``alembic -c biweeklybudget/alembic/alembic.ini history``.
 
 .. _getting_started.configuration:
 

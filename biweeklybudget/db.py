@@ -126,7 +126,7 @@ def init_db():
     # you will have to import them first before calling init_db()
     alembic_ini = pkg_resources.resource_filename(
         pkg_resources.Requirement.parse('biweeklybudget'),
-        'alembic.ini'
+        'biweeklybudget/alembic/alembic.ini'
     )
     alembic_config = Config(alembic_ini)
     script = ScriptDirectory.from_config(alembic_config)

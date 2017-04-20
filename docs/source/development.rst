@@ -91,10 +91,10 @@ Alembic DB Migrations
 This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
 for DB migrations:
 
-* To generate migrations, run ``alembic revision --autogenerate -m "message"`` and examine/edit then commit the resulting file(s).
-* To apply migrations, run ``alembic upgrade head``.
-* To see the current DB version, run ``alembic current``.
-* To see migration history, run ``alembic history``.
+* To generate migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini revision --autogenerate -m "message"`` and examine/edit then commit the resulting file(s).
+* To apply migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``.
+* To see the current DB version, run ``alembic -c biweeklybudget/alembic/alembic.ini current``.
+* To see migration history, run ``alembic -c biweeklybudget/alembic/alembic.ini history``.
 
 Database Debugging
 ------------------
