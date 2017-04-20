@@ -288,7 +288,7 @@ class AcceptanceHelper(object):
             try:
                 _selenium.get(url)
                 return
-            except TimeoutError as ex:
+            except TimeoutException as ex:
                 if count > 4:
                     raise
                 print('selenium.get(%s) timed out; trying again', url)
