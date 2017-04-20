@@ -141,7 +141,7 @@ def init_db():
         logger.debug("DB stamped at %s", head_rev)
     elif curr_rev != head_rev:
         logger.warning("Alembic head is %s but this DB is at %s; "
-                       "running migrations",head_rev, curr_rev)
+                       "running migrations", head_rev, curr_rev)
         command.upgrade(alembic_config, "head")
         logger.info("Migrations complete")
     else:
