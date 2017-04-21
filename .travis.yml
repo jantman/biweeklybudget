@@ -58,7 +58,6 @@ after_failure:
 
 notifications:
   email:
-    on_success: always
     on_failure: always
   pushover:
     users:
