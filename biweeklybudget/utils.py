@@ -41,6 +41,7 @@ import logging
 from biweeklybudget import settings
 from datetime import datetime
 import pytz
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,14 @@ def date_suffix(n):
     return 'th' if 11 <= n <= 13 else {1: 'st', 2: 'nd', 3: 'rd'}.get(
         n % 10, 'th'
     )
+
+
+@contextmanager
+def in_directory(path):
+    pwd = os.getcwd()
+    os.chdir(path)
+    yield os.path.abspath(path)
+    os.chdir(pwd)
 
 
 class SecretMissingException(Exception):
