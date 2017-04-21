@@ -56,7 +56,8 @@ for x in [
     'STATEMENTS_SAVE_PATH',
     'DB_CONNSTRING',
     'STALE_DATA_TIMEDELTA',
-    'PAY_PERIOD_START_DATE'
+    'PAY_PERIOD_START_DATE',
+    'RECONCILE_BEGIN_DATE'
 ]:
     if x not in to_import:
         raise RuntimeError(

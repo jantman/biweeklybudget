@@ -70,3 +70,7 @@ STALE_DATA_TIMEDELTA = timedelta(days=2)
 #: The starting date of one pay period. The dates of all pay periods will be
 #: determined based on an interval from this date.
 PAY_PERIOD_START_DATE = date(2017, 3, 17)
+
+#: When listing unreconciled transactions that need to be reconciled, any
+#: :py:class:`~.OFXTransaction` before this date will be ignored.
+RECONCILE_BEGIN_DATE = date(2017, 1, 1)

@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 #: Address to connect to Vault at, for OFX credentials
 VAULT_ADDR = 'http://127.0.0.1:8200'
@@ -85,3 +85,7 @@ def find_last_friday(d):
 #: The starting date of one pay period. The dates of all pay periods will be
 #: determined based on an interval from this date.
 PAY_PERIOD_START_DATE = find_last_friday(datetime.now()).date()
+
+#: When listing unreconciled transactions that need to be reconciled, any
+#: :py:class:`~.OFXTransaction` before this date will be ignored.
+RECONCILE_BEGIN_DATE = date(2017, 1, 1)
