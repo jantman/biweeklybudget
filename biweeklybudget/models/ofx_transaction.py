@@ -39,13 +39,16 @@ from sqlalchemy import (
     Column, String, PrimaryKeyConstraint, Text, Numeric, Boolean, ForeignKey,
     Integer
 )
+from sqlalchemy.sql.expression import null
 from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship
 from pytz import UTC
+from datetime import datetime
 import logging
 from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
+from biweeklybudget.settings import RECONCILE_BEGIN_DATE
 
 logger = logging.getLogger(__name__)
 
@@ -190,3 +193,22 @@ class OFXTransaction(Base, ModelAsDict):
         if not self.account.negate_ofx_amounts:
             return self.amount
         return self.amount * Decimal(-1.0)
+
+    @staticmethod
+    def unreconciled(db):
+        """
+        Return a query to match all unreconciled OFXTransactions.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query to match all unreconciled OFXTransactions
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        cutoff_date = datetime(
+            RECONCILE_BEGIN_DATE.year, RECONCILE_BEGIN_DATE.month,
+            RECONCILE_BEGIN_DATE.day, 0, 0, 0, tzinfo=UTC
+        )
+        return db.query(OFXTransaction).filter(
+            OFXTransaction.reconcile.__eq__(null()),
+            OFXTransaction.date_posted.__ge__(cutoff_date)
+        )

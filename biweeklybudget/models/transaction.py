@@ -37,8 +37,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from sqlalchemy import Column, Integer, Numeric, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import null
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.utils import dtnow
+from biweeklybudget.settings import RECONCILE_BEGIN_DATE
 
 
 class Transaction(Base, ModelAsDict):
@@ -98,4 +100,19 @@ class Transaction(Base, ModelAsDict):
     def __repr__(self):
         return "<Transaction(id=%d)>" % (
             self.id
+        )
+
+    @staticmethod
+    def unreconciled(db):
+        """
+        Return a query to match all unreconciled Transactions.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query to match all unreconciled Transactions
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return db.query(Transaction).filter(
+            Transaction.reconcile.__eq__(null()),
+            Transaction.date.__ge__(RECONCILE_BEGIN_DATE)
         )
