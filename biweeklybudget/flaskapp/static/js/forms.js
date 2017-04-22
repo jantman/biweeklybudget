@@ -73,7 +73,8 @@ function handleForm(container_id, form_id, post_url, dataTableObj) {
  * @param {string} container_id - the ID of the modal container on the page
  * @param {string} form_id - the ID of the form on the page
  * @param {Object} dataTableObj - A reference to the DataTable on the page, that
- *   needs to be refreshed. If null, reload the whole page.
+ *   needs to be refreshed. If null, reload the whole page. If false, do
+ *   nothing.
  */
 function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
     if(data.hasOwnProperty('error_message')) {
@@ -95,7 +96,9 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
             var oneitem_re = /\/\d+$/;
-            if (dataTableObj) {
+            if (dataTableObj === false) {
+                // do nothing.
+            } else if (dataTableObj !== null) {
                 dataTableObj.api().ajax.reload();
             } else {
                 // dataTableObj is null, refresh the page
