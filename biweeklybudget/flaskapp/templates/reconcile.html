@@ -21,8 +21,25 @@
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><strong>Transactions</strong></div>
+                        <div class="panel-body" id="trans-panel"></div>
+                    </div>
+                </div>
+                <!-- /.col-lg-6 -->
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><strong>OFX</strong></div>
+                        <div class="panel-body" id="ofx-panel"></div>
+                    </div>
+                </div>
+                <!-- /.col-lg-6 -->
+            </div>
+            <!-- /.row -->
+            <div class="row" id="submit-row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Reconcile</h1>
+                    Submit Button Here!
                 </div>
                 <!-- /.col-lg-12 -->
             </div>

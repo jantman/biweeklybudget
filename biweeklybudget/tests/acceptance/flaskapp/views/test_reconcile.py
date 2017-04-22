@@ -38,6 +38,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import datetime, date
 from pytz import UTC
+from locale import currency
+import re
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -48,8 +50,78 @@ from biweeklybudget.tests.conftest import engine
 dnow = dtnow()
 
 
+def txn_div(id, dt, amt, acct_name, acct_id,
+            budget_name, budget_id, desc, drop_div=''):
+    """
+    Return the HTML for a Transaction div.
+
+    :param drop_div: contents of ``reconcile-drop-target`` div
+    :type drop_div: str
+    :return: HTML for Transaction reconcile div
+    :rtype: str
+    """
+    s = '<div class="reconcile reconcile-trans" id="trans-%s">' % id
+    s += '<div class="row">'
+    s += '<div class="col-lg-3">%s</div>' % dt.strftime('%Y-%m-%d')
+    s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
+    s += '<div class="col-lg-3"><strong>Acct:</strong> '
+    s += '<span style="white-space: nowrap;">'
+    s += '<a href="/accounts/%s">%s (%s)</a>' % (acct_id, acct_name, acct_id)
+    s += '</span></div>'
+    s += '<div class="col-lg-3"><strong>Budget:</strong> '
+    s += '<span style="white-space: nowrap;">'
+    s += '<a href="/budgets/%s">%s (%s)</a>' % (
+        budget_id, budget_name, budget_id
+    )
+    s += '</span></div>'
+    s += '</div>'
+    s += '<div class="row"><div class="col-lg-12">'
+    s += '<a href="javascript:transModal('
+    s += '%s, function () { updateReconcileTrans(%s) })">Trans %s</a>: %s' % (
+        id, id, id, desc
+    )
+    s += '</div></div>'
+    s += '<div class="reconcile-drop-target">%s</div>' % drop_div
+    s += '</div>'
+    return s
+
+
+def clean_fitid(fitid):
+    return re.sub(r'\W', '', fitid)
+
+
+def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name):
+    """
+    Return the HTML for an OFXTransaction div.
+
+    :return: HTML for OFXTransaction reconcile div
+    :rtype: str
+    """
+    cfitid = clean_fitid(fitid)
+    s = '<div class="reconcile reconcile-ofx" id="ofx-%s-%s">' % (
+        acct_id, cfitid
+    )
+    s += '<div class="row">'
+    s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
+    s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
+    s += '<div class="col-lg-3"><strong>Acct:</strong> '
+    s += '<span style="white-space: nowrap;">'
+    s += '<a href="/accounts/%s">%s (%s)</a>' % (acct_id, acct_name, acct_id)
+    s += '</span></div>'
+    s += '<div class="col-lg-3"><strong>Type:</strong> %s</div>' % trans_type
+    s += '</div>'
+    s += '<div class="row"><div class="col-lg-12">'
+    s += '<a href="javascript:ofxTransModal(%s, \'%s\', false)">%s</a>' % (
+        acct_id, cfitid, fitid
+    )
+    s += ': %s' % name
+    s += '</div>'
+    s += '</div></div>'
+    return s
+
+
 @pytest.mark.acceptance
-class TestReconcile(AcceptanceHelper):
+class DONOTTestReconcile(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -72,9 +144,7 @@ class TestReconcile(AcceptanceHelper):
         assert div.get_attribute('class') == 'row'
 
 
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestReconcileSimple(AcceptanceHelper):
+class ReconcileHelper(AcceptanceHelper):
 
     def test_00_clean_db(self, testdb):
         # clean the database
@@ -294,3 +364,92 @@ class TestReconcileSimple(AcceptanceHelper):
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         testdb.flush()
         testdb.commit()
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestColumns(ReconcileHelper):
+
+    def test_06_transactions(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        trans_div = selenium.find_element_by_id('trans-panel')
+        expected_trans = "\n".join([
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            ),
+            txn_div(
+                3,
+                date(2017, 4, 11),
+                600,
+                'BankTwo', 2,
+                '2Periodic', 2,
+                'trans2'
+            ),
+            txn_div(
+                4,
+                date(2017, 4, 14),
+                1400,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans3'
+            )
+        ])
+        assert trans_div.get_attribute('innerHTML').strip() == expected_trans
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        # ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name)
+        expected_ofx = "\n".join([
+            ofx_div(
+                date(2017, 4, 9),
+                -600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1'
+            ),
+            ofx_div(
+                date(2017, 4, 10),
+                100,
+                'BankOne', 1,
+                'Deposit',
+                'OFX1',
+                'ofx1-income'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                -250,
+                'BankOne', 1,
+                'Debit',
+                'OFX2',
+                'ofx2-trans1'
+            ),
+            ofx_div(
+                date(2017, 4, 14),
+                -10,
+                'BankOne', 1,
+                'Purchase',
+                'OFXT4',
+                'ofx4-st2'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                123,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT5',
+                'ofx5'
+            )
+        ])
+        assert ofxtrans_div.get_attribute('innerHTML').strip() == expected_ofx

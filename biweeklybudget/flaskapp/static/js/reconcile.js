@@ -34,3 +34,123 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
+
+/*
+ * Show unreconciled transactions in the proper div. Empty the div, then
+ * load transactions via ajax. Uses :js:func:`reconcileShowTransactions` as the
+ * ajax callback.
+ */
+function reconcileGetTransactions() {
+  $.ajax("/ajax/unreconciled/trans").done(reconcileShowTransactions);
+}
+
+/*
+ * Ajax callback handler for :js:func:`reconcileGetTransactions`. Display the
+ * returned data in the proper div.
+ *
+ * @param {Object} data - ajax response (JSON array of Transaction Objects)
+ */
+function reconcileShowTransactions(data) {
+  $('#trans-panel').empty();
+  for (var i in data) {
+    var t = data[i];
+    $('#trans-panel').append(reconcileTransDiv(t));
+  }
+}
+
+/*
+ * Generate a div for an individual Transaction, to display on the reconcile
+ * view.
+ *
+ * @param {Object} trans - ajax JSON object representing one Transaction
+ */
+function reconcileTransDiv(trans) {
+  var div = '<div class="reconcile reconcile-trans" id="trans-' + trans['id'] + '">';
+  div += '<div class="row">'
+  div += '<div class="col-lg-3">' + trans['date']['str'] + '</div>';
+  div += '<div class="col-lg-3">' + fmt_currency(trans['actual_amount']) + '</div>';
+  div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
+  div += '<div class="col-lg-3"><strong>Budget:</strong> <span style="white-space: nowrap;"><a href="/budgets/' + trans['budget_id'] + '">' + trans['budget_name'] + ' (' + trans['budget_id'] + ')</a></span></div>';
+  div += '</div>';
+  div += '<div class="row"><div class="col-lg-12"><a href="javascript:transModal(' + trans['id'] + ', function () { updateReconcileTrans(' + trans['id'] + ') })">Trans ' + trans['id'] + '</a>: ' + trans['description'] + '</div></div>';
+  div += '<div class="reconcile-drop-target"></div>';
+  div += '</div>\n';
+  return div;
+}
+
+/*
+ * Trigger update of a single Transaction on the reconcile page.
+ *
+ * @param {Integer} trans_id - the Transaction ID to update.
+ */
+function updateReconcileTrans(trans_id) {
+  console.log("Update transaction: " + trans_id);
+}
+
+/*
+ * Show unreconciled OFX transactions in the proper div. Empty the div, then
+ * load transactions via ajax. Uses :js:func:`reconcileShowOFX` as the
+ * ajax callback.
+ */
+function reconcileGetOFX() {
+  $.ajax("/ajax/unreconciled/ofx").done(reconcileShowOFX);
+}
+
+/*
+ * Ajax callback handler for :js:func:`reconcileGetOFX`. Display the
+ * returned data in the proper div.
+ *
+ * @param {Object} data - ajax response (JSON array of OFXTransaction Objects)
+ */
+function reconcileShowOFX(data) {
+  $('#ofx-panel').empty();
+  for (var i in data) {
+    var t = data[i];
+    $('#ofx-panel').append(reconcileOfxDiv(t));
+  }
+}
+
+/*
+ * Generate a div for an individual OFXTransaction, to display on the reconcile
+ * view.
+ *
+ * @param {Object} ofxtrans - ajax JSON object representing one OFXTransaction
+ */
+function reconcileOfxDiv(trans) {
+  var fitid = clean_fitid(trans['fitid']);
+  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '">';
+  div += '<div class="row">'
+  div += '<div class="col-lg-3">' + trans['date_posted']['ymdstr'] + '</div>';
+  div += '<div class="col-lg-3">' + fmt_currency(trans['account_amount']) + '</div>';
+  div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
+  div += '<div class="col-lg-3"><strong>Type:</strong> ' + trans['trans_type'] + '</div>';
+  div += '</div>';
+  div += '<div class="row"><div class="col-lg-12"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div></div>';
+  div += '</div>\n';
+  return div;
+}
+
+/*
+ * Trigger update of a single OFXTransaction on the reconcile page.
+ *
+ * @param {Integer} acct_id - the Account ID for the OFXTrans to update.
+ * @param {String} fitid - the FITID for the OFXTrans to update.
+ */
+function updateReconcileOFXTrans(acct_id, fitid) {
+  console.log("Update OFX transaction: " + acct_id + ', ' + fitid);
+}
+
+/*
+ * Given an OFXTransaction fitid, return a "clean" (alphanumeric) version of it,
+ * suitable for use as an HTML element id.
+ *
+ * @param {String} fitid - original, unmodified OFXTransaction fitid.
+ */
+function clean_fitid(fitid) {
+  return fitid.replace(/\W/g, '')
+}
+
+$(document).ready(function() {
+  reconcileGetTransactions();
+  reconcileGetOFX();
+});

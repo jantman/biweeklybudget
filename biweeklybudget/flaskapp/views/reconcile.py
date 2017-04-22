@@ -44,6 +44,8 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,39 @@ class TxnReconcileAjax(MethodView):
             res['acct_name'] = rec.transaction.account.name
         return jsonify(res)
 
+
+class OfxUnreconciledAjax(MethodView):
+    """
+    Handle GET /ajax/unreconciled/ofx endpoint.
+    """
+
+    def get(self):
+        res = []
+        for t in OFXTransaction.unreconciled(
+                db_session).order_by(OFXTransaction.date_posted).all():
+            d = t.as_dict
+            d['account_name'] = t.account.name
+            d['account_amount'] = t.account_amount
+            res.append(d)
+        return jsonify(res)
+
+
+class TransUnreconciledAjax(MethodView):
+    """
+    Handle GET /ajax/unreconciled/trans endpoint.
+    """
+
+    def get(self):
+        res = []
+        for t in Transaction.unreconciled(
+                db_session).order_by(Transaction.date).all():
+            d = t.as_dict
+            d['account_name'] = t.account.name
+            d['budget_name'] = t.budget.name
+            res.append(d)
+        return jsonify(res)
+
+
 app.add_url_rule(
     '/reconcile',
     view_func=ReconcileView.as_view('reconcile_view')
@@ -102,4 +137,14 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/reconcile/<int:reconcile_id>',
     view_func=TxnReconcileAjax.as_view('txn_reconcile_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/unreconciled/ofx',
+    view_func=OfxUnreconciledAjax.as_view('ofx_unreconciled_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/unreconciled/trans',
+    view_func=TransUnreconciledAjax.as_view('trans_unreconciled_ajax')
 )
