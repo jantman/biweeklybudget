@@ -64,6 +64,18 @@ function handleForm(container_id, form_id, post_url, dataTableObj) {
     });
 }
 
+/*
+ * Return True if ``functionToCheck`` is a function, False otherwise.
+ *
+ * From: http://stackoverflow.com/a/7356528/211734
+ *
+ * @param {Object} functionToCheck - The object to test.
+ */
+function isFunction(functionToCheck) {
+ var getType = {};
+ return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
 /**
  * Handle the response from the API URL that the form data is POSTed to.
  *
@@ -73,8 +85,8 @@ function handleForm(container_id, form_id, post_url, dataTableObj) {
  * @param {string} container_id - the ID of the modal container on the page
  * @param {string} form_id - the ID of the form on the page
  * @param {Object} dataTableObj - A reference to the DataTable on the page, that
- *   needs to be refreshed. If null, reload the whole page. If false, do
- *   nothing.
+ *   needs to be refreshed. If null, reload the whole page. If a function, call
+ *   that function. If false, do nothing.
  */
 function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
     if(data.hasOwnProperty('error_message')) {
@@ -96,8 +108,11 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
             var oneitem_re = /\/\d+$/;
-            if (dataTableObj === false) {
-                // do nothing.
+            if (isFunction(dataTableObj)) {
+                // if it's a function, call it.
+                dataTableObj();
+            } else if (dataTableObj === false) {
+                // do nothing
             } else if (dataTableObj !== null) {
                 dataTableObj.api().ajax.reload();
             } else {
