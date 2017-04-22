@@ -108,14 +108,7 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
         $('#modalSaveButton').hide();
         $('[data-dismiss="modal"]').click(function() {
             var oneitem_re = /\/\d+$/;
-            if (isFunction(dataTableObj)) {
-                // if it's a function, call it.
-                dataTableObj();
-            } else if (dataTableObj === false) {
-                // do nothing
-            } else if (dataTableObj !== null) {
-                dataTableObj.api().ajax.reload();
-            } else {
+            if (dataTableObj === null || typeof dataTableObj == 'undefined') {
                 // dataTableObj is null, refresh the page
                 if (oneitem_re.test(window.location.href)) {
                     // don't reload if it will just show the modal again
@@ -124,6 +117,17 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
                 } else {
                     location.reload();
                 }
+            } else if (isFunction(dataTableObj)) {
+                // if it's a function, call it.
+                dataTableObj();
+            } else if (dataTableObj === false) {
+                // do nothing
+            } else if (dataTableObj !== null) {
+                console.log(dataTableObj);
+                dataTableObj.api().ajax.reload();
+            } else {
+                console.log("ERROR: dataTableObj unknown type");
+                console.log(dataTableObj);
             }
         });
     }
