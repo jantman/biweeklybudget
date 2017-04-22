@@ -39,7 +39,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Ajax callback to generate the modal HTML with reconcile information.
  */
 function txnReconcileModalDiv(msg) {
-    console.log(msg)
     var frm = '<div>';
     // TxnReconcile info
     frm += '<div class="row"><div class="col-lg-12">\n'
@@ -54,7 +53,7 @@ function txnReconcileModalDiv(msg) {
     frm += '<div class="col-lg-6">\n';
     frm += '<div class="table-responsive">\n<table class="table table-bordered table-hover" id="txnReconcileModal-trans">\n<tbody>\n';
     frm += '<tr><th colspan="2" style="text-align: center;">Transaction</th></tr>\n';
-    frm += '<tr><th>Date</th><td>' + msg['transaction']['date']['ymdstr'] + '</td></tr>\n';
+    frm += '<tr><th>Date</th><td>' + msg['transaction']['date']['str'] + '</td></tr>\n';
     frm += '<tr><th>Amount</th><td>' + fmt_currency(msg['transaction']['actual_amount']) + '</td></tr>\n';
     frm += '<tr><th>Budgeted Amount</th><td>' + fmt_currency(msg['transaction']['budgeted_amount']) + '</td></tr>\n';
     frm += '<tr><th>Description</th><td>' + msg['transaction']['description'] + '</td></tr>\n';
