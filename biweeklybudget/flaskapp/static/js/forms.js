@@ -123,7 +123,6 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
             } else if (dataTableObj === false) {
                 // do nothing
             } else if (dataTableObj !== null) {
-                console.log(dataTableObj);
                 dataTableObj.api().ajax.reload();
             } else {
                 console.log("ERROR: dataTableObj unknown type");
