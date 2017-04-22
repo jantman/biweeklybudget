@@ -7,3 +7,40 @@ span.data_age {
 tr.inactive {
     background-color: #d9d9d9 !important;
 }
+
+div.reconcile-drop-target {
+  min-height: 10px;
+}
+
+div.reconcile {
+  box-sizing: border-box;
+  min-height: 20px;
+  padding-top: 9px;
+  padding-right: 9px;
+  padding-bottom: 9px;
+  padding-left: 9px;
+  margin-bottom: 20px;
+  background-color: rgb(245, 245, 245);
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+  border-top-style: solid;
+  border-right-style: solid;
+  border-bottom-style: solid;
+  border-left-style: solid;
+  border-top-color: rgb(227, 227, 227);
+  border-right-color: rgb(227, 227, 227);
+  border-bottom-color: rgb(227, 227, 227);
+  border-left-color: rgb(227, 227, 227);
+  border-image-source: initial;
+  border-image-slice: initial;
+  border-image-width: initial;
+  border-image-outset: initial;
+  border-image-repeat: initial;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-bottom-left-radius: 3px;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 1px inset;
+}
