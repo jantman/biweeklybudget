@@ -614,7 +614,7 @@ class TestTransReconciledModal(AcceptanceHelper):
             ['Account', 'BankOne (1)'],
             ['FITID', 'BankOne.0.1'],
             ['Date Posted', (dtnow() - timedelta(days=6)).strftime('%Y-%m-%d')],
-            ['Amount', '$-20.00'],
+            ['Amount', '-$20.00'],
             ['Name', 'Late Fee'],
             ['Memo', ''],
             ['Type', 'Debit'],

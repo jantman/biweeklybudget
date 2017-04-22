@@ -56,7 +56,9 @@ function fmt_null(o) {
  */
 function fmt_currency(value) {
     if (value === null) { return '&nbsp;'; }
-    return '$' + value.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+    return (
+      '$' + value.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+    ).replace('$-', '-$');
 }
 
 /**
