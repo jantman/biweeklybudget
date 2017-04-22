@@ -60,22 +60,6 @@ function fmt_currency(value) {
 }
 
 /**
- * Format a dtdict as returned by
- * :py:class:`biweeklybudget.flaskapp.jsonencoder.MagicJSONEncoder`
- * in ``%Y-%m-%d`` format.
- *
- * @param {Object} d - date dict
- * @returns {string} formatted Y-m-d date
- */
-function fmt_dtdict_ymd(d) {
-    var ds = d['date'] + '';
-    var ms = d['month'] + '';
-    if (ds.length < 2) { ds = '0' + ds; }
-    if (ms.length < 2) { ms = '0' + ms; }
-    return d['year'] + '-' + ms + '-' + ds;
-}
-
-/**
  * Format a javascript Date as ISO8601 YYYY-MM-DD
  *
  * @param {Date} d - the date to format
