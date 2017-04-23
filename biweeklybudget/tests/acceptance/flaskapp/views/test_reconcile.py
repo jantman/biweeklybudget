@@ -782,13 +782,76 @@ class TestDragLimitations(ReconcileHelper):
         }
 
     def test_08_wrong_account(self, base_url, selenium):
-        pass
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-1-OFXT4')
+        tgt = selenium.find_element_by_id(
+            'trans-4').find_element_by_class_name('reconcile-drop-target')
+        # get the innerHTML of both columns
+        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # sleep a bit for the drag to stop
+        sleep(1)
+        # ensure both columns are still the same
+        assert selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML') == trans_div
+        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML') == ofxtrans_div
+        # ensure reconciled JS var is still the same
+        assert self.get_reconciled(selenium) == {}
 
     def test_09_wrong_amount(self, base_url, selenium):
-        pass
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-1-OFXT4')
+        tgt = selenium.find_element_by_id(
+            'trans-1').find_element_by_class_name('reconcile-drop-target')
+        # get the innerHTML of both columns
+        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # sleep a bit for the drag to stop
+        sleep(1)
+        # ensure both columns are still the same
+        assert selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML') == trans_div
+        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML') == ofxtrans_div
+        # ensure reconciled JS var is still the same
+        assert self.get_reconciled(selenium) == {}
 
     def test_10_wrong_acct_and_amount(self, base_url, selenium):
-        pass
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-1-OFXT4')
+        tgt = selenium.find_element_by_id(
+            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        # get the innerHTML of both columns
+        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # sleep a bit for the drag to stop
+        sleep(1)
+        # ensure both columns are still the same
+        assert selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML') == trans_div
+        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML') == ofxtrans_div
+        # ensure reconciled JS var is still the same
+        assert self.get_reconciled(selenium) == {}
 
     def test_11_unreconcile(self, base_url, selenium):
         self.baseurl = base_url
