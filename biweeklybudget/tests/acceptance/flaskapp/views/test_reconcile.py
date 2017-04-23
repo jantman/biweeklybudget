@@ -41,6 +41,7 @@ from pytz import UTC
 from locale import currency
 import re
 import json
+from time import sleep
 from selenium.webdriver import ActionChains
 
 from biweeklybudget.utils import dtnow
@@ -724,7 +725,61 @@ class TestDragLimitations(ReconcileHelper):
         }
 
     def test_07_already_has_ofx(self, base_url, selenium):
-        pass
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-2-OFXT6')
+        src2 = selenium.find_element_by_id('ofx-2-OFXT7')
+        tgt = selenium.find_element_by_id(
+            'trans-5').find_element_by_class_name('reconcile-drop-target')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # ensure that the OFX div was hidden in the OFX column
+        src = selenium.find_element_by_id('ofx-2-OFXT6')
+        assert src.is_displayed() is False
+        # ensure that the OFX div was placed in the drop target
+        tgt = selenium.find_element_by_id('trans-5')
+        expected = txn_div(
+            5,
+            date(2017, 4, 16),
+            25,
+            'BankTwo', 2,
+            '3Periodic', 3,
+            'trans4',
+            drop_div=ofx_div(
+                date(2017, 4, 16),
+                25,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT6',
+                'ofx6',
+                trans_id=5
+            )
+        )
+        assert tgt.get_attribute('outerHTML') == expected
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            5: [2, 'OFXT6']
+        }
+        # get the innerHTML of both columns
+        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML')
+        # attempt to drag the other OFX
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src2, tgt).perform()
+        # sleep a bit for the drag to stop
+        sleep(1)
+        # ensure both columns are still the same
+        assert selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML') == trans_div
+        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML') == ofxtrans_div
+        # ensure reconciled JS var is still the same
+        assert self.get_reconciled(selenium) == {
+            5: [2, 'OFXT6']
+        }
 
     def test_08_wrong_account(self, base_url, selenium):
         pass
