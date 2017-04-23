@@ -56,9 +56,6 @@ function reconcileShowTransactions(data) {
     var t = data[i];
     $('#trans-panel').append(
       '<div class="reconcile reconcile-trans" id="trans-' + t['id'] + '" ' +
-      'ondrop="handleReconcileTransOnDrop(' + t['id'] + ', event)" ' +
-      'ondragover="handleReconcileTransOnDragOver(' + t['id'] + ', event)" ' +
-      'ondragenter="handleReconcileTransOnDragEnter(' + t['id'] + ', event)" ' +
       'data-trans-id="' + t['id'] + '" >' +
       reconcileTransDiv(t) + '</div>\n'
     );
@@ -126,7 +123,7 @@ function reconcileShowOFX(data) {
  */
 function reconcileOfxDiv(trans) {
   var fitid = clean_fitid(trans['fitid']);
-  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '" draggable="true" ondragstart="handleReconcileOfxDrag(event)">';
+  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '">';
   div += '<div class="row">'
   div += '<div class="col-lg-3">' + trans['date_posted']['ymdstr'] + '</div>';
   div += '<div class="col-lg-3">' + fmt_currency(trans['account_amount']) + '</div>';
@@ -136,67 +133,6 @@ function reconcileOfxDiv(trans) {
   div += '<div class="row"><div class="col-lg-12"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div></div>';
   div += '</div>\n';
   return div;
-}
-
-/*
- * Handler for ``ondragstart`` of OFXTransaction divs (``div.reconcile-ofx``).
- *
- * Sets the drag data to the ID of the div.
- *
- * @param {Object} event - the drag event
- */
-function handleReconcileOfxDrag(event) {
-  event.dataTransfer.setData("text", event.target.id);
-}
-
-/*
- * Handler for ``ondragover`` event on Transaction divs
- * (``div.reconcile-trans``; drop target). Determines whether or not to allow
- * a drop onto this div.
- *
- * Calling ``event.preventDefault()`` *allows* the drop.
- *
- * @param {Integer} trans_id - the (target) Transaction ID
- * @param {Object} event - the drop event.
- */
-function handleReconcileTransOnDragOver(trans_id, event) {
-  event.stopPropagation();
-  event.preventDefault();
-}
-
-/*
- * Handler for ``ondragenter`` event on Transaction divs
- * (``div.reconcile-trans``; drop target).
- *
- * @param {Integer} trans_id - the (target) Transaction ID
- * @param {Object} event - the drop event.
- */
-function handleReconcileTransOnDragEnter(trans_id, event) {
-  event.stopPropagation();
-  event.preventDefault();
-  return false;
-}
-
-/*
- * Handler for ``ondrop`` event on Transaction divs(``div.reconcile-trans``;
- * drop target).
- *
- * @param {Integer} trans_id - the (target) Transaction ID
- * @param {Object} event - the drop event.
- */
-function handleReconcileTransOnDrop(trans_id, event) {
-  event.preventDefault();
-  event.stopPropagation();
-  var div_id = event.dataTransfer.getData("text");
-  console.log("Dropped " + trans_id + " (div id " + div_id + "):");
-  console.log(event);
-  console.log("Event target:");
-  console.log(event.target);
-  console.log("$(event.target)");
-  console.log($(event.target));
-  console.log("event target .reconcole-drop-target");
-  console.log($(event.target).find('.reconcile-drop-target'));
-  $(event.target).find('.reconcile-drop-target').append($(div_id));
 }
 
 /*
