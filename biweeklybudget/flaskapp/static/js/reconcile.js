@@ -107,7 +107,7 @@ function reconcileTransHandleDropEvent(event, ui) {
   var amt = $(ui.draggable[0]).attr('data-amt');
   console.log('Reconcile Transaction(' + trans_id + ') with OFXTransaction(' + acct_id + ', ' + fitid + ')')
   // create a new div to put in the Transaction
-  var newdiv = $('<div class="reconcile reconcile-ofx-dropped" id="dropped-ofx-' + acct_id + '-' + cfitid + '" data-acct-id="' + acct_id + '" data-amt="' + amt + '" data-fitid="' + fitid + '" />').html(content);
+  var newdiv = $('<div class="reconcile reconcile-ofx-dropped" id="dropped-ofx-' + acct_id + '-' + cfitid + '" data-acct-id="' + acct_id + '" data-amt="' + amt + '" data-fitid="' + fitid + '" style="" />').html(content);
   // hide the source draggable
   $(ui.draggable[0]).hide();
   // append the new div to the droppable
@@ -131,7 +131,17 @@ function reconcileTransHandleDropEvent(event, ui) {
  * @param {String} fitid - the FITID
  */
 function reconcileDoUnreconcile(trans_id, acct_id, fitid) {
-  console.log("reconcileDoUnreconcile(" + trans_id + ", " + acct_id + ", " + fitid + ")");
+  // remove from the reconciled object
+  delete reconciled[trans_id];
+  // change the transaction link back to a real link
+  var editText = $('#trans-' + trans_id).find('.disabledEditLink');
+  editText.replaceWith(
+    $('<a href="javascript:transModal(' + trans_id + ', function () { updateReconcileTrans(' + trans_id + ') })">Trans ' + trans_id + '</a>')
+  );
+  // remove the dropped OFX
+  $('#trans-' + trans_id).find('.reconcile-drop-target').empty();
+  // make the OFX visible again
+  $('#ofx-' + acct_id + '-' + clean_fitid(fitid)).show();
 }
 
 /**
@@ -206,7 +216,7 @@ function reconcileShowOFX(data) {
  */
 function reconcileOfxDiv(trans) {
   var fitid = clean_fitid(trans['fitid']);
-  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '" data-acct-id="' + trans['account_id'] + '" data-amt="' + trans['account_amount'] + '" data-fitid="' + trans['fitid'] + '">';
+  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '" data-acct-id="' + trans['account_id'] + '" data-amt="' + trans['account_amount'] + '" data-fitid="' + trans['fitid'] + '" style="">';
   div += '<div class="row">'
   div += '<div class="col-lg-3">' + trans['date_posted']['ymdstr'] + '</div>';
   div += '<div class="col-lg-3">' + fmt_currency(trans['account_amount']) + '</div>';

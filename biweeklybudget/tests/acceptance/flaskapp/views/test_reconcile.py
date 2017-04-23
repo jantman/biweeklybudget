@@ -120,7 +120,7 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
         classes = 'reconcile reconcile-ofx ui-draggable ui-draggable-handle'
         _id = 'ofx-%s-%s' % (acct_id, cfitid)
     s = '<div class="%s" id="%s" data-acct-id="%s" ' \
-        'data-amt="%s" data-fitid="%s">' % (
+        'data-amt="%s" data-fitid="%s" style="">' % (
             classes, _id, acct_id, amt, fitid
         )
     s += '<div class="row">'
@@ -735,5 +735,65 @@ class TestDragLimitations(ReconcileHelper):
     def test_10_wrong_acct_and_amount(self, base_url, selenium):
         pass
 
-    def test_11_(self, base_url, selenium):
-        pass
+    def test_11_unreconcile(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-2-OFX3')
+        tgt = selenium.find_element_by_id(
+            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # ensure that the OFX div was hidden in the OFX column
+        src = selenium.find_element_by_id('ofx-2-OFX3')
+        assert src.is_displayed() is False
+        # ensure that the OFX div was placed in the drop target
+        tgt = selenium.find_element_by_id('trans-3')
+        expected = txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2',
+            drop_div=ofx_div(
+                date(2017, 4, 9),
+                600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1',
+                trans_id=3
+            )
+        )
+        assert tgt.get_attribute('outerHTML') == expected
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            3: [2, 'OFX3']
+        }
+        # unreconcile
+        link = tgt.find_element_by_xpath('//a[text()="Unreconcile"]')
+        link.click()
+        src = selenium.find_element_by_id('ofx-2-OFX3')
+        tgt = selenium.find_element_by_id('trans-3')
+        assert src.is_displayed() is True
+        assert src.get_attribute('outerHTML') == ofx_div(
+            date(2017, 4, 9),
+            600.00,
+            'BankTwo', 2,
+            'Purchase',
+            'OFX3',
+            'ofx3-trans2-st1'
+        )
+        assert tgt.find_element_by_class_name(
+            'reconcile-drop-target').get_attribute('innerHTML') == ''
+        assert self.get_reconciled(selenium) == {}
+        expected = txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2'
+        )
+        assert tgt.get_attribute('outerHTML') == expected
