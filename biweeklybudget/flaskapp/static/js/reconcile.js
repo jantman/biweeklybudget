@@ -48,6 +48,11 @@ function reconcileGetTransactions() {
  * Ajax callback handler for :js:func:`reconcileGetTransactions`. Display the
  * returned data in the proper div.
  *
+ * Sets each Transaction div as ``droppable``, using
+ * :js:func:`reconcileTransHandleDropEvent` as the drop event handler and
+ * :js:func:`reconcileTransDroppableAccept` to test if a draggable is droppable
+ * on the element.
+ *
  * @param {Object} data - ajax response (JSON array of Transaction Objects)
  */
 function reconcileShowTransactions(data) {
@@ -56,10 +61,60 @@ function reconcileShowTransactions(data) {
     var t = data[i];
     $('#trans-panel').append(
       '<div class="reconcile reconcile-trans" id="trans-' + t['id'] + '" ' +
-      'data-trans-id="' + t['id'] + '" >' +
+      'data-trans-id="' + t['id'] + '" data-acct-id="' + t['account_id'] + '" data-amt="' + t['actual_amount'] + '">' +
       reconcileTransDiv(t) + '</div>\n'
     );
   }
+  $('.reconcile-trans').droppable({
+    drop: reconcileTransHandleDropEvent,
+    accept: reconcileTransDroppableAccept
+  });
+}
+
+/*
+ * Accept function for droppables, to determine if a given draggable can be
+ * dropped on it.
+ *
+ * @param {Object} drag - the draggable element being dropped.
+ */
+function reconcileTransDroppableAccept(drag) {
+  var drop_acct = $(this).attr('data-acct-id');
+  var drop_amt = $(this).attr('data-amt');
+  var drag_acct = $(drag).attr('data-acct-id');
+  var drag_amt = $(drag).attr('data-amt');
+  return (
+    drop_acct === drag_acct &&
+    drop_amt === drag_amt &&
+    $(this).find('.reconcile-drop-target').is(':empty')
+  );
+}
+
+/*
+ * Handler for Drop events on reconcile Transaction divs. Setup as handler
+ * via :js:func:`reconcileShowTransactions`.
+ *
+ * @param {Object} event - the drop event
+ * @param {Object} ui - the UI element, containing the draggable
+ */
+function reconcileTransHandleDropEvent(event, ui) {
+  // get the droppable's transaction_id
+  var trans_id = $(event.target).attr('data-trans-id');
+  // get the contents of the draggable and relevant attributes
+  var content = $(ui.draggable[0]).html();
+  var acct_id = $(ui.draggable[0]).attr('data-acct-id');
+  var fitid = $(ui.draggable[0]).attr('data-fitid');
+  var cfitid = clean_fitid(fitid);
+  var amt = $(ui.draggable[0]).attr('data-amt');
+  console.log('Reconcile Transaction(' + trans_id + ') with OFXTransaction(' + acct_id + ', ' + fitid + ')')
+  // create a new div to put in the Transaction
+  var newdiv = $('<div class="reconcile reconcile-ofx-dropped" id="dropped-ofx-' + acct_id + '-' + cfitid + '" data-acct-id="' + acct_id + '" data-amt="' + amt + '" data-fitid="' + fitid + '" />').html(content);
+  // hide the source draggable
+  $(ui.draggable[0]).hide();
+  // append the new div to the droppable
+  var droppable = $(event.target).find('.reconcile-drop-target');
+  $(droppable).html('<div style="text-align: right;"><a href="">Unreconcile</a></div>');
+  $(newdiv).appendTo(droppable);
+  reconciled[trans_id] = [acct_id, fitid];
 }
 
 /*
@@ -89,6 +144,8 @@ function updateReconcileTrans(trans_id) {
   var url = "/ajax/transactions/" + trans_id;
   $.ajax(url).done(function(data) {
     $('#trans-' + data['id']).html(reconcileTransDiv(data));
+    $('#trans-' + data['id']).attr('data-acct-id', data['account_id']);
+    $('#trans-' + data['id']).attr('data-amt', data['actual_amount']);
   });
 }
 
@@ -113,6 +170,15 @@ function reconcileShowOFX(data) {
     var t = data[i];
     $('#ofx-panel').append(reconcileOfxDiv(t));
   }
+  $('.reconcile-ofx').each(function(index) {
+    $(this).draggable({
+      cursor: 'move',
+      // start: dragStart,
+      // containment: '#content-row',
+      revert: 'invalid',
+      helper: 'clone'
+    });
+  });
 }
 
 /*
@@ -123,7 +189,7 @@ function reconcileShowOFX(data) {
  */
 function reconcileOfxDiv(trans) {
   var fitid = clean_fitid(trans['fitid']);
-  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '">';
+  var div = '<div class="reconcile reconcile-ofx" id="ofx-' + trans['account_id'] + '-' + fitid + '" data-acct-id="' + trans['account_id'] + '" data-amt="' + trans['account_amount'] + '" data-fitid="' + trans['fitid'] + '">';
   div += '<div class="row">'
   div += '<div class="col-lg-3">' + trans['date_posted']['ymdstr'] + '</div>';
   div += '<div class="col-lg-3">' + fmt_currency(trans['account_amount']) + '</div>';

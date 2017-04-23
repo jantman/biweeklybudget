@@ -60,7 +60,10 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     :return: HTML for Transaction reconcile div
     :rtype: str
     """
-    s = '<div class="reconcile reconcile-trans" id="trans-%s">' % id
+    s = '<div class="reconcile reconcile-trans ui-droppable" ' \
+        'id="trans-%s" data-trans-id="%s" data-acct-id="%s" data-amt="%s">' % (
+        id, id, acct_id, amt
+    )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt.strftime('%Y-%m-%d')
     s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
@@ -98,9 +101,14 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name):
     :rtype: str
     """
     cfitid = clean_fitid(fitid)
-    s = '<div class="reconcile reconcile-ofx" id="ofx-%s-%s">' % (
-        acct_id, cfitid
-    )
+    if int(amt) == amt:
+        # JS doesn't put the trailing decimal on a ".0" number
+        amt = int(amt)
+    s = '<div class="reconcile reconcile-ofx ui-draggable ' \
+        'ui-draggable-handle" id="ofx-%s-%s" data-acct-id="%s" ' \
+        'data-amt="%s" data-fitid="%s">' % (
+            acct_id, cfitid, acct_id, amt, fitid
+        )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
     s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)

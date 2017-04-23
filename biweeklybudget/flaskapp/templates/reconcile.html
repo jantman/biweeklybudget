@@ -16,6 +16,10 @@
         {% for id in budgets.keys()|sort %}
         budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
         {% endfor %}
+
+        // store state for reconciled transactions - dict of Trans ID to
+        // Array of [OFX account_id, OFX fitid]
+        var reconciled = {};
     </script>
 {% endblock %}
 {% block body %}
@@ -58,6 +62,9 @@
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
+    <!-- jQuery UI JS -->
+    <script src="/static/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
 
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/transactions_modal.js"></script>
