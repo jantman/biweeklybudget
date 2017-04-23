@@ -12,6 +12,10 @@ div.reconcile-drop-target {
   min-height: 10px;
 }
 
+div.reconcile-ofx {
+  cursor: move;
+}
+
 div.reconcile {
   box-sizing: border-box;
   min-height: 20px;
