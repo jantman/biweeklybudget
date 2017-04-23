@@ -2,4 +2,4 @@ include CHANGES.rst
 include LICENSE
 include README.rst
 include requirements.txt
-include biweeklybudget/alembic/alembic.ini
+recursive-include biweeklybudget/alembic *.ini *.py

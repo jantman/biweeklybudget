@@ -81,7 +81,9 @@ setup(
         'biweeklybudget': [
             'flaskapp/templates/*',
             'flaskapp/static/*',
-            'alembic/alembic.ini'
+            'alembic/alembic.ini',
+            'alembic/env.py',
+            'alembic/versions/*.py'
         ]
     },
     url=PROJECT_URL,
