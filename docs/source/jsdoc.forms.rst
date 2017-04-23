@@ -39,6 +39,17 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 
    
 
+.. js:function:: isFunction(functionToCheck)
+
+   Return True if ``functionToCheck`` is a function, False otherwise.
+   
+   From: http://stackoverflow.com/a/7356528/211734
+
+   :param Object functionToCheck: The object to test.
+   
+
+   
+
 .. js:function:: serializeForm(form_id)
 
    Given the ID of a form, return an Object (hash/dict) of all data from it,

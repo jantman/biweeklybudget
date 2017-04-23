@@ -64,7 +64,7 @@ function handleForm(container_id, form_id, post_url, dataTableObj) {
     });
 }
 
-/*
+/**
  * Return True if ``functionToCheck`` is a function, False otherwise.
  *
  * From: http://stackoverflow.com/a/7356528/211734

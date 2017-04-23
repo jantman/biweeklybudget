@@ -75,6 +75,7 @@ function budgetModalDivForm() {
 
 /**
  * Ajax callback to fill in the modalDiv with data on a budget.
+ * Callback for ajax call in :js:func:`budgetModal`.
  */
 function budgetModalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Budget ' + msg['id']);
@@ -106,6 +107,7 @@ function budgetModalDivFillAndShow(msg) {
 
 /**
  * Show the modal popup, populated with information for one Budget.
+ * Uses :js:func:`budgetModalDivFillAndShow` as ajax callback.
  *
  * @param {number} id - the ID of the Budget to show modal for, or null to
  *   show a modal to add a new Budget.

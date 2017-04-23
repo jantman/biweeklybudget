@@ -35,7 +35,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
-/*
+/**
  * Show unreconciled transactions in the proper div. Empty the div, then
  * load transactions via ajax. Uses :js:func:`reconcileShowTransactions` as the
  * ajax callback.
@@ -44,7 +44,7 @@ function reconcileGetTransactions() {
   $.ajax("/ajax/unreconciled/trans").done(reconcileShowTransactions);
 }
 
-/*
+/**
  * Ajax callback handler for :js:func:`reconcileGetTransactions`. Display the
  * returned data in the proper div.
  *
@@ -71,7 +71,7 @@ function reconcileShowTransactions(data) {
   });
 }
 
-/*
+/**
  * Accept function for droppables, to determine if a given draggable can be
  * dropped on it.
  *
@@ -89,7 +89,7 @@ function reconcileTransDroppableAccept(drag) {
   );
 }
 
-/*
+/**
  * Handler for Drop events on reconcile Transaction divs. Setup as handler
  * via :js:func:`reconcileShowTransactions`.
  *
@@ -117,7 +117,7 @@ function reconcileTransHandleDropEvent(event, ui) {
   reconciled[trans_id] = [acct_id, fitid];
 }
 
-/*
+/**
  * Generate a div for an individual Transaction, to display on the reconcile
  * view.
  *
@@ -135,7 +135,7 @@ function reconcileTransDiv(trans) {
   return div;
 }
 
-/*
+/**
  * Trigger update of a single Transaction on the reconcile page.
  *
  * @param {Integer} trans_id - the Transaction ID to update.
@@ -149,7 +149,7 @@ function updateReconcileTrans(trans_id) {
   });
 }
 
-/*
+/**
  * Show unreconciled OFX transactions in the proper div. Empty the div, then
  * load transactions via ajax. Uses :js:func:`reconcileShowOFX` as the
  * ajax callback.
@@ -158,7 +158,7 @@ function reconcileGetOFX() {
   $.ajax("/ajax/unreconciled/ofx").done(reconcileShowOFX);
 }
 
-/*
+/**
  * Ajax callback handler for :js:func:`reconcileGetOFX`. Display the
  * returned data in the proper div.
  *
@@ -181,7 +181,7 @@ function reconcileShowOFX(data) {
   });
 }
 
-/*
+/**
  * Generate a div for an individual OFXTransaction, to display on the reconcile
  * view.
  *
@@ -201,7 +201,7 @@ function reconcileOfxDiv(trans) {
   return div;
 }
 
-/*
+/**
  * Given an OFXTransaction fitid, return a "clean" (alphanumeric) version of it,
  * suitable for use as an HTML element id.
  *
