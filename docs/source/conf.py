@@ -326,6 +326,7 @@ nitpick_ignore = [
     ('js:func', 'Object|null'),
     ('js:func', 'Object|string'),
     ('js:func', 'string'),
+    ('js:func', 'String'),
     ('js:func', 'Integer'),
     ('js:func', 'number'),
     ('js:func', 'Date')
