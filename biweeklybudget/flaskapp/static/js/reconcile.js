@@ -98,10 +98,10 @@ function reconcileTransDroppableAccept(drag) {
  */
 function reconcileTransHandleDropEvent(event, ui) {
   // get the droppable's transaction_id
-  var trans_id = $(event.target).attr('data-trans-id');
+  var trans_id = parseInt($(event.target).attr('data-trans-id'));
   // get the contents of the draggable and relevant attributes
   var content = $(ui.draggable[0]).html();
-  var acct_id = $(ui.draggable[0]).attr('data-acct-id');
+  var acct_id = parseInt($(ui.draggable[0]).attr('data-acct-id'));
   var fitid = $(ui.draggable[0]).attr('data-fitid');
   var cfitid = clean_fitid(fitid);
   var amt = $(ui.draggable[0]).attr('data-amt');
@@ -112,9 +112,26 @@ function reconcileTransHandleDropEvent(event, ui) {
   $(ui.draggable[0]).hide();
   // append the new div to the droppable
   var droppable = $(event.target).find('.reconcile-drop-target');
-  $(droppable).html('<div style="text-align: right;"><a href="">Unreconcile</a></div>');
+  $(droppable).html('<div style="text-align: right;"><a href="javascript:reconcileDoUnreconcile(' + trans_id + ', ' + acct_id + ', \'' + fitid + '\')">Unreconcile</a></div>');
   $(newdiv).appendTo(droppable);
+  var editLink = $(event.target).find('a:contains("Trans ' + trans_id + '")');
+  editLink.replaceWith(
+    $('<span class="disabledEditLink">Trans ' + trans_id + '</span>')
+  );
   reconciled[trans_id] = [acct_id, fitid];
+}
+
+/**
+ * Unreconcile a reconciled OFXTransaction/Transaction. This removes
+ * ``trans_id`` from the ``reconciled`` variable, empties the Transaction div's
+ * reconciled div, and shows the OFX div.
+ *
+ * @param {Integer} trans_id - the transaction id
+ * @param {Integer} acct_id - the account id
+ * @param {String} fitid - the FITID
+ */
+function reconcileDoUnreconcile(trans_id, acct_id, fitid) {
+  console.log("reconcileDoUnreconcile(" + trans_id + ", " + acct_id + ", " + fitid + ")");
 }
 
 /**

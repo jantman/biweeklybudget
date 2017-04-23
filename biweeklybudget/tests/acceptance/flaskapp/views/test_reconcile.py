@@ -40,6 +40,8 @@ from datetime import datetime, date
 from pytz import UTC
 from locale import currency
 import re
+import json
+from selenium.webdriver import ActionChains
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -79,10 +81,14 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     s += '</span></div>'
     s += '</div>'
     s += '<div class="row"><div class="col-lg-12">'
-    s += '<a href="javascript:transModal('
-    s += '%s, function () { updateReconcileTrans(%s) })">Trans %s</a>: %s' % (
-        id, id, id, desc
-    )
+    if drop_div == '':
+        s += '<a href="javascript:transModal('
+        s += '%s, function () { updateReconcileTrans(%s) })">Trans %s</a>: ' \
+             '%s' % (id, id, id, desc)
+    else:
+        s += '<span class="disabledEditLink">Trans %s</span>: %s' % (
+            id, desc
+        )
     s += '</div></div>'
     s += '<div class="reconcile-drop-target">%s</div>' % drop_div
     s += '</div>'
@@ -93,10 +99,13 @@ def clean_fitid(fitid):
     return re.sub(r'\W', '', fitid)
 
 
-def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name):
+def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
+            trans_id=None):
     """
     Return the HTML for an OFXTransaction div.
 
+    :param trans_id: if dropped on a Transaction div, the trans_id
+    :type trans_id: int
     :return: HTML for OFXTransaction reconcile div
     :rtype: str
     """
@@ -104,10 +113,15 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name):
     if int(amt) == amt:
         # JS doesn't put the trailing decimal on a ".0" number
         amt = int(amt)
-    s = '<div class="reconcile reconcile-ofx ui-draggable ' \
-        'ui-draggable-handle" id="ofx-%s-%s" data-acct-id="%s" ' \
+    if trans_id is not None:
+        classes = 'reconcile reconcile-ofx-dropped'
+        _id = 'dropped-ofx-%s-%s' % (acct_id, cfitid)
+    else:
+        classes = 'reconcile reconcile-ofx ui-draggable ui-draggable-handle'
+        _id = 'ofx-%s-%s' % (acct_id, cfitid)
+    s = '<div class="%s" id="%s" data-acct-id="%s" ' \
         'data-amt="%s" data-fitid="%s">' % (
-            acct_id, cfitid, acct_id, amt, fitid
+            classes, _id, acct_id, amt, fitid
         )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
@@ -125,6 +139,11 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name):
     s += ': %s' % name
     s += '</div>'
     s += '</div></div>'
+    if trans_id is not None:
+        return '<div style="text-align: right;"><a href="javascript:reconc' \
+               'ileDoUnreconcile(%s, %s, \'%s\')">Unreconcile</a></div>%s' % (
+                   trans_id, acct_id, fitid, s
+               )
     return s
 
 
@@ -153,6 +172,23 @@ class DONOTTestReconcile(AcceptanceHelper):
 
 
 class ReconcileHelper(AcceptanceHelper):
+
+    def get_reconciled(self, driver):
+        """
+        Execute javascript in the selenium browser to return the
+        ``reconciled`` JavaScript object as a JSON string; deserialize the
+        JSON and return the resulting dict.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :return: ``reconciled`` javascript variable from page
+        :rtype: dict
+        """
+        script = 'return JSON.stringify(reconciled);'
+        res = driver.execute_script(script)
+        print("reconciled JSON: %s" % res)
+        r = json.loads(res)
+        return {int(x): r[x] for x in r}
 
     def test_00_clean_db(self, testdb):
         # clean the database
@@ -549,7 +585,7 @@ class DONOTTestColumns(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestTransactionEditModal(ReconcileHelper):
+class DONOTTestTransactionEditModal(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         t = testdb.query(Transaction).get(1)
@@ -644,3 +680,60 @@ class TestTransactionEditModal(ReconcileHelper):
             )
         ]
         assert actual_trans == expected_trans
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestDragLimitations(ReconcileHelper):
+
+    def test_06_success(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        src = selenium.find_element_by_id('ofx-2-OFX3')
+        tgt = selenium.find_element_by_id(
+            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(src, tgt).perform()
+        # ensure that the OFX div was hidden in the OFX column
+        src = selenium.find_element_by_id('ofx-2-OFX3')
+        assert src.is_displayed() is False
+        # ensure that the OFX div was placed in the drop target
+        tgt = selenium.find_element_by_id('trans-3')
+        expected = txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2',
+            drop_div=ofx_div(
+                date(2017, 4, 9),
+                600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1',
+                trans_id=3
+            )
+        )
+        assert tgt.get_attribute('outerHTML') == expected
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            3: [2, 'OFX3']
+        }
+
+    def test_07_already_has_ofx(self, base_url, selenium):
+        pass
+
+    def test_08_wrong_account(self, base_url, selenium):
+        pass
+
+    def test_09_wrong_amount(self, base_url, selenium):
+        pass
+
+    def test_10_wrong_acct_and_amount(self, base_url, selenium):
+        pass
+
+    def test_11_(self, base_url, selenium):
+        pass

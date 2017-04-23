@@ -72,3 +72,7 @@ div.reconcile-ofx-dropped {
   max-height: calc(100vh - 344px);
   overflow-y: scroll;
 }
+
+.disabledEditLink {
+  font-weight: bold;
+}
