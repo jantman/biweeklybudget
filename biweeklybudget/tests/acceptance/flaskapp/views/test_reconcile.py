@@ -453,3 +453,82 @@ class TestColumns(ReconcileHelper):
             )
         ])
         assert ofxtrans_div.get_attribute('innerHTML').strip() == expected_ofx
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestTransactionEditModal(ReconcileHelper):
+
+    def test_06_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(1)
+        assert t is not None
+        assert t.description == 'income'
+        assert t.date == date(2017, 4, 10)
+        assert float(t.actual_amount) == -100.00
+        assert t.account_id == 1
+        assert t.budget_id == 1
+
+    def test_07_edit(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        link = selenium.find_element_by_xpath('//a[text()="Trans 1"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 1'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '1'
+        amt = body.find_element_by_id('trans_frm_amount')
+        amt.clear()
+        amt.send_keys('-123.45')
+        desc = body.find_element_by_id('trans_frm_description')
+        desc.send_keys('edited')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 1 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that updated budget was removed from the page
+        trans_div = selenium.find_element_by_id('trans-panel')
+        expected_trans = "\n".join([
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -123.45,
+                'BankOne', 1,
+                '1Income', 1,
+                'incomeedited'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            ),
+            txn_div(
+                3,
+                date(2017, 4, 11),
+                600,
+                'BankTwo', 2,
+                '2Periodic', 2,
+                'trans2'
+            ),
+            txn_div(
+                4,
+                date(2017, 4, 14),
+                1400,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans3'
+            )
+        ])
+        assert trans_div.get_attribute('innerHTML').strip() == expected_trans
