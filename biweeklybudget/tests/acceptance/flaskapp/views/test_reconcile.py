@@ -930,7 +930,6 @@ class TestDragAndDropReconcile(ReconcileHelper):
         assert res[0].ofx_fitid == 'OFX8'
 
     def test_07_drag_and_drop(self, base_url, selenium):
-        self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         # drag and drop
         chain = ActionChains(selenium)
@@ -974,3 +973,10 @@ class TestDragAndDropReconcile(ReconcileHelper):
         }
         # click submit button
         selenium.find_element_by_id('reconcile-submit').click()
+
+    def test_08_submit_with_nothing_reconciled(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        # check the columns
+        # submit the form
+        # make sure the columns are the same
+        # make sure the warning box is there
