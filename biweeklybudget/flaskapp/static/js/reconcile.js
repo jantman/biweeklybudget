@@ -238,7 +238,60 @@ function clean_fitid(fitid) {
   return fitid.replace(/\W/g, '')
 }
 
+/**
+ * Handle click of the Submit button on the reconcile view. This POSTs to
+ * ``/ajax/reconcile`` via ajax. Feedback is provided by appending a div with
+ * id ``reconcile-msg`` to ``div#notifications-row/div.col-lg-12``.
+ */
+function reconcileHandleSubmit() {
+  $('body').find('#reconcile-msg').remove();
+  if (jQuery.isEmptyObject(reconciled)) {
+    var container = $('#notifications-row').find('.col-lg-12');
+    var newdiv = $(
+      '<div class="alert alert-warning" id="reconcile-msg">' +
+      '<strong>Warning:</strong> No reconciled transactions; did not submit form.</div>'
+    );
+    $(container).append(newdiv);
+    newdiv.effect("shake");
+    return;
+  }
+  $.ajax({
+        type: "POST",
+        url: '/ajax/reconcile',
+        data: reconciled,
+        success: function(data) {
+            var container = $('#notifications-row').find('.col-lg-12');
+            if(!data['success']) {
+                var newdiv = $(
+                  '<div class="alert alert-danger" id="reconcile-msg">' +
+                  '<strong>Error:</strong> ' + data['error_message'] + '</div>'
+                );
+                $(container).append(newdiv);
+                newdiv.effect("shake");
+            } else {
+                $(container).append(
+                  '<div class="alert alert-success" id="reconcile-msg">' +
+                  data['success_message'] + '</div>'
+                );
+                reconcileGetTransactions();
+                reconcileGetOFX();
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            var container = $('#notifications-row').find('.col-lg-12');
+            var newdiv = $(
+              '<div class="alert alert-danger" id="reconcile-msg">' +
+              '<strong>Error submitting form:</strong> ' + textStatus +
+              ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
+            );
+            $(container).append(newdiv);
+            newdiv.effect("shake");
+        }
+    });
+}
+
 $(document).ready(function() {
   reconcileGetTransactions();
   reconcileGetOFX();
+  $('#reconcile-submit').click(reconcileHandleSubmit);
 });

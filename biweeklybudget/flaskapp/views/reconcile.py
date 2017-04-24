@@ -36,9 +36,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import json
 
 from flask.views import MethodView
-from flask import render_template, jsonify
+from flask import render_template, jsonify, request
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.budget_model import Budget
@@ -129,6 +130,25 @@ class TransUnreconciledAjax(MethodView):
         return jsonify(res)
 
 
+class ReconcileAjax(MethodView):
+    """
+    Handle POST /ajax/reconcile endpoint.
+    """
+
+    def post(self):
+        logger.debug('POST /ajax/reconcile: %s', request.data)
+        """
+        return jsonify({
+            'success': True,
+            'success_message': "some success."
+        })
+        """
+        return jsonify({
+            'success': False,
+            'error_message': "foo bar <strong>error</strong>."
+        })
+
+
 app.add_url_rule(
     '/reconcile',
     view_func=ReconcileView.as_view('reconcile_view')
@@ -147,4 +167,9 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/unreconciled/trans',
     view_func=TransUnreconciledAjax.as_view('trans_unreconciled_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/reconcile',
+    view_func=ReconcileAjax.as_view('reconcile_ajax')
 )

@@ -685,7 +685,7 @@ class DONOTTestTransactionEditModal(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestDragLimitations(ReconcileHelper):
+class DONOTTestDragLimitations(ReconcileHelper):
 
     def test_06_success(self, base_url, selenium):
         self.baseurl = base_url
@@ -915,3 +915,62 @@ class TestDragLimitations(ReconcileHelper):
             'trans2'
         )
         assert tgt.get_attribute('outerHTML') == expected
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestDragAndDropReconcile(ReconcileHelper):
+
+    def test_06_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert res[0].id == 1
+        assert res[0].txn_id == 7
+        assert res[0].ofx_account_id == 2
+        assert res[0].ofx_fitid == 'OFX8'
+
+    def test_07_drag_and_drop(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-2-OFX3'),
+            selenium.find_element_by_id(
+                'trans-3'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-1-OFX1'),
+            selenium.find_element_by_id(
+                'trans-1'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-1-OFX2'),
+            selenium.find_element_by_id(
+                'trans-2'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-2-OFXT6'),
+            selenium.find_element_by_id(
+                'trans-5'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-2-OFXT7'),
+            selenium.find_element_by_id(
+                'trans-6'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            3: [2, 'OFX3'],
+            1: [1, 'OFX1'],
+            2: [1, 'OFX2'],
+            5: [2, 'OFXT6'],
+            6: [2, 'OFXT7']
+        }
+        # click submit button
+        selenium.find_element_by_id('reconcile-submit').click()
