@@ -115,7 +115,7 @@ def _alembic_get_current_rev(config, script):
         fn=display_version
     ):
         script.run_env()
-    if ' ' in config._curr_rev:
+    if config._curr_rev is not None and ' ' in config._curr_rev:
         config._curr_rev = config._curr_rev.strip().split(' ')[0]
     return config._curr_rev
 
