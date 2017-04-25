@@ -38,25 +38,20 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import locale
 
+from flask import Flask
+
 from biweeklybudget.db import init_db, cleanup_db
 from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
+from biweeklybudget.utils import fix_werkzeug_logger
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
          "%(name)s.%(funcName)s() ] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=format)
 logger = logging.getLogger()
 
-"""
-With Werkzeug at least as of 0.12.1, werkzeug._internal._log sets up its own
-StreamHandler if logging isn't already configured. However, the result of this
-is that unless we configure our logging _before_ importing Flask, werkzeug's
-HTTP requests are logged _twice_, once by the StreamHandler setup by werkzeug
-itself and then again by our root-level logger. The fix for this is to setup
-our logger *before* importing Flask.
-"""
-from flask import Flask  # noqa
-
 locale.setlocale(locale.LC_ALL, '')
+
+fix_werkzeug_logger()
 
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')
