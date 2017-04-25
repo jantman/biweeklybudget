@@ -258,7 +258,9 @@ function reconcileHandleSubmit() {
   $.ajax({
         type: "POST",
         url: '/ajax/reconcile',
-        data: reconciled,
+        data: JSON.stringify(reconciled),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
         success: function(data) {
             var container = $('#notifications-row').find('.col-lg-12');
             if(!data['success']) {
@@ -273,6 +275,7 @@ function reconcileHandleSubmit() {
                   '<div class="alert alert-success" id="reconcile-msg">' +
                   data['success_message'] + '</div>'
                 );
+                reconciled = {};
                 reconcileGetTransactions();
                 reconcileGetOFX();
             }

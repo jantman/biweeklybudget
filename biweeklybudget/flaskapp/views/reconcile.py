@@ -132,20 +132,62 @@ class TransUnreconciledAjax(MethodView):
 
 class ReconcileAjax(MethodView):
     """
-    Handle POST /ajax/reconcile endpoint.
+    Handle POST ``/ajax/reconcile`` endpoint.
     """
 
     def post(self):
-        logger.debug('POST /ajax/reconcile: %s', request.data)
         """
+        Handle POST ``/ajax/reconcile``
+
+        Response is a JSON dict. Keys are ``success`` (boolean) and either
+        ``error_message`` (string) or ``success_message`` (string).
+
+        :return: JSON response
+        """
+        raw = request.get_json()
+        data = {int(x): raw[x] for x in raw}
+        logger.debug('POST /ajax/reconcile: %s', data)
+        rec_count = 0
+        for trans_id in sorted(data.keys()):
+            ofx_key = (data[trans_id][0], data[trans_id][1])
+            try:
+                trans = db_session.query(Transaction).get(trans_id)
+            except Exception:
+                logger.error('Exception getting Transaction %s',
+                               trans_id, exc_info=True)
+                return jsonify({
+                    'success': False,
+                    'error_message': 'Invalid Transaction ID: %s' % trans_id
+                })
+            try:
+                ofx = db_session.query(OFXTransaction).get(ofx_key)
+            except Exception:
+                logger.error('Exception getting OFXTransaction %s',
+                               ofx_key, exc_info=True)
+                return jsonify({
+                    'success': False,
+                    'error_message': 'Invalid OFXTransaction: %s' % ofx_key
+                })
+            db_session.add(TxnReconcile(
+                transaction=trans,
+                ofx_trans=ofx
+            ))
+            logger.info('Reconcile %s with %s', trans, ofx)
+            rec_count += 1
+        try:
+            db_session.flush()
+            db_session.commit()
+        except Exception as ex:
+            logger.error('Exception committing transaction reconcile',
+                         exc_info=True)
+            return jsonify({
+                'success': False,
+                'error_message': 'Exception committing reconcile(s): %s' % ex
+            })
         return jsonify({
             'success': True,
-            'success_message': "some success."
-        })
-        """
-        return jsonify({
-            'success': False,
-            'error_message': "foo bar <strong>error</strong>."
+            'success_message': 'Successfully reconciled '
+                               '%d transactions' % rec_count
         })
 
 
