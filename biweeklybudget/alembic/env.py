@@ -39,6 +39,7 @@ from __future__ import with_statement
 from alembic import context
 from sqlalchemy import pool, create_engine
 from logging.config import fileConfig
+import logging
 from biweeklybudget.settings import DB_CONNSTRING
 from biweeklybudget.models.base import Base
 
@@ -46,9 +47,11 @@ from biweeklybudget.models.base import Base
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-fileConfig(config.config_file_name)
+# only configure logging if used standalone, not when imported in app:
+if len(logging.getLogger().handlers) < 1:
+    # Interpret the config file for Python logging.
+    # This line sets up loggers basically.
+    fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
