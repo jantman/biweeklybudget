@@ -150,7 +150,7 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
 
 
 @pytest.mark.acceptance
-class DONOTTestReconcile(AcceptanceHelper):
+class TestReconcile(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -456,7 +456,7 @@ class ReconcileHelper(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestColumns(ReconcileHelper):
+class TestColumns(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
@@ -587,7 +587,7 @@ class DONOTTestColumns(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestTransactionEditModal(ReconcileHelper):
+class TestTransactionEditModal(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         t = testdb.query(Transaction).get(1)
@@ -686,7 +686,7 @@ class DONOTTestTransactionEditModal(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestDragLimitations(ReconcileHelper):
+class TestDragLimitations(ReconcileHelper):
 
     def test_06_success(self, base_url, selenium):
         self.baseurl = base_url
@@ -920,7 +920,7 @@ class DONOTTestDragLimitations(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestDragAndDropReconcile(ReconcileHelper):
+class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
@@ -1006,7 +1006,7 @@ class DONOTTestDragAndDropReconcile(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestUIReconcileMulti(ReconcileHelper):
+class TestUIReconcileMulti(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
