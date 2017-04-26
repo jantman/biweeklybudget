@@ -794,6 +794,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
         # delete existing transactions
+        for tr in testdb.query(TxnReconcile).all():
+            testdb.delete(tr)
         for idx in [1, 2, 3]:
             t = testdb.query(Transaction).get(idx)
             testdb.delete(t)
@@ -840,7 +842,6 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             scheduled_trans=st
         )
         testdb.add(t)
-        testdb.add(TxnReconcile(note='foo', transaction=t))
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=6)),
             actual_amount=111.13,
@@ -869,6 +870,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             account=testdb.query(Account).get(3),
             budget=e2budget
         ))
+        testdb.flush()
+        testdb.commit()
+        testdb.add(TxnReconcile(note='foo', txn_id=t.id))
         testdb.flush()
         testdb.commit()
 
@@ -1251,6 +1255,8 @@ class TestMakeTransModal(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
         # delete existing transactions
+        for tr in testdb.query(TxnReconcile).all():
+            testdb.delete(tr)
         for idx in [1, 2, 3]:
             t = testdb.query(Transaction).get(idx)
             testdb.delete(t)
