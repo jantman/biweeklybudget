@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-import json
 
 from flask.views import MethodView
 from flask import render_template, jsonify, request
@@ -154,7 +153,7 @@ class ReconcileAjax(MethodView):
                 trans = db_session.query(Transaction).get(trans_id)
             except Exception:
                 logger.error('Exception getting Transaction %s',
-                               trans_id, exc_info=True)
+                             trans_id, exc_info=True)
                 return jsonify({
                     'success': False,
                     'error_message': 'Invalid Transaction ID: %s' % trans_id
@@ -163,7 +162,7 @@ class ReconcileAjax(MethodView):
                 ofx = db_session.query(OFXTransaction).get(ofx_key)
             except Exception:
                 logger.error('Exception getting OFXTransaction %s',
-                               ofx_key, exc_info=True)
+                             ofx_key, exc_info=True)
                 return jsonify({
                     'success': False,
                     'error_message': 'Invalid OFXTransaction: %s' % ofx_key

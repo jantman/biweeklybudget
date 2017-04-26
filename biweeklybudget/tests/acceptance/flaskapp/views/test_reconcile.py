@@ -65,8 +65,8 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     """
     s = '<div class="reconcile reconcile-trans ui-droppable" ' \
         'id="trans-%s" data-trans-id="%s" data-acct-id="%s" data-amt="%s">' % (
-        id, id, acct_id, amt
-    )
+            id, id, acct_id, amt
+        )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt.strftime('%Y-%m-%d')
     s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
