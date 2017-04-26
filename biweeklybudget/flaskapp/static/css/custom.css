@@ -56,23 +56,6 @@ div.reconcile-ofx-dropped {
 
 }
 
-/* based on bootstrap .pre-scrollable */
-.panel-vert-scroll {
-  /*
-  heights:
-  Top header is 51px
-  Notification row with 2 notifications is 144px
-  Panel heading is 41px
-  Bottom padding on the txn/OFX panel is 20px
-  Bottom submit row is 86px
-    sum: 342px
-  Add 2px for buffer to prevent body scrolling
-  */
-  min-height: 100px;
-  max-height: calc(100vh - 344px);
-  overflow-y: scroll;
-}
-
 .disabledEditLink {
   font-weight: bold;
 }
