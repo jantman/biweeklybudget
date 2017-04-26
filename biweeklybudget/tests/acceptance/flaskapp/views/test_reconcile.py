@@ -919,7 +919,7 @@ class DONOTTestDragLimitations(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestDragAndDropReconcile(ReconcileHelper):
+class DONOTTestDragAndDropReconcile(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
@@ -973,10 +973,114 @@ class TestDragAndDropReconcile(ReconcileHelper):
         }
         # click submit button
         selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        assert self.get_reconciled(selenium) == {}
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Successfully reconciled 5 transactions'
+        assert 'alert-success' in msg.get_attribute('class')
 
     def test_08_submit_with_nothing_reconciled(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        # check the columns
-        # submit the form
-        # make sure the columns are the same
-        # make sure the warning box is there
+        assert self.get_reconciled(selenium) == {}
+        # get the innerHTML of both columns
+        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML')
+        # attempt to drag the other OFX
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        # ensure both columns are still the same
+        assert selenium.find_element_by_id('trans-panel').get_attribute(
+            'innerHTML') == trans_div
+        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+            'innerHTML') == ofxtrans_div
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Warning: No reconciled transactions; ' \
+                           'did not submit form.'
+        assert 'alert-warning' in msg.get_attribute('class')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestUIReconcileMulti(ReconcileHelper):
+
+    def test_06_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert res[0].id == 1
+        assert res[0].txn_id == 7
+        assert res[0].ofx_account_id == 2
+        assert res[0].ofx_fitid == 'OFX8'
+
+    def test_07_drag_and_drop(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-2-OFX3'),
+            selenium.find_element_by_id(
+                'trans-3'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            3: [2, 'OFX3']
+        }
+        # click submit button
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        assert self.get_reconciled(selenium) == {}
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Successfully reconciled 1 transactions'
+        assert 'alert-success' in msg.get_attribute('class')
+        # reconcile 2 more
+        self.wait_for_id(selenium, 'ofx-1-OFX2')
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-1-OFX1'),
+            selenium.find_element_by_id(
+                'trans-1'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-1-OFX2'),
+            selenium.find_element_by_id(
+                'trans-2'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            1: [1, 'OFX1'],
+            2: [1, 'OFX2']
+        }
+        # click submit button
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        assert self.get_reconciled(selenium) == {}
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Successfully reconciled 2 transactions'
+        assert 'alert-success' in msg.get_attribute('class')
+
+    def test_08_invalid_trans_id(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        assert self.get_reconciled(selenium) == {}
+        script = 'reconciled[1234] = [4, "OFXNONE"];'
+        selenium.execute_script(script)
+        assert self.get_reconciled(selenium) == {
+            1234: [4, "OFXNONE"]
+        }
+        # click submit button
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        assert self.get_reconciled(selenium) == {
+            1234: [4, "OFXNONE"]
+        }
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Error: Invalid Transaction ID: 1234'
+        assert 'alert-danger' in msg.get_attribute('class')

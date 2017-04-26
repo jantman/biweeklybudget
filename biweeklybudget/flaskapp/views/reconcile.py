@@ -149,20 +149,16 @@ class ReconcileAjax(MethodView):
         rec_count = 0
         for trans_id in sorted(data.keys()):
             ofx_key = (data[trans_id][0], data[trans_id][1])
-            try:
-                trans = db_session.query(Transaction).get(trans_id)
-            except Exception:
-                logger.error('Exception getting Transaction %s',
-                             trans_id, exc_info=True)
+            trans = db_session.query(Transaction).get(trans_id)
+            if trans is None:
+                logger.error('Invalid transaction ID: %s', trans_id)
                 return jsonify({
                     'success': False,
                     'error_message': 'Invalid Transaction ID: %s' % trans_id
                 })
-            try:
-                ofx = db_session.query(OFXTransaction).get(ofx_key)
-            except Exception:
-                logger.error('Exception getting OFXTransaction %s',
-                             ofx_key, exc_info=True)
+            ofx = db_session.query(OFXTransaction).get(ofx_key)
+            if ofx is None:
+                logger.error('Invalid OFXTransaction: %s', ofx_key)
                 return jsonify({
                     'success': False,
                     'error_message': 'Invalid OFXTransaction: %s' % ofx_key
