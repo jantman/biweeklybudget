@@ -628,8 +628,8 @@ class TestTransactionEditModal(ReconcileHelper):
         # test that updated budget was removed from the page
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            x.get_attribute('outerHTML')
-            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+            t.get_attribute('outerHTML')
+            for t in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
             txn_div(
