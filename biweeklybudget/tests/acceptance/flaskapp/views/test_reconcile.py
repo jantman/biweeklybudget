@@ -43,6 +43,7 @@ import re
 import json
 from time import sleep
 from selenium.webdriver import ActionChains
+import requests
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -1005,7 +1006,7 @@ class DONOTTestDragAndDropReconcile(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestUIReconcileMulti(ReconcileHelper):
+class DONOTTestUIReconcileMulti(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
@@ -1084,3 +1085,81 @@ class TestUIReconcileMulti(ReconcileHelper):
         msg = selenium.find_element_by_id('reconcile-msg')
         assert msg.text == 'Error: Invalid Transaction ID: 1234'
         assert 'alert-danger' in msg.get_attribute('class')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestReconcileBackend(ReconcileHelper):
+
+    def test_06_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert res[0].id == 1
+        assert res[0].txn_id == 7
+        assert res[0].ofx_account_id == 2
+        assert res[0].ofx_fitid == 'OFX8'
+
+    def test_07_success(self, base_url):
+        res = requests.post(
+            base_url + '/ajax/reconcile',
+            json={3: [2, 'OFX3']}
+        )
+        assert res.json() == {
+            'success': True,
+            'success_message': 'Successfully reconciled 1 transactions'
+        }
+        assert res.status_code == 200
+
+    def test_08_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 2
+        assert res[1].id == 2
+        assert res[1].txn_id == 3
+        assert res[1].ofx_account_id == 2
+        assert res[1].ofx_fitid == 'OFX3'
+
+    def test_09_invalid_trans(self, base_url, testdb):
+        res = requests.post(
+            base_url + '/ajax/reconcile',
+            json={32198: [2, 'OFX3']}
+        )
+        assert res.json() == {
+            'success': False,
+            'error_message': 'Invalid Transaction ID: 32198'
+        }
+        assert res.status_code == 400
+        assert len(testdb.query(TxnReconcile).all()) == 2
+
+    def test_10_invalid_ofx(self, base_url, testdb):
+        res = requests.post(
+            base_url + '/ajax/reconcile',
+            json={3: [2, 'OFX338ufd']}
+        )
+        assert res.json() == {
+            'success': False,
+            'error_message': "Invalid OFXTransaction: (2, 'OFX338ufd')"
+        }
+        assert res.status_code == 400
+        assert len(testdb.query(TxnReconcile).all()) == 2
+
+    def test_10_commit_exception(self, base_url):
+        # already reconciled in test_07
+        res = requests.post(
+            base_url + '/ajax/reconcile',
+            json={3: [2, 'OFX3']}
+        )
+        j = res.json()
+        assert sorted(j.keys()) == ['error_message', 'success']
+        assert j['success'] is False
+        assert j['error_message'].startswith('Exception committing reconcile')
+        assert "Duplicate entry '3' for key " \
+               "'uq_txn_reconciles_txn_id'" in j['error_message']
+        assert res.status_code == 400
+
+    def test_11_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 2
+        assert res[1].id == 2
+        assert res[1].txn_id == 3
+        assert res[1].ofx_account_id == 2
+        assert res[1].ofx_fitid == 'OFX3'

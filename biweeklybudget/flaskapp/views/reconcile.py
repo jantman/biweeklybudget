@@ -155,17 +155,18 @@ class ReconcileAjax(MethodView):
                 return jsonify({
                     'success': False,
                     'error_message': 'Invalid Transaction ID: %s' % trans_id
-                })
+                }), 400
             ofx = db_session.query(OFXTransaction).get(ofx_key)
             if ofx is None:
                 logger.error('Invalid OFXTransaction: %s', ofx_key)
                 return jsonify({
                     'success': False,
-                    'error_message': 'Invalid OFXTransaction: %s' % ofx_key
-                })
+                    'error_message': 'Invalid OFXTransaction: %s' % str(ofx_key)
+                }), 400
             db_session.add(TxnReconcile(
-                transaction=trans,
-                ofx_trans=ofx
+                txn_id=trans_id,
+                ofx_account_id=data[trans_id][0],
+                ofx_fitid=data[trans_id][1]
             ))
             logger.info('Reconcile %s with %s', trans, ofx)
             rec_count += 1
@@ -178,7 +179,7 @@ class ReconcileAjax(MethodView):
             return jsonify({
                 'success': False,
                 'error_message': 'Exception committing reconcile(s): %s' % ex
-            })
+            }), 400
         return jsonify({
             'success': True,
             'success_message': 'Successfully reconciled '
