@@ -105,9 +105,10 @@ function reconcileTransHandleDropEvent(event, ui) {
   var fitid = $(ui.draggable[0]).attr('data-fitid');
   var cfitid = clean_fitid(fitid);
   var amt = $(ui.draggable[0]).attr('data-amt');
-  console.log('Reconcile Transaction(' + trans_id + ') with OFXTransaction(' + acct_id + ', ' + fitid + ')')
   // create a new div to put in the Transaction
   var newdiv = $('<div class="reconcile reconcile-ofx-dropped" id="dropped-ofx-' + acct_id + '-' + cfitid + '" data-acct-id="' + acct_id + '" data-amt="' + amt + '" data-fitid="' + fitid + '" style="" />').html(content);
+  // remove the (make trans) link
+  $(newdiv).find('.make-trans-link').remove();
   // hide the source draggable
   $(ui.draggable[0]).hide();
   // append the new div to the droppable
@@ -223,7 +224,10 @@ function reconcileOfxDiv(trans) {
   div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
   div += '<div class="col-lg-3"><strong>Type:</strong> ' + trans['trans_type'] + '</div>';
   div += '</div>';
-  div += '<div class="row"><div class="col-lg-12"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div></div>';
+  div += '<div class="row"><div class="col-lg-12">';
+  div += '<div style="float: left;"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div>';
+  div += '<div style="float: right;" class="make-trans-link"><a href="javascript:makeTransFromOfx(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')">(make trans)</a></div>';
+  div += '</div></div>';
   div += '</div>\n';
   return div;
 }
@@ -301,6 +305,44 @@ function reconcileHandleSubmit() {
             newdiv.effect("shake");
         }
     });
+}
+
+/**
+ * Link function to create a Transaction from a specified OFXTransaction,
+ * and then reconcile them.
+ *
+ * @param {Integer} acct_id - the OFXTransaction account ID
+ * @param {String} fitid - the OFXTransaction fitid
+ */
+function makeTransFromOfx(acct_id, fitid) {
+    // @TODO WIP - working on implementing this...
+    $('#modalBody').empty();
+    $('#modalBody').append(transModalDivForm());
+    $('#modalSaveButton').click(function() {
+        handleForm('modalBody', 'transForm', '/forms/transaction', dataTableObj);
+    }).show();
+    if(id) {
+        var url = "/ajax/transactions/" + id;
+        // @TODO this needs to be a custom function to fill the OFX data
+        $.ajax(url).done(transModalDivFillAndShow);
+    } else {
+        $('#modalLabel').text('Add New Transaction');
+        $("#modalDiv").modal('show');
+    }
+}
+
+/**
+ * Callback for the "Save" button on the Transaction modal created by
+ * :js:func:`makeTransFromOfx`. Displays the new Transaction at the bottom
+ * of the Transactions list, then reconciles it with the original OFXTransaction
+ */
+function makeTransSaveCallback() {
+  // @TODO this is complicated, because forms.js `handleFormSubmitted` doesn't
+  // pass the new Transaction ID to the callback, and doesn't get it at all.
+  // We'll need to make some changes to the Python to make that happen. The
+  // most logical is to change ALL of our form handlers from sending back a
+  // single string message, to sending back a JSON dict with ``message`` and
+  // other attributes as needed.
 }
 
 $(document).ready(function() {
