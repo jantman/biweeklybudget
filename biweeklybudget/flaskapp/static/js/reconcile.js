@@ -282,11 +282,21 @@ function reconcileHandleSubmit() {
         },
         error: function(jqXHR, textStatus, errorThrown) {
             var container = $('#notifications-row').find('.col-lg-12');
-            var newdiv = $(
-              '<div class="alert alert-danger" id="reconcile-msg">' +
-              '<strong>Error submitting form:</strong> ' + textStatus +
-              ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
-            );
+            if(jqXHR.responseText.indexOf('{') == 0) {
+                // JSON response
+                var resp = JSON.parse(jqXHR.responseText);
+                var newdiv = $(
+                  '<div class="alert alert-danger" id="reconcile-msg">' +
+                  '<strong>Error ' + jqXHR.status +
+                  ':</strong> ' + resp['error_message'] + '</div>'
+                );
+            } else {
+                var newdiv = $(
+                  '<div class="alert alert-danger" id="reconcile-msg">' +
+                  '<strong>Error submitting form:</strong> ' + textStatus +
+                  ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
+                );
+            }
             $(container).append(newdiv);
             newdiv.effect("shake");
         }

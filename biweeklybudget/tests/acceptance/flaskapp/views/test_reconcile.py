@@ -1083,7 +1083,7 @@ class TestUIReconcileMulti(ReconcileHelper):
             1234: [4, "OFXNONE"]
         }
         msg = selenium.find_element_by_id('reconcile-msg')
-        assert msg.text == 'Error: Invalid Transaction ID: 1234'
+        assert msg.text == 'Error 400: Invalid Transaction ID: 1234'
         assert 'alert-danger' in msg.get_attribute('class')
 
 
