@@ -161,7 +161,9 @@ class ReconcileAjax(MethodView):
                 logger.error('Invalid OFXTransaction: %s', ofx_key)
                 return jsonify({
                     'success': False,
-                    'error_message': 'Invalid OFXTransaction: %s' % str(ofx_key)
+                    'error_message': 'Invalid OFXTransaction: (%s, \'%s\')' % (
+                        ofx_key[0], ofx_key[1]
+                    )
                 }), 400
             db_session.add(TxnReconcile(
                 txn_id=trans_id,
