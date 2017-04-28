@@ -119,7 +119,7 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
                 }
             } else if (isFunction(dataTableObj)) {
                 // if it's a function, call it.
-                dataTableObj();
+                dataTableObj(data);
             } else if (dataTableObj === false) {
                 // do nothing
             } else if (dataTableObj !== null) {
