@@ -293,8 +293,12 @@ class TransactionFormHandler(FormHandlerView):
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
         db_session.commit()
-        return 'Successfully saved Transaction' \
-               ' %d in database.' % trans.id
+        return {
+            'success_message': 'Successfully saved Transaction %d '
+                               'in database.' % trans.id,
+            'success': True,
+            'trans_id': trans.id
+        }
 
 
 app.add_url_rule(
