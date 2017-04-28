@@ -73,6 +73,8 @@ class FormHandlerView(MethodView):
                 'success': False,
                 'error_message': str(ex)
             })
+        if isinstance(res, type({})):
+            return jsonify(res)
         return jsonify({
             'success': True,
             'success_message': res
