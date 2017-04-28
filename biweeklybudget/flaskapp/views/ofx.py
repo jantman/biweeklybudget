@@ -91,7 +91,8 @@ class OfxTransAjax(MethodView):
             'acct_name': db_session.query(Account).get(acct_id).name,
             'acct_id': txn.account_id,
             'txn': txn.as_dict,
-            'stmt': stmt
+            'stmt': stmt,
+            'account_amount': txn.account_amount
         }
         return jsonify(res)
 

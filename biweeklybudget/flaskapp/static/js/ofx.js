@@ -49,7 +49,7 @@ function ofxTransModal(acct_id, fitid) {
         tbody.empty();
         tbody.append('<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>');
         tbody.append('<tr><th>FITID</th><td>' + msg['txn']['fitid'] + '</td></tr>');
-        tbody.append('<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['txn']['date_posted']) + '</td></tr>');
+        tbody.append('<tr><th>Date Posted</th><td>' + msg['txn']['date_posted']['ymdstr'] + '</td></tr>');
         tbody.append('<tr><th>Amount</th><td>' + fmt_currency(msg['txn']['amount']) + '</td></tr>');
         tbody.append('<tr><th>Name</th><td>' + msg['txn']['name'] + '</td></tr>');
         tbody.append('<tr><th>Memo</th><td>' + fmt_null(msg['txn']['memo']) + '</td></tr>');
@@ -61,9 +61,9 @@ function ofxTransModal(acct_id, fitid) {
         tbody.append('<tr><th>SIC</th><td>' + fmt_null(msg['txn']['sic']) + '</td></tr>');
         tbody.append('<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>');
         tbody.append('<tr><th>ID</th><td>' + fmt_null(msg['stmt']['id']) + '</td></tr>');
-        tbody.append('<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['stmt']['as_of']) + '</td></tr>');
+        tbody.append('<tr><th>Date</th><td>' + msg['stmt']['as_of']['ymdstr'] + '</td></tr>');
         tbody.append('<tr><th>Filename</th><td>' + fmt_null(msg['stmt']['filename']) + '</td></tr>');
-        tbody.append('<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['stmt']['file_mtime']) + '</td></tr>');
+        tbody.append('<tr><th>File mtime</th><td>' + msg['stmt']['file_mtime']['ymdstr'] + '</td></tr>');
         tbody.append('<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['stmt']['ledger_bal']) + '</td></tr>');
         $('#modalSaveButton').hide();
         modal.modal('show');

@@ -38,12 +38,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 
 from flask.views import MethodView
-from flask import render_template, jsonify
+from flask import render_template, jsonify, request
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,99 @@ class TxnReconcileAjax(MethodView):
             res['acct_name'] = rec.transaction.account.name
         return jsonify(res)
 
+
+class OfxUnreconciledAjax(MethodView):
+    """
+    Handle GET /ajax/unreconciled/ofx endpoint.
+    """
+
+    def get(self):
+        res = []
+        for t in OFXTransaction.unreconciled(
+                db_session).order_by(OFXTransaction.date_posted).all():
+            d = t.as_dict
+            d['account_name'] = t.account.name
+            d['account_amount'] = t.account_amount
+            res.append(d)
+        return jsonify(res)
+
+
+class TransUnreconciledAjax(MethodView):
+    """
+    Handle GET /ajax/unreconciled/trans endpoint.
+    """
+
+    def get(self):
+        res = []
+        for t in Transaction.unreconciled(
+                db_session).order_by(Transaction.date).all():
+            d = t.as_dict
+            d['account_name'] = t.account.name
+            d['budget_name'] = t.budget.name
+            res.append(d)
+        return jsonify(res)
+
+
+class ReconcileAjax(MethodView):
+    """
+    Handle POST ``/ajax/reconcile`` endpoint.
+    """
+
+    def post(self):
+        """
+        Handle POST ``/ajax/reconcile``
+
+        Response is a JSON dict. Keys are ``success`` (boolean) and either
+        ``error_message`` (string) or ``success_message`` (string).
+
+        :return: JSON response
+        """
+        raw = request.get_json()
+        data = {int(x): raw[x] for x in raw}
+        logger.debug('POST /ajax/reconcile: %s', data)
+        rec_count = 0
+        for trans_id in sorted(data.keys()):
+            ofx_key = (data[trans_id][0], data[trans_id][1])
+            trans = db_session.query(Transaction).get(trans_id)
+            if trans is None:
+                logger.error('Invalid transaction ID: %s', trans_id)
+                return jsonify({
+                    'success': False,
+                    'error_message': 'Invalid Transaction ID: %s' % trans_id
+                }), 400
+            ofx = db_session.query(OFXTransaction).get(ofx_key)
+            if ofx is None:
+                logger.error('Invalid OFXTransaction: %s', ofx_key)
+                return jsonify({
+                    'success': False,
+                    'error_message': 'Invalid OFXTransaction: (%s, \'%s\')' % (
+                        ofx_key[0], ofx_key[1]
+                    )
+                }), 400
+            db_session.add(TxnReconcile(
+                txn_id=trans_id,
+                ofx_account_id=data[trans_id][0],
+                ofx_fitid=data[trans_id][1]
+            ))
+            logger.info('Reconcile %s with %s', trans, ofx)
+            rec_count += 1
+        try:
+            db_session.flush()
+            db_session.commit()
+        except Exception as ex:
+            logger.error('Exception committing transaction reconcile',
+                         exc_info=True)
+            return jsonify({
+                'success': False,
+                'error_message': 'Exception committing reconcile(s): %s' % ex
+            }), 400
+        return jsonify({
+            'success': True,
+            'success_message': 'Successfully reconciled '
+                               '%d transactions' % rec_count
+        })
+
+
 app.add_url_rule(
     '/reconcile',
     view_func=ReconcileView.as_view('reconcile_view')
@@ -102,4 +197,19 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/reconcile/<int:reconcile_id>',
     view_func=TxnReconcileAjax.as_view('txn_reconcile_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/unreconciled/ofx',
+    view_func=OfxUnreconciledAjax.as_view('ofx_unreconciled_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/unreconciled/trans',
+    view_func=TransUnreconciledAjax.as_view('trans_unreconciled_ajax')
+)
+
+app.add_url_rule(
+    '/ajax/reconcile',
+    view_func=ReconcileAjax.as_view('reconcile_ajax')
 )

@@ -36,7 +36,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from biweeklybudget.utils import dtnow
-from sqlalchemy import Column, Integer, String, ForeignKey, ForeignKeyConstraint
+from sqlalchemy import (
+    Column, Integer, String, ForeignKey, ForeignKeyConstraint, UniqueConstraint
+)
 from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship, backref
 from biweeklybudget.models.base import Base, ModelAsDict
@@ -50,6 +52,8 @@ class TxnReconcile(Base, ModelAsDict):
             ['ofx_account_id', 'ofx_fitid'],
             ['ofx_trans.account_id', 'ofx_trans.fitid']
         ),
+        UniqueConstraint('txn_id'),
+        UniqueConstraint('ofx_account_id', 'ofx_fitid'),
         {'mysql_engine': 'InnoDB'}
     )
 
@@ -57,7 +61,7 @@ class TxnReconcile(Base, ModelAsDict):
     id = Column(Integer, primary_key=True)
 
     #: Transaction ID
-    txn_id = Column(Integer, ForeignKey('transactions.id'))
+    txn_id = Column(Integer, ForeignKey('transactions.id'), nullable=False)
 
     #: Relationship - :py:class:`~.Transaction`
     transaction = relationship(

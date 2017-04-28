@@ -34,7 +34,18 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
    :param Object data: response data
    :param string container_id: the ID of the modal container on the page
    :param string form_id: the ID of the form on the page
-   :param Object dataTableObj: A reference to the DataTable on the page, that needs to be refreshed. If null, reload the whole page.
+   :param Object dataTableObj: A reference to the DataTable on the page, that needs to be refreshed. If null, reload the whole page. If a function, call that function. If false, do nothing.
+   
+
+   
+
+.. js:function:: isFunction(functionToCheck)
+
+   Return True if ``functionToCheck`` is a function, False otherwise.
+   
+   From: http://stackoverflow.com/a/7356528/211734
+
+   :param Object functionToCheck: The object to test.
    
 
    

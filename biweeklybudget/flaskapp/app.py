@@ -42,6 +42,7 @@ from flask import Flask
 
 from biweeklybudget.db import init_db, cleanup_db
 from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
+from biweeklybudget.utils import fix_werkzeug_logger
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
          "%(name)s.%(funcName)s() ] %(message)s"
@@ -49,6 +50,8 @@ logging.basicConfig(level=logging.DEBUG, format=format)
 logger = logging.getLogger()
 
 locale.setlocale(locale.LC_ALL, '')
+
+fix_werkzeug_logger()
 
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')

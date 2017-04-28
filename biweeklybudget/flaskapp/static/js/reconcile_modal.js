@@ -39,7 +39,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Ajax callback to generate the modal HTML with reconcile information.
  */
 function txnReconcileModalDiv(msg) {
-    console.log(msg)
     var frm = '<div>';
     // TxnReconcile info
     frm += '<div class="row"><div class="col-lg-12">\n'
@@ -54,7 +53,7 @@ function txnReconcileModalDiv(msg) {
     frm += '<div class="col-lg-6">\n';
     frm += '<div class="table-responsive">\n<table class="table table-bordered table-hover" id="txnReconcileModal-trans">\n<tbody>\n';
     frm += '<tr><th colspan="2" style="text-align: center;">Transaction</th></tr>\n';
-    frm += '<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['transaction']['date']) + '</td></tr>\n';
+    frm += '<tr><th>Date</th><td>' + msg['transaction']['date']['str'] + '</td></tr>\n';
     frm += '<tr><th>Amount</th><td>' + fmt_currency(msg['transaction']['actual_amount']) + '</td></tr>\n';
     frm += '<tr><th>Budgeted Amount</th><td>' + fmt_currency(msg['transaction']['budgeted_amount']) + '</td></tr>\n';
     frm += '<tr><th>Description</th><td>' + msg['transaction']['description'] + '</td></tr>\n';
@@ -77,7 +76,7 @@ function txnReconcileModalDiv(msg) {
         frm += '<tr><th colspan="2" style="text-align: center;">OFX Transaction</th></tr>\n';
         frm += '<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>\n';
         frm += '<tr><th>FITID</th><td>' + msg['ofx_trans']['fitid'] + '</td></tr>\n';
-        frm += '<tr><th>Date Posted</th><td>' + fmt_dtdict_ymd(msg['ofx_trans']['date_posted']) + '</td></tr>\n';
+        frm += '<tr><th>Date Posted</th><td>' + msg['ofx_trans']['date_posted']['ymdstr'] + '</td></tr>\n';
         frm += '<tr><th>Amount</th><td>' + fmt_currency(msg['ofx_trans']['amount']) + '</td></tr>\n';
         frm += '<tr><th>Name</th><td>' + msg['ofx_trans']['name'] + '</td></tr>\n';
         frm += '<tr><th>Memo</th><td>' + fmt_null(msg['ofx_trans']['memo']) + '</td></tr>\n';
@@ -89,9 +88,9 @@ function txnReconcileModalDiv(msg) {
         frm += '<tr><th>SIC</th><td>' + fmt_null(msg['ofx_trans']['sic']) + '</td></tr>\n';
         frm += '<tr><th colspan="2" style="text-align: center;">OFX Statement</th></tr>\n';
         frm += '<tr><th>ID</th><td>' + fmt_null(msg['ofx_stmt']['id']) + '</td></tr>\n';
-        frm += '<tr><th>Date</th><td>' + fmt_dtdict_ymd(msg['ofx_stmt']['as_of']) + '</td></tr>\n';
+        frm += '<tr><th>Date</th><td>' + msg['ofx_stmt']['as_of']['ymdstr'] + '</td></tr>\n';
         frm += '<tr><th>Filename</th><td>' + fmt_null(msg['ofx_stmt']['filename']) + '</td></tr>\n';
-        frm += '<tr><th>File mtime</th><td>' + fmt_dtdict_ymd(msg['ofx_stmt']['file_mtime']) + '</td></tr>\n';
+        frm += '<tr><th>File mtime</th><td>' + msg['ofx_stmt']['file_mtime']['ymdstr'] + '</td></tr>\n';
         frm += '<tr><th>Ledger Balance</th><td>' + fmt_currency(msg['ofx_stmt']['ledger_bal']) + '</td></tr>\n';
         frm += '</tbody>\n</table>\n</div><!-- /.table-responsive -->\n';
         frm += '</div><!-- /col-lg-6 -->\n';

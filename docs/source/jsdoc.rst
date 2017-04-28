@@ -11,6 +11,7 @@ Files
    jsdoc.forms
    jsdoc.ofx
    jsdoc.payperiod_modal
+   jsdoc.reconcile
    jsdoc.reconcile_modal
    jsdoc.scheduled_modal
    jsdoc.transactions_modal

@@ -56,23 +56,9 @@ function fmt_null(o) {
  */
 function fmt_currency(value) {
     if (value === null) { return '&nbsp;'; }
-    return '$' + value.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
-}
-
-/**
- * Format a dtdict as returned by
- * :py:class:`biweeklybudget.flaskapp.jsonencoder.MagicJSONEncoder`
- * in ``%Y-%m-%d`` format.
- *
- * @param {Object} d - date dict
- * @returns {string} formatted Y-m-d date
- */
-function fmt_dtdict_ymd(d) {
-    var ds = d['date'] + '';
-    var ms = d['month'] + '';
-    if (ds.length < 2) { ds = '0' + ds; }
-    if (ms.length < 2) { ms = '0' + ms; }
-    return d['year'] + '-' + ms + '-' + ds;
+    return (
+      '$' + value.toFixed(2).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+    ).replace('$-', '-$');
 }
 
 /**

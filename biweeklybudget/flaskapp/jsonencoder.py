@@ -64,7 +64,8 @@ class MagicJSONEncoder(JSONEncoder):
                 'minute': o.minute,
                 'second': o.second,
                 'tzname': o.strftime('%Z'),
-                'tzoffset': o.strftime('%z')
+                'tzoffset': o.strftime('%z'),
+                'ymdstr': o.strftime('%Y-%m-%d')
             }
         if isinstance(o, date):
             return {

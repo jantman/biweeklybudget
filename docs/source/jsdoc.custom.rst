@@ -13,18 +13,6 @@ File: ``biweeklybudget/flaskapp/static/js/custom.js``
 
    
 
-.. js:function:: fmt_dtdict_ymd(d)
-
-   Format a dtdict as returned by
-   :py:class:`biweeklybudget.flaskapp.jsonencoder.MagicJSONEncoder`
-   in ``%Y-%m-%d`` format.
-
-   :param Object d: date dict
-   :returns: **string** -- formatted Y-m-d date
-   
-
-   
-
 .. js:function:: fmt_null(o)
 
    Format a null object as "&nbsp;"
