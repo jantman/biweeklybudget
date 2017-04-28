@@ -44,6 +44,7 @@ import json
 from time import sleep
 from selenium.webdriver import ActionChains
 import requests
+from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -1173,29 +1174,227 @@ class TestReconcileBackend(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestOFXMakeTrans(ReconcileHelper):
+class TestOFXMakeTrans(AcceptanceHelper):
+
+    def get_reconciled(self, driver):
+        """
+        Execute javascript in the selenium browser to return the
+        ``reconciled`` JavaScript object as a JSON string; deserialize the
+        JSON and return the resulting dict.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :return: ``reconciled`` javascript variable from page
+        :rtype: dict
+        """
+        script = 'return JSON.stringify(reconciled);'
+        res = driver.execute_script(script)
+        print("reconciled JSON: %s" % res)
+        r = json.loads(res)
+        return {int(x): r[x] for x in r}
+
+    def test_00_clean_db(self, testdb):
+        # clean the database
+        biweeklybudget.models.base.Base.metadata.reflect(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(engine)
+        biweeklybudget.models.base.Base.metadata.create_all(engine)
+
+    def test_01_add_accounts(self, testdb):
+        a = Account(
+            description='First Bank Account',
+            name='BankOne',
+            ofx_cat_memo_to_name=True,
+            ofxgetter_config_json='{"foo": "bar"}',
+            vault_creds_path='secret/foo/bar/BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(a)
+        a.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
+        b = Account(
+            description='Second Bank Account',
+            name='BankTwo',
+            acct_type=AcctType.Bank,
+            negate_ofx_amounts=True
+        )
+        testdb.add(b)
+        b.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_add_budgets(self, testdb):
+        testdb.add(Budget(
+            name='1Income',
+            is_periodic=True,
+            description='1Income',
+            starting_balance=0.0,
+            is_income=True
+        ))
+        testdb.add(Budget(
+            name='2Periodic',
+            is_periodic=True,
+            description='2Periodic',
+            starting_balance=500.00
+        ))
+        testdb.add(Budget(
+            name='3Periodic',
+            is_periodic=True,
+            description='3Periodic',
+            starting_balance=0.00
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_03_add_transactions(self, testdb):
+        acct1 = testdb.query(Account).get(1)
+        ibudget = testdb.query(Budget).get(1)
+        # income - matches OFX1
+        testdb.add(Transaction(
+            date=date(2017, 4, 10),
+            actual_amount=-123.45,
+            budgeted_amount=-123.45,
+            description='income',
+            account=acct1,
+            budget=ibudget
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_04_add_ofx(self, testdb):
+        acct2 = testdb.query(Account).get(2)
+        stmt1 = OFXStatement(
+            account=acct2,
+            filename='a2.ofx',
+            file_mtime=dnow,
+            as_of=dnow,
+            currency='USD',
+            acctid='2',
+            bankid='b1',
+            routing_number='r1'
+        )
+        testdb.add(stmt1)
+        # matches Transaction 2
+        testdb.add(OFXTransaction(
+            account=acct2,
+            statement=stmt1,
+            fitid='OFX2',
+            trans_type='Debit',
+            date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
+            amount=251.23,
+            name='ofx2-trans1'
+        ))
+        testdb.flush()
+        testdb.commit()
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
+        assert len(res) == 0
+
+    def test_07_verify_db_transaction(self, testdb):
+        res = testdb.query(Transaction).all()
         assert len(res) == 1
         assert res[0].id == 1
-        assert res[0].txn_id == 7
-        assert res[0].ofx_account_id == 2
-        assert res[0].ofx_fitid == 'OFX8'
 
-    def test_07_drag_and_drop(self, base_url, selenium):
+    def test_08_trans_from_ofx(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxdiv = selenium.find_element_by_id('ofx-1-OFXT4')
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX2')
         link = ofxdiv.find_element_by_xpath('//a[text()="(make trans)"]')
         link.click()
+        # test the modal population
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Add Transaction for OFX (2, OFXT4)'
-        """
+        assert title.text == 'Add Transaction for OFX (2, OFX2)'
+        assert body.find_element_by_id(
+            'trans_frm_date').get_attribute('value') == date(
+            2017, 4, 11).strftime('%Y-%m-%d')
+        assert body.find_element_by_id(
+            'trans_frm_amount').get_attribute('value') == '-251.23'
+        assert body.find_element_by_id(
+            'trans_frm_description').get_attribute('value') == 'ofx2-trans1'
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwo']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '2'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', '1Income (i)'],
+            ['2', '2Periodic'],
+            ['3', '3Periodic']
+        ]
+        budget_sel.select_by_value('2')
+        notes = selenium.find_element_by_id('trans_frm_notes')
+        assert notes.get_attribute(
+            'value') == 'created from OFXTransaction(2, OFX2)'
+        notes.send_keys('foo')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 2 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # ensure that the original OFX div is hidden
+        assert selenium.find_element_by_id('ofx-2-OFX2').is_displayed() is False
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
-            3: [2, 'OFX3']
+            2: [2, 'OFX2']
         }
+        # ensure that the Transaction was added, and the ofx moved to it
+        trans_div = selenium.find_element_by_id('trans-panel')
+        actual_trans = [
+            t.get_attribute('outerHTML')
+            for t in trans_div.find_elements_by_class_name('reconcile-trans')
+        ]
+        expected_trans = [
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -123.45,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 11),
+                -251.23,
+                'BankTwo', 2,
+                '2Periodic', 2,
+                'ofx2-trans1',
+                drop_div=ofx_div(
+                    date(2017, 4, 11),
+                    -251.23,
+                    'BankTwo', 2,
+                    'Debit',
+                    'OFX2',
+                    'ofx2-trans1',
+                    trans_id=2
+                )
+            )
+        ]
+        assert actual_trans == expected_trans
         # click submit button
         selenium.find_element_by_id('reconcile-submit').click()
         sleep(1)
@@ -1204,32 +1403,22 @@ class DONOTTestOFXMakeTrans(ReconcileHelper):
         msg = selenium.find_element_by_id('reconcile-msg')
         assert msg.text == 'Successfully reconciled 1 transactions'
         assert 'alert-success' in msg.get_attribute('class')
-        # reconcile 2 more
-        self.wait_for_id(selenium, 'ofx-1-OFX2')
-        chain = ActionChains(selenium)
-        chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX1'),
-            selenium.find_element_by_id(
-                'trans-1'
-            ).find_element_by_class_name('reconcile-drop-target')
-        ).perform()
-        chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX2'),
-            selenium.find_element_by_id(
-                'trans-2'
-            ).find_element_by_class_name('reconcile-drop-target')
-        ).perform()
-        # ensure the reconciled variable was updated
-        assert self.get_reconciled(selenium) == {
-            1: [1, 'OFX1'],
-            2: [1, 'OFX2']
-        }
-        # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
-        sleep(1)
-        self.wait_for_jquery_done(selenium)
-        assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
-        assert msg.text == 'Successfully reconciled 2 transactions'
-        assert 'alert-success' in msg.get_attribute('class')
-        """
+
+    def test_09_verify_db_txnreconcile(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert res[0].id == 1
+        assert res[0].txn_id == 2
+        assert res[0].ofx_account_id == 2
+        assert res[0].ofx_fitid == 'OFX2'
+
+    def test_10_verify_db_transaction(self, testdb):
+        res = testdb.query(Transaction).all()
+        assert len(res) == 2
+        assert res[1].id == 2
+        assert res[1].account_id == 2
+        assert res[1].date == date(2017, 4, 11)
+        assert float(res[1].actual_amount) == -251.23
+        assert res[1].description == 'ofx2-trans1'
+        assert res[1].budget_id == 2
+        assert res[1].notes == 'created from OFXTransaction(2, OFX2)foo'
