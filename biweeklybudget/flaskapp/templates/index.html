@@ -139,7 +139,7 @@
                                                 <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ (acct.credit_limit - acct.balance.ledger)|reddollars }}</td>
+                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

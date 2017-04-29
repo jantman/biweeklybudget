@@ -193,7 +193,7 @@ class TestAccountCreditOne(AcceptanceHelper):
         assert texts[0:4] == [
             ['Description', 'First Credit Card, limit 2000'],
             ['Type', 'Credit'],
-            ['Ledger Balance', '$952.06'],
+            ['Ledger Balance', '-$952.06'],
             ['Credit Limit', '$2,000.00']
         ]
         assert texts[4][0] == 'Last OFX Data'
@@ -245,7 +245,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
         assert texts[0:4] == [
             ['Description', 'Credit 2 limit 5500'],
             ['Type', 'Credit'],
-            ['Ledger Balance', '$5,498.65'],
+            ['Ledger Balance', '-$5,498.65'],
             ['Credit Limit', '$5,500.00']
         ]
         assert texts[4][0] == 'Last OFX Data'

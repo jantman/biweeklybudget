@@ -397,7 +397,7 @@ class SampleDataLoader(object):
                 acctid='CreditOneAcctId',
                 type='Credit',
                 as_of=(self.dt - timedelta(hours=13)),
-                ledger_bal=952.06,
+                ledger_bal=-952.06,
                 ledger_bal_as_of=(self.dt - timedelta(hours=13)),
             )
         ]
@@ -443,7 +443,7 @@ class SampleDataLoader(object):
                 acctid='',
                 type='CreditCard',
                 as_of=(self.dt - timedelta(hours=36)),
-                ledger_bal=5498.65,
+                ledger_bal=-5498.65,
                 ledger_bal_as_of=(self.dt - timedelta(hours=36))
             )
         ]
