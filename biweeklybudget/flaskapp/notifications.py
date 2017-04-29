@@ -96,6 +96,16 @@ class NotificationsController(object):
         return float(res)
 
     @staticmethod
+    def num_unreconciled_ofx():
+        """
+        Return the number of unreconciled OFXTransactions.
+
+        :return: number of unreconciled OFXTransactions
+        :rtype: int
+        """
+        return OFXTransaction.unreconciled(db_session).count()
+
+    @staticmethod
     def get_notifications():
         """
         Return all notifications that should be displayed at the top of pages,
@@ -130,7 +140,7 @@ class NotificationsController(object):
                                currency(standing_bal, grouping=True)
                            )
             })
-        unreconciled_ofx = OFXTransaction.unreconciled(db_session).count()
+        unreconciled_ofx = NotificationsController.num_unreconciled_ofx()
         if unreconciled_ofx > 0:
             res.append({
                 'classes': 'alert alert-warning unreconciled-alert',
