@@ -283,7 +283,7 @@ class TestOFXTransModal(AcceptanceHelper):
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
-            ['Ledger Balance', '$952.06']
+            ['Ledger Balance', '-$952.06']
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
@@ -325,7 +325,7 @@ class TestOFXTransURL(AcceptanceHelper):
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
-            ['Ledger Balance', '$952.06']
+            ['Ledger Balance', '-$952.06']
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
