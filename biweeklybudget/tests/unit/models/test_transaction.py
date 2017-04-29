@@ -73,6 +73,8 @@ class TestTransactionModel(object):
         assert kall[0] == 'query().filter'
         expected1 = Transaction.reconcile.__eq__(null())
         expected2 = Transaction.date.__ge__(date(2017, 3, 17))
-        assert len(kall[1]) == 2
+        expected3 = Transaction.account.has(reconcile_trans=True)
+        assert len(kall[1]) == 3
         assert str(expected1) == str(kall[1][0])
         assert binexp_to_dict(expected2) == binexp_to_dict(kall[1][1])
+        assert str(expected3) == str(kall[1][2])

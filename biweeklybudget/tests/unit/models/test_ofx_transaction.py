@@ -159,6 +159,8 @@ class TestParamsFromOfxparserTransaction(object):
         expected1 = OFXTransaction.reconcile.__eq__(null())
         cutoff = datetime(2017, 3, 17, 0, 0, 0, tzinfo=UTC)
         expected2 = OFXTransaction.date_posted.__ge__(cutoff)
-        assert len(kall[1]) == 2
+        expected3 = OFXTransaction.account.has(reconcile_trans=True)
+        assert len(kall[1]) == 3
         assert str(expected1) == str(kall[1][0])
         assert binexp_to_dict(expected2) == binexp_to_dict(kall[1][1])
+        assert str(kall[1][2]) == str(expected3)
