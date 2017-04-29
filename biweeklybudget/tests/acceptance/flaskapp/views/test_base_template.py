@@ -36,7 +36,16 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from datetime import datetime, date
+from pytz import UTC
+
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+import biweeklybudget.models.base  # noqa
+from biweeklybudget.tests.conftest import engine
+from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.ofx_statement import OFXStatement
 
 
 @pytest.mark.acceptance
@@ -105,11 +114,98 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
         assert self.relurl(a.get_attribute('href')) == '/accounts'
         assert a.text == 'View Accounts'
 
-    def test_unreconciled_transactions(self, selenium):
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
-        assert div.text == 'XX Unreconciled Transactions. (EXAMPLE) Alert Link.'
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
+
+    def test_00_clean_db(self, testdb):
+        # clean the database
+        biweeklybudget.models.base.Base.metadata.reflect(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(engine)
+        biweeklybudget.models.base.Base.metadata.create_all(engine)
+
+    def test_01_add(self, testdb):
+        a = Account(
+            description='First Bank Account',
+            name='BankOne',
+            ofx_cat_memo_to_name=True,
+            ofxgetter_config_json='{"foo": "bar"}',
+            vault_creds_path='secret/foo/bar/BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(a)
+        a.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
+        b = Budget(
+            name='1Income',
+            is_periodic=True,
+            description='1Income',
+            starting_balance=0.0,
+            is_income=True
+        )
+        testdb.add(b)
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_notification_none(self, selenium, base_url):
+        self.get(selenium, base_url)
+        assert 'unreconciled-alert' not in selenium.page_source
+        assert 'Unreconciled Transactions' not in selenium.page_source
+
+    def test_03_add_ofx(self, testdb):
+        acct1 = testdb.query(Account).get(1)
+        stmt1 = OFXStatement(
+            account=acct1,
+            filename='a1.ofx',
+            file_mtime=datetime(2017, 4, 10, 12, 31, 42, tzinfo=UTC),
+            as_of=datetime(2017, 4, 10, 12, 31, 42, tzinfo=UTC),
+            currency='USD',
+            acctid='1',
+            bankid='b1',
+            routing_number='r1'
+        )
+        testdb.add(stmt1)
+        testdb.add(OFXTransaction(
+            account=acct1,
+            statement=stmt1,
+            fitid='OFX1',
+            trans_type='Deposit',
+            date_posted=datetime(2017, 4, 10, 12, 3, 4, tzinfo=UTC),
+            amount=-100.0,
+            name='ofx1-income'
+        ))
+        # matches Transaction 2
+        testdb.add(OFXTransaction(
+            account=acct1,
+            statement=stmt1,
+            fitid='OFX2',
+            trans_type='Debit',
+            date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
+            amount=250.0,
+            name='ofx2-trans1'
+        ))
+        # matches Transcation 3
+        testdb.add(OFXTransaction(
+            account=acct1,
+            statement=stmt1,
+            fitid='OFX3',
+            trans_type='Purchase',
+            date_posted=datetime(2017, 4, 9, 12, 3, 4, tzinfo=UTC),
+            amount=-600.0,
+            name='ofx3-trans2-st1'
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_04_notification(self, selenium, base_url):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+        div = selenium.find_element_by_class_name('unreconciled-alert')
+        assert div.text == '3 Unreconciled OFXTransactions.'
         a = div.find_element_by_tag_name('a')
         assert self.relurl(a.get_attribute('href')) == '/reconcile'
-        assert a.text == 'Alert Link'
+        assert a.text == 'Unreconciled OFXTransactions'

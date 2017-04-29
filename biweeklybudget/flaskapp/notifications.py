@@ -41,6 +41,7 @@ from locale import currency
 from biweeklybudget.db import db_session
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 
 class NotificationsController(object):
@@ -129,9 +130,12 @@ class NotificationsController(object):
                                currency(standing_bal, grouping=True)
                            )
             })
-        res.append({
-            'classes': 'alert alert-warning',
-            'content': 'XX Unreconciled Transactions. (EXAMPLE) '
-                       '<a href="/reconcile" class="alert-link">Alert Link</a>.'
-        })
+        unreconciled_ofx = OFXTransaction.unreconciled(db_session).count()
+        if unreconciled_ofx > 0:
+            res.append({
+                'classes': 'alert alert-warning unreconciled-alert',
+                'content': '%s <a href="/reconcile" class="alert-link">'
+                           'Unreconciled OFXTransactions'
+                           '</a>.' % unreconciled_ofx
+            })
         return res
