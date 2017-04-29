@@ -358,7 +358,6 @@ function makeTransFromOfx(acct_id, fitid) {
  * @param {Object} data - OFXTransaction response data
  */
 function transModalOfxFillAndShow(data) {
-    console.log(data);
     $('#modalLabel').text('Add Transaction for OFX (' + data['txn']['account_id'] + ', ' + data['txn']['fitid'] + ')');
     $('#trans_frm_description').val(data['txn']['name']);
     $('#trans_frm_date').val(data['txn']['date_posted']['ymdstr']);
