@@ -50,6 +50,14 @@ application available to anything other than localhost, but if you do, you need 
 application is **not** designed to be accessible in any way to anyone other than authorized users (i.e. if you just serve it
 over the web, someone *will* get your account numbers, or worse).
 
+Important Warning
++++++++++++++++++
+
+This software should be considered *alpha* quality at best. At this point, I can't even say that I'm 100% confident
+it is mathematically correct, balances are right, all scheduled transactions will show up in the right places, etc. I'm going to
+be testing it for my own purposes, and comparing it against my manual calculations. Until further notice, if you decide to use this,
+please double-check *everything* produced by it before relying on its output.
+
 Main Features
 +++++++++++++
 
