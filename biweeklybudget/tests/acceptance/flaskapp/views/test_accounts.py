@@ -104,10 +104,12 @@ class TestAccountsMainPage(AcceptanceHelper):
         table = selenium.find_element_by_xpath(
             "//div[@id='panel-credit-cards']//table"
         )
-        assert self.thead2list(table) == ['Account', 'Balance']
+        assert self.thead2list(table) == [
+            'Account', 'Balance', 'Credit Limit', 'Available'
+        ]
         assert self.tbody2textlist(table) == [
-            ['CreditOne', '$952.06 (13 hours ago)'],
-            ['CreditTwo', '$5,498.65 (a day ago)']
+            ['CreditOne', '$952.06 (13 hours ago)', '$2,000.00', '$1,047.94'],
+            ['CreditTwo', '$5,498.65 (a day ago)', '$5,500.00', '$1.35']
         ]
         links = []
         tbody = table.find_element_by_tag_name('tbody')
