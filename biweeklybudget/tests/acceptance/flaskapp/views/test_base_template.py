@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import datetime, date
+from datetime import datetime
 from pytz import UTC
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper

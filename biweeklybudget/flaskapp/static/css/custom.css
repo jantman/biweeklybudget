@@ -59,3 +59,24 @@ div.reconcile-ofx-dropped {
 .disabledEditLink {
   font-weight: bold;
 }
+
+/*
+height of .panel-vert-scroll is based on:
+  Top header is 51px
+  Panel heading is 41px
+  Bottom padding on the txn/OFX panel is 20px
+  Bottom submit row is 86px
+  Add 2px for buffer to prevent body scrolling
+  72px for the status bar row (added via JS)
+----------
+sum: 272px
+----------
+
+this was based on bootstrap3's .pre-scrollable
+*/
+
+.panel-vert-scroll {
+  min-height: 100px;
+  max-height: calc(100vh - 272px);
+  overflow-y: scroll;
+}

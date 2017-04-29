@@ -81,10 +81,9 @@ class TestNotifications(object):
             res = NotificationsController.get_notifications()
         assert res == [
             {
-                'classes': 'alert alert-warning',
-                'content': 'XX Unreconciled Transactions. (EXAMPLE) '
-                           '<a href="/reconcile" class="alert-link">'
-                           'Alert Link</a>.'
+                'classes': 'alert alert-warning unreconciled-alert',
+                'content': '28 <a href="/reconcile" class="alert-link">'
+                           'Unreconciled OFXTransactions</a>.'
             }
         ]
 
@@ -106,10 +105,9 @@ class TestNotifications(object):
                            'class="alert-link">View Accounts</a>.'
             },
             {
-                'classes': 'alert alert-warning',
-                'content': 'XX Unreconciled Transactions. (EXAMPLE) '
-                           '<a href="/reconcile" class="alert-link">'
-                           'Alert Link</a>.'
+                'classes': 'alert alert-warning unreconciled-alert',
+                'content': '28 <a href="/reconcile" class="alert-link">'
+                           'Unreconciled OFXTransactions</a>.'
             }
         ]
 
@@ -131,9 +129,8 @@ class TestNotifications(object):
                            'class="alert-link">View Accounts</a>.'
             },
             {
-                'classes': 'alert alert-warning',
-                'content': 'XX Unreconciled Transactions. (EXAMPLE) '
-                           '<a href="/reconcile" class="alert-link">'
-                           'Alert Link</a>.'
+                'classes': 'alert alert-warning unreconciled-alert',
+                'content': '28 <a href="/reconcile" class="alert-link">'
+                           'Unreconciled OFXTransactions</a>.'
             }
         ]

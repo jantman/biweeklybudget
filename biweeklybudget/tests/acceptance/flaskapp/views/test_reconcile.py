@@ -465,18 +465,6 @@ class ReconcileHelper(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestColumns(ReconcileHelper):
 
-    def test_06_notification_hidden(self, base_url, selenium):
-        self.get(selenium, base_url + '/reconcile')
-        unrec_notification = selenium.find_element_by_class_name(
-            'unreconciled-alert'
-        )
-        assert unrec_notification.is_displayed() is False
-
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestColumns(ReconcileHelper):
-
     def test_06_transactions(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         trans_div = selenium.find_element_by_id('trans-panel')
