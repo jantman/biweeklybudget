@@ -114,5 +114,6 @@ class Transaction(Base, ModelAsDict):
         """
         return db.query(Transaction).filter(
             Transaction.reconcile.__eq__(null()),
-            Transaction.date.__ge__(RECONCILE_BEGIN_DATE)
+            Transaction.date.__ge__(RECONCILE_BEGIN_DATE),
+            Transaction.account.has(reconcile_trans=True)
         )

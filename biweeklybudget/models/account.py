@@ -94,6 +94,12 @@ class Account(Base, ModelAsDict):
     #: OFX statements will show the opposite.
     negate_ofx_amounts = Column(Boolean, default=False)
 
+    #: Include Transactions and OFXTransactions from this account when
+    #: reconciling. Set to False to exclude accounts that are investment,
+    #: payment only, or otherwise won't have a matching Transaction for each
+    #: OFXTransaction.
+    reconcile_trans = Column(Boolean, default=True, nullable=False)
+
     #: Type of account (Enum :py:class:`~.AcctType` )
     acct_type = Column(Enum(AcctType))
 

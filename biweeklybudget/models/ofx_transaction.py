@@ -210,5 +210,6 @@ class OFXTransaction(Base, ModelAsDict):
         )
         return db.query(OFXTransaction).filter(
             OFXTransaction.reconcile.__eq__(null()),
-            OFXTransaction.date_posted.__ge__(cutoff_date)
+            OFXTransaction.date_posted.__ge__(cutoff_date),
+            OFXTransaction.account.has(reconcile_trans=True)
         )

@@ -594,6 +594,213 @@ class TestColumns(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestAccountReconcileFalse(ReconcileHelper):
+
+    def test_06_transactions(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        trans_div = selenium.find_element_by_id('trans-panel')
+        actual_trans = [
+            x.get_attribute('outerHTML')
+            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+        ]
+        expected_trans = [
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            ),
+            txn_div(
+                3,
+                date(2017, 4, 11),
+                600,
+                'BankTwo', 2,
+                '2Periodic', 2,
+                'trans2'
+            ),
+            txn_div(
+                4,
+                date(2017, 4, 14),
+                10,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans3'
+            ),
+            txn_div(
+                5,
+                date(2017, 4, 16),
+                25,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans4'
+            ),
+            txn_div(
+                6,
+                date(2017, 4, 17),
+                25,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans5'
+            )
+        ]
+        assert actual_trans == expected_trans
+
+    def test_07_ofxtrans(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            x.get_attribute('outerHTML')
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 9),
+                600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1'
+            ),
+            ofx_div(
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                'Deposit',
+                'OFX1',
+                'ofx1-income'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                250,
+                'BankOne', 1,
+                'Debit',
+                'OFX2',
+                'ofx2-trans1'
+            ),
+            ofx_div(
+                date(2017, 4, 14),
+                10,
+                'BankOne', 1,
+                'Purchase',
+                'OFXT4',
+                'ofx4-st2'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                10,
+                'BankOne', 1,
+                'Foo',
+                'OFXT5',
+                'ofx5'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                25,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT6',
+                'ofx6'
+            ),
+            ofx_div(
+                date(2017, 4, 17),
+                25,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT7',
+                'ofx7'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+
+    def test_08_set_do_not_reconcile(self, testdb):
+        acct = testdb.query(Account).get(2)
+        acct.reconcile_trans = False
+        testdb.flush()
+        testdb.commit()
+
+    def test_09_transactions(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        trans_div = selenium.find_element_by_id('trans-panel')
+        actual_trans = [
+            x.get_attribute('outerHTML')
+            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+        ]
+        expected_trans = [
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            )
+        ]
+        assert actual_trans == expected_trans
+
+    def test_10_ofxtrans(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            x.get_attribute('outerHTML')
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                'Deposit',
+                'OFX1',
+                'ofx1-income'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                250,
+                'BankOne', 1,
+                'Debit',
+                'OFX2',
+                'ofx2-trans1'
+            ),
+            ofx_div(
+                date(2017, 4, 14),
+                10,
+                'BankOne', 1,
+                'Purchase',
+                'OFXT4',
+                'ofx4-st2'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                10,
+                'BankOne', 1,
+                'Foo',
+                'OFXT5',
+                'ofx5'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestTransactionEditModal(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):

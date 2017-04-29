@@ -99,6 +99,7 @@ class TestAccountBankOne(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', '{"foo": "bar"}'],
+            ['reconcile_trans', 'True'],
             ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'True'],
             [
@@ -149,6 +150,7 @@ class TestAccountBankTwoStale(AcceptanceHelper):
         assert texts[4:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', '{"foo": "baz"}'],
+            ['reconcile_trans', 'True'],
             ['negate_ofx_amounts', 'True'],
             ['ofx_cat_memo_to_name', 'False'],
             [
@@ -200,6 +202,7 @@ class TestAccountCreditOne(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', 'None'],
+            ['reconcile_trans', 'True'],
             ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [
@@ -251,6 +254,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
         assert texts[5:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
+            ['reconcile_trans', 'True'],
             ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [
@@ -301,6 +305,7 @@ class TestAccountInvestmentOne(AcceptanceHelper):
         assert texts[4:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
+            ['reconcile_trans', 'False'],
             ['negate_ofx_amounts', 'False'],
             ['ofx_cat_memo_to_name', 'False'],
             [

@@ -481,7 +481,8 @@ class SampleDataLoader(object):
             ofxgetter_config_json='',
             vault_creds_path='',
             acct_type=AcctType.Investment,
-            is_active=True
+            is_active=True,
+            reconcile_trans=False
         )
         statements = [
             OFXStatement(
