@@ -390,7 +390,7 @@ function makeTransSaveCallback(data, acct_id, fitid) {
       accept: reconcileTransDroppableAccept
     });
     // reconcile the OFXTrans with the Transaction
-    reconcileTransactions($('#ofx-' + acct_id + '-' + fitid), $('#trans-' + trans_id));
+    reconcileTransactions($('#ofx-' + acct_id + '-' + clean_fitid(fitid)), $('#trans-' + trans_id));
   });
 }
 
