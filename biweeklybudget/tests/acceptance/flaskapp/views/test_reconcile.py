@@ -477,7 +477,7 @@ class TestColumns(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -536,7 +536,7 @@ class TestColumns(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
         ]
         expected_ofx = [
@@ -608,7 +608,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -667,7 +667,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
         ]
         expected_ofx = [
@@ -740,7 +740,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -767,7 +767,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
         ]
         expected_ofx = [
@@ -850,7 +850,7 @@ class TestTransactionEditModal(ReconcileHelper):
         # test that updated budget was removed from the page
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            t.get_attribute('outerHTML')
+            self.normalize_html(t.get_attribute('outerHTML'))
             for t in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -941,7 +941,7 @@ class TestDragLimitations(ReconcileHelper):
                 trans_id=3
             )
         )
-        assert tgt.get_attribute('outerHTML') == expected
+        assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3']
@@ -979,7 +979,7 @@ class TestDragLimitations(ReconcileHelper):
                 trans_id=5
             )
         )
-        assert tgt.get_attribute('outerHTML') == expected
+        assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             5: [2, 'OFXT6']
@@ -1107,7 +1107,7 @@ class TestDragLimitations(ReconcileHelper):
                 trans_id=3
             )
         )
-        assert tgt.get_attribute('outerHTML') == expected
+        assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3']
@@ -1118,7 +1118,7 @@ class TestDragLimitations(ReconcileHelper):
         src = selenium.find_element_by_id('ofx-2-OFX3')
         tgt = selenium.find_element_by_id('trans-3')
         assert src.is_displayed() is True
-        assert src.get_attribute('outerHTML') == ofx_div(
+        assert self.normalize_html(src.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             600.00,
             'BankTwo', 2,
@@ -1137,7 +1137,7 @@ class TestDragLimitations(ReconcileHelper):
             '2Periodic', 2,
             'trans2'
         )
-        assert tgt.get_attribute('outerHTML') == expected
+        assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
 
 
 @pytest.mark.acceptance
@@ -1612,7 +1612,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
         # ensure that the Transaction was added, and the ofx moved to it
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            t.get_attribute('outerHTML')
+            self.normalize_html(t.get_attribute('outerHTML'))
             for t in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -1680,7 +1680,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         trans_div = selenium.find_element_by_id('trans-panel')
         actual_trans = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in trans_div.find_elements_by_class_name('reconcile-trans')
         ]
         expected_trans = [
@@ -1739,7 +1739,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
-            x.get_attribute('outerHTML')
+            self.normalize_html(x.get_attribute('outerHTML'))
             for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
         ]
         expected_ofx = [
@@ -1806,7 +1806,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         # check Trans and OFX
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,
@@ -1815,7 +1815,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
-        assert ofx.get_attribute('outerHTML') == ofx_div(
+        assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             600.00,
             'BankTwo', 2,
@@ -1837,7 +1837,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         }
         # check Trans and OFX
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,
@@ -1862,7 +1862,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         self.wait_for_jquery_done(selenium)
         # check Trans and OFX
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,
@@ -1871,7 +1871,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
-        assert ofx.get_attribute('outerHTML') == ofx_div(
+        assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             600.00,
             'BankTwo', 2,
@@ -1895,7 +1895,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         # check Trans and OFX
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,
@@ -1904,7 +1904,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
-        assert ofx.get_attribute('outerHTML') == ofx_div(
+        assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             600.00,
             'BankTwo', 2,
@@ -1936,7 +1936,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
                     'id="trans-3-noOFX" style=""><p><strong>No OFX:</strong>' \
                     ' My Trans Note</p></div>'
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,
@@ -1950,7 +1950,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         # unreconcile
         trans.find_element_by_link_text('Unreconcile').click()
         trans = selenium.find_element_by_id('trans-3')
-        assert trans.get_attribute('outerHTML') == txn_div(
+        assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
             600,

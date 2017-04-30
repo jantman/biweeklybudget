@@ -49,6 +49,20 @@ logger = logging.getLogger(__name__)
 
 class AcceptanceHelper(object):
 
+    def normalize_html(self, html):
+        """
+        Given a HTML string, normalize some differences that may occur between
+        different test environments.
+
+        :param html: html
+        :type html: str
+        :return: normalized HTML
+        :rtype: str
+        """
+        # strange inconsistency between local and TravisCI...
+        html = html.replace('style="display: none; "', 'style="display: none;"')
+        return html
+
     def relurl(self, url):
         """
         Given an absolute URL including ``self.baseurl``, return the relative
