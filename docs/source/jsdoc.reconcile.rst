@@ -50,6 +50,17 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    
 
+.. js:function:: reconcileDoUnreconcileNoOfx(trans_id)
+
+   Unreconcile a reconciled NoOFX Transaction. This removes
+   ``trans_id`` from the ``reconciled`` variable and empties the Transaction
+   div's reconciled div.
+
+   :param Integer trans_id: the transaction id
+   
+
+   
+
 .. js:function:: reconcileGetOFX()
 
    Show unreconciled OFX transactions in the proper div. Empty the div, then
@@ -148,6 +159,15 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    
 
+.. js:function:: reconcileTransNoOfx(trans_id, note)
+
+   Reconcile a Transaction without a matching OFXTransaction. Called from
+   the Save button handler in :js:func:`transNoOfx`.
+
+   
+
+   
+
 .. js:function:: reconcileTransactions(ofx_div, target)
 
    Reconcile a transaction; move the divs and other elements as necessary,
@@ -166,6 +186,28 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
    it into the Transaction modal form.
 
    :param Object data: OFXTransaction response data
+   
+
+   
+
+.. js:function:: transNoOfx(trans_id)
+
+   Show the modal for reconciling a Transaction without a matching
+   OFXTransaction. Calls :js:func:`transNoOfxDivForm` to generate the modal form
+   div content. Uses an inline function to handle the save action, which calls
+   :js:func:`reconcileTransNoOfx` to perform the reconcile action.
+
+   :param number trans_id: the ID of the Transaction
+   
+
+   
+
+.. js:function:: transNoOfxDivForm(trans_id)
+
+   Generate the modal form div content for the modal to reconcile a Transaction
+   without a matching OFXTransaction. Called by :js:func:`transNoOfx`.
+
+   :param number trans_id: the ID of the Transaction
    
 
    

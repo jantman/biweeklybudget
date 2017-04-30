@@ -273,6 +273,21 @@ class AcceptanceHelper(object):
         assert body.is_displayed()
         assert body.is_enabled()
 
+    def assert_modal_hidden(self, modal, title, body):
+        """
+        Assert that the modal is displayed.
+
+        :param modal: the modal itself
+        :type modal: selenium.webdriver.remote.webelement.WebElement
+        :param title: the title element of the modal
+        :type title: selenium.webdriver.remote.webelement.WebElement
+        :param body: the body element of the modal
+        :type body: selenium.webdriver.remote.webelement.WebElement
+        """
+        assert modal.is_displayed() is False
+        assert title.is_displayed() is False
+        assert body.is_displayed() is False
+
     def get(self, _selenium, url):
         """
         Wrapper around ``selenium`` fixture's ``get()`` method to retry up to

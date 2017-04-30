@@ -132,6 +132,7 @@ function reconcileTransactions(ofx_div, target) {
   editLink.replaceWith(
     $('<span class="disabledEditLink">Trans ' + trans_id + '</span>')
   );
+  $(target).find('a:contains("(no OFX)")').hide();
   reconciled[trans_id] = [acct_id, fitid];
 }
 
@@ -156,6 +157,7 @@ function reconcileDoUnreconcile(trans_id, acct_id, fitid) {
   $('#trans-' + trans_id).find('.reconcile-drop-target').empty();
   // make the OFX visible again
   $('#ofx-' + acct_id + '-' + clean_fitid(fitid)).show();
+  $('#trans-' + trans_id).find('a:contains("(no OFX)")').show();
 }
 
 /**
@@ -171,7 +173,10 @@ function reconcileTransDiv(trans) {
   div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
   div += '<div class="col-lg-3"><strong>Budget:</strong> <span style="white-space: nowrap;"><a href="/budgets/' + trans['budget_id'] + '">' + trans['budget_name'] + ' (' + trans['budget_id'] + ')</a></span></div>';
   div += '</div>';
-  div += '<div class="row"><div class="col-lg-12"><a href="javascript:transModal(' + trans['id'] + ', function () { updateReconcileTrans(' + trans['id'] + ') })">Trans ' + trans['id'] + '</a>: ' + trans['description'] + '</div></div>';
+  div += '<div class="row"><div class="col-lg-12">';
+  div += '<div style="float: left;"><a href="javascript:transModal(' + trans['id'] + ', function () { updateReconcileTrans(' + trans['id'] + ') })">Trans ' + trans['id'] + '</a>: ' + trans['description'] + '</div>';
+  div += '<div style="float: right;" class="trans-no-ofx"><a href="javascript:transNoOfx(' + trans['id'] + ')" style="" title="Reconcile as never having a matching OFX Transaction">(no OFX)</a></div>';
+  div += '</div></div>';
   div += '<div class="reconcile-drop-target"></div>';
   return div;
 }
@@ -239,7 +244,7 @@ function reconcileOfxDiv(trans) {
   div += '</div>';
   div += '<div class="row"><div class="col-lg-12">';
   div += '<div style="float: left;"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div>';
-  div += '<div style="float: right;" class="make-trans-link"><a href="javascript:makeTransFromOfx(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')">(make trans)</a></div>';
+  div += '<div style="float: right;" class="make-trans-link"><a href="javascript:makeTransFromOfx(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')" title="Create Transaction from this OFX">(make trans)</a></div>';
   div += '</div></div>';
   div += '</div>\n';
   return div;
@@ -392,6 +397,89 @@ function makeTransSaveCallback(data, acct_id, fitid) {
     // reconcile the OFXTrans with the Transaction
     reconcileTransactions($('#ofx-' + acct_id + '-' + clean_fitid(fitid)), $('#trans-' + trans_id));
   });
+}
+
+/**
+ * Show the modal for reconciling a Transaction without a matching
+ * OFXTransaction. Calls :js:func:`transNoOfxDivForm` to generate the modal form
+ * div content. Uses an inline function to handle the save action, which calls
+ * :js:func:`reconcileTransNoOfx` to perform the reconcile action.
+ *
+ * @param {number} trans_id - the ID of the Transaction
+ */
+function transNoOfx(trans_id) {
+    console.log("transNoOfx(" + trans_id + ")");
+    $('#modalBody').empty();
+    $('#modalBody').append(transNoOfxDivForm(trans_id));
+    $('#modalLabel').text('Reconcile Transaction ' + trans_id + ' Without OFX');
+    $('#modalSaveButton').click(function() {
+        $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
+        var note = $('#trans_frm_note').val().trim();
+        if (note == "") {
+            $('#trans_frm_note').parent().append('<p class="text-danger formfeedback">Note cannot be empty.</p>');
+            $('#trans_frm_note').parent().addClass('has-error');
+            return;
+        } else {
+            reconcileTransNoOfx(trans_id, note);
+            $("#modalDiv").modal('hide');
+        }
+    }).show();
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Generate the modal form div content for the modal to reconcile a Transaction
+ * without a matching OFXTransaction. Called by :js:func:`transNoOfx`.
+ *
+ * @param {number} trans_id - the ID of the Transaction
+ */
+function transNoOfxDivForm(trans_id) {
+    var frm = '<form role="form" id="transForm">';
+    frm += '<p>Mark Transaction as reconciled with no OFX (i.e. Transaction that will never be seen on any OFX statement).</p>';
+    // id
+    frm += '<input type="hidden" id="trans_frm_id" name="id" value="' + trans_id + '">\n';
+    // note
+    frm += '<div class="form-group"><label for="trans_frm_note" class="control-label">Note</label><input class="form-control" id="trans_frm_note" name="note" type="text"></div>\n';
+    frm += '</form>\n';
+    return frm;
+}
+
+/**
+ * Reconcile a Transaction without a matching OFXTransaction. Called from
+ * the Save button handler in :js:func:`transNoOfx`.
+ */
+function reconcileTransNoOfx(trans_id, note) {
+  var target = $('#trans-' + trans_id);
+  var newdiv = $('<div class="reconcile" id="trans-' + trans_id + '-noOFX" style="" />').html('<p><strong>No OFX:</strong> ' + note + '</p>');
+  var droppable = $(target).find('.reconcile-drop-target');
+  $(droppable).html('<div style="text-align: right;"><a href="javascript:reconcileDoUnreconcileNoOfx(' + trans_id + ')">Unreconcile</a></div>');
+  $(newdiv).appendTo(droppable);
+  var editLink = $(target).find('a:contains("Trans ' + trans_id + '")');
+  editLink.replaceWith(
+    $('<span class="disabledEditLink">Trans ' + trans_id + '</span>')
+  );
+  $(target).find('a:contains("(no OFX)")').hide();
+  reconciled[trans_id] = note;
+}
+
+/**
+ * Unreconcile a reconciled NoOFX Transaction. This removes
+ * ``trans_id`` from the ``reconciled`` variable and empties the Transaction
+ * div's reconciled div.
+ *
+ * @param {Integer} trans_id - the transaction id
+ */
+function reconcileDoUnreconcileNoOfx(trans_id) {
+  // remove from the reconciled object
+  delete reconciled[trans_id];
+  // change the transaction link back to a real link
+  var editText = $('#trans-' + trans_id).find('.disabledEditLink');
+  editText.replaceWith(
+    $('<a href="javascript:transModal(' + trans_id + ', function () { updateReconcileTrans(' + trans_id + ') })">Trans ' + trans_id + '</a>')
+  );
+  // remove the dropped OFX
+  $('#trans-' + trans_id).find('.reconcile-drop-target').empty();
+  $('#trans-' + trans_id).find('a:contains("(no OFX)")').show();
 }
 
 $(document).ready(function() {

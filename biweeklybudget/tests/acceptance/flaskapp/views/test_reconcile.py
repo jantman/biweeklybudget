@@ -85,13 +85,20 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     s += '</div>'
     s += '<div class="row"><div class="col-lg-12">'
     if drop_div == '':
-        s += '<a href="javascript:transModal('
-        s += '%s, function () { updateReconcileTrans(%s) })">Trans %s</a>: ' \
-             '%s' % (id, id, id, desc)
+        s += '<div style="float: left;"><a href="javascript:transModal('
+        s += '%s, function () { updateReconcileTrans(%s) })">Trans %s</a>' \
+             ': %s</div>' % (id, id, id, desc)
+        s += '<div style="float: right;" class="trans-no-ofx"><a ' \
+             'href="javascript:transNoOfx(%s)" style="" title="Reconcile ' \
+             'as never having a matching OFX Transaction">(no OFX)</a>' \
+             '</div>' % id
     else:
-        s += '<span class="disabledEditLink">Trans %s</span>: %s' % (
-            id, desc
-        )
+        s += '<div style="float: left;"><span class="disabledEditLink">' \
+             'Trans %s</span>: %s</div>' % (id, desc)
+        s += '<div style="float: right;" class="trans-no-ofx"><a ' \
+             'href="javascript:transNoOfx(%s)" style="display: none;" ' \
+             'title="Reconcile as never having a matching OFX Transaction">' \
+             '(no OFX)</a></div>' % id
     s += '</div></div>'
     s += '<div class="reconcile-drop-target">%s</div>' % drop_div
     s += '</div>'
@@ -143,9 +150,10 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
     s += ': %s' % name
     s += '</div>'
     if trans_id is None:
-        s += '<div style="float: right;" class="make-trans-link"><a href="' \
-             'javascript:makeTransFromOfx(%d, \'%s\')">' \
-             '(make trans)</a></div>' % (acct_id, fitid)
+        s += '<div style="float: right;" class="make-trans-link"><a ' \
+             'href="javascript:makeTransFromOfx(%d, \'%s\')" ' \
+             'title="Create Transaction from this OFX">(make trans)</a>' \
+             '</div>' % (acct_id, fitid)
     s += '</div>'
     s += '</div></div>'
     if trans_id is not None:
@@ -1327,6 +1335,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_08_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
         assert len(res) == 2
+        assert res[0].id == 1
         assert res[1].id == 2
         assert res[1].txn_id == 3
         assert res[1].ofx_account_id == 2
@@ -1371,12 +1380,44 @@ class TestReconcileBackend(ReconcileHelper):
         assert res.status_code == 400
 
     def test_11_verify_db(self, testdb):
+        testdb.expire_all()
         res = testdb.query(TxnReconcile).all()
         assert len(res) == 2
+        assert res[0].id == 1
         assert res[1].id == 2
         assert res[1].txn_id == 3
         assert res[1].ofx_account_id == 2
         assert res[1].ofx_fitid == 'OFX3'
+
+    def test_12_reconcile_noOFX(self, base_url):
+        res = requests.post(
+            base_url + '/ajax/reconcile',
+            json={4: 'Foo Bar Baz'}
+        )
+        assert res.json() == {
+            'success': True,
+            'success_message': 'Successfully reconciled 1 transactions'
+        }
+        assert res.status_code == 200
+
+    def test_13_verify_db(self, testdb):
+        testdb.expire_all()
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 3
+        assert res[2].txn_id == 4
+        assert res[2].note == 'Foo Bar Baz'
+
+    def test_14_verify_reconcile_modal(self, base_url, selenium, testdb):
+        res = testdb.query(TxnReconcile).all()
+        txn_id = res[-1].txn_id
+        self.get(selenium, base_url + '/transactions')
+        selenium.find_element_by_link_text('Yes (%s)' % txn_id).click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Transaction Reconcile %s' % txn_id
+        assert 'Foo Bar Baz' in body.text
+        assert body.find_elements_by_class_name('col-lg-6')[1].text == \
+            'No OFX Transaction'
 
 
 @pytest.mark.acceptance
@@ -1629,3 +1670,292 @@ class TestOFXMakeTrans(AcceptanceHelper):
         assert res[1].description == 'ofx2-trans1'
         assert res[1].budget_id == 2
         assert res[1].notes == 'created from OFXTransaction(2, OFX2)foo'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestTransReconcileNoOfx(ReconcileHelper):
+
+    def test_06_transactions_column(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        trans_div = selenium.find_element_by_id('trans-panel')
+        actual_trans = [
+            x.get_attribute('outerHTML')
+            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+        ]
+        expected_trans = [
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
+            ),
+            txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            ),
+            txn_div(
+                3,
+                date(2017, 4, 11),
+                600,
+                'BankTwo', 2,
+                '2Periodic', 2,
+                'trans2'
+            ),
+            txn_div(
+                4,
+                date(2017, 4, 14),
+                10,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans3'
+            ),
+            txn_div(
+                5,
+                date(2017, 4, 16),
+                25,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans4'
+            ),
+            txn_div(
+                6,
+                date(2017, 4, 17),
+                25,
+                'BankTwo', 2,
+                '3Periodic', 3,
+                'trans5'
+            )
+        ]
+        assert actual_trans == expected_trans
+
+    def test_07_ofx_column(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            x.get_attribute('outerHTML')
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 9),
+                600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1'
+            ),
+            ofx_div(
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                'Deposit',
+                'OFX1',
+                'ofx1-income'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                250,
+                'BankOne', 1,
+                'Debit',
+                'OFX2',
+                'ofx2-trans1'
+            ),
+            ofx_div(
+                date(2017, 4, 14),
+                10,
+                'BankOne', 1,
+                'Purchase',
+                'OFXT4',
+                'ofx4-st2'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                10,
+                'BankOne', 1,
+                'Foo',
+                'OFXT5',
+                'ofx5'
+            ),
+            ofx_div(
+                date(2017, 4, 16),
+                25,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT6',
+                'ofx6'
+            ),
+            ofx_div(
+                date(2017, 4, 17),
+                25,
+                'BankTwo', 2,
+                'Foo',
+                'OFXT7',
+                'ofx7'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+
+    def test_08_reconcile_unreconcile_noOFX_visible(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        # check Trans and OFX
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2'
+        )
+        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        assert ofx.get_attribute('outerHTML') == ofx_div(
+            date(2017, 4, 9),
+            600.00,
+            'BankTwo', 2,
+            'Purchase',
+            'OFX3',
+            'ofx3-trans2-st1'
+        )
+        # drag and drop
+        chain = ActionChains(selenium)
+        chain.drag_and_drop(
+            selenium.find_element_by_id('ofx-2-OFX3'),
+            selenium.find_element_by_id(
+                'trans-3'
+            ).find_element_by_class_name('reconcile-drop-target')
+        ).perform()
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {
+            3: [2, 'OFX3']
+        }
+        # check Trans and OFX
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2',
+            drop_div=ofx_div(
+                date(2017, 4, 9),
+                600.00,
+                'BankTwo', 2,
+                'Purchase',
+                'OFX3',
+                'ofx3-trans2-st1',
+                trans_id=3
+            )
+        )
+        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        assert ofx.is_displayed() is False
+        # unreconcile
+        trans.find_element_by_xpath('//a[text()="Unreconcile"]').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        # check Trans and OFX
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2'
+        )
+        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        assert ofx.get_attribute('outerHTML') == ofx_div(
+            date(2017, 4, 9),
+            600.00,
+            'BankTwo', 2,
+            'Purchase',
+            'OFX3',
+            'ofx3-trans2-st1'
+        )
+        # ensure the reconciled variable was updated
+        assert self.get_reconciled(selenium) == {}
+        # click submit button
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        assert self.get_reconciled(selenium) == {}
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Warning: No reconciled transactions; ' \
+            'did not submit form.'
+        assert 'alert-warning' in msg.get_attribute('class')
+
+    def test_09_reconcile_unreconcile_noOFX(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        # check Trans and OFX
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2'
+        )
+        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        assert ofx.get_attribute('outerHTML') == ofx_div(
+            date(2017, 4, 9),
+            600.00,
+            'BankTwo', 2,
+            'Purchase',
+            'OFX3',
+            'ofx3-trans2-st1'
+        )
+        assert self.get_reconciled(selenium) == {}
+        # reconcile as noOFX
+        trans.find_element_by_link_text('(no OFX)').click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Reconcile Transaction 3 Without OFX'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '3'
+        note = body.find_element_by_id('trans_frm_note')
+        note.clear()
+        note.send_keys('My Trans Note')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        # assert modal is hidden
+        assert selenium.find_element_by_id('modalDiv').is_displayed() is False
+        # test trans div was updated
+        noofx_div = '<div style="text-align: right;"><a href="' \
+                    'javascript:reconcileDoUnreconcileNoOfx(3)">' \
+                    'Unreconcile</a></div><div class="reconcile" ' \
+                    'id="trans-3-noOFX" style=""><p><strong>No OFX:</strong>' \
+                    ' My Trans Note</p></div>'
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2',
+            drop_div=noofx_div
+        )
+        # test that reconciled var was updated
+        assert self.get_reconciled(selenium) == {3: 'My Trans Note'}
+        # unreconcile
+        trans.find_element_by_link_text('Unreconcile').click()
+        trans = selenium.find_element_by_id('trans-3')
+        assert trans.get_attribute('outerHTML') == txn_div(
+            3,
+            date(2017, 4, 11),
+            600,
+            'BankTwo', 2,
+            '2Periodic', 2,
+            'trans2'
+        )
+        assert self.get_reconciled(selenium) == {}

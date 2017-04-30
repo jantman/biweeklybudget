@@ -148,7 +148,6 @@ class ReconcileAjax(MethodView):
         logger.debug('POST /ajax/reconcile: %s', data)
         rec_count = 0
         for trans_id in sorted(data.keys()):
-            ofx_key = (data[trans_id][0], data[trans_id][1])
             trans = db_session.query(Transaction).get(trans_id)
             if trans is None:
                 logger.error('Invalid transaction ID: %s', trans_id)
@@ -156,6 +155,19 @@ class ReconcileAjax(MethodView):
                     'success': False,
                     'error_message': 'Invalid Transaction ID: %s' % trans_id
                 }), 400
+            if not isinstance(data[trans_id], type([])):
+                # it's a string; reconcile without OFX
+                db_session.add(TxnReconcile(
+                    txn_id=trans_id,
+                    note=data[trans_id]
+                ))
+                logger.info(
+                    'Reconcile %s as NoOFX; note=%s', trans, data[trans_id]
+                )
+                rec_count += 1
+                continue
+            # else reconcile with OFX
+            ofx_key = (data[trans_id][0], data[trans_id][1])
             ofx = db_session.query(OFXTransaction).get(ofx_key)
             if ofx is None:
                 logger.error('Invalid OFXTransaction: %s', ofx_key)
