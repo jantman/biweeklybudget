@@ -58,6 +58,8 @@
                                             <th>Balance</th>
                                             <th>Credit Limit</th>
                                             <th>Available</th>
+                                            <th>Unreconciled</th>
+                                            <th>Difference</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -74,6 +76,8 @@
                                             </td>
                                             <td>{{ acct.credit_limit|dollars }}</td>
                                             <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars }}</td>
+                                            <td>{{ acct.unreconciled_sum|dollars }}</td>
+                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

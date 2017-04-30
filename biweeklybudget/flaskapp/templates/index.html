@@ -129,6 +129,7 @@
                                             <th>Account</th>
                                             <th>Balance</th>
                                             <th>Available</th>
+                                            <th>Avail - Unrec</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -144,6 +145,7 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars }}</td>
+                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

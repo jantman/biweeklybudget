@@ -106,10 +106,12 @@ class TestIndexAccounts(AcceptanceHelper):
         table = selenium.find_element_by_xpath(
             "//div[@id='panel-credit-cards']//table"
         )
-        assert self.thead2list(table) == ['Account', 'Balance', 'Available']
+        assert self.thead2list(table) == [
+            'Account', 'Balance', 'Available', 'Avail - Unrec'
+        ]
         assert self.tbody2textlist(table) == [
-            ['CreditOne', '-$952.06 (13 hours ago)', '$1,047.94'],
-            ['CreditTwo', '-$5,498.65 (a day ago)', '$1.35']
+            ['CreditOne', '-$952.06 (13 hours ago)', '$1,047.94', '$825.72'],
+            ['CreditTwo', '-$5,498.65 (a day ago)', '$1.35', '$1.35']
         ]
         links = []
         tbody = table.find_element_by_tag_name('tbody')
