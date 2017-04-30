@@ -126,20 +126,20 @@ class TestFindPayPeriod(AcceptanceHelper):
         send_date = start_date + timedelta(days=4)
         if send_date.month > dtnow().month:
             print("Using datepicker cal3")
-            daysdiv = selenium.find_element_by_xpath(
-                '//div[@id="cal3"]//div[@class="datepicker-days"]'
-            )
+            div_id = 'cal3'
+            exp_month_th = send_date.strftime('%B %Y')
         else:
             print("Using datepicker cal2")
-            daysdiv = selenium.find_element_by_xpath(
-                '//div[@id="cal2"]//div[@class="datepicker-days"]'
-            )
+            div_id = 'cal2'
+            exp_month_th = dtnow().strftime('%B %Y')
+        daysdiv = selenium.find_element_by_xpath(
+            '//div[@id="%s"]//div[@class="datepicker-days"]' % div_id
+        )
         tbl = daysdiv.find_elements_by_tag_name('table')[0]
         # month
         assert tbl.find_elements_by_tag_name(
             'thead')[0].find_elements_by_tag_name(
-            'tr')[1].find_elements_by_tag_name('th')[1].text == \
-            dtnow().strftime('%B %Y')
+            'tr')[1].find_elements_by_tag_name('th')[1].text == exp_month_th
         tbody = tbl.find_elements_by_tag_name('tbody')[0]
         print('Looking for datepicker TD for date %s' % send_date)
         for e in tbody.find_elements_by_tag_name('td'):
