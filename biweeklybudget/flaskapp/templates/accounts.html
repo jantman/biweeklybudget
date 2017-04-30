@@ -16,6 +16,8 @@
                                         <tr>
                                             <th>Account</th>
                                             <th>Balance</th>
+                                            <th>Unreconciled</th>
+                                            <th>Difference</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -30,6 +32,8 @@
                                                 <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
+                                            <td>{{ acct.unreconciled_sum|dollars }}</td>
+                                            <td>{{ (cast_float(acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

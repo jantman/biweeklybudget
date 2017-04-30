@@ -60,3 +60,16 @@ def settings():
     :rtype: dict
     """
     return {'settings': {x: getattr(settingsmod, x) for x in dir(settingsmod)}}
+
+
+@app.context_processor
+def utilities():
+    """
+    Utility functions to put in the jinja context.
+
+    :return: template context with utility functions added
+    :rtype: dict
+    """
+    def cast_float(x):
+        return float(x)
+    return dict(cast_float=cast_float)

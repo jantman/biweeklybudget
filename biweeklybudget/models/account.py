@@ -40,13 +40,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import null
 
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import dtnow
 import json
 import enum
-from biweeklybudget.settings import STALE_DATA_TIMEDELTA
+from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
 
 
 class AcctType(enum.Enum):
@@ -240,3 +242,33 @@ class Account(Base, ModelAsDict):
         res = sess.query(AccountBalance).with_parent(self).order_by(
             AccountBalance.id.desc()).limit(1).first()
         return res
+
+    @property
+    def unreconciled(self):
+        """
+        Return a query to match all unreconciled Transactions for this account.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query to match all unreconciled Transactions
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        sess = inspect(self).session
+        return sess.query(Transaction).filter(
+            Transaction.reconcile.__eq__(null()),
+            Transaction.date.__ge__(RECONCILE_BEGIN_DATE),
+            Transaction.account_id.__eq__(self.id)
+        )
+
+    @property
+    def unreconciled_sum(self):
+        """
+        Return the sum of all unreconciled transaction amounts for this account.
+
+        :return: sum of amounts of all unreconciled transactions
+        :rtype: float
+        """
+        total = 0.0
+        for t in self.unreconciled:
+            total += float(t.actual_amount)
+        return total
