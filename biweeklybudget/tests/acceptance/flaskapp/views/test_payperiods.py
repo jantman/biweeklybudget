@@ -124,11 +124,13 @@ class TestFindPayPeriod(AcceptanceHelper):
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + timedelta(days=4)
-        if start_date.month > dtnow().month:
+        if send_date.month > dtnow().month:
+            print("Using datepicker cal3")
             daysdiv = selenium.find_element_by_xpath(
                 '//div[@id="cal3"]//div[@class="datepicker-days"]'
             )
         else:
+            print("Using datepicker cal2")
             daysdiv = selenium.find_element_by_xpath(
                 '//div[@id="cal2"]//div[@class="datepicker-days"]'
             )
