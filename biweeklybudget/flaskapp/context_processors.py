@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.notifications import NotificationsController
+from biweeklybudget import settings as settingsmod
 
 
 @app.context_processor
@@ -48,3 +49,14 @@ def notifications():
     :rtype: dict
     """
     return dict(notifications=NotificationsController().get_notifications())
+
+
+@app.context_processor
+def settings():
+    """
+    Add settings to template context for all templates.
+
+    :return: template context with notifications added
+    :rtype: dict
+    """
+    return {'settings': {x: getattr(settingsmod, x) for x in dir(settingsmod)}}

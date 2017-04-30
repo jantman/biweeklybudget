@@ -57,7 +57,8 @@ for x in [
     'DB_CONNSTRING',
     'STALE_DATA_TIMEDELTA',
     'PAY_PERIOD_START_DATE',
-    'RECONCILE_BEGIN_DATE'
+    'RECONCILE_BEGIN_DATE',
+    'DEFAULT_ACCOUNT_ID'
 ]:
     if x not in to_import:
         raise RuntimeError(

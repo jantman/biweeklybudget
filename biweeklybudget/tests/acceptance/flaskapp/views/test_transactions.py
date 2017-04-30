@@ -521,6 +521,7 @@ class TestTransAddModal(AcceptanceHelper):
         desc = body.find_element_by_id('trans_frm_description')
         desc.send_keys('NewTrans4')
         acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
         budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
         budget_sel.select_by_value('2')

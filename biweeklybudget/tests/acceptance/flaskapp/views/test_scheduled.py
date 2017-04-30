@@ -496,6 +496,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')
         acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
         budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
         budget_sel.select_by_value('1')
@@ -557,6 +558,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')
         acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('2')
         budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
         budget_sel.select_by_value('2')
@@ -617,6 +619,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')
         acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
         budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
         budget_sel.select_by_value('1')
@@ -677,6 +680,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
         amt = body.find_element_by_id('sched_frm_amount')
         amt.send_keys('123.45')
         acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
         budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
         budget_sel.select_by_value('7')

@@ -76,6 +76,9 @@
 {% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
+<script>
+var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
+</script>
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/budgets.js"></script>
 <script src="/static/js/budgets_modal.js"></script>

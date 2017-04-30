@@ -118,6 +118,7 @@ function transModal(id, dataTableObj) {
         $.ajax(url).done(transModalDivFillAndShow);
     } else {
         $('#modalLabel').text('Add New Transaction');
+        $('#trans_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
         $("#modalDiv").modal('show');
     }
 }

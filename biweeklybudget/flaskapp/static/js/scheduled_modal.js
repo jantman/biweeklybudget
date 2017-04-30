@@ -174,6 +174,7 @@ function schedModal(id, dataTableObj) {
         $.ajax(url).done(schedModalDivFillAndShow);
     } else {
         $('#modalLabel').text('Add New Scheduled Transaction');
+        $('#sched_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
         $("#modalDiv").modal('show');
     }
 }

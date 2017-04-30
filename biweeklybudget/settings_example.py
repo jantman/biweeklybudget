@@ -74,3 +74,6 @@ PAY_PERIOD_START_DATE = date(2017, 3, 17)
 #: When listing unreconciled transactions that need to be reconciled, any
 #: :py:class:`~.OFXTransaction` before this date will be ignored.
 RECONCILE_BEGIN_DATE = date(2017, 1, 1)
+
+#: Account ID to show first in dropdown lists
+DEFAULT_ACCOUNT_ID = 1
