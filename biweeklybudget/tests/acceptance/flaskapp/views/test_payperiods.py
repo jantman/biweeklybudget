@@ -53,7 +53,7 @@ dt = dtnow()
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriods(AcceptanceHelper):
+class TestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -77,7 +77,7 @@ class DONOTTestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriodFor(AcceptanceHelper):
+class TestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -206,7 +206,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestPayPeriodsIndex(AcceptanceHelper):
+class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -487,7 +487,7 @@ class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestPayPeriod(AcceptanceHelper):
+class TestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -520,7 +520,7 @@ class DONOTTestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -787,7 +787,7 @@ class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestCurrentPayPeriod(AcceptanceHelper):
+class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1248,7 +1248,7 @@ class DONOTTestCurrentPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DONOTTestMakeTransModal(AcceptanceHelper):
+class TestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
