@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+import os
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
@@ -164,11 +165,13 @@ class TestFindPayPeriod(AcceptanceHelper):
 
     def test_input_calendar_future(self, base_url, selenium):
         self.get(selenium, base_url + '/payperiods')
-        start_date = PAY_PERIOD_START_DATE
+        start_date = dtnow()
         print("PayPeriod start date: %s" % start_date)
         send_date = start_date + relativedelta(months=3)
         send_date = send_date.replace(day=3)
+        print("send_date: %s" % send_date)
         send_pp = BiweeklyPayPeriod.period_for_date(send_date, None)
+        print("send_pp.start_date: %s" % send_pp.start_date)
         daysdiv = selenium.find_element_by_xpath(
             '//div[@id="cal2"]//div[@class="datepicker-days"]'
         )
@@ -179,6 +182,14 @@ class TestFindPayPeriod(AcceptanceHelper):
             'tr')[1].find_elements_by_tag_name('th')[1].text == \
             dtnow().strftime('%B %Y')
         tbody = tbl.find_elements_by_tag_name('tbody')[0]
+        assets_dir = os.path.abspath(os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            '..', '..', '..', '..', '..',
+            'results', 'assets'
+        ))
+        ss_path = os.path.join(assets_dir, 'test_input_calendar_future1.png')
+        print('Screenshotting to: %s' % ss_path)
+        selenium.get_screenshot_as_file(ss_path)
         print('Advancing by 3 months')
         next_link = thead.find_element_by_xpath('//th[@class="next"]')
         next_link.click()
@@ -187,6 +198,9 @@ class TestFindPayPeriod(AcceptanceHelper):
         self.wait_for_jquery_done(selenium)
         next_link.click()
         self.wait_for_jquery_done(selenium)
+        ss_path = os.path.join(assets_dir, 'test_input_calendar_future2.png')
+        print('Screenshotting to: %s' % ss_path)
+        selenium.get_screenshot_as_file(ss_path)
         print('Looking for datepicker TD for date %s' % send_date)
         for e in tbody.find_elements_by_tag_name('td'):
             if e.get_attribute('class') != 'day':
