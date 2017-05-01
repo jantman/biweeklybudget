@@ -15,7 +15,7 @@ Running
 
 To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql+pymysql://budgetTester@127.0.0.1:3306/budgettest?charset=utf8mb4' flask run``
 
-By default, Flask will only bind to localhost. If you want to bind to all interfaces, you can add `` --host=0.0.0.0`` to the ``flask run`` commands. Please be aware of the implications of this (see "Security", below).
+By default, Flask will only bind to localhost. If you want to bind to all interfaces, you can add ``--host=0.0.0.0`` to the ``flask run`` commands. Please be aware of the implications of this (see "Security", below).
 
 Security
 --------
