@@ -36,17 +36,6 @@ to make use of un-merged pull requests that fix bugs; since
     pip install -r requirements.txt
     python setup.py develop
 
-Upgrading
----------
-
-This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
-for DB migrations. The migrations should be applied automatically as needed, but if
-that fails:
-
-* To apply migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``.
-* To see the current DB version, run ``alembic -c biweeklybudget/alembic/alembic.ini current``.
-* To see migration history, run ``alembic -c biweeklybudget/alembic/alembic.ini history``.
-
 .. _getting_started.configuration:
 
 Configuration
