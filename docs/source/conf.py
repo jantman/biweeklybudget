@@ -15,6 +15,7 @@
 import sys
 import os
 import re
+import glob
 # to let sphinx find the actual source...
 sys.path.insert(0, os.path.abspath("../.."))
 from biweeklybudget.version import VERSION, PROJECT_URL
@@ -150,7 +151,7 @@ html_title = 'v{v} - Biweekly Budget App'.format(v=version)
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
-#html_extra_path = []
+html_extra_path = glob.glob('*.png')
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
