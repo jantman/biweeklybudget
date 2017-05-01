@@ -6,7 +6,7 @@ Flask Application
 Running
 -------
 
-1. First, setup your environment per `Getting Started - Setup <getting_started.setup>`.
+1. First, setup your environment per :ref:`Getting Started - Setup <getting_started.setup>`.
 2. ``export FLASK_APP="biweeklybudget.flaskapp.app"``
 3. ``flask --help`` for information on usage:
 
