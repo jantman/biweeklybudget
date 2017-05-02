@@ -36,10 +36,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, jsonify
+from copy import copy
+from sqlalchemy import asc
 
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.models.account import Account, AcctType, AccountBalance
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.db import db_session
 
@@ -67,4 +69,48 @@ class IndexView(MethodView):
             standing_budgets=standing
         )
 
+
+class AcctBalanaceChartView(MethodView):
+    """
+    Handle GET //ajax/chart-data/account-balances endpoint.
+    """
+
+    def get(self):
+        accounts = {
+            x.id: x.name for x in db_session.query(Account).all()
+        }
+        acct_names = accounts.values()
+        datedict = {x: None for x in acct_names}
+        data = {}
+        for bal in db_session.query(AccountBalance).order_by(
+            asc(AccountBalance.overall_date)
+        ).all():
+            ds = bal.overall_date.strftime('%Y-%m-%d')
+            if ds not in data:
+                data[ds] = copy(datedict)
+                data[ds]['date'] = ds
+            data[ds][bal.account.name] = float(bal.ledger)
+        resdata = []
+        last = None
+        for k in sorted(data.keys()):
+            if last is None:
+                last = data[k]
+                continue
+            d = copy(data[k])
+            for subk in acct_names:
+                if d[subk] is None:
+                    d[subk] = last[subk]
+            last = d
+            resdata.append(d)
+        res = {
+            'data': resdata,
+            'keys': sorted(acct_names)
+        }
+        return jsonify(res)
+
+
 app.add_url_rule('/', view_func=IndexView.as_view('index_view'))
+app.add_url_rule(
+    '/ajax/chart-data/account-balances',
+    view_func=AcctBalanaceChartView.as_view('acct_balance_chart_view')
+)
