@@ -35,12 +35,37 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from .accounts import *
-from .budgets import *
-from .index import *
-from .ofx import *
-from .payperiods import *
-from .reconcile import *
-from .scheduled import *
-from .transactions import *
-from .help import *
+import logging
+from flask.views import MethodView
+from flask import render_template, request
+from versionfinder import find_version
+
+from biweeklybudget.flaskapp.app import app
+from biweeklybudget.version import VERSION, PROJECT_URL
+from biweeklybudget.settings import DB_CONNSTRING
+
+logger = logging.getLogger(__name__)
+
+for lname in ['versionfinder', 'pip', 'git']:
+    l = logging.getLogger(lname)
+    l.setLevel(logging.CRITICAL)
+    l.propagate = True
+
+
+class HelpView(MethodView):
+    """
+    Render the GET /help view using the ``help.html`` template.
+    """
+
+    def get(self):
+        return render_template(
+            'help.html',
+            ver_info=find_version('biweeklybudget').long_str,
+            version=VERSION,
+            url=PROJECT_URL,
+            ua_str=request.headers.get('User-Agent', 'unknown'),
+            db_uri=DB_CONNSTRING
+        )
+
+
+app.add_url_rule('/help', view_func=HelpView.as_view('help_view'))

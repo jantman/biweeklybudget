@@ -86,9 +86,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             ('/reconcile', 'Reconcile'),
             ('/budgets', 'Budgets'),
             ('/scheduled', 'Scheduled'),
-            ('https://github.com/jantman/biweeklybudget',
-             'biweeklybudget is AGPLv3+ Free Software'),
-            ('http://biweeklybudget.readthedocs.io/en/latest/', 'Docs')
+            ('/help', 'Help/Docs/Code (AGPL)')
         ]
 
 

@@ -36,3 +36,4 @@ pytz
 requests==2.13.0
 selenium==3.0.2
 six==1.10.0
+versionfinder==0.1.0
