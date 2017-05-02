@@ -25,8 +25,10 @@ for information on how to create a venv.
 This app is developed against Python 3.6, but should work back to 2.7. It does
 not support Python3 < 3.3.
 
-Please note that, at the moment, two dependencies are installed via git in order
-to make use of un-merged pull requests that fix bugs; since
+Please note that, at the moment, one dependency is installed via git in order
+to make use of an un-merged pull request that fixes a bug; since installation doesn't
+support specifying git dependencies in ``setup.py``, you must install with
+``requirements.txt`` directly:
 
 .. code-block:: bash
 
@@ -41,8 +43,14 @@ to make use of un-merged pull requests that fix bugs; since
 Configuration
 -------------
 
-biweeklybudget primarily takes its settings from constants defined in a Python
-module. :py:mod:`biweeklybudget.settings` imports all globals/constants from a
+biweeklybudget can take its configuration settings via either constants defined in a Python
+module or environment variables. Configuration in environment variables always
+overrides configuration from the settings module.
+
+Settings Module
++++++++++++++++
+
+:py:mod:`biweeklybudget.settings` imports all globals/constants from a
 module defined in the ``SETTINGS_MODULE`` environment variable. The recommended
 way to configure this is to create your own separate Python package for customization
 (either in a private git repository, or just in a directory on your computer)
@@ -56,13 +64,19 @@ with ``pip install -e <git URL>`` (if it is kept in a git repository) or
 
 This customization package can also be used for
 :ref:`Loading Data <development.loading_data>` during development, or
-implementing :ref:`Custom OFX Downloading via Selenium <ofx.selenium>`.
+implementing :ref:`Custom OFX Downloading via Selenium <ofx.selenium>`. It is
+the recommended configuration method if you need to include more logic than
+simply defining static configuration settings.
 
-If you just want to try the application without worrying about creating a
-customization package, you can copy ``biweeklybudget/settings_example.py`` to
-a new file, edit it, add it to ``.gitignore``, and then use
-``SETTINGS_MODULE=biweeklybudget.NewModuleName``. This will, however, make it
-more complicated to pull upstream changes and improvements.
+Environment Variables
++++++++++++++++++++++
+
+Every configuration setting can also be specified by setting an environment
+variable with the same name; these will override any settings defined in
+a ``SETTINGS_MODULE``, if specified. Note that some environment variables
+require specific formatting of their values; see the
+:py:mod:`settings module documentation <biweeklybudget.settings>` for a list
+of these variables and the required formats.
 
 Usage
 -----
@@ -77,7 +91,9 @@ Setup
     source bin/activate
     export SETTINGS_MODULE=<settings module>
 
-It's recommended that you create an alias to do this for you.
+It's recommended that you create an alias to do this for you. Alternatively,
+instead of setting ``SETTINGS_MODULE``, you can export the required environment
+variables (see above).
 
 Flask
 +++++
