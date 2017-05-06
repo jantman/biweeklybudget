@@ -15,6 +15,7 @@ Submodules
    biweeklybudget.flaskapp.views.budgets
    biweeklybudget.flaskapp.views.example
    biweeklybudget.flaskapp.views.formhandlerview
+   biweeklybudget.flaskapp.views.help
    biweeklybudget.flaskapp.views.index
    biweeklybudget.flaskapp.views.ofx
    biweeklybudget.flaskapp.views.payperiods
