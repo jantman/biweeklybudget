@@ -38,6 +38,8 @@ matrix:
       env: TOXENV=acceptance36 PIP_DOWNLOAD_CACHE=$HOME/.pip-cache DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
     - python: "3.6"
       env: TOXENV=docs PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+    - python: "3.6"
+      env: TOXENV=docker PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
 
 install:
 - virtualenv --version
