@@ -68,7 +68,7 @@ import tarfile
 from biweeklybudget.version import VERSION
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger()
 
 for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
@@ -570,9 +570,7 @@ def set_log_level_format(level, format):
 
 if __name__ == "__main__":
     sys.argv.pop(0)
-    if sys.argv[0] in ['-v', '-vv']:
-        sys.argv.pop(0)
-        set_log_debug()
+    set_log_debug()
     toxinidir = sys.argv[0]
     distdir = sys.argv[1]
     b = DockerImageBuilder(toxinidir, distdir)
