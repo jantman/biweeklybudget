@@ -40,11 +40,12 @@ as needed; specifically, we need to override the database connection string,
 pay period start date and reconcile begin date. In the examples below, we would
 save this as ``biweeklybudget.env``:
 
-```
-DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@HOST:PORT/DBNAME?charset=utf8mb4
-PAY_PERIOD_START_DATE=2017-03-28
-RECONCILE_BEGIN_DATE=2017-02-15
-```
+.. code-block:: none
+
+    DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@HOST:PORT/DBNAME?charset=utf8mb4
+    PAY_PERIOD_START_DATE=2017-03-28
+    RECONCILE_BEGIN_DATE=2017-02-15
+
 
 Containerized MySQL Example
 ---------------------------
@@ -55,16 +56,16 @@ web UI served on host port 8080:
 
 In our ``biweeklybudget.env``, we would specify the database connection string for the "mysql" container:
 
-```
-DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@mysql:3306/DBNAME?charset=utf8mb4
-```
+.. code-block:: none
+
+    DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@mysql:3306/DBNAME?charset=utf8mb4
 
 And then run biweeklybudget:
 
-```
-docker run --name biweeklybudget --env-file biweeklybudget.env \
--p 8080:80 --link mysql jantman/biweeklybudget:latest
-```
+.. code-block:: none
+
+    docker run --name biweeklybudget --env-file biweeklybudget.env \
+    -p 8080:80 --link mysql jantman/biweeklybudget:latest
 
 Host-Local MySQL Example
 ------------------------
@@ -75,24 +76,24 @@ Docker networking mode, this will coorespond to a ``docker0`` interface on the h
 The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file---add-host>`_
 provides a helpful snippet for this (on my systems, this results in ``172.17.0.1``):
 
-```
-ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1
-```
+.. code-block:: none
+
+    ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1
 
 In our ``biweeklybudget.env``, we would specify the database connection string that uses the "dockerhost" hosts file entry, created by the ``--add-host`` option:
 
-```
-# "dockerhost" is added to /etc/hosts via the `--add-host` docker run option
-DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@dockerhost:3306/DBNAME?charset=utf8mb4
-```
+.. code-block:: none
+
+    # "dockerhost" is added to /etc/hosts via the `--add-host` docker run option
+    DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@dockerhost:3306/DBNAME?charset=utf8mb4
 
 So using that, we could run biweeklybudget listening on port 8080 and using our host's MySQL server (on port 3306):
 
-```
-docker run --name biweeklybudget --env-file biweeklybudget.env \
---add-host="dockerhost:$(ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1)" \
--p 8080:80 jantman/biweeklybudget:latest
-```
+.. code-block:: none
+
+    docker run --name biweeklybudget --env-file biweeklybudget.env \
+    --add-host="dockerhost:$(ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1)" \
+    -p 8080:80 jantman/biweeklybudget:latest
 
 You may need to adjust those commands depending on your operating system, Docker networking mode, and MySQL server.
 
@@ -108,11 +109,11 @@ run the container as shown below to mount the custom settings module into the co
 Note that this example assumes using MySQL in another container; adjust as necessary if you are using
 MySQL running on the Docker host:
 
-```
-docker run --name biweeklybudget -e SETTINGS_MODULE=biweeklybudget.mysettings \
--v /opt/biweeklybudget-settings.py:/app/lib/python3.6/site-packages/biweeklybudget/mysettings.py \
--p 8080:80 --link mysql jantman/biweeklybudget:latest
-```
+.. code-block:: none
+
+    docker run --name biweeklybudget -e SETTINGS_MODULE=biweeklybudget.mysettings \
+    -v /opt/biweeklybudget-settings.py:/app/lib/python3.6/site-packages/biweeklybudget/mysettings.py \
+    -p 8080:80 --link mysql jantman/biweeklybudget:latest
 
 Note on Locales
 ---------------
