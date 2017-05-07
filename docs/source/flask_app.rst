@@ -17,6 +17,11 @@ To run the app against the acceptance test database, use: ``DB_CONNSTRING='mysql
 
 By default, Flask will only bind to localhost. If you want to bind to all interfaces, you can add ``--host=0.0.0.0`` to the ``flask run`` commands. Please be aware of the implications of this (see "Security", below).
 
+If you wish to run the flask app in a multi-process/thread/worker WSGI container,
+be sure that you run the ``initdb`` entrypoint before starting the workers. Otherwise,
+it's likely that all workers will attempt to create the database tables or run migrations
+at the same time, and fail.
+
 Security
 --------
 

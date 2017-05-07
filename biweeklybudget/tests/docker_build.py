@@ -64,6 +64,7 @@ from git import Repo
 import requests
 import docker
 from io import BytesIO
+import requests
 import tarfile
 from textwrap import dedent
 from versionfinder import find_version
@@ -73,7 +74,7 @@ FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 logger = logging.getLogger()
 
-for lname in ['versionfinder', 'pip', 'git', 'requests']:
+for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
     l = logging.getLogger(lname)
     l.setLevel(logging.CRITICAL)
     l.propagate = True
@@ -87,6 +88,7 @@ USER root
 
 COPY tini_0.14.0.deb /tmp/tini_0.14.0.deb
 COPY requirements.txt /tmp/requirements.txt
+COPY entrypoint.sh /tmp/entrypoint.sh
 {copy}
 
 RUN /usr/bin/dpkg -i /tmp/tini_0.14.0.deb
@@ -103,7 +105,8 @@ RUN echo 'deb http://ftp.debian.org/debian jessie-backports main' >> \
     apt-get --assume-yes install phantomjs locales && \
     apt-get clean && \
     echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && \
-    /usr/sbin/locale-gen
+    /usr/sbin/locale-gen && \
+    install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
 # default to using settings_example.py, and user can override as needed
 ENV SETTINGS_MODULE=biweeklybudget.settings_example
@@ -115,7 +118,7 @@ LABEL homepage "http://github.com/jantman/biweeklybudget"
 
 EXPOSE 80
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/app/bin/gunicorn", "-w 4", "-b :80", "biweeklybudget.flaskapp.app:app"]
+CMD ["/app/bin/entrypoint.sh"]
 """
 
 
@@ -220,8 +223,7 @@ class DockerImageBuilder(object):
             tag = self._tag_for_local()
             logger.info('Local build; tag=%s', tag)
         self._check_tag(tag)
-        # img_tag = self._build_image(tag)
-        img_tag = tag
+        img_tag = self._build_image(tag)
         if self._needs_test:
             self.test(img_tag)
         logger.info('Image "%s" built and tested.', img_tag)
@@ -230,8 +232,6 @@ class DockerImageBuilder(object):
             print('docker push %s' % img_tag)
             print('docker tag %s %s:latest' % (img_tag, self.image_name))
             print('docker push %s:latest' % self.image_name)
-        raise NotImplementedError("re-enable build here!!! and "
-                                  "remove 'tag =' in test()")
         return img_tag
 
     @property
@@ -255,7 +255,6 @@ class DockerImageBuilder(object):
         :param tag: tag of built image
         :type tag: str
         """
-        tag = 'e14eb6c5-dirty_1494159769'
         db_container = self._run_mysql()
         dbname = db_container.name
         kwargs = {
@@ -281,6 +280,7 @@ class DockerImageBuilder(object):
         logger.info('Container status: %s', container.status)
         logger.info('Sleeping 20s for stabilization...')
         time.sleep(20)
+        container.reload()
         logger.info('Container status: %s', container.status)
         if container.status != 'running':
             logger.critical('Container did not stay running! Logs:')
@@ -289,9 +289,58 @@ class DockerImageBuilder(object):
                                timestamps=True).decode()
             )
             raise RuntimeError('Container did not stay running')
+        else:
+            logger.info(
+                'Container logs:\n%s',
+                container.logs(stderr=True, stdout=True, stream=False,
+                               timestamps=True).decode()
+            )
         # do the tests
-        #db_container.stop()
-        #contaner.stop()
+        try:
+            self._run_tests(container)
+            db_container.stop()
+            container.stop()
+        except Exception as exc:
+            logger.critical("Tests failed: %s", exc, exc_info=True)
+            db_container.stop()
+            container.stop()
+            raise
+
+    def _run_tests(self, container):
+        """
+        Run smoke tests against the container.
+
+        :param container: biweeklybudget Docker container
+        :type container: 
+        :return: 
+        :rtype: 
+        """
+        container.reload()
+        cnet = container.attrs['NetworkSettings']
+        c_ip = cnet['IPAddress']
+        logger.debug('Container IP: %s / NetworkSettings: %s', c_ip, cnet)
+        baseurl = 'http://%s' % c_ip
+        failures = False
+        r = requests.get('%s/' % baseurl)
+        if r.status_code == 200:
+            logger.info('GET /: OK (200)')
+        else:
+            logger.error('GET /: %s', r.status_code)
+            failures = True
+        exp = '<a class="navbar-brand" href="index.html">BiweeklyBudget</a>'
+        if exp in r.text:
+            logger.info('GET / content OK')
+        else:
+            logger.error('GET / content NOT OK: \n%s', r.text)
+            failures = True
+        r = requests.get('%s/payperiods' % baseurl)
+        if r.status_code == 200:
+            logger.info('GET /payperiods: OK (200)')
+        else:
+            logger.error('GET /payperiods: %s', r.status_code)
+            failures = True
+        if failures:
+            raise RuntimeError('Tests FAILED.')
 
     def _run_mysql(self):
         """
@@ -348,7 +397,7 @@ class DockerImageBuilder(object):
             'decode': True
         }
         logger.info('Running docker build with args: %s', kwargs)
-        res = self._docker.build(**kwargs)
+        res = self._docker.api.build(**kwargs)
         logger.info('Build running; output:')
         for line in res:
             try:
@@ -424,6 +473,7 @@ class DockerImageBuilder(object):
         b = BytesIO()
         tar = tarfile.open(fileobj=b, mode='w')
         self._tar_add_string_file(tar, 'Dockerfile', self._dockerfile())
+        self._tar_add_string_file(tar, 'entrypoint.sh', self._entrypoint())
         tar.add(
             os.path.join(self._toxinidir, 'requirements.txt'),
             arcname='requirements.txt'
@@ -478,6 +528,19 @@ class DockerImageBuilder(object):
             install=s_install
         )
         logger.debug("Dockerfile:\n%s", s)
+        return s
+
+    def _entrypoint(self):
+        """
+        Generate the string contents of the entrypoint script.
+
+        :return: entrypoint script contents
+        :rtype: str
+        """
+        s = "#!/bin/bash -ex\n"
+        s += "/app/bin/python /app/bin/initdb -vv \n"
+        s += "/app/bin/gunicorn -w 4 -b :80 biweeklybudget.flaskapp.app:app\n"
+        logger.debug('Entrypoint script:\n%s', s)
         return s
 
 

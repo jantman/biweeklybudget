@@ -98,6 +98,7 @@ setup(
     loaddata = biweeklybudget.load_data:main
     ofxgetter = biweeklybudget.ofxgetter:main
     ofxbackfiller = biweeklybudget.backfill_ofx:main
+    initdb = biweeklybudget.initdb:main
     [flask.commands]
     rundev=biweeklybudget.flaskapp.cli_commands:rundev_command
     """,
