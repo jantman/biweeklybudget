@@ -3,8 +3,14 @@
 Getting Started
 ===============
 
+.. _getting_started.requirements:
+
 Requirements
 ------------
+
+**Note:** Alternatively, biweeklybudget is also distributed as a :ref:`Docker container <docker>`.
+Using the dockerized version will eliminate all of these dependencies aside from MySQL and
+Vault (the latter only if you choose to take advantage of the OFX downloading), both of which you can also run in containers.
 
 * Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6 and developed with 3.6)
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
