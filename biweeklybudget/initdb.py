@@ -37,12 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import argparse
 import logging
-import atexit
-import importlib
 
-from biweeklybudget.db import init_db, cleanup_db, db_session, engine
+from biweeklybudget.db import init_db
 from biweeklybudget.cliutils import set_log_debug, set_log_info
-from biweeklybudget.models.base import Base
 
 logger = logging.getLogger(__name__)
 

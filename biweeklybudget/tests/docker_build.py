@@ -64,10 +64,7 @@ from git import Repo
 import requests
 import docker
 from io import BytesIO
-import requests
 import tarfile
-from textwrap import dedent
-from versionfinder import find_version
 from biweeklybudget.version import VERSION
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
@@ -150,7 +147,7 @@ class DockerImageBuilder(object):
         """
         Return information about the state of the Git repository tox is being
         run from.
-        
+
         :return: dict with keys 'dirty' (bool), 'sha' (str), 'tag' (str or None)
         :rtype: dict
         """
@@ -259,8 +256,8 @@ class DockerImageBuilder(object):
         dbname = db_container.name
         kwargs = {
             'detach': True,
-            #'auto_remove': True,
-            #'remove': True,
+            'auto_remove': True,
+            'remove': True,
             'name': 'biweeklybudget-test-%s' % int(time.time()),
             'environment': {
                 'DB_CONNSTRING': 'mysql+pymysql://'
@@ -311,9 +308,7 @@ class DockerImageBuilder(object):
         Run smoke tests against the container.
 
         :param container: biweeklybudget Docker container
-        :type container: 
-        :return: 
-        :rtype: 
+        :type container: ``docker.models.containers.Container``
         """
         container.reload()
         cnet = container.attrs['NetworkSettings']
@@ -353,8 +348,8 @@ class DockerImageBuilder(object):
         img = 'mariadb:5.5.56'
         kwargs = {
             'detach': True,
-            #'auto_remove': True,
-            #'remove': True,
+            'auto_remove': True,
+            'remove': True,
             'name': 'biweeklybudget-mariadb-%s' % int(time.time()),
             'environment': {
                 'MYSQL_ROOT_PASSWORD': 'root'
