@@ -102,6 +102,12 @@ Database Debugging
 If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by
 SQLAlchemy will be logged at INFO level.
 
+Docker Image Build
+------------------
+
+Use the ``docker`` tox environment. See the docstring at the top of
+``biweeklybudget/tests/docker_build.py`` for further information.
+
 Frontend / UI
 -------------
 
@@ -119,11 +125,13 @@ Release Checklist
 2. Verify whether or not DB migrations are needed. If they are, ensure they've been created, tested and verified.
 3. Confirm that there are CHANGES.rst entries for all major changes.
 4. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
-5. Ensure that Travis tests passing in all environments.
-6. Ensure that test coverage is no less than the last release (ideally, 100%).
-7. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
-8. Confirm that README.rst renders correctly on GitHub.
-9. Upload package to testpypi:
+5. Run the Docker image build and tests locally: ``tox -e docker``.
+6. Ensure that Travis tests passing in all environments.
+7. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
+8. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
+9. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
+10. Confirm that README.rst renders correctly on GitHub.
+11. Upload package to testpypi:
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
@@ -132,14 +140,21 @@ Release Checklist
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
 
-10. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
-11. Tag the release in Git, push tag to GitHub:
+12. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
+13. Tag the release in Git, push tag to GitHub:
 
    * tag the release. for now the message is quite simple: ``git tag -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
    * push the tag to GitHub: ``git push origin X.Y.Z``
 
-12. Upload package to live pypi:
+14. Upload package to live pypi:
 
     * ``twine upload dist/*``
 
-13. make sure any GH issues fixed in the release were closed.
+15. Build and push the new Docker image:
+
+   * Check out the git tag: ``git checkout X.Y.Z``
+   * Build the Docker image: ``tox -e docker``
+   * Follow the instructions from that script to push the image to the
+     Docker Hub and tag a "latest" version.
+
+16. make sure any GH issues fixed in the release were closed.

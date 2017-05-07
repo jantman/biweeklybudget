@@ -25,6 +25,8 @@ Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budg
 
 **For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
 
+**`Screenshots <http://biweeklybudget.readthedocs.io/en/latest/screenshots.html>`_**
+
 **For development activity**, see `https://waffle.io/jantman/biweeklybudget <https://waffle.io/jantman/biweeklybudget>`_
 
 Overview
@@ -66,6 +68,10 @@ Main Features
 
 Requirements
 ------------
+
+**Note:** Alternatively, biweeklybudget is also distributed as a `Docker container <http://biweeklybudget.readthedocs.io/en/latest/flask_app.html>`_.
+Using the dockerized version will eliminate all of these dependencies aside from MySQL (which you can run in another container) and
+Vault (if you choose to take advantage of the OFX downloading), which you can also run in another container.
 
 * Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6 and developed with 3.6)
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)

@@ -11,6 +11,7 @@ Contents
 
    Screenshots <screenshots>
    Getting Started <getting_started>
+   Running With Docker <docker>
    Flask App <flask_app>
    OFX Transaction Downloading <ofx>
    Getting Help <getting_help>

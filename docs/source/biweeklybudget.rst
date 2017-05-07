@@ -23,6 +23,7 @@ Submodules
    biweeklybudget.biweeklypayperiod
    biweeklybudget.cliutils
    biweeklybudget.db
+   biweeklybudget.initdb
    biweeklybudget.load_data
    biweeklybudget.ofxgetter
    biweeklybudget.ofxupdater
