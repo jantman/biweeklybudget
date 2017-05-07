@@ -126,10 +126,8 @@ Release Checklist
 3. Confirm that there are CHANGES.rst entries for all major changes.
 4. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
 5. Ensure that Travis tests passing in all environments.
-6. Ensure that test coverage is no less than the last release, and that there are
-  acceptance tests for any non-trivial changes.
-7. If there have been any major visual or functional changes to the UI, regenerate
-  screenshots via ``tox -e screenshots``.
+6. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
+7. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
 8. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
 9. Confirm that README.rst renders correctly on GitHub.
 10. Upload package to testpypi:

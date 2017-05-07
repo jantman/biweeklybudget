@@ -4,7 +4,7 @@ Docker
 ======
 
 Biweeklybudget is also distributed as a `docker image <https://hub.docker.com/r/jantman/biweeklybudget/>`_,
-to make it easier to run without installing as many :ref:`Requirements <_getting_started.requirements>`.
+to make it easier to run without installing as many :ref:`Requirements <getting_started.requirements>`.
 
 You can pull the latest version of the image with ``docker pull jantman/biweeklybudget:latest``, or
 a specific release version ``X.Y.Z`` with ``docker pull jantman/biweeklybudget:X.Y.Z``.
@@ -24,7 +24,7 @@ use by a single user/client.
 
 For ease of running, the image defaults the ``SETTINGS_MODULE`` environment variable to
 ``biweeklybudget.settings_example``. This allows leveraging the environment variable
-:ref:`configuration <_getting_started.configuration>` overrides so that you need only
+:ref:`configuration <getting_started.configuration>` overrides so that you need only
 specify configuration options that you want to override from
 `settings_example.py <https://github.com/jantman/biweeklybudget/blob/master/biweeklybudget/settings_example.py>`_.
 
@@ -63,7 +63,7 @@ And then run biweeklybudget:
 
 ```
 docker run --name biweeklybudget --env-file biweeklybudget.env \
-  -p 8080:80 --link mysql jantman/biweeklybudget:latest
+-p 8080:80 --link mysql jantman/biweeklybudget:latest
 ```
 
 Host-Local MySQL Example
@@ -90,8 +90,8 @@ So using that, we could run biweeklybudget listening on port 8080 and using our 
 
 ```
 docker run --name biweeklybudget --env-file biweeklybudget.env \
-  --add-host="dockerhost:$(ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1)" \
-  -p 8080:80 jantman/biweeklybudget:latest
+--add-host="dockerhost:$(ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1)" \
+-p 8080:80 jantman/biweeklybudget:latest
 ```
 
 You may need to adjust those commands depending on your operating system, Docker networking mode, and MySQL server.
@@ -110,8 +110,8 @@ MySQL running on the Docker host:
 
 ```
 docker run --name biweeklybudget -e SETTINGS_MODULE=biweeklybudget.mysettings \
-  -v /opt/biweeklybudget-settings.py:/app/lib/python3.6/site-packages/biweeklybudget/mysettings.py \
-  -p 8080:80 --link mysql jantman/biweeklybudget:latest
+-v /opt/biweeklybudget-settings.py:/app/lib/python3.6/site-packages/biweeklybudget/mysettings.py \
+-p 8080:80 --link mysql jantman/biweeklybudget:latest
 ```
 
 Note on Locales
