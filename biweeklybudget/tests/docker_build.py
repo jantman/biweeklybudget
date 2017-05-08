@@ -256,8 +256,6 @@ class DockerImageBuilder(object):
         dbname = db_container.name
         kwargs = {
             'detach': True,
-            'auto_remove': True,
-            'remove': True,
             'name': 'biweeklybudget-test-%s' % int(time.time()),
             'environment': {
                 'DB_CONNSTRING': 'mysql+pymysql://'
@@ -296,11 +294,15 @@ class DockerImageBuilder(object):
         try:
             self._run_tests(container)
             db_container.stop()
+            db_container.remove()
             container.stop()
+            container.remove()
         except Exception as exc:
             logger.critical("Tests failed: %s", exc, exc_info=True)
             db_container.stop()
+            db_container.remove()
             container.stop()
+            container.remove()
             raise
 
     def _run_tests(self, container):
@@ -348,8 +350,6 @@ class DockerImageBuilder(object):
         img = 'mariadb:5.5.56'
         kwargs = {
             'detach': True,
-            'auto_remove': True,
-            'remove': True,
             'name': 'biweeklybudget-mariadb-%s' % int(time.time()),
             'environment': {
                 'MYSQL_ROOT_PASSWORD': 'root'
