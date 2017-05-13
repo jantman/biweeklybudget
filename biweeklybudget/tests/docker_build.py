@@ -99,14 +99,19 @@ RUN /usr/local/bin/virtualenv /app && \
     /app/bin/pip install {install} && \
     /app/bin/pip install gunicorn==19.7.1
 
-# install phantomjs and locales; setip locales
-RUN echo 'deb http://ftp.debian.org/debian jessie-backports main' >> \
-    /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get --assume-yes install phantomjs locales && \
-    apt-get clean && \
-    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && \
-    /usr/sbin/locale-gen && \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# install phantomjs and locales; setup locales
+# phantomjs installation from:
+# https://github.com/josefcs/debian-phantomjs/blob/1e5bd20c8c51ec9a2e54a765594eea79aa0b9aed/Dockerfile
+RUN apt-get update && \
+    apt-get --assume-yes install locales wget ca-certificates \
+    fontconfig bzip2 && \
+    apt-get clean && cd / && \
+    wget -qO- https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xvj && \
+    cp /phantomjs-*/bin/phantomjs /usr/bin/phantomjs && \
+    rm -rf /phantomjs* /var/lib/apt/lists/* && \
+    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && /usr/sbin/locale-gen && \
     install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
 # default to using settings_example.py, and user can override as needed
