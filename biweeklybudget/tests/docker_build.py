@@ -311,6 +311,15 @@ class DockerImageBuilder(object):
                 raise
         finally:
             try:
+                logger.info(
+                    'biweeklybudget container logs:\n%s',
+                    container.logs(
+                        stderr=True, stdout=True, stream=False, timestamps=True
+                    ).decode()
+                )
+            except Exception:
+                pass
+            try:
                 db_container.stop()
                 db_container.remove()
             except Exception:
@@ -633,8 +642,10 @@ class DockerImageBuilder(object):
         :rtype: str
         """
         s = "#!/bin/bash -ex\n"
+        s += "export PYTHONUNBUFFERED=true\n"
         s += "/app/bin/python /app/bin/initdb -vv \n"
-        s += "/app/bin/gunicorn -w 4 -b :80 biweeklybudget.flaskapp.app:app\n"
+        s += "/app/bin/gunicorn -w 4 -b :80 --log-file=- --access-logfile=- " \
+             "biweeklybudget.flaskapp.app:app\n"
         logger.debug('Entrypoint script:\n%s', s)
         return s
 
