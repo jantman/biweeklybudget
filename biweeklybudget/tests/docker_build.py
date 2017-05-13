@@ -371,7 +371,7 @@ class DockerImageBuilder(object):
         cmd = [
             '/bin/bash',
             '-c',
-            'QT_QPA_PLATFORM=offscreen /usr/bin/phantomjs --version'
+            '/usr/bin/phantomjs --version'
         ]
         logger.debug('Running: %s', cmd)
         res = container.exec_run(cmd).decode().strip()
@@ -396,7 +396,7 @@ class DockerImageBuilder(object):
         cmd = [
             '/bin/bash',
             '-c',
-            'QT_QPA_PLATFORM=offscreen /usr/bin/phantomjs /phantomtest.js; '
+            '/usr/bin/phantomjs /phantomtest.js; '
             'echo "exitcode=$?"'
         ]
         logger.debug('Running: %s', cmd)
@@ -408,6 +408,11 @@ class DockerImageBuilder(object):
         if exitcode != 'exitcode=0':
             raise RuntimeError('Expected PhantomJS to exit with code 0, but'
                                ' got %s' % exitcode)
+        if '<title>BiweeklyBudget</title>' not in res:
+            raise RuntimeError('PhantomJS page source does not look correct')
+        if '<a class="navbar-brand" href="index.html">BiweeklyBud' not in res:
+            raise RuntimeError('PhantomJS page source does not look correct')
+        logger.info('PhantomJS test SUCCEEDED')
 
     def _run_mysql(self):
         """
