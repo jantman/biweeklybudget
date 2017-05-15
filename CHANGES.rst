@@ -11,6 +11,7 @@ Unreleased Changes
   * Add testing of PhantomJS in Docker image testing; check version and that it actually works (GET a page).
   * More reliable stopping and removing of Docker containers during Docker image tests.
 * `Issue #63 <https://github.com/jantman/biweeklybudget/issues/63>`_ - Enable gunicorn request logging in Docker container.
+* Switch to my fork of ofxclient in requirements.txt, to pull in `ofxclient PR #41 <https://github.com/captin411/ofxclient/pull/41>`_
 
 0.1.0 (2017-05-07)
 ------------------

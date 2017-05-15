@@ -22,9 +22,10 @@ idna==2.5
 itsdangerous==0.24
 keyring==10.3.1
 lxml==3.7.3
-ofxclient==2.0.3
+# ofxclient with https://github.com/captin411/ofxclient/pull/41
+git+https://github.com/jantman/ofxclient.git@citi-fix#egg=ofxclient
 ofxhome==0.3.3
-# to incorporate https://github.com/jseutter/ofxparse/pull/127
+# to incorporate https://github.com/captin411/ofxclient/pull/41
 git+https://github.com/jantman/ofxparse.git@7fcf07ee1a827db5f9b7bb8ca8cab9166afae196#egg=ofxparse
 packaging==16.8
 pluggy==0.4.0
