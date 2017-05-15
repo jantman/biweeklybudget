@@ -103,12 +103,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # install phantomjs and locales; setup locales
 # phantomjs installation from:
-# https://github.com/josefcs/debian-phantomjs/blob/1e5bd20c8c51ec9a2e54a765594eea79aa0b9aed/Dockerfile
+# https://github.com/josefcs/debian-phantomjs/blob/master/Dockerfile
+# @ 1e5bd20c8c51ec9a2e54a765594eea79aa0b9aed
 RUN apt-get update && \
     apt-get --assume-yes install locales wget ca-certificates \
     fontconfig bzip2 && \
     apt-get clean && cd / && \
-    wget -qO- https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xvj && \
+    wget -qO- {phantomjs_url} | tar xvj && \
     cp /phantomjs-*/bin/phantomjs /usr/bin/phantomjs && \
     rm -rf /phantomjs* /var/lib/apt/lists/* && \
     echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && /usr/sbin/locale-gen && \
@@ -126,6 +127,9 @@ EXPOSE 80
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/app/bin/entrypoint.sh"]
 """
+
+PHANTOMJS_URL = 'https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-' \
+    '2.1.1-linux-x86_64.tar.bz2'
 
 
 class DockerImageBuilder(object):
@@ -629,7 +633,8 @@ class DockerImageBuilder(object):
             s_install = 'biweeklybudget==%s' % self.build_ver
         s = DOCKERFILE_TEMPLATE.format(
             copy=s_copy,
-            install=s_install
+            install=s_install,
+            phantomjs_url=PHANTOMJS_URL
         )
         logger.debug("Dockerfile:\n%s", s)
         return s
