@@ -97,6 +97,8 @@ class OFXUpdater(object):
         """
         if mtime is None:
             mtime = dtnow()
+        if hasattr(ofx, 'status') and ofx.status['severity'] == 'ERROR':
+            raise RuntimeError("OFX Error: %s" % vars(ofx))
         stmt = self._create_statement(ofx, mtime, filename)
         if ofx.account.type == AccountType.Bank:
             stmt.type = 'Bank'

@@ -158,3 +158,4 @@ Release Checklist
      Docker Hub and tag a "latest" version.
 
 16. make sure any GH issues fixed in the release were closed.
+17. Log in to readthedocs.org and enable building of the release tag. You may need to re-run another build to get the tag to be picked up.

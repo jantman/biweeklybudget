@@ -5,6 +5,9 @@ Script to build Docker image of the project and possibly test it.
 Actions are largely driven by environment variables, and some information
 about the version of biweeklybudget installed...
 
+If ``DOCKER_TEST_TAG`` is set, just run tests against an existing (local) image
+with that tag, and exit.
+
 If ``TRAVIS=="true"``:
 
   - build the image using the sdist created by ``tox``
@@ -66,6 +69,7 @@ import docker
 from io import BytesIO
 import tarfile
 from biweeklybudget.version import VERSION
+from textwrap import dedent
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -95,14 +99,20 @@ RUN /usr/local/bin/virtualenv /app && \
     /app/bin/pip install {install} && \
     /app/bin/pip install gunicorn==19.7.1
 
-# install phantomjs and locales; setip locales
-RUN echo 'deb http://ftp.debian.org/debian jessie-backports main' >> \
-    /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get --assume-yes install phantomjs locales && \
-    apt-get clean && \
-    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && \
-    /usr/sbin/locale-gen && \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# install phantomjs and locales; setup locales
+# phantomjs installation from:
+# https://github.com/josefcs/debian-phantomjs/blob/master/Dockerfile
+# @ 1e5bd20c8c51ec9a2e54a765594eea79aa0b9aed
+RUN apt-get update && \
+    apt-get --assume-yes install locales wget ca-certificates \
+    fontconfig bzip2 && \
+    apt-get clean && cd / && \
+    wget -qO- {phantomjs_url} | tar xvj && \
+    cp /phantomjs-*/bin/phantomjs /usr/bin/phantomjs && \
+    rm -rf /phantomjs* /var/lib/apt/lists/* && \
+    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && /usr/sbin/locale-gen && \
     install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
 # default to using settings_example.py, and user can override as needed
@@ -118,10 +128,14 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/app/bin/entrypoint.sh"]
 """
 
+PHANTOMJS_URL = 'https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-' \
+    '2.1.1-linux-x86_64.tar.bz2'
+
 
 class DockerImageBuilder(object):
 
     image_name = 'jantman/biweeklybudget'
+    _phantomjs_version = '2.1.1'
 
     def __init__(self, toxinidir, distdir):
         """
@@ -252,58 +266,73 @@ class DockerImageBuilder(object):
         :param tag: tag of built image
         :type tag: str
         """
-        db_container = self._run_mysql()
-        dbname = db_container.name
-        kwargs = {
-            'detach': True,
-            'name': 'biweeklybudget-test-%s' % int(time.time()),
-            'environment': {
-                'DB_CONNSTRING': 'mysql+pymysql://'
-                    'root:root@mysql:3306/'
-                    'budgetfoo?charset=utf8mb4'
-            },
-            'links': {dbname: 'mysql'},
-            'ports': {
-                '80/tcp': None
-            }
-        }
-        img = '%s:%s' % (self.image_name, tag)
-        logger.info('Docker run %s with kwargs: %s', img, kwargs)
-        container = self._docker.containers.run(img, **kwargs)
-        logger.info('Running biweeklybudget container; name=%s id=%s',
-                    container.name, container.id)
-        logger.info('Container status: %s', container.status)
-        logger.info('Sleeping 20s for stabilization...')
-        time.sleep(20)
-        container.reload()
-        logger.info('Container status: %s', container.status)
-        if container.status != 'running':
-            logger.critical('Container did not stay running! Logs:')
-            logger.critical(
-                container.logs(stderr=True, stdout=True, stream=False,
-                               timestamps=True).decode()
-            )
-            raise RuntimeError('Container did not stay running')
-        else:
-            logger.info(
-                'Container logs:\n%s',
-                container.logs(stderr=True, stdout=True, stream=False,
-                               timestamps=True).decode()
-            )
-        # do the tests
+        db_container = None
+        container = None
         try:
-            self._run_tests(container)
-            db_container.stop()
-            db_container.remove()
-            container.stop()
-            container.remove()
-        except Exception as exc:
-            logger.critical("Tests failed: %s", exc, exc_info=True)
-            db_container.stop()
-            db_container.remove()
-            container.stop()
-            container.remove()
-            raise
+            db_container = self._run_mysql()
+            dbname = db_container.name
+            kwargs = {
+                'detach': True,
+                'name': 'biweeklybudget-test-%s' % int(time.time()),
+                'environment': {
+                    'DB_CONNSTRING': 'mysql+pymysql://'
+                        'root:root@mysql:3306/'
+                        'budgetfoo?charset=utf8mb4'
+                },
+                'links': {dbname: 'mysql'},
+                'ports': {
+                    '80/tcp': None
+                }
+            }
+            img = '%s:%s' % (self.image_name, tag)
+            logger.info('Docker run %s with kwargs: %s', img, kwargs)
+            container = self._docker.containers.run(img, **kwargs)
+            logger.info('Running biweeklybudget container; name=%s id=%s',
+                        container.name, container.id)
+            logger.info('Container status: %s', container.status)
+            logger.info('Sleeping 20s for stabilization...')
+            time.sleep(20)
+            container.reload()
+            logger.info('Container status: %s', container.status)
+            if container.status != 'running':
+                logger.critical('Container did not stay running! Logs:')
+                logger.critical(
+                    container.logs(stderr=True, stdout=True, stream=False,
+                                   timestamps=True).decode()
+                )
+                raise RuntimeError('Container did not stay running')
+            else:
+                logger.info(
+                    'Container logs:\n%s',
+                    container.logs(stderr=True, stdout=True, stream=False,
+                                   timestamps=True).decode()
+                )
+            # do the tests
+            try:
+                self._run_tests(container)
+            except Exception as exc:
+                logger.critical("Tests failed: %s", exc, exc_info=True)
+                raise
+        finally:
+            try:
+                logger.info(
+                    'biweeklybudget container logs:\n%s',
+                    container.logs(
+                        stderr=True, stdout=True, stream=False, timestamps=True
+                    ).decode()
+                )
+            except Exception:
+                pass
+            try:
+                db_container.stop()
+                db_container.remove()
+            except Exception:
+                pass
+            try:
+                container.stop()
+                container.remove()
+            except Exception:
+                pass
 
     def _run_tests(self, container):
         """
@@ -336,8 +365,67 @@ class DockerImageBuilder(object):
         else:
             logger.error('GET /payperiods: %s', r.status_code)
             failures = True
+        try:
+            self._test_phantomjs(container)
+            logger.info('phantomjs test PASSED')
+        except Exception as exc:
+            logger.error('PhantomJS test failed: %s', exc, exc_info=True)
+            failures = True
         if failures:
             raise RuntimeError('Tests FAILED.')
+
+    def _test_phantomjs(self, container):
+        """
+        Test phantomjs on the container.
+
+        :param container: biweeklybudget Docker container
+        :type container: ``docker.models.containers.Container``
+        """
+        cmd = [
+            '/bin/bash',
+            '-c',
+            '/usr/bin/phantomjs --version'
+        ]
+        logger.debug('Running: %s', cmd)
+        res = container.exec_run(cmd).decode().strip()
+        logger.debug('Command output:\n%s', res)
+        if res != self._phantomjs_version:
+            raise RuntimeError('ERROR: expected phantomjs version to be %s'
+                               ' but got %s', self._phantomjs_version, res)
+        logger.debug('phamtomjs version correct: %s', res)
+        phantomtest = dedent("""
+        "use strict";
+        var page = require("webpage").create();
+        page.open("http://127.0.0.1:80/", function(status) {
+          console.log("Status: " + status);
+          if(status === "success") {
+            console.log(page.content);
+          }
+          phantom.exit();
+        });
+        """)
+        phantom_script = self._string_to_tarfile('phantomtest.js', phantomtest)
+        container.put_archive('/', phantom_script)
+        cmd = [
+            '/bin/bash',
+            '-c',
+            '/usr/bin/phantomjs /phantomtest.js; '
+            'echo "exitcode=$?"'
+        ]
+        logger.debug('Running: %s', cmd)
+        res = container.exec_run(cmd).decode().strip()
+        logger.debug('Command output:\n%s', res)
+        if 'FATAL' in res or 'PhantomJS has crashed' in res:
+            raise RuntimeError('PhantomJS crashed during test')
+        exitcode = res.split("\n")[-1]
+        if exitcode != 'exitcode=0':
+            raise RuntimeError('Expected PhantomJS to exit with code 0, but'
+                               ' got %s' % exitcode)
+        if '<title>BiweeklyBudget</title>' not in res:
+            raise RuntimeError('PhantomJS page source does not look correct')
+        if '<a class="navbar-brand" href="index.html">BiweeklyBud' not in res:
+            raise RuntimeError('PhantomJS page source does not look correct')
+        logger.info('PhantomJS test SUCCEEDED')
 
     def _run_mysql(self):
         """
@@ -359,13 +447,19 @@ class DockerImageBuilder(object):
         cont = self._docker.containers.run(img, **kwargs)
         logger.debug('MySQL container running; name=%s id=%s',
                      cont.name, cont.id)
-        logger.info('Sleeping 10s for stabilization...')
-        time.sleep(10)
-        logger.info('Creating database...')
-        cmd = '/usr/bin/mysql -uroot -proot -e "CREATE DATABASE budgetfoo;"'
-        logger.debug('Running: %s', cmd)
-        res = cont.exec_run(cmd)
-        logger.debug('Command output:\n%s', res)
+        count = 0
+        while count < 10:
+            count += 1
+            logger.info('Creating database...')
+            cmd = '/usr/bin/mysql -uroot -proot -e "CREATE DATABASE budgetfoo;"'
+            logger.debug('Running: %s', cmd)
+            res = cont.exec_run(cmd)
+            logger.debug('Command output:\n%s', res)
+            if 'ERROR' not in res.decode():
+                logger.info('Database creation appears successful.')
+                break
+            logger.warning('Database creation errored; sleep 5s and retry')
+            time.sleep(5)
         return cont
 
     def _build_image(self, tag):
@@ -483,6 +577,25 @@ class DockerImageBuilder(object):
         logger.debug('Docker context created')
         return b
 
+    def _string_to_tarfile(self, path, s):
+        """
+        Return a BytesIO object containing a tarfile containing one file at
+        ``path``, with contents ``s``.
+
+        :param path: path in the tar archive to write the file at
+        :type path: str
+        :param s: file contents
+        :type s: str
+        :return: tarfile object containing one file
+        :rtype: io.BytesIO
+        """
+        b = BytesIO()
+        tar = tarfile.open(fileobj=b, mode='w')
+        self._tar_add_string_file(tar, path, s)
+        tar.close()
+        b.seek(0)
+        return b
+
     def _tar_add_string_file(self, tarobj, fpath, content):
         """
         Given a tarfile object, add a file to it at ``fpath``, with content
@@ -520,7 +633,8 @@ class DockerImageBuilder(object):
             s_install = 'biweeklybudget==%s' % self.build_ver
         s = DOCKERFILE_TEMPLATE.format(
             copy=s_copy,
-            install=s_install
+            install=s_install,
+            phantomjs_url=PHANTOMJS_URL
         )
         logger.debug("Dockerfile:\n%s", s)
         return s
@@ -533,8 +647,10 @@ class DockerImageBuilder(object):
         :rtype: str
         """
         s = "#!/bin/bash -ex\n"
+        s += "export PYTHONUNBUFFERED=true\n"
         s += "/app/bin/python /app/bin/initdb -vv \n"
-        s += "/app/bin/gunicorn -w 4 -b :80 biweeklybudget.flaskapp.app:app\n"
+        s += "/app/bin/gunicorn -w 4 -b :80 --log-file=- --access-logfile=- " \
+             "biweeklybudget.flaskapp.app:app\n"
         logger.debug('Entrypoint script:\n%s', s)
         return s
 
@@ -574,4 +690,9 @@ if __name__ == "__main__":
     toxinidir = sys.argv[0]
     distdir = sys.argv[1]
     b = DockerImageBuilder(toxinidir, distdir)
-    b.build()
+    test_tag = os.environ.get('DOCKER_TEST_TAG', None)
+    if test_tag is not None:
+        logger.info('TEST-ONLY RUN for tag: %s', test_tag)
+        b.test(test_tag)
+    else:
+        b.build()
