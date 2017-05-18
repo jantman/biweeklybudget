@@ -116,6 +116,7 @@ function budgetModalDivFillAndShow(msg) {
 function budgetModal(id, dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(budgetModalDivForm());
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
         handleForm('modalBody', 'budgetForm', '/forms/budget', dataTableObj);
     }).show();

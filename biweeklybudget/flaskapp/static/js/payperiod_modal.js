@@ -95,6 +95,7 @@ function schedToTransModal(id, payperiod_start_date) {
         format: 'yyyy-mm-dd'
     });
     $('#schedtotrans_frm_pp_date').val(payperiod_start_date);
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
         handleForm(
           'modalBody', 'schedToTransForm', '/forms/sched_to_trans', null

@@ -335,6 +335,7 @@ function reconcileHandleSubmit() {
 function makeTransFromOfx(acct_id, fitid) {
     $('#modalBody').empty();
     $('#modalBody').append(transModalDivForm());
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(
         function() {
             handleForm(
@@ -412,6 +413,7 @@ function transNoOfx(trans_id) {
     $('#modalBody').empty();
     $('#modalBody').append(transNoOfxDivForm(trans_id));
     $('#modalLabel').text('Reconcile Transaction ' + trans_id + ' Without OFX');
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
         $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
         var note = $('#trans_frm_note').val().trim();

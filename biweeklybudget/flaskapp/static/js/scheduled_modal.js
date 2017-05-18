@@ -166,6 +166,7 @@ function schedModal(id, dataTableObj) {
         todayHighlight: true,
         format: 'yyyy-mm-dd'
     });
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
         handleForm('modalBody', 'schedForm', '/forms/scheduled', dataTableObj);
     }).show();

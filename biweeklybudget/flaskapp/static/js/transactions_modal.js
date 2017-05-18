@@ -110,6 +110,7 @@ function transModal(id, dataTableObj) {
         todayHighlight: true,
         format: 'yyyy-mm-dd'
     });
+    $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
         handleForm('modalBody', 'transForm', '/forms/transaction', dataTableObj);
     }).show();
