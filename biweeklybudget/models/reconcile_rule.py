@@ -56,6 +56,6 @@ class ReconcileRule(Base, ModelAsDict):
     is_active = Column(Boolean, default=True)
 
     def __repr__(self):
-        return "<ReconcileRule(id=%d)>" % (
+        return "<ReconcileRule(id=%s)>" % (
             self.id
         )
