@@ -53,6 +53,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.db import init_db, db_session, cleanup_db
 from biweeklybudget.ofxupdater import OFXUpdater
 from biweeklybudget.cliutils import set_log_debug, set_log_info
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +87,8 @@ class OfxGetter(object):
                 'id': acct.id,
                 'cat_memo': acct.ofx_cat_memo_to_name
             }
-        logger.info('Initialized with data for %d accounts',
-                    len(self._account_data))
+        logger.debug('Initialized with data for %d accounts',
+                     len(self._account_data))
         self._accounts = {}
         self.vault = Vault()
         for acct_name in self._account_data.keys():
@@ -99,7 +100,7 @@ class OfxGetter(object):
             data['institution']['username'] = secrets['username']
             if 'class_name' not in data:
                 self._accounts[acct_name] = OfxClientAccount.deserialize(data)
-        logger.info('Initialized %d accounts', len(self._accounts))
+        logger.debug('Initialized %d accounts', len(self._accounts))
         self.now_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     def get_ofx(self, account_name, write_to_file=True, days=30):
@@ -117,19 +118,19 @@ class OfxGetter(object):
         :rtype: str
         """
         fname = None
-        logger.info('Downloading OFX for account: %s', account_name)
+        logger.debug('Downloading OFX for account: %s', account_name)
         if 'class_name' in self._account_data[account_name]['config']:
             ofxdata = self._get_ofx_scraper(account_name, days=days)
         else:
             acct = self._accounts[account_name]
-            logger.info(
+            logger.debug(
                 'Disabling logging for ofxclient, which has bad logging'
             )
             oldlvl = logging.getLogger().getEffectiveLevel()
             logging.getLogger().setLevel(logging.WARNING)
             ofxdata = acct.download(days=days).read()
             logging.getLogger().setLevel(oldlvl)
-            logger.info('Re-enabling logging')
+            logger.debug('Re-enabling ofxclient logging')
         if write_to_file:
             fname = self._write_ofx_file(account_name, ofxdata)
         self._ofx_to_db(account_name, fname, ofxdata)
@@ -156,7 +157,18 @@ class OfxGetter(object):
         )
         logger.debug('Updating OFX in DB')
         updater.update(ofx, filename=fname)
+        count_new = 0
+        count_upd = 0
+        for obj in db_session.dirty:
+            if isinstance(obj, OFXTransaction):
+                count_upd += 1
+        for obj in db_session.new:
+            if isinstance(obj, OFXTransaction):
+                count_new += 1
         db_session.commit()
+        logger.info('Account "%s" - inserted %d new OFXTransaction(s), updated '
+                    '%d existing OFXTransaction(s)',
+                    account_name, count_new, count_upd)
         logger.debug('Done updating OFX in DB')
 
     def _get_ofx_scraper(self, account_name, days=30):
@@ -212,7 +224,7 @@ class OfxGetter(object):
         logger.debug('Writing %d bytes of OFX to: %s', len(ofxdata), fpath)
         with open(fpath, 'w') as fh:
             fh.write(ofxdata)
-        logger.info('Wrote OFX data to: %s', fpath)
+        logger.debug('Wrote OFX data to: %s', fpath)
         return fname
 
 
@@ -242,6 +254,12 @@ def main():
         set_log_debug(logger)
     elif args.verbose == 1:
         set_log_info(logger)
+    if args.verbose <= 1:
+        # if we're not in verbose mode, suppress routine logging for cron
+        lgr = logging.getLogger('alembic')
+        lgr.setLevel(logging.WARNING)
+        lgr = logging.getLogger('biweeklybudget.db')
+        lgr.setLevel(logging.WARNING)
 
     atexit.register(cleanup_db)
     init_db()

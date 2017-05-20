@@ -6,6 +6,9 @@ Unreleased Changes
 
 * Minor fix to instructions printed after release build in ``biweeklybudget/tests/docker_build.py``
 * `Issue #61 <https://github.com/jantman/biweeklybudget/issues/61>`_ - Document running ``ofxgetter`` in the Docker container.
+* fix ReconcileRule repr for uncommited (id is None)
+* `Issue #67 <https://github.com/jantman/biweeklybudget/issues/67>`_ - ofxgetter logging -
+  suppress DB and Alembic logging at INFO and above; log number of inserted  and updated transactions.
 
 0.1.1 (2017-05-20)
 ------------------
