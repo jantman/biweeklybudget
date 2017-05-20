@@ -122,3 +122,32 @@ biweeklybudget uses Python's `locale <https://docs.python.org/3.6/library/locale
 to format currency. This requires an appropriate locale installed on the system. The docker image
 distributed for this package only includes the ``en_US.UTF-8`` locale. If you need a different one,
 please cut a pull request against ``docker_build.py``.
+
+Running ofxgetter in Docker
+---------------------------
+
+If you wish to use the :ref:`ofxgetter <ofx>` script inside the Docker container, some special
+settings are needed:
+
+1. You must mount the statement save path (:py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH`) into the container.
+2. You must mount the Vault token file path (:py:const:`~biweeklybudget.settings.TOKEN_PATH`) into the container.
+3. You must set either the ``VAULT_ADDR`` environment variable, or the :py:const:`~biweeklybudget.settings.VAULT_ADDR` setting.
+
+As an example, for using ofxgetter with :py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH` in your settings file
+set to ``/statements`` and :py:const:`~biweeklybudget.settings.TOKEN_PATH` set to ``/.token`` (root paths used here
+for simplicity in the example), you would add to your ``docker run`` command:
+
+.. code-block:: none
+
+    -v /statements:/statements \
+    -v /.token:/.token
+
+Assuming your container was running with ``--name biweeklybudget``, you could run ofxgetter (e.g. via cron) as:
+
+.. code-block::none
+
+    docker exec biweeklybudget /bin/bash -c 'cd /statements && /app/bin/ofxgetter'
+
+We run explicitly in the statements directory so that if ``ofxgetter`` encounters an error
+when using a :py:class:`~biweeklybudget.screenscraper.ScreenScraper` class, the screenshots
+and HTML output will be saved to the host filesystem.

@@ -5,6 +5,7 @@ Unreleased Changes
 ------------------
 
 * Minor fix to instructions printed after release build in ``biweeklybudget/tests/docker_build.py``
+* `Issue #61 <https://github.com/jantman/biweeklybudget/issues/61>`_ - Document running ``ofxgetter`` in the Docker container.
 
 0.1.1 (2017-05-20)
 ------------------
