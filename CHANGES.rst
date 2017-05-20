@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.1.1 (2017-05-20)
 ------------------
 
 * Improve ofxgetter/ofxupdater error handling; catch OFX files with error messages in them.
