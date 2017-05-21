@@ -60,16 +60,23 @@ class PayPeriodsView(MethodView):
 
     def get(self):
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        pp_curr_idx = 1
+        pp_next_idx = 2
+        pp_following_idx = 3
+        periods = [
+            pp.previous,
+            pp,
+            pp.next,
+            pp.next.next
+        ]
         return render_template(
             'payperiods.html',
-            pp_prev_date=pp.previous.start_date,
-            pp_prev_sums=pp.previous.overall_sums,
-            pp_curr_date=pp.start_date,
-            pp_curr_sums=pp.overall_sums,
-            pp_next_date=pp.next.start_date,
-            pp_next_sums=pp.next.overall_sums,
-            pp_following_date=pp.next.next.start_date,
-            pp_following_sums=pp.next.next.overall_sums
+            periods=periods,
+            curr_pp=curr_pp,
+            pp_curr_idx=pp_curr_idx,
+            pp_next_idx=pp_next_idx,
+            pp_following_idx=pp_following_idx
         )
 
 
