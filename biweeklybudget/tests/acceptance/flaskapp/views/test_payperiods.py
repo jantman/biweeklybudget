@@ -794,9 +794,9 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
                 d=pp.start_date.strftime('%Y-%m-%d')),
             '<a href="/payperiod/{d}">{d} <em>(next)</em></a>'.format(
                 d=pp.next.start_date.strftime('%Y-%m-%d')),
-            '<a href="/payperiod/{d}">{d}</a>'.format(
+            '<a href="/payperiod/{d}">{d} <em></em></a>'.format(
                 d=pp.next.next.start_date.strftime('%Y-%m-%d')),
-            '<a href="/payperiod/{d}">{d}</a>'.format(
+            '<a href="/payperiod/{d}">{d} <em></em></a>'.format(
                 d=pp.next.next.next.start_date.strftime('%Y-%m-%d'))
         ]
 

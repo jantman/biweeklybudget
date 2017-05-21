@@ -31,11 +31,11 @@
                                 <table class="table table-bordered" id="pay-period-table">
                                     <thead>
                                         <tr>
-                                            <th><a href="/payperiod/{{ pp_prev_date|dateymd }}">{{ pp_prev_date|dateymd }} <em>(prev.)</em></a></th>
-                                            <th class="info">{{ pp_curr_date|dateymd }} <em>(curr.)</em></th>
-                                            <th><a href="/payperiod/{{ pp_next_date|dateymd }}">{{ pp_next_date|dateymd }} <em>(next)</em></a></th>
-                                            <th><a href="/payperiod/{{ pp_following_date|dateymd }}">{{ pp_following_date|dateymd }}</a></th>
-                                            <th><a href="/payperiod/{{ pp_last_date|dateymd }}">{{ pp_last_date|dateymd }}</a></th>
+                                            <th><a href="/payperiod/{{ pp_prev_date|dateymd }}">{{ pp_prev_date|dateymd }} <em>{{ pp_prev_suffix }}</em></a></th>
+                                            <th class="info">{{ pp_curr_date|dateymd }} <em>{{ pp_curr_suffix }}</em></th>
+                                            <th><a href="/payperiod/{{ pp_next_date|dateymd }}">{{ pp_next_date|dateymd }} <em>{{ pp_next_suffix }}</em></a></th>
+                                            <th><a href="/payperiod/{{ pp_following_date|dateymd }}">{{ pp_following_date|dateymd }} <em>{{ pp_following_suffix }}</em></a></th>
+                                            <th><a href="/payperiod/{{ pp_last_date|dateymd }}">{{ pp_last_date|dateymd }} <em>{{ pp_last_suffix }}</em></a></th>
                                         </tr>
                                     </thead>
                                     <tbody>
