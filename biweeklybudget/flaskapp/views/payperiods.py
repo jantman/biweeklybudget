@@ -60,20 +60,25 @@ class PayPeriodsView(MethodView):
 
     def get(self):
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
-        curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
         pp_curr_idx = 1
         pp_next_idx = 2
         pp_following_idx = 3
         periods = [
             pp.previous,
-            pp,
-            pp.next,
-            pp.next.next
+            pp
         ]
+        x = pp
+        # add another
+        for i in range(0, 8):
+            x = x.next
+            periods.append(x)
+        # trigger calculation/cache of data before passing on to jinja
+        for p in periods:
+            p.overall_sums
         return render_template(
             'payperiods.html',
             periods=periods,
-            curr_pp=curr_pp,
+            curr_pp=pp,
             pp_curr_idx=pp_curr_idx,
             pp_next_idx=pp_next_idx,
             pp_following_idx=pp_following_idx
