@@ -12,18 +12,18 @@
 {% include 'notifications.html' %}
             <div class="row" id="totals-row">
                 <div class="col-lg-3 col-md-6">
-                    <div class="panel panel-{{ pp_curr_sums['remaining']|period_panel_color }}" id="panel-period-current">
+                    <div class="panel panel-{{ periods[pp_curr_idx].overall_sums['remaining']|period_panel_color }}" id="panel-period-current">
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">{{ pp_curr_sums['remaining']|dollars }}</div>
+                                    <div class="huge">{{ periods[pp_curr_idx].overall_sums['remaining']|dollars }}</div>
                                     <div>Remaining this period</div>
                                 </div>
                             </div>
                         </div>
-                        <a href="/payperiod/{{ pp_curr_date|dateymd }}">
+                        <a href="/payperiod/{{ periods[pp_curr_idx].start_date|dateymd }}">
                             <div class="panel-footer">
-                                <span class="pull-left">View {{ pp_curr_date|dateymd }} Pay Period</span>
+                                <span class="pull-left">View {{ periods[pp_curr_idx].start_date|dateymd }} Pay Period</span>
                                 <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -31,18 +31,18 @@
                     </div> <!-- /panel -->
                 </div> <!-- /col -->
                 <div class="col-lg-3 col-md-6">
-                    <div class="panel panel-{{ pp_next_sums['remaining']|period_panel_color }}" id="panel-period-next">
+                    <div class="panel panel-{{ periods[pp_next_idx].overall_sums['remaining']|period_panel_color }}" id="panel-period-next">
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">{{ pp_next_sums['remaining']|dollars }}</div>
+                                    <div class="huge">{{ periods[pp_next_idx].overall_sums['remaining']|dollars }}</div>
                                     <div>Remaining next period</div>
                                 </div>
                             </div>
                         </div>
-                        <a href="/payperiod/{{ pp_next_date|dateymd }}">
+                        <a href="/payperiod/{{ periods[pp_next_idx].start_date|dateymd }}">
                             <div class="panel-footer">
-                                <span class="pull-left">View {{ pp_next_date|dateymd }} Pay Period</span>
+                                <span class="pull-left">View {{ periods[pp_next_idx].start_date|dateymd }} Pay Period</span>
                                 <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -50,18 +50,18 @@
                     </div> <!-- /panel -->
                 </div> <!-- /col -->
                 <div class="col-lg-3 col-md-6">
-                    <div class="panel panel-{{ pp_following_sums['remaining']|period_panel_color }}" id="panel-period-following">
+                    <div class="panel panel-{{ periods[pp_following_idx].overall_sums['remaining']|period_panel_color }}" id="panel-period-following">
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-12 text-right">
-                                    <div class="huge">{{ pp_following_sums['remaining']|dollars }}</div>
+                                    <div class="huge">{{ periods[pp_following_idx].overall_sums['remaining']|dollars }}</div>
                                     <div>Remaining following period</div>
                                 </div>
                             </div>
                         </div>
-                        <a href="/payperiod/{{ pp_following_date|dateymd }}">
+                        <a href="/payperiod/{{ periods[pp_following_idx].start_date|dateymd }}">
                             <div class="panel-footer">
-                                <span class="pull-left">View {{ pp_following_date|dateymd }} Pay Period</span>
+                                <span class="pull-left">View {{ periods[pp_following_idx].start_date|dateymd }} Pay Period</span>
                                 <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
                                 <div class="clearfix"></div>
                             </div>
@@ -85,30 +85,19 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td><a href="/payperiod/{{ pp_prev_date|dateymd }}">{{ pp_prev_date|dateymd }}</a></td>
-                                            <td>{{ pp_prev_sums['allocated']|dollars }}</td>
-                                            <td>{{ pp_prev_sums['spent']|dollars }}</td>
-                                            <td>{{ pp_prev_sums['remaining']|reddollars|safe }}</td>
-                                        </tr>
+                                        {% for period in periods %}
+                                        {% if curr_pp.start_date == period.start_date %}
                                         <tr class="info">
-                                            <td><a href="/payperiod/{{ pp_curr_date|dateymd }}">{{ pp_curr_date|dateymd }}</a> <em>(current)</em></td>
-                                            <td>{{ pp_curr_sums['allocated']|dollars }}</td>
-                                            <td>{{ pp_curr_sums['spent']|dollars }}</td>
-                                            <td>{{ pp_curr_sums['remaining']|reddollars|safe }}</td>
-                                        </tr>
+                                            <td><a href="/payperiod/{{ period.start_date|dateymd }}">{{ period.start_date|dateymd }}</a> <em>(current)</em></td>
+                                        {% else %}
                                         <tr>
-                                            <td><a href="/payperiod/{{ pp_next_date|dateymd }}">{{ pp_next_date|dateymd }}</a></td>
-                                            <td>{{ pp_next_sums['allocated']|dollars }}</td>
-                                            <td>{{ pp_next_sums['spent']|dollars }}</td>
-                                            <td>{{ pp_next_sums['remaining']|reddollars|safe }}</td>
+                                            <td><a href="/payperiod/{{ period.start_date|dateymd }}">{{ period.start_date|dateymd }}</a></td>
+                                        {% endif %}
+                                            <td>{{ period.overall_sums['allocated']|dollars }}</td>
+                                            <td>{{ period.overall_sums['spent']|dollars }}</td>
+                                            <td>{{ period.overall_sums['remaining']|reddollars|safe }}</td>
                                         </tr>
-                                        <tr>
-                                            <td><a href="/payperiod/{{ pp_following_date|dateymd }}">{{ pp_following_date|dateymd }}</a></td>
-                                            <td>{{ pp_following_sums['allocated']|dollars }}</td>
-                                            <td>{{ pp_following_sums['spent']|dollars }}</td>
-                                            <td>{{ pp_following_sums['remaining']|reddollars|safe }}</td>
-                                        </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>
                             </div>

@@ -9,6 +9,7 @@ Unreleased Changes
 * fix ReconcileRule repr for uncommited (id is None)
 * `Issue #67 <https://github.com/jantman/biweeklybudget/issues/67>`_ - ofxgetter logging -
   suppress DB and Alembic logging at INFO and above; log number of inserted  and updated transactions.
+* `Issue #71 <https://github.com/jantman/biweeklybudget/issues/71>`_ - Fix display text next to prev/curr/next periods on ``/payperiod/YYYY-mm-dd`` view; add 6 more future pay periods to the ``/payperiods`` table.
 
 0.1.1 (2017-05-20)
 ------------------

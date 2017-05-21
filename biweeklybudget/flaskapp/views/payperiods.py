@@ -60,16 +60,28 @@ class PayPeriodsView(MethodView):
 
     def get(self):
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        pp_curr_idx = 1
+        pp_next_idx = 2
+        pp_following_idx = 3
+        periods = [
+            pp.previous,
+            pp
+        ]
+        x = pp
+        # add another
+        for i in range(0, 8):
+            x = x.next
+            periods.append(x)
+        # trigger calculation/cache of data before passing on to jinja
+        for p in periods:
+            p.overall_sums
         return render_template(
             'payperiods.html',
-            pp_prev_date=pp.previous.start_date,
-            pp_prev_sums=pp.previous.overall_sums,
-            pp_curr_date=pp.start_date,
-            pp_curr_sums=pp.overall_sums,
-            pp_next_date=pp.next.start_date,
-            pp_next_sums=pp.next.overall_sums,
-            pp_following_date=pp.next.next.start_date,
-            pp_following_sums=pp.next.next.overall_sums
+            periods=periods,
+            curr_pp=pp,
+            pp_curr_idx=pp_curr_idx,
+            pp_next_idx=pp_next_idx,
+            pp_following_idx=pp_following_idx
         )
 
 
@@ -79,9 +91,33 @@ class PayPeriodView(MethodView):
     ``payperiod.html`` template.
     """
 
+    def suffix_for_period(self, curr_pp, pp):
+        """
+        Generate the suffix to use for the given pay period in the view
+
+        :param curr_pp: the current (today) pay period
+        :type curr_pp: BiweeklyPayPeriod
+        :param pp: the pay period in question
+        :type pp: BiweeklyPayPeriod
+        :return: suffix for the pay period
+        :rtype: str
+        """
+        if pp.start_date == curr_pp.start_date:
+            logger.info('curr_pp=%s pp=%s return: (curr)', curr_pp, pp)
+            return '(curr.)'
+        if pp.start_date == curr_pp.next.start_date:
+            logger.info('curr_pp=%s pp=%s return: (next)', curr_pp, pp)
+            return '(next)'
+        if pp.start_date == curr_pp.previous.start_date:
+            logger.info('curr_pp=%s pp=%s return: (prev)', curr_pp, pp)
+            return '(prev.)'
+        logger.info('curr_pp=%s pp=%s return: ""', curr_pp, pp)
+        return ''
+
     def get(self, period_date):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
         budgets = {}
         for b in db_session.query(Budget).all():
             k = b.name
@@ -108,14 +144,19 @@ class PayPeriodView(MethodView):
             pp=pp,
             pp_prev_date=pp.previous.start_date,
             pp_prev_sums=pp.previous.overall_sums,
+            pp_prev_suffix=self.suffix_for_period(curr_pp, pp.previous),
             pp_curr_date=pp.start_date,
             pp_curr_sums=pp.overall_sums,
+            pp_curr_suffix=self.suffix_for_period(curr_pp, pp),
             pp_next_date=pp.next.start_date,
             pp_next_sums=pp.next.overall_sums,
+            pp_next_suffix=self.suffix_for_period(curr_pp, pp.next),
             pp_following_date=pp.next.next.start_date,
             pp_following_sums=pp.next.next.overall_sums,
+            pp_following_suffix=self.suffix_for_period(curr_pp, pp.next.next),
             pp_last_date=pp.next.next.next.start_date,
             pp_last_sums=pp.next.next.next.overall_sums,
+            pp_last_suffix=self.suffix_for_period(curr_pp, pp.next.next.next),
             budget_sums=pp.budget_sums,
             budgets=budgets,
             standing=standing,

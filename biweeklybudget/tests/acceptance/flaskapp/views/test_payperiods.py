@@ -272,16 +272,14 @@ class TestPayPeriodsIndex(AcceptanceHelper):
         testdb.commit()
 
     def pay_periods(self, db):
-        return {
-            'prev': BiweeklyPayPeriod.period_for_date(
-                (PAY_PERIOD_START_DATE - timedelta(days=2)), db),
-            'curr': BiweeklyPayPeriod.period_for_date(
-                PAY_PERIOD_START_DATE, db),
-            'next': BiweeklyPayPeriod.period_for_date(
-                (PAY_PERIOD_START_DATE + timedelta(days=15)), db),
-            'following': BiweeklyPayPeriod.period_for_date(
-                (PAY_PERIOD_START_DATE + timedelta(days=29)), db)
-        }
+        x = BiweeklyPayPeriod.period_for_date(
+            (PAY_PERIOD_START_DATE - timedelta(days=2)), db
+        )
+        periods = []
+        for i in range(0, 10):
+            periods.append(x)
+            x = x.next
+        return periods
 
     def test_3_add_transactions(self, testdb):
         acct = testdb.query(Account).get(1)
@@ -290,7 +288,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
         e2budget = testdb.query(Budget).get(3)
         periods = self.pay_periods(testdb)
         # previous pay period
-        ppdate = periods['prev'].start_date
+        ppdate = periods[0].start_date
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=100.00,
@@ -314,7 +312,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct,
             budget=e1budget
         ))
-        ppdate = periods['curr'].start_date
+        ppdate = periods[1].start_date
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
@@ -338,7 +336,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct,
             budget=e1budget
         ))
-        ppdate = periods['next'].start_date
+        ppdate = periods[2].start_date
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
@@ -362,7 +360,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct,
             budget=e1budget
         ))
-        ppdate = periods['following'].start_date
+        ppdate = periods[3].start_date
         testdb.add(Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
@@ -391,25 +389,25 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_4_confirm_sums(self, testdb):
         periods = self.pay_periods(testdb)
-        assert periods['prev'].overall_sums == {
+        assert periods[0].overall_sums == {
             'allocated': 750.0,
             'spent': 850.0,
             'income': 1000.0,
             'remaining': 150.0
         }
-        assert periods['curr'].overall_sums == {
+        assert periods[1].overall_sums == {
             'allocated': 2350.0,
             'spent': 2450.0,
             'income': 1400.0,
             'remaining': -1050.0
         }
-        assert periods['next'].overall_sums == {
+        assert periods[2].overall_sums == {
             'allocated': 1288.0,
             'spent': 1388.0,
             'income': 1400.0,
             'remaining': 12.0
         }
-        assert periods['following'].overall_sums == {
+        assert periods[3].overall_sums == {
             'allocated': 502.0,
             'spent': 602.0,
             'income': 1400.0,
@@ -422,39 +420,47 @@ class TestPayPeriodsIndex(AcceptanceHelper):
         table = selenium.find_element_by_id('pay-period-table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
-        assert texts == [
+        expected = [
             [
-                periods['prev'].start_date.strftime('%Y-%m-%d'),
+                periods[0].start_date.strftime('%Y-%m-%d'),
                 '$750.00',
                 '$850.00',
                 '$150.00'
             ],
             [
-                periods['curr'].start_date.strftime('%Y-%m-%d') + ' (current)',
+                periods[1].start_date.strftime('%Y-%m-%d') + ' (current)',
                 '$2,350.00',
                 '$2,450.00',
                 '-$1,050.00'
             ],
             [
-                periods['next'].start_date.strftime('%Y-%m-%d'),
+                periods[2].start_date.strftime('%Y-%m-%d'),
                 '$1,288.00',
                 '$1,388.00',
                 '$12.00'
             ],
             [
-                periods['following'].start_date.strftime('%Y-%m-%d'),
+                periods[3].start_date.strftime('%Y-%m-%d'),
                 '$502.00',
                 '$602.00',
                 '$798.00'
             ]
         ]
+        for i in range(4, 10):
+            expected.append([
+                periods[i].start_date.strftime('%Y-%m-%d'),
+                '$500.00',
+                '$0.00',
+                '$500.00'
+            ])
+        assert texts == expected
         # test links
         links = [x[0].get_attribute('innerHTML') for x in elems]
         expected = []
-        for k in ['prev', 'curr', 'next', 'following']:
-            dstr = periods[k].start_date.strftime('%Y-%m-%d')
+        for idx, period in enumerate(periods):
+            dstr = period.start_date.strftime('%Y-%m-%d')
             s = '<a href="/payperiod/%s">%s</a>' % (dstr, dstr)
-            if k == 'curr':
+            if idx == 1:
                 s += ' <em>(current)</em>'
             expected.append(s)
         assert links == expected
@@ -476,9 +482,9 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             == '-$1,050.00\nRemaining this period'
         assert this_panel.find_element_by_tag_name('a').get_attribute(
             'href') == base_url + '/payperiod/' + periods[
-            'curr'].start_date.strftime('%Y-%m-%d')
+            1].start_date.strftime('%Y-%m-%d')
         assert this_panel.find_element_by_class_name('panel-footer')\
-            .text == 'View ' + periods['curr'].start_date.strftime(
+            .text == 'View ' + periods[1].start_date.strftime(
             '%Y-%m-%d') + ' Pay Period'
         next_panel = selenium.find_element_by_id('panel-period-next')
         assert next_panel.get_attribute('class') == 'panel panel-yellow'
@@ -486,9 +492,9 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             == '$12.00\nRemaining next period'
         assert next_panel.find_element_by_tag_name('a').get_attribute(
             'href') == base_url + '/payperiod/' + periods[
-            'next'].start_date.strftime('%Y-%m-%d')
+            2].start_date.strftime('%Y-%m-%d')
         assert next_panel.find_element_by_class_name('panel-footer')\
-            .text == 'View ' + periods['next'].start_date.strftime(
+            .text == 'View ' + periods[2].start_date.strftime(
             '%Y-%m-%d') + ' Pay Period'
         following_panel = selenium.find_element_by_id('panel-period-following')
         assert following_panel.get_attribute('class') == 'panel panel-green'
@@ -496,9 +502,9 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             .text == '$798.00\nRemaining following period'
         assert following_panel.find_element_by_tag_name('a').get_attribute(
             'href') == base_url + '/payperiod/' + periods[
-            'following'].start_date.strftime('%Y-%m-%d')
+            3].start_date.strftime('%Y-%m-%d')
         assert following_panel.find_element_by_class_name('panel-footer')\
-            .text == 'View ' + periods['following'].start_date.strftime(
+            .text == 'View ' + periods[3].start_date.strftime(
             '%Y-%m-%d') + ' Pay Period'
 
 
@@ -794,9 +800,9 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
                 d=pp.start_date.strftime('%Y-%m-%d')),
             '<a href="/payperiod/{d}">{d} <em>(next)</em></a>'.format(
                 d=pp.next.start_date.strftime('%Y-%m-%d')),
-            '<a href="/payperiod/{d}">{d}</a>'.format(
+            '<a href="/payperiod/{d}">{d} <em></em></a>'.format(
                 d=pp.next.next.start_date.strftime('%Y-%m-%d')),
-            '<a href="/payperiod/{d}">{d}</a>'.format(
+            '<a href="/payperiod/{d}">{d} <em></em></a>'.format(
                 d=pp.next.next.next.start_date.strftime('%Y-%m-%d'))
         ]
 
