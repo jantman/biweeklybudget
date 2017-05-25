@@ -37,8 +37,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 
+from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.txn_reconcile import TxnReconcile
+from selenium.webdriver.support.ui import Select
 
 
 @pytest.mark.acceptance
@@ -590,6 +594,149 @@ class TestAddIncomeBudget(AcceptanceHelper):
         assert float(b.starting_balance) == 123.45
         assert b.is_active is True
         assert b.is_income is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestBudgetTransfer(AcceptanceHelper):
+
+    def test_1_verify_db(self, testdb):
+        max_t = max([
+            t.id for t in testdb.query(Transaction).all()
+        ])
+        assert max_t == 3
+        max_r = max([
+            t.id for t in testdb.query(TxnReconcile).all()
+        ])
+        assert max_r == 1
+
+    def test_2_transfer_modal(self, base_url, selenium):
+        # Fill in the form
+        self.get(selenium, base_url + '/budgets')
+        # test that updated budget was removed from the page
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        stexts = self.tbody2textlist(stable)
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29']
+        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptexts = self.tbody2textlist(ptable)
+        assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
+        link = selenium.find_element_by_id('btn_budget_txfr')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == dtnow(
+            ).date().strftime('%Y-%m-%d')
+        amt = body.find_element_by_id('budg_txfr_frm_amount')
+        amt.clear()
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('budg_txfr_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        from_budget_sel = Select(
+            body.find_element_by_id('budg_txfr_frm_from_budget')
+        )
+        opts = []
+        for o in from_budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert from_budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        from_budget_sel.select_by_value('2')
+        to_budget_sel = Select(
+            body.find_element_by_id('budg_txfr_frm_to_budget')
+        )
+        opts = []
+        for o in from_budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert to_budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        to_budget_sel.select_by_value('5')
+        notes = selenium.find_element_by_id('budg_txfr_frm_notes')
+        notes.clear()
+        notes.send_keys('Budget Transfer Notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transactions 4 and 5' \
+                                 ' in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'table-standing-budgets')
+        # test that updated budget was removed from the page
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        stexts = self.tbody2textlist(stable)
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,605.74']
+        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptexts = self.tbody2textlist(ptable)
+        assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
+
+    def test_3_verify_db(self, testdb):
+        desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
+        t1 = testdb.query(Transaction).get(4)
+        assert t1.date == dtnow().date()
+        assert float(t1.actual_amount) == 123.45
+        assert float(t1.budgeted_amount) == 123.45
+        assert t1.description == desc
+        assert t1.notes is None
+        assert t1.account_id == 1
+        assert t1.scheduled_trans_id is None
+        assert t1.budget_id == 2
+        rec1 = testdb.query(TxnReconcile).get(2)
+        assert rec1.txn_id == 4
+        assert rec1.ofx_fitid is None
+        assert rec1.ofx_account_id is None
+        assert rec1.note == desc
+        t2 = testdb.query(Transaction).get(5)
+        assert t2.date == dtnow().date()
+        assert float(t2.actual_amount) == -123.45
+        assert float(t2.budgeted_amount) == -123.45
+        assert t2.description == desc
+        assert t2.notes is None
+        assert t2.account_id == 1
+        assert t2.scheduled_trans_id is None
+        assert t2.budget_id == 5
+        rec2 = testdb.query(TxnReconcile).get(3)
+        assert rec2.txn_id == 5
+        assert rec2.ofx_fitid is None
+        assert rec2.ofx_account_id is None
+        assert rec2.note == desc
 
 
 @pytest.mark.acceptance

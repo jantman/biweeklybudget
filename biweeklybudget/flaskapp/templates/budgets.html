@@ -1,10 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Budgets - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for id in budgets.keys()|sort %}
+        budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
+    </script>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
                 <div class="col-lg-12">
-                    <div><p><button type="button" class="btn btn-primary" id="btn_add_budget">Add Budget</button></p></div>
+                    <div><p>
+                        <button type="button" class="btn btn-primary" id="btn_add_budget">Add Budget</button>
+                        <button type="button" class="btn btn-primary" id="btn_budget_txfr">Transfer</button>
+                    </p></div>
                     <div class="panel panel-default" id="panel-periodic-budgets">
                         <div class="panel-heading">
                             Periodic Budgets
@@ -76,17 +94,21 @@
 {% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
 <script>
 var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
 </script>
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/budgets.js"></script>
 <script src="/static/js/budgets_modal.js"></script>
+<script src="/static/js/budget_transfer_modal.js"></script>
 <script>
 /* BEGIN conditional default modal for /budgets/<id> */
 {% if budget_id is defined and budget_id is not none %}
 budgetModal({{ budget_id }}, null);
 {% endif %}
 /* END conditional default modal for /budgets/<id> */
+$('#btn_budget_txfr').click(function() { budgetTransferModal(); });
 </script>
 {% endblock %}
