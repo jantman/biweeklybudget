@@ -714,7 +714,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert float(t1.actual_amount) == 123.45
         assert float(t1.budgeted_amount) == 123.45
         assert t1.description == desc
-        assert t1.notes is None
+        assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
         assert t1.budget_id == 2
@@ -728,7 +728,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert float(t2.actual_amount) == -123.45
         assert float(t2.budgeted_amount) == -123.45
         assert t2.description == desc
-        assert t2.notes is None
+        assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
         assert t2.budget_id == 5
