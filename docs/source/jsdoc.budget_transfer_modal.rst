@@ -14,7 +14,7 @@ File: ``biweeklybudget/flaskapp/static/js/budget_transfer_modal.js``
 .. js:function:: budgetTransferModal()
 
    Show the modal popup for transferring between budgets.
-   Uses :js:func:`budgetTransferDivFillAndShow` as ajax callback.
+   Uses :js:func:`budgetTransferDivForm` to generate the form.
 
    
 
