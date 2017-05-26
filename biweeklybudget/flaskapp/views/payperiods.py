@@ -244,7 +244,7 @@ class SchedToTransFormHandler(FormHandlerView):
         db_session.add(t)
         db_session.commit()
         logger.info('Created Transaction %d for ScheduledTransaction %d',
-                     t.id, st.id)
+                    t.id, st.id)
         return 'Successfully created Transaction %d for ' \
                'ScheduledTransaction %d.' % (t.id, st.id)
 
@@ -268,7 +268,7 @@ class SkipSchedTransFormHandler(FormHandlerView):
         # make sure the ID is valid
         db_session.query(ScheduledTransaction).get(_id)
         d = datetime.strptime(data['payperiod_start_date'], '%Y-%m-%d').date()
-        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        BiweeklyPayPeriod.period_for_date(d, db_session)
         have_errors = False
         errors = {k: [] for k in data.keys()}
         if data.get('notes', '').strip() == '':
@@ -311,7 +311,7 @@ class SkipSchedTransFormHandler(FormHandlerView):
         ))
         db_session.commit()
         logger.info('Created Transaction %d to skip ScheduledTransaction %d',
-                     t.id, st.id)
+                    t.id, st.id)
         return 'Successfully created Transaction %d to skip ' \
                'ScheduledTransaction %d.' % (t.id, st.id)
 
