@@ -1484,3 +1484,577 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t.budget_id == 1
         assert t.scheduled_trans_id == 7
         assert t.notes == 'T4notes'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestBudgetTransferPtoS(AcceptanceHelper):
+
+    def test_00_inactivate_scheduled(self, testdb):
+        for s in testdb.query(
+                ScheduledTransaction).filter(
+            ScheduledTransaction.is_active.__eq__(True)
+        ).all():
+            s.is_active = False
+            testdb.add(s)
+        testdb.flush()
+        testdb.commit()
+        # delete existing transactions
+        for tr in testdb.query(TxnReconcile).all():
+            testdb.delete(tr)
+        for idx in [1, 2, 3]:
+            t = testdb.query(Transaction).get(idx)
+            testdb.delete(t)
+        testdb.flush()
+        testdb.commit()
+
+    def test_01_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        e1budget = testdb.query(Budget).get(1)
+        e2budget = testdb.query(Budget).get(2)
+        pp = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        )
+        ppdate = pp.start_date
+        st = ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=11.11,
+            num_per_period=2,
+            description='ST7 per_period'
+        )
+        testdb.add(st)
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=22.22,
+            day_of_month=(ppdate + timedelta(days=5)).day,
+            description='ST8 day_of_month'
+        ))
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e2budget,
+            amount=33.33,
+            date=(ppdate + timedelta(days=6)),
+            description='ST9 date'
+        ))
+        t = Transaction(
+            date=(ppdate + timedelta(days=8)),
+            actual_amount=12.00,
+            budgeted_amount=11.11,
+            description='Txn From ST7',
+            account=acct,
+            budget=e1budget,
+            scheduled_trans=st
+        )
+        testdb.add(t)
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=6)),
+            actual_amount=111.13,
+            budgeted_amount=111.11,
+            description='T1foo',
+            notes='notesT1',
+            account=acct,
+            scheduled_trans=testdb.query(ScheduledTransaction).get(1),
+            budget=e1budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=-333.33,
+            budgeted_amount=-333.33,
+            description='T2',
+            notes='notesT2',
+            account=testdb.query(Account).get(2),
+            scheduled_trans=testdb.query(ScheduledTransaction).get(3),
+            budget=testdb.query(Budget).get(4)
+        ))
+        testdb.add(Transaction(
+            date=ppdate,
+            actual_amount=222.22,
+            description='T3',
+            notes='notesT3',
+            account=testdb.query(Account).get(3),
+            budget=e2budget
+        ))
+        testdb.flush()
+        testdb.commit()
+        testdb.add(TxnReconcile(note='foo', txn_id=t.id))
+        testdb.flush()
+        testdb.commit()
+
+    def test_03_info_panels(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.67'
+        assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$345.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+
+    def test_04_periodic_budgets(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$155.55',
+                '$123.13',
+                '<span class="text-danger">-$56.46</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$255.55',
+                '$222.22',
+                '<span class="text-danger">-$21.55</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.67',
+                '$0.00',
+                '$0.00',
+                '$2,345.67'
+            ]
+        ]
+
+    def test_05_standing_budgets(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('sb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/4">Standing1</a>',
+                '$1,284.23'
+            ],
+            [
+                '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29'
+            ]
+        ]
+
+    def test_06_transaction_table(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        ppdate = pp.start_date
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('trans-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '',
+                '$11.11',
+                '<em>(sched)</em> <a href="javascript:schedModal(7, null);">'
+                'ST7 per_period (7)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                ppdate.strftime('%Y-%m-%d'),
+                '$222.22',
+                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="/accounts/3">CreditOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '&nbsp;',
+                '&nbsp;'
+            ],
+            [
+                (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
+                '-$333.33',
+                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="/accounts/2">BankTwoStale</a>',
+                '<a href="/budgets/4">Standing1</a>',
+                '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                '$22.22',
+                '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
+                'ST8 day_of_month (8)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$111.13',
+                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$33.33',
+                '<em>(sched)</em> <a href="javascript:schedModal(9, null);">'
+                'ST9 date (9)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$12.00',
+                '<a href="javascript:transModal(4, null);">Txn From ST7'
+                ' (4)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
+            ]
+        ]
+
+    def test_07_verify_db_ids(self, testdb):
+        max_t = max([
+            t.id for t in testdb.query(Transaction).all()
+        ])
+        assert max_t == 7
+        max_r = max([
+            t.id for t in testdb.query(TxnReconcile).all()
+        ])
+        assert max_r == 2
+
+    def test_08_budget_transfer(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == \
+            datetime.now().date().strftime('%Y-%m-%d')
+        amt = body.find_element_by_id('budg_txfr_frm_amount')
+        amt.clear()
+        amt.send_keys('123.45')
+        acct_sel = Select(body.find_element_by_id('budg_txfr_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        from_budget_sel = Select(
+            body.find_element_by_id('budg_txfr_frm_from_budget')
+        )
+        opts = []
+        for o in from_budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert from_budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        from_budget_sel.select_by_value('2')
+        to_budget_sel = Select(
+            body.find_element_by_id('budg_txfr_frm_to_budget')
+        )
+        opts = []
+        for o in from_budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert to_budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        to_budget_sel.select_by_value('5')
+        notes = selenium.find_element_by_id('budg_txfr_frm_notes')
+        notes.clear()
+        notes.send_keys('Budget Transfer Notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transactions 8 and 9' \
+                                 ' in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'sb-table')
+
+    def test_10_verify_db(self, testdb):
+        desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
+        t1 = testdb.query(Transaction).get(8)
+        assert t1.date == datetime.now().date()
+        assert float(t1.actual_amount) == 123.45
+        assert float(t1.budgeted_amount) == 123.45
+        assert t1.description == desc
+        assert t1.notes == 'Budget Transfer Notes'
+        assert t1.account_id == 1
+        assert t1.scheduled_trans_id is None
+        assert t1.budget_id == 2
+        rec1 = testdb.query(TxnReconcile).get(3)
+        assert rec1.txn_id == 8
+        assert rec1.ofx_fitid is None
+        assert rec1.ofx_account_id is None
+        assert rec1.note == desc
+        t2 = testdb.query(Transaction).get(9)
+        assert t2.date == datetime.now().date()
+        assert float(t2.actual_amount) == -123.45
+        assert float(t2.budgeted_amount) == -123.45
+        assert t2.description == desc
+        assert t2.notes == 'Budget Transfer Notes'
+        assert t2.account_id == 1
+        assert t2.scheduled_trans_id is None
+        assert t2.budget_id == 5
+        rec2 = testdb.query(TxnReconcile).get(4)
+        assert rec2.txn_id == 9
+        assert rec2.ofx_fitid is None
+        assert rec2.ofx_account_id is None
+        assert rec2.note == desc
+
+    def test_13_info_panels(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.67'
+        assert selenium.find_element_by_id('amt-allocated').text == '$534.55'
+        assert selenium.find_element_by_id('amt-spent').text == '$468.80'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,811.12'
+
+    def test_14_periodic_budgets(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$155.55',
+                '$123.13',
+                '<span class="text-danger">-$56.46</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$379.00',
+                '$345.67',
+                '<span class="text-danger">-$145.00</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.67',
+                '$0.00',
+                '$0.00',
+                '$2,345.67'
+            ]
+        ]
+
+    def test_15_standing_budgets(self, base_url, selenium, testdb):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('sb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/4">Standing1</a>',
+                '$1,284.23'
+            ],
+            [
+                '<a href="/budgets/5">Standing2</a>',
+                '$9,605.74'
+            ]
+        ]
+
+    def test_16_transaction_table(self, base_url, selenium, testdb):
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        ppdate = pp.start_date
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('trans-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '',
+                '$11.11',
+                '<em>(sched)</em> <a href="javascript:schedModal(7, null);">'
+                'ST7 per_period (7)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                ppdate.strftime('%Y-%m-%d'),
+                '$222.22',
+                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="/accounts/3">CreditOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '&nbsp;',
+                '&nbsp;'
+            ],
+            [
+                (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
+                '-$333.33',
+                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="/accounts/2">BankTwoStale</a>',
+                '<a href="/budgets/4">Standing1</a>',
+                '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                '$22.22',
+                '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
+                'ST8 day_of_month (8)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$111.13',
+                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
+                '</em>',
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$123.45',
+                '<a href="javascript:transModal(8, null);">'
+                'Budget Transfer - 123.45 from Periodic2 (2) to '
+                'Standing2 (5) (8)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '&nbsp;',
+                '<a href="javascript:txnReconcileModal(3)">Yes (3)</a>'
+            ],
+            [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '-$123.45',
+                '<a href="javascript:transModal(9, null);">'
+                'Budget Transfer - 123.45 from Periodic2 (2) to '
+                'Standing2 (5) (9)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/5">Standing2</a>',
+                '&nbsp;',
+                '<a href="javascript:txnReconcileModal(4)">Yes (4)</a>'
+            ],
+            [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$33.33',
+                '<em>(sched)</em> <a href="javascript:schedModal(9, null);">'
+                'ST9 date (9)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$12.00',
+                '<a href="javascript:transModal(4, null);">Txn From ST7'
+                ' (4)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
+            ]
+        ]
