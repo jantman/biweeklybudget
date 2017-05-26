@@ -1488,7 +1488,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestBudgetTransferPtoS(AcceptanceHelper):
+class TestBudgetTransfer(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
