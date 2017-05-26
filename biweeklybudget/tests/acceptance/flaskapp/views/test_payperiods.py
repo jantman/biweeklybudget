@@ -2014,6 +2014,17 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
+                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                '$33.33',
+                '<em>(sched)</em> <a href="javascript:schedModal(9, null);">'
+                'ST9 date (9)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
+                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '&nbsp;'
+            ],
+            [
                 datetime.now().date().strftime('%Y-%m-%d'),
                 '$123.45',
                 '<a href="javascript:transModal(8, null);">'
@@ -2034,17 +2045,6 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="/budgets/5">Standing2</a>',
                 '&nbsp;',
                 '<a href="javascript:txnReconcileModal(4)">Yes (4)</a>'
-            ],
-            [
-                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
-                '$33.33',
-                '<em>(sched)</em> <a href="javascript:schedModal(9, null);">'
-                'ST9 date (9)</a>',
-                '<a href="/accounts/1">BankOne</a>',
-                '<a href="/budgets/2">Periodic2</a>',
-                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
-                '&nbsp;'
             ],
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
