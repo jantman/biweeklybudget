@@ -102,7 +102,7 @@ Settings Module Example
 
 If you need to provide biweeklybudget with more complicated configuration, this is
 still possible via a Python settings module. The easiest way to inject one into the
-Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only>`_
+Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v-read-only>`_
 a python module directly into the biweeklybudget package directory. Assuming you have
 a custom settings module on your local machine at ``/opt/biweeklybudget-settings.py``, you would
 run the container as shown below to mount the custom settings module into the container and use it.
