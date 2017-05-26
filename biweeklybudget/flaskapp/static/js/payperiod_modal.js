@@ -104,3 +104,146 @@ function schedToTransModal(id, payperiod_start_date) {
     var url = "/ajax/scheduled/" + id;
     $.ajax(url).done(schedToTransModalDivFillAndShow);
 }
+
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function skipSchedTransModalDivForm() {
+    var frm = '<form role="form" id="skipSchedTransForm">';
+    // id
+    frm += '<input type="hidden" id="skipschedtrans_frm_id" name="id" value="">\n';
+    // payperiod
+    frm += '<input type="hidden" id="skipschedtrans_frm_pp_date" name="payperiod_start_date" value="">\n';
+        // description
+    frm += '<div class="form-group"><label for="skipschedtrans_frm_description" class="control-label">Description</label><input class="form-control" id="skipschedtrans_frm_description" name="description" type="text"></div>\n';
+    // type
+    frm += '<div class="form-group"><label class="control-label">Type </label> ';
+    frm += '<label class="radio-inline" for="skipschedtrans_frm_type_monthly"><input type="radio" name="type" id="skipschedtrans_frm_type_monthly" value="monthly" onchange="schedModalDivHandleType()" checked>Monthly</label>';
+    frm += '<label class="radio-inline" for="skipschedtrans_frm_type_per_period"><input type="radio" name="type" id="skipschedtrans_frm_type_per_period" value="per_period" onchange="schedModalDivHandleType()">Per Period</label>';
+    frm += '<label class="radio-inline" for="skipschedtrans_frm_type_date"><input type="radio" name="type" id="skipschedtrans_frm_type_date" value="date" onchange="schedModalDivHandleType()">Date</label>';
+    frm += '</div>\n';
+    // recurrence - monthly
+    frm += '<div class="form-group" id="skipschedtrans_frm_group_monthly">';
+    frm += '<label for="skipschedtrans_frm_day_of_month" class="control-label">Day of Month</label><input class="form-control" id="skipschedtrans_frm_day_of_month" name="day_of_month" type="text" size="4" maxlength="2">';
+    frm += '</div>\n';
+    // recurrence - per period
+    frm += '<div class="form-group" id="skipschedtrans_frm_group_num_per_period" style="display: none;">';
+    frm += '<label for="skipschedtrans_frm_num_per_period" class="control-label">Number Per Pay Period</label><input class="form-control" id="skipschedtrans_frm_num_per_period" name="num_per_period" type="text" size="4" maxlength="2">';
+    frm += '</div>\n';
+    // recurrence - date
+    frm += '<div class="form-group" id="skipschedtrans_frm_group_date" style="display: none;">';
+    frm += '<label for="skipschedtrans_frm_date" class="control-label">Specific Date</label><div class="input-group date" id="skipschedtrans_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="skipschedtrans_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
+    frm += '</div>\n';
+    // amount
+    frm += '<div class="form-group"><label for="skipschedtrans_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="skipschedtrans_frm_amount" name="amount"></div><p class="help-block">Transaction amount (positive for expenses, negative for income).</p></div>\n';
+    // account
+    frm += '<div class="form-group"><label for="skipschedtrans_frm_account" class="control-label">Account</label>';
+    frm += '<select id="skipschedtrans_frm_account" name="account" class="form-control">';
+    frm += '<option value="None" selected="selected"></option>';
+    Object.keys(acct_names_to_id).forEach(function (key) {
+        frm += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
+    });
+    frm += '</select>';
+    frm += '</div>\n';
+    // budget
+    frm += '<div class="form-group"><label for="skipschedtrans_frm_budget" class="control-label">Budget</label>';
+    frm += '<select id="skipschedtrans_frm_budget" name="budget" class="form-control">';
+    frm += '<option value="None" selected="selected"></option>';
+    Object.keys(budget_names_to_id).forEach(function (key) {
+        frm += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
+    });
+    frm += '</select>';
+    frm += '</div>\n';
+    // notes
+    frm += '<div class="form-group"><label for="skipschedtrans_frm_notes" class="control-label">Notes</label><input class="form-control" id="skipschedtrans_frm_notes" name="notes" type="text"></div>\n';
+    frm += '</form>\n';
+    return frm;
+}
+
+/**
+ * Ajax callback to fill in the modalDiv with data on a budget.
+ */
+function skipSchedTransModalDivFillAndShow(msg) {
+    console.log(msg);
+    $('#modalLabel').text('Skip Scheduled Transaction ' + msg['id'] + ' in period ' + $('#skipschedtrans_frm_pp_date').val());
+    $('#skipschedtrans_frm_id').val(msg['id']);
+    $('#skipschedtrans_frm_description').val(msg['description']);
+    $('#skipschedtrans_frm_description').prop('disabled', true);
+    if(msg['date'] != null) {
+        $('#skipschedtrans_frm_type_monthly').prop('checked', false);
+        $('#skipschedtrans_frm_type_per_period').prop('checked', false);
+        $('#skipschedtrans_frm_type_date').prop('checked', true);
+        $('#skipschedtrans_frm_date').val(msg['date']['str']);
+    } else if(msg['day_of_month'] != null) {
+        $('#skipschedtrans_frm_type_per_period').prop('checked', false);
+        $('#skipschedtrans_frm_type_date').prop('checked', false);
+        $('#skipschedtrans_frm_type_monthly').prop('checked', true);
+        $('#skipschedtrans_frm_day_of_month').val(msg['day_of_month']);
+    } else {
+        // num_per_period
+        $('#skipschedtrans_frm_type_monthly').prop('checked', false);
+        $('#skipschedtrans_frm_type_date').prop('checked', false);
+        $('#skipschedtrans_frm_type_per_period').prop('checked', true);
+        $('#skipschedtrans_frm_num_per_period').val(msg['num_per_period']);
+    }
+    // schedModalDivHandleType()
+    if($('#skipschedtrans_frm_type_monthly').is(':checked')) {
+        $('#skipschedtrans_frm_group_monthly').show();
+        $('#skipschedtrans_frm_group_num_per_period').hide();
+        $('#skipschedtrans_frm_group_date').hide();
+    } else if($('#skipschedtrans_frm_type_per_period').is(':checked')) {
+        $('#skipschedtrans_frm_group_monthly').hide();
+        $('#skipschedtrans_frm_group_num_per_period').show();
+        $('#skipschedtrans_frm_group_date').hide();
+    } else {
+        $('#skipschedtrans_frm_group_monthly').hide();
+        $('#skipschedtrans_frm_group_num_per_period').hide();
+        $('#skipschedtrans_frm_group_date').show();
+    }
+    // END schedModalDivHandleType()
+    // disable date inputs
+    $('#skipschedtrans_frm_type_monthly').prop('disabled', true);
+    $('#skipschedtrans_frm_type_per_period').prop('disabled', true);
+    $('#skipschedtrans_frm_type_date').prop('disabled', true);
+    $('#skipschedtrans_frm_date').prop('disabled', true);
+    $('#skipschedtrans_frm_day_of_month').prop('disabled', true);
+    $('#skipschedtrans_frm_num_per_period').prop('disabled', true);
+    // end disable date inputs
+    $('#skipschedtrans_frm_amount').val(msg['amount']);
+    $('#skipschedtrans_frm_amount').prop('disabled', true);
+    $('#skipschedtrans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
+    $('#skipschedtrans_frm_account').prop('disabled', true);
+    $('#skipschedtrans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
+    $('#skipschedtrans_frm_budget').prop('disabled', true);
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Show the Skip Scheduled Transaction modal popup. This function
+ * calls :js:func:`skipSchedTransModalDivForm` to generate the form HTML,
+ * :js:func:`skipSchedTransModalDivFillAndShow` to populate the form for
+ * editing, and :js:func:`handleForm` to handle the Submit action.
+ *
+ * @param {number} id - the ID of the ScheduledTransaction to show a modal for.
+ * @param {string} payperiod_start_date - The Y-m-d starting date of the pay
+ *  period.
+ */
+function skipSchedTransModal(id, payperiod_start_date) {
+    $('#modalBody').empty();
+    $('#modalBody').append(skipSchedTransModalDivForm());
+    $('#skipschedtrans_frm_group_date_input').datepicker({
+        todayBtn: "linked",
+        autoclose: true,
+        todayHighlight: true,
+        format: 'yyyy-mm-dd'
+    });
+    $('#skipschedtrans_frm_pp_date').val(payperiod_start_date);
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        handleForm(
+          'modalBody', 'skipSchedTransForm', '/forms/skip_sched_trans', null
+        );
+    }).show();
+    var url = "/ajax/scheduled/" + id;
+    $.ajax(url).done(skipSchedTransModalDivFillAndShow);
+}

@@ -47,6 +47,7 @@ from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
@@ -184,7 +185,7 @@ class PeriodForDateView(MethodView):
 
 class SchedToTransFormHandler(FormHandlerView):
     """
-    Handle POST /forms/scheduled
+    Handle POST /forms/sched_to_trans
     """
 
     def validate(self, data):
@@ -242,9 +243,76 @@ class SchedToTransFormHandler(FormHandlerView):
         )
         db_session.add(t)
         db_session.commit()
-        logger.debug('Created Transaction %d for ScheduledTransaction %d',
-                     t.id, st.id)
+        logger.info('Created Transaction %d for ScheduledTransaction %d',
+                    t.id, st.id)
         return 'Successfully created Transaction %d for ' \
+               'ScheduledTransaction %d.' % (t.id, st.id)
+
+
+class SkipSchedTransFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/skip_sched_trans
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        _id = int(data['id'])
+        # make sure the ID is valid
+        db_session.query(ScheduledTransaction).get(_id)
+        d = datetime.strptime(data['payperiod_start_date'], '%Y-%m-%d').date()
+        BiweeklyPayPeriod.period_for_date(d, db_session)
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('notes', '').strip() == '':
+            errors['notes'].append('Notes cannot be empty')
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        st_id = int(data['id'])
+        st = db_session.query(ScheduledTransaction).get(st_id)
+        d = datetime.strptime(data['payperiod_start_date'], '%Y-%m-%d').date()
+        desc = 'Skip ScheduledTransaction %d in period %s' % (
+            st_id, data['payperiod_start_date']
+        )
+        t = Transaction(
+            date=d,
+            actual_amount=0.0,
+            budgeted_amount=0.0,
+            description=desc,
+            notes=data['notes'],
+            account=st.account,
+            budget=st.budget,
+            scheduled_trans=st
+        )
+        db_session.add(t)
+        db_session.add(TxnReconcile(
+            transaction=t,
+            note=desc
+        ))
+        db_session.commit()
+        logger.info('Created Transaction %d to skip ScheduledTransaction %d',
+                    t.id, st.id)
+        return 'Successfully created Transaction %d to skip ' \
                'ScheduledTransaction %d.' % (t.id, st.id)
 
 
@@ -266,4 +334,9 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/sched_to_trans',
     view_func=SchedToTransFormHandler.as_view('sched_to_trans_form')
+)
+
+app.add_url_rule(
+    '/forms/skip_sched_trans',
+    view_func=SkipSchedTransFormHandler.as_view('skip_sched_trans_form')
 )
