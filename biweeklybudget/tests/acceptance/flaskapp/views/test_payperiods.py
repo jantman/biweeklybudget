@@ -1011,8 +1011,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(7, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(7, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1041,8 +1044,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST8 day_of_month (8)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(8, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(8, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1062,8 +1068,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 'ST9 date (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
-                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(9, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(9, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1355,8 +1364,11 @@ class TestMakeTransModal(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(7, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(7, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1366,8 +1378,11 @@ class TestMakeTransModal(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(7, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(7, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ]
         ]
@@ -1678,8 +1693,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(7, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(7, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1708,8 +1726,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST8 day_of_month (8)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(8, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(8, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1729,8 +1750,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST9 date (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
-                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(9, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(9, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1969,8 +1993,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST7 per_period (7)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(7, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(7, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(7, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -1999,8 +2026,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST8 day_of_month (8)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
-                '<a href="javascript:schedToTransModal(8, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(8, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(8, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
@@ -2020,8 +2050,11 @@ class TestBudgetTransfer(AcceptanceHelper):
                 'ST9 date (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
-                '<a href="javascript:schedToTransModal(9, \'%s\');">make '
-                'trans.</a>' % pp.start_date.strftime('%Y-%m-%d'),
+                '<a href="javascript:schedToTransModal(9, \'{sd}\');">make '
+                'trans.</a> | <a href="javascript:skipSchedTransModal(9, '
+                '\'{sd}\');">skip</a>'.format(
+                    sd=pp.start_date.strftime('%Y-%m-%d')
+                ),
                 '&nbsp;'
             ],
             [
