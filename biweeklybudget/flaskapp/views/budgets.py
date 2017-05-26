@@ -38,11 +38,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from flask.views import MethodView
 from flask import render_template, jsonify
+from datetime import datetime
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.models.account import Account
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +63,19 @@ class BudgetsView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        budgets = {}
+        for b in db_session.query(Budget).all():
+            k = b.name
+            if b.is_income:
+                k = '%s (i)' % b.name
+            budgets[b.id] = k
         return render_template(
             'budgets.html',
             standing=standing,
-            periodic=periodic
+            periodic=periodic,
+            accts=accts,
+            budgets=budgets
         )
 
 
@@ -79,11 +92,20 @@ class OneBudgetView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        budgets = {}
+        for b in db_session.query(Budget).all():
+            k = b.name
+            if b.is_income:
+                k = '%s (i)' % b.name
+            budgets[b.id] = k
         return render_template(
             'budgets.html',
             standing=standing,
             periodic=periodic,
-            budget_id=budget_id
+            budget_id=budget_id,
+            accts=accts,
+            budgets=budgets
         )
 
 
@@ -178,6 +200,132 @@ class BudgetFormHandler(FormHandlerView):
         return 'Successfully saved Budget %d in database.' % budget.id
 
 
+class BudgetTxfrFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/budget_transfer
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data['date'].strip() == '':
+            errors['date'].append('Transactions must have a date')
+            have_errors = True
+        else:
+            try:
+                datetime.strptime(data['date'], '%Y-%m-%d').date()
+            except Exception:
+                errors['date'].append(
+                    'Date "%s" is not valid (YYYY-MM-DD)' % data['date']
+                )
+                have_errors = True
+        if float(data['amount']) == 0:
+            errors['amount'].append('Amount cannot be zero')
+            have_errors = True
+        if float(data['amount']) < 0:
+            errors['amount'].append('Amount cannot be negative')
+            have_errors = True
+        if data['account'] == 'None':
+            errors['account'].append('Transactions must have an account')
+            have_errors = True
+        if data['from_budget'] == 'None':
+            errors['from_budget'].append('from_budget cannot be empty')
+            have_errors = True
+        to_budget = db_session.query(Budget).get(int(data['to_budget']))
+        if to_budget.is_periodic:
+            errors['to_budget'].append('cannot transfer to periodic budgets')
+            have_errors = True
+        if data['to_budget'] == 'None':
+            errors['to_budget'].append('to_budget cannot be empty')
+            have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        # get the data
+        trans_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        amt = float(data['amount'])
+        acct = db_session.query(Account).get(int(data['account']))
+        if acct is None:
+            raise RuntimeError(
+                "Error: no Account with ID %s" % data['account']
+            )
+        from_budget = db_session.query(Budget).get(int(data['from_budget']))
+        if from_budget is None:
+            raise RuntimeError(
+                "Error: no Budget with ID %s" % data['from_budget']
+            )
+        to_budget = db_session.query(Budget).get(int(data['to_budget']))
+        if to_budget is None:
+            raise RuntimeError(
+                "Error: no Budget with ID %s" % data['to_budget']
+            )
+        notes = data['notes'].strip()
+        desc = 'Budget Transfer - %s from %s (%d) to %s (%d)' % (
+            amt, from_budget.name, from_budget.id, to_budget.name,
+            to_budget.id
+        )
+        logger.info(desc)
+        t1 = Transaction(
+            date=trans_date,
+            actual_amount=amt,
+            budgeted_amount=amt,
+            description=desc,
+            account=acct,
+            budget=from_budget,
+            notes=notes
+        )
+        db_session.add(t1)
+        if not from_budget.is_periodic:
+            from_budget.current_balance = \
+                float(from_budget.current_balance) - amt
+            db_session.add(from_budget)
+        if not to_budget.is_periodic:
+            to_budget.current_balance = float(to_budget.current_balance) + amt
+            db_session.add(to_budget)
+        t2 = Transaction(
+            date=trans_date,
+            actual_amount=(-1 * amt),
+            budgeted_amount=(-1 * amt),
+            description=desc,
+            account=acct,
+            budget=to_budget,
+            notes=notes
+        )
+        db_session.add(t2)
+        db_session.add(TxnReconcile(
+            transaction=t1,
+            note=desc
+        ))
+        db_session.add(TxnReconcile(
+            transaction=t2,
+            note=desc
+        ))
+        db_session.commit()
+        return 'Successfully saved Transactions %d and %d in database.' % (
+            t1.id, t2.id
+        )
+
+
 app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
 app.add_url_rule(
     '/budgets/<int:budget_id>',
@@ -190,4 +338,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/budget',
     view_func=BudgetFormHandler.as_view('budget_form')
+)
+app.add_url_rule(
+    '/forms/budget_transfer',
+    view_func=BudgetTxfrFormHandler.as_view('budget_transfer_form')
 )

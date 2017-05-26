@@ -108,7 +108,7 @@
             <div class="row">
                 <div class="col-lg-4 col-md-6">
                     <div class="panel panel-warning">
-                        <div class="panel-heading">Periodic Budgets</div>
+                        <div class="panel-heading">Periodic Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-periodic">Transfer</button></div>
                         <div class="table-responsive">
                                 <table class="table table-bordered" id="pb-table">
                                     <thead>
@@ -137,7 +137,7 @@
                             <!-- /.table-responsive -->
                     </div> <!-- /.panel -->
                     <div class="panel panel-warning">
-                        <div class="panel-heading">Standing Budgets</div>
+                        <div class="panel-heading">Standing Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-standing">Transfer</button></div>
                         <div class="table-responsive">
                                 <table class="table table-bordered" id="sb-table">
                                     <thead>
@@ -227,7 +227,10 @@ var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
 <script src="/static/js/scheduled_modal.js"></script>
 <script src="/static/js/payperiod_modal.js"></script>
 <script src="/static/js/reconcile_modal.js"></script>
+<script src="/static/js/budget_transfer_modal.js"></script>
 <script>
     $('#btn-add-txn').click(function() { transModal(null, null); });
+    $('#btn-budg-txfr-periodic').click(function() { budgetTransferModal(); });
+    $('#btn-budg-txfr-standing').click(function() { budgetTransferModal(); });
 </script>
 {% endblock %}

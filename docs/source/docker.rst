@@ -73,7 +73,7 @@ Host-Local MySQL Example
 It is also possible to use a MySQL server on the physical (Docker) host system. To do so,
 you'll need to know the host system's IP address. On Linux when using the default "bridge"
 Docker networking mode, this will coorespond to a ``docker0`` interface on the host system.
-The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file---add-host>`_
+The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file-add-host>`_
 provides a helpful snippet for this (on my systems, this results in ``172.17.0.1``):
 
 .. code-block:: none
@@ -102,7 +102,7 @@ Settings Module Example
 
 If you need to provide biweeklybudget with more complicated configuration, this is
 still possible via a Python settings module. The easiest way to inject one into the
-Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only>`_
+Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v-read-only>`_
 a python module directly into the biweeklybudget package directory. Assuming you have
 a custom settings module on your local machine at ``/opt/biweeklybudget-settings.py``, you would
 run the container as shown below to mount the custom settings module into the container and use it.
