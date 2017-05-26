@@ -73,7 +73,7 @@ Host-Local MySQL Example
 It is also possible to use a MySQL server on the physical (Docker) host system. To do so,
 you'll need to know the host system's IP address. On Linux when using the default "bridge"
 Docker networking mode, this will coorespond to a ``docker0`` interface on the host system.
-The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file---add-host>`_
+The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file-add-host>`_
 provides a helpful snippet for this (on my systems, this results in ``172.17.0.1``):
 
 .. code-block:: none
