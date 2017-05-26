@@ -2014,7 +2014,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                datetime.now().date().strftime('%Y-%m-%d'),
                 '$123.45',
                 '<a href="javascript:transModal(8, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
@@ -2025,7 +2025,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="javascript:txnReconcileModal(3)">Yes (3)</a>'
             ],
             [
-                (pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d'),
+                datetime.now().date().strftime('%Y-%m-%d'),
                 '-$123.45',
                 '<a href="javascript:transModal(9, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
