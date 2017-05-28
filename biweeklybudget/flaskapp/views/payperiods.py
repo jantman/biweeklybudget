@@ -173,10 +173,15 @@ class PeriodForDateView(MethodView):
     """
 
     def get(self):
-        d_str = request.args.get('date')
-        d = datetime.strptime(d_str, '%Y-%m-%d').date()
-        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
-        logger.debug('Found period for %s (%s): %s', d_str, d, pp)
+        d_str = request.args.get('date', None)
+        if d_str is None:
+            pp = BiweeklyPayPeriod.period_for_date(
+                datetime.now().date(), db_session
+            )
+        else:
+            d = datetime.strptime(d_str, '%Y-%m-%d').date()
+            pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+            logger.debug('Found period for %s (%s): %s', d_str, d, pp)
         return redirect(
             '/payperiod/%s' % pp.start_date.strftime('%Y-%m-%d'),
             code=301

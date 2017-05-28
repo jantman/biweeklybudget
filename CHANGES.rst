@@ -18,6 +18,7 @@ Unreleased Changes
 * When adding or updating the ``actual_amount`` of a Transaction against a Standing Budget, update the ``current_balance`` of the budget.
 * Fix ordering of Transactions table on Pay Period view, to properly sort by date and then amount.
 * Numerous fixes to date-sensitive acceptance tests.
+* `Issue #79 <https://github.com/jantman/biweeklybudget/issues/79>`_ - Update ``/pay_period_for`` view to redirect to current pay period when called with no query parameters; add bookmarkable link to current pay period to Pay Periods view.
 
 0.1.1 (2017-05-20)
 ------------------
