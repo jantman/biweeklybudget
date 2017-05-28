@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.1.2 (2017-05-28)
 ------------------
 
 * Minor fix to instructions printed after release build in ``biweeklybudget/tests/docker_build.py``
