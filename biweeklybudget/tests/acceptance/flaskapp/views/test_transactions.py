@@ -583,7 +583,7 @@ class TestTransAddStandingBudgetModal(AcceptanceHelper):
         assert title.text == 'Add New Transaction'
         date_input = body.find_element_by_id('trans_frm_date')
         assert date_input.get_attribute(
-            'value') == dtnow().strftime('%Y-%m-%d')
+            'value') == datetime.now().strftime('%Y-%m-%d')
         # END date chooser popup
         amt = body.find_element_by_id('trans_frm_amount')
         amt.clear()
@@ -618,7 +618,7 @@ class TestTransAddStandingBudgetModal(AcceptanceHelper):
         t = testdb.query(Transaction).get(4)
         assert t is not None
         assert t.description == 'NewTrans4'
-        assert t.date == dtnow().date()
+        assert t.date == datetime.now().date()
         assert float(t.actual_amount) == 345.67
         assert t.budgeted_amount is None
         assert t.account_id == 1
