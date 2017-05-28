@@ -293,10 +293,6 @@ class TransactionFormHandler(FormHandlerView):
         trans.notes = data['notes'].strip()
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
-        if not budg.is_periodic:
-            budg.current_balance =\
-                float(budg.current_balance) - float(data['amount'])
-            db_session.add(budg)
         db_session.commit()
         return {
             'success_message': 'Successfully saved Transaction %d '
