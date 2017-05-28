@@ -560,6 +560,84 @@ class TestTransAddModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestTransAddStandingBudgetModal(AcceptanceHelper):
+    """Test that updating a transaction against a standing budget actually
+    updates the balance on the standing budget."""
+
+    def test_1_verify_index_budgets_table(self, base_url, selenium):
+        self.get(selenium, base_url + '/')
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        stexts = self.tbody2textlist(stable)
+        assert stexts == [
+            ['Standing1 (4)', '$1,284.23'],
+            ['Standing2 (5)', '$9,482.29']
+        ]
+
+    def test_2_modal_add(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_id('btn_add_trans')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Transaction'
+        date_input = body.find_element_by_id('trans_frm_date')
+        assert date_input.get_attribute(
+            'value') == datetime.now().strftime('%Y-%m-%d')
+        # END date chooser popup
+        amt = body.find_element_by_id('trans_frm_amount')
+        amt.clear()
+        amt.send_keys('345.67')
+        desc = body.find_element_by_id('trans_frm_description')
+        desc.send_keys('NewTrans4')
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        acct_sel.select_by_value('1')
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel.select_by_value('5')
+        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes.send_keys('NewTransNotes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 4 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that new trans was added to the table
+        table = selenium.find_element_by_id('table-transactions')
+        texts = [y[2] for y in self.tbody2textlist(table)]
+        assert 'NewTrans4' in texts
+
+    def test_3_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(4)
+        assert t is not None
+        assert t.description == 'NewTrans4'
+        assert t.date == datetime.now().date()
+        assert float(t.actual_amount) == 345.67
+        assert t.budgeted_amount is None
+        assert t.account_id == 1
+        assert t.budget_id == 5
+        assert t.scheduled_trans_id is None
+        assert t.notes == 'NewTransNotes'
+
+    def test_4_verify_index_budgets_table(self, base_url, selenium):
+        self.get(selenium, base_url + '/')
+        stable = selenium.find_element_by_id('table-standing-budgets')
+        stexts = self.tbody2textlist(stable)
+        assert stexts == [
+            ['Standing1 (4)', '$1,284.23'],
+            ['Standing2 (5)', '$9,136.62']
+        ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestTransReconciledModal(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):

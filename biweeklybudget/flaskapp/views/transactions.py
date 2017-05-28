@@ -284,11 +284,12 @@ class TransactionFormHandler(FormHandlerView):
         else:
             trans = Transaction()
             action = 'creating new Transaction'
+        budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.actual_amount = float(data['amount'])
         trans.account_id = int(data['account'])
-        trans.budget_id = int(data['budget'])
+        trans.budget = budg
         trans.notes = data['notes'].strip()
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)

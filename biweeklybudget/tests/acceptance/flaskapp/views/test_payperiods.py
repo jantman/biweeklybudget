@@ -837,6 +837,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         st = ScheduledTransaction(
             account=acct,
             budget=e1budget,
@@ -849,7 +852,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             account=acct,
             budget=e1budget,
             amount=22.22,
-            day_of_month=(ppdate + timedelta(days=5)).day,
+            day_of_month=st8_day,
             description='ST8 day_of_month'
         ))
         testdb.add(ScheduledTransaction(
@@ -968,7 +971,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -991,19 +994,17 @@ class TestCurrentPayPeriod(AcceptanceHelper):
     def test_07_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element_by_id('trans-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == self.sort_trans_rows([
             [
                 '',
                 '$11.11',
@@ -1038,7 +1039,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -1086,7 +1087,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '</em>',
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
-        ]
+        ])
 
     def test_08_transaction_modal(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
@@ -1531,6 +1532,9 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         st = ScheduledTransaction(
             account=acct,
             budget=e1budget,
@@ -1543,7 +1547,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             account=acct,
             budget=e1budget,
             amount=22.22,
-            day_of_month=(ppdate + timedelta(days=5)).day,
+            day_of_month=st8_day,
             description='ST8 day_of_month'
         ))
         testdb.add(ScheduledTransaction(
@@ -1662,7 +1666,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -1678,14 +1682,12 @@ class TestBudgetTransfer(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         table = selenium.find_element_by_id('trans-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == self.sort_trans_rows([
             [
                 '',
                 '$11.11',
@@ -1720,7 +1722,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -1768,7 +1770,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '</em>',
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
-        ]
+        ])
 
     def test_07_verify_db_ids(self, testdb):
         max_t = max([
@@ -1962,7 +1964,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -1973,19 +1975,17 @@ class TestBudgetTransfer(AcceptanceHelper):
     def test_16_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element_by_id('trans-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == self.sort_trans_rows([
             [
                 '',
                 '$11.11',
@@ -2020,7 +2020,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -2058,6 +2058,17 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$12.00',
+                '<a href="javascript:transModal(4, null);">Txn From ST7'
+                ' (4)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
+            ],
+            [
                 datetime.now().date().strftime('%Y-%m-%d'),
                 '$123.45',
                 '<a href="javascript:transModal(8, null);">'
@@ -2078,19 +2089,8 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="/budgets/5">Standing2</a>',
                 '&nbsp;',
                 '<a href="javascript:txnReconcileModal(4)">Yes (4)</a>'
-            ],
-            [
-                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
-                '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
-                '<a href="/accounts/1">BankOne</a>',
-                '<a href="/budgets/1">Periodic1</a>',
-                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
-                '</em>',
-                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
-        ]
+        ])
 
 
 @pytest.mark.acceptance
@@ -2123,6 +2123,9 @@ class TestSkipScheduled(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         st = ScheduledTransaction(
             account=acct,
             budget=e1budget,
@@ -2135,7 +2138,7 @@ class TestSkipScheduled(AcceptanceHelper):
             account=acct,
             budget=e1budget,
             amount=22.22,
-            day_of_month=(ppdate + timedelta(days=5)).day,
+            day_of_month=st8_day,
             description='ST8 day_of_month'
         ))
         testdb.add(ScheduledTransaction(
@@ -2254,7 +2257,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -2265,19 +2268,17 @@ class TestSkipScheduled(AcceptanceHelper):
     def test_06_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
+        st8_day = (ppdate + timedelta(days=5)).day
+        if st8_day > 28:
+            st8_day = 28
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element_by_id('trans-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == self.sort_trans_rows([
             [
                 '',
                 '$11.11',
@@ -2312,7 +2313,7 @@ class TestSkipScheduled(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                (pp.start_date + timedelta(days=5)).strftime('%Y-%m-%d'),
+                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -2360,7 +2361,7 @@ class TestSkipScheduled(AcceptanceHelper):
                 '</em>',
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
-        ]
+        ])
 
     def test_07_verify_db_ids(self, testdb):
         max_t = max([
@@ -2527,7 +2528,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -2544,13 +2545,8 @@ class TestSkipScheduled(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element_by_id('trans-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == self.sort_trans_rows([
             [
                 '',
                 '$11.11',
@@ -2632,4 +2628,4 @@ class TestSkipScheduled(AcceptanceHelper):
                 '</em>',
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
-        ]
+        ])

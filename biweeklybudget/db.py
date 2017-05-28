@@ -92,6 +92,7 @@ logger.debug('Setting up Base and query')
 
 from biweeklybudget.models.base import Base  # noqa
 Base.query = db_session.query_property()
+from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 
 
 def _alembic_get_current_rev(config, script):
@@ -160,6 +161,7 @@ def init_db():
             logger.debug('Alembic is at the correct head version (%s)',
                          curr_rev)
     logger.debug('Done initializing DB')
+    init_event_listeners(db_session)
 
 
 def cleanup_db():

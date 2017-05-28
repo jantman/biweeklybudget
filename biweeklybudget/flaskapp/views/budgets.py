@@ -295,13 +295,6 @@ class BudgetTxfrFormHandler(FormHandlerView):
             notes=notes
         )
         db_session.add(t1)
-        if not from_budget.is_periodic:
-            from_budget.current_balance = \
-                float(from_budget.current_balance) - amt
-            db_session.add(from_budget)
-        if not to_budget.is_periodic:
-            to_budget.current_balance = float(to_budget.current_balance) + amt
-            db_session.add(to_budget)
         t2 = Transaction(
             date=trans_date,
             actual_amount=(-1 * amt),

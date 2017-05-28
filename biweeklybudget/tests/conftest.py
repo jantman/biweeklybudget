@@ -58,6 +58,7 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
+from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -100,6 +101,7 @@ def refreshdb():
     sess = scoped_session(
         sessionmaker(autocommit=False, bind=conn)
     )
+    init_event_listeners(sess)
     # yield the session
     yield(sess)
     # when we're done, close
@@ -122,6 +124,7 @@ def class_refresh_db():
     # setup the connection
     conn = engine.connect()
     sess = sessionmaker(autocommit=False, bind=conn)()
+    init_event_listeners(sess)
     # yield the session
     yield(sess)
     sess.close()
@@ -152,6 +155,7 @@ def testdb():
     # setup the connection
     conn = engine.connect()
     sess = sessionmaker(autocommit=False, bind=conn)()
+    init_event_listeners(sess)
     # yield the session
     yield(sess)
     sess.close()

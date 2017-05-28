@@ -257,7 +257,8 @@ class Account(Base, ModelAsDict):
         return sess.query(Transaction).filter(
             Transaction.reconcile.__eq__(null()),
             Transaction.date.__ge__(RECONCILE_BEGIN_DATE),
-            Transaction.account_id.__eq__(self.id)
+            Transaction.account_id.__eq__(self.id),
+            Transaction.date.__le__(dtnow())
         )
 
     @property

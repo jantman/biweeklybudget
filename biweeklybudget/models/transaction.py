@@ -54,7 +54,7 @@ class Transaction(Base, ModelAsDict):
     id = Column(Integer, primary_key=True)
 
     #: date of the transaction
-    date = Column(Date, default=dtnow())
+    date = Column(Date, default=dtnow().date())
 
     #: Actual amount of the transaction
     actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
@@ -98,7 +98,7 @@ class Transaction(Base, ModelAsDict):
     )
 
     def __repr__(self):
-        return "<Transaction(id=%d)>" % (
+        return "<Transaction(id=%s)>" % (
             self.id
         )
 
