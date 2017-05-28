@@ -15,7 +15,7 @@ Unreleased Changes
 * `Issue #57 <https://github.com/jantman/biweeklybudget/issues/57>`_ - Ignore future transactions from unreconciled transactions list.
 * Transaction model - fix default for ``date`` field to actually be just a date; previously, Transactions with ``date`` left as default would attempt to put a full datetime into a date column, and throw a data truncation warning.
 * Transaction model - Fix ``__repr__`` to not throw exception on un-persisted objects.
-
+* When adding or updating the ``actual_amount`` of a Transaction against a Standing Budget, update the ``current_balance`` of the budget.
 
 0.1.1 (2017-05-20)
 ------------------

@@ -968,7 +968,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -1662,7 +1662,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -1962,7 +1962,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -2058,6 +2058,17 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
+                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
+                '$12.00',
+                '<a href="javascript:transModal(4, null);">Txn From ST7'
+                ' (4)</a>',
+                '<a href="/accounts/1">BankOne</a>',
+                '<a href="/budgets/1">Periodic1</a>',
+                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
+                '</em>',
+                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
+            ],
+            [
                 datetime.now().date().strftime('%Y-%m-%d'),
                 '$123.45',
                 '<a href="javascript:transModal(8, null);">'
@@ -2078,17 +2089,6 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="/budgets/5">Standing2</a>',
                 '&nbsp;',
                 '<a href="javascript:txnReconcileModal(4)">Yes (4)</a>'
-            ],
-            [
-                (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
-                '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
-                '<a href="/accounts/1">BankOne</a>',
-                '<a href="/budgets/1">Periodic1</a>',
-                '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
-                '</em>',
-                '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
         ]
 
@@ -2254,7 +2254,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
@@ -2527,7 +2527,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
+                '$1,617.56'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',

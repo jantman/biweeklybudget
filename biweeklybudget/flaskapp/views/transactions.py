@@ -284,14 +284,19 @@ class TransactionFormHandler(FormHandlerView):
         else:
             trans = Transaction()
             action = 'creating new Transaction'
+        budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.actual_amount = float(data['amount'])
         trans.account_id = int(data['account'])
-        trans.budget_id = int(data['budget'])
+        trans.budget = budg
         trans.notes = data['notes'].strip()
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
+        if not budg.is_periodic:
+            budg.current_balance =\
+                float(budg.current_balance) - float(data['amount'])
+            db_session.add(budg)
         db_session.commit()
         return {
             'success_message': 'Successfully saved Transaction %d '
