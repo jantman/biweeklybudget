@@ -111,6 +111,7 @@ class TestPayPeriodFor(AcceptanceHelper):
         assert selenium.current_url == \
             base_url + '/payperiod/' + start_date.strftime('%Y-%m-%d')
 
+
 @pytest.mark.acceptance
 class TestFindPayPeriod(AcceptanceHelper):
 
