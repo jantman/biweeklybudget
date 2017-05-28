@@ -358,7 +358,14 @@ class BiweeklyPayPeriod(object):
                 ordered.append(d)
         for t in sorted(unordered, key=lambda k: k['date']):
             ordered.append(t)
-        return ordered
+
+        def sortkey(k):
+            d = k.get('date', None)
+            if d is None:
+                d = date.min
+            return d, k['amount']
+
+        return sorted(ordered, key=sortkey)
 
     @property
     def budget_sums(self):

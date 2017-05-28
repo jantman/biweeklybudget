@@ -501,28 +501,29 @@ class TestMakeCombinedTransactions(object):
 
         def se_trans_dict(_, t):
             if t._mock_name.startswith('per_period'):
-                return {'name': t._mock_name}
+                return {'name': t._mock_name, 'amount': t.amount}
             print(t)
             return {
                 'date': date(year=2017, month=3, day=t.day),
-                'name': t._mock_name
+                'name': t._mock_name,
+                'amount': t.amount
             }
 
-        mock_per_periodA = Mock(num_per_period=1, name='per_period_A')
-        mock_per_periodB = Mock(num_per_period=3, name='per_period_B')
+        mock_per_periodA = Mock(num_per_period=1, name='per_period_A', amount=8)
+        mock_per_periodB = Mock(num_per_period=3, name='per_period_B', amount=9)
         self.cls._data_cache = {
             'transactions': [
-                Mock(name='t1', day=1, scheduled_trans_id=1),
-                Mock(name='t2', day=4, scheduled_trans_id=None),
-                Mock(name='t3', day=6, scheduled_trans_id=2)
+                Mock(name='t1', day=1, scheduled_trans_id=1, amount=1),
+                Mock(name='t2', day=4, scheduled_trans_id=None, amount=2),
+                Mock(name='t3', day=6, scheduled_trans_id=2, amount=3)
             ],
             'st_date': [
-                Mock(name='std1', day=2, id=1),
-                Mock(name='std2', day=5)
+                Mock(name='std1', day=2, id=1, amount=4),
+                Mock(name='std2', day=5, amount=5)
             ],
             'st_monthly': [
-                Mock(name='stm1', day=3),
-                Mock(name='stm2', day=6, id=2)
+                Mock(name='stm1', day=3, amount=6),
+                Mock(name='stm2', day=6, id=2, amount=7)
             ],
             'st_per_period': [
                 mock_per_periodA,
@@ -533,29 +534,34 @@ class TestMakeCombinedTransactions(object):
             mock_t_dict.side_effect = se_trans_dict
             res = self.cls._make_combined_transactions()
         assert res == [
-            {'name': 'per_period_A'},
-            {'name': 'per_period_B'},
-            {'name': 'per_period_B'},
-            {'name': 'per_period_B'},
+            {'name': 'per_period_A', 'amount': 8},
+            {'name': 'per_period_B', 'amount': 9},
+            {'name': 'per_period_B', 'amount': 9},
+            {'name': 'per_period_B', 'amount': 9},
             {
                 'name': 't1',
-                'date': date(year=2017, month=3, day=1)
+                'date': date(year=2017, month=3, day=1),
+                'amount': 1
             },
             {
                 'name': 'stm1',
-                'date': date(year=2017, month=3, day=3)
+                'date': date(year=2017, month=3, day=3),
+                'amount': 6
             },
             {
                 'name': 't2',
-                'date': date(year=2017, month=3, day=4)
+                'date': date(year=2017, month=3, day=4),
+                'amount': 2
             },
             {
                 'name': 'std2',
-                'date': date(year=2017, month=3, day=5)
+                'date': date(year=2017, month=3, day=5),
+                'amount': 5
             },
             {
                 'name': 't3',
-                'date': date(2017, 3, 6)
+                'date': date(2017, 3, 6),
+                'amount': 3
             }
         ]
 

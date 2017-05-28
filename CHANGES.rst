@@ -16,6 +16,8 @@ Unreleased Changes
 * Transaction model - fix default for ``date`` field to actually be just a date; previously, Transactions with ``date`` left as default would attempt to put a full datetime into a date column, and throw a data truncation warning.
 * Transaction model - Fix ``__repr__`` to not throw exception on un-persisted objects.
 * When adding or updating the ``actual_amount`` of a Transaction against a Standing Budget, update the ``current_balance`` of the budget.
+* Fix ordering of Transactions table on Pay Period view, to properly sort by date and then amount.
+* Numerous fixes to date-sensitive acceptance tests.
 
 0.1.1 (2017-05-20)
 ------------------

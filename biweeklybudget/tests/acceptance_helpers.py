@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import locale
 from time import sleep
 from selenium.common.exceptions import (
     StaleElementReferenceException, TimeoutException
@@ -45,6 +46,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 logger = logging.getLogger(__name__)
+
+locale.setlocale(locale.LC_ALL, '')
 
 
 class AcceptanceHelper(object):
@@ -323,3 +326,43 @@ class AcceptanceHelper(object):
                 print('selenium.get(%s) timed out; trying again', url)
             except Exception:
                 raise
+
+    def inner_htmls(self, elems):
+        """
+        Return a list of lists, where each outer list represents an element in
+        ``elems``, and each inner list represents the ``innerHTML`` attribute
+        of each item in the outer list.
+
+        :param elems: A list of HTMLElements, such as the return value of
+          :py:meth:`~.tbody2elemlist`
+        :type elems: list
+        :return: list of lists, rows to innerHTML of elements in each row
+        :rtype: list
+        """
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        return htmls
+
+    def sort_trans_rows(self, rows):
+        """
+        Sort a list of transaction rows by date and then amount, to match up
+        with the HTML in transactions table.
+
+        :param rows: list of inner HTMLs, such as those returned by
+          :py:meth:`~.inner_htmls`.
+        :type rows: list
+        :return: sorted rows
+        :rtype: list
+        """
+        tmp_rows = []
+        for row in rows:
+            row[1] = float(row[1].replace('$', ''))
+            tmp_rows.append(row)
+        ret = []
+        for row in sorted(tmp_rows, key=lambda x: (x[0], x[1])):
+            row[1] = locale.currency(row[1], grouping=True)
+            ret.append(row)
+        return ret
