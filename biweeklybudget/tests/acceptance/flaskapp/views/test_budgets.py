@@ -38,7 +38,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import datetime
 
-from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.transaction import Transaction
