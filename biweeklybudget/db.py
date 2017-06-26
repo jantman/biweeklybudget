@@ -171,7 +171,7 @@ def cleanup_db():
         atexit.register(cleanup_db)
 
     """
-    logger.info('Closing DB session')
+    logger.debug('Closing DB session')
     db_session.remove()
 
 
