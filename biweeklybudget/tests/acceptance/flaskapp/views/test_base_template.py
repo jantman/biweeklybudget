@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import UTC
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -46,6 +46,11 @@ from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.flaskapp.notifications import NotificationsController
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.utils import dtnow
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 
 @pytest.mark.acceptance
@@ -207,3 +212,124 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
         a = div.find_element_by_tag_name('a')
         assert self.relurl(a.get_attribute('href')) == '/reconcile'
         assert a.text == 'Unreconciled OFXTransactions'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestBudgetOverBalanceNotification(AcceptanceHelper):
+
+    def test_0_update_db(self, testdb):
+        b = testdb.query(Budget).get(4)
+        b.current_balance = 123456.78
+        testdb.add(b)
+        testdb.flush()
+        testdb.commit()
+
+    def test_1_confirm_db(self, testdb):
+        b = testdb.query(Budget).get(4)
+        assert float(b.current_balance) == 123456.78
+
+    def test_2_confirm_pp(self, testdb):
+        acct_bal = NotificationsController.budget_account_sum(testdb)
+        assert acct_bal == 12889.24
+        stand_bal = NotificationsController.standing_budgets_sum(testdb)
+        assert stand_bal == 132939.07
+        pp_bal = NotificationsController.pp_sum(testdb)
+        # floating point awfulness
+        assert "%.2f" % pp_bal == '444.42'
+
+    def test_3_notification(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+        div = selenium.find_elements_by_xpath(
+            "//div[@id='notifications-row']/div/div"
+        )[1]
+        assert div.text == 'Combined balance of all budget-funding accounts ' \
+                           '($12,889.24) is less than balance of all ' \
+                           'standing budgets ($132,939.07) plus the current ' \
+                           'pay period allocated and unreconciled ' \
+                           'transactions ($444.42)!'
+        a = div.find_elements_by_tag_name('a')
+        assert self.relurl(a[0].get_attribute('href')) == '/accounts'
+        assert a[0].text == 'budget-funding accounts'
+        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
+        assert a[1].text == 'standing budgets'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestPPOverBalanceNotification(AcceptanceHelper):
+
+    def test_0_update_db(self, testdb):
+        b = testdb.query(Budget).get(4)
+        b.current_balance = 1617.56
+        testdb.add(b)
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
+        tdate = pp.start_date + timedelta(days=2)
+        stmt1 = OFXStatement(
+            account=acct,
+            filename='a1.ofx',
+            file_mtime=dtnow(),
+            as_of=dtnow(),
+            currency='USD',
+            acctid='1',
+            bankid='b1',
+            routing_number='r1'
+        )
+        testdb.add(stmt1)
+        o = OFXTransaction(
+            account=acct,
+            statement=stmt1,
+            fitid='OFX8',
+            trans_type='Purchase',
+            date_posted=dtnow(),
+            amount=-600.0,
+            name='ofx8-trans4'
+        )
+        testdb.add(o)
+        t = Transaction(
+            date=tdate,
+            actual_amount=600.00,
+            description='trans6',
+            account=acct,
+            budget=budget
+        )
+        testdb.add(t)
+        testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
+        testdb.add(Transaction(
+            date=tdate,
+            actual_amount=34000.00,
+            description='transFoo',
+            account=acct,
+            budget=budget
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_1_confirm_pp(self, testdb):
+        acct_bal = NotificationsController.budget_account_sum(testdb)
+        assert acct_bal == 12889.24
+        stand_bal = NotificationsController.standing_budgets_sum(testdb)
+        assert stand_bal == 11099.85
+        pp_bal = NotificationsController.pp_sum(testdb)
+        # floating point awfulness
+        assert "%.2f" % pp_bal == '34444.42'
+
+    def test_2_notification(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+        div = selenium.find_elements_by_xpath(
+            "//div[@id='notifications-row']/div/div"
+        )[1]
+        assert div.text == 'Combined balance of all budget-funding accounts ' \
+                           '($12,889.24) is less than balance of all ' \
+                           'standing budgets ($11,099.85) plus the current ' \
+                           'pay period allocated and unreconciled ' \
+                           'transactions ($34,444.42)!'
+        a = div.find_elements_by_tag_name('a')
+        assert self.relurl(a[0].get_attribute('href')) == '/accounts'
+        assert a[0].text == 'budget-funding accounts'
+        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
+        assert a[1].text == 'standing budgets'

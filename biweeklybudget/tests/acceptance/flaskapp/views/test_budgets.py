@@ -894,34 +894,3 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc
-
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestBudgetOverBalanceNotification(AcceptanceHelper):
-
-    def test_0_update_db(self, testdb):
-        b = testdb.query(Budget).get(4)
-        b.current_balance = 123456.78
-        testdb.add(b)
-        testdb.flush()
-        testdb.commit()
-
-    def test_1_notification(self, base_url, selenium):
-        self.baseurl = base_url
-        # Fill in the form
-        self.get(selenium, base_url + '/budgets')
-        stable = selenium.find_element_by_id('table-standing-budgets')
-        stexts = self.tbody2textlist(stable)
-        assert stexts[0] == ['yes', 'Standing1 (4)', '$123,456.78']
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
-        assert div.text == 'Combined balance of all budget-funding accounts ' \
-                           '($12,889.24) is less than balance of all ' \
-                           'standing budgets ($132,939.07)!'
-        a = div.find_elements_by_tag_name('a')
-        assert self.relurl(a[0].get_attribute('href')) == '/accounts'
-        assert a[0].text == 'budget-funding accounts'
-        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
-        assert a[1].text == 'standing budgets'

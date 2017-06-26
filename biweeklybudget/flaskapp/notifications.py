@@ -35,19 +35,26 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import logging
 from sqlalchemy import func
+from sqlalchemy.sql.expression import null
 from locale import currency
 
 from biweeklybudget.db import db_session
+from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationsController(object):
 
     @staticmethod
-    def num_stale_accounts():
+    def num_stale_accounts(sess=None):
         """
         Return the number of accounts with stale data.
 
@@ -57,21 +64,25 @@ class NotificationsController(object):
         :return: count of accounts with stale data
         :rtype: int
         """
+        if sess is None:
+            sess = db_session
         return sum(
-            1 if a.is_stale else 0 for a in db_session.query(
+            1 if a.is_stale else 0 for a in sess.query(
                 Account).filter(Account.is_active.__eq__(True)).all()
         )
 
     @staticmethod
-    def budget_account_sum():
+    def budget_account_sum(sess=None):
         """
         Return the sum of current balances for all is_budget_source accounts.
 
         :return: Combined balance of all budget source accounts
         :rtype: float
         """
+        if sess is None:
+            sess = db_session
         sum = 0
-        for acct in db_session.query(Account).filter(
+        for acct in sess.query(Account).filter(
                 Account.is_budget_source.__eq__(True),
                 Account.is_active.__eq__(True)
         ):
@@ -80,14 +91,16 @@ class NotificationsController(object):
         return sum
 
     @staticmethod
-    def standing_budgets_sum():
+    def standing_budgets_sum(sess=None):
         """
         Return the sum of current balances of all standing budgets.
 
         :return: sum of current balances of all standing budgets
         :rtype: float
         """
-        res = db_session.query(func.sum(Budget.current_balance)).filter(
+        if sess is None:
+            sess = db_session
+        res = sess.query(func.sum(Budget.current_balance)).filter(
             Budget.is_periodic.__eq__(False),
             Budget.is_active.__eq__(True)
         ).all()[0][0]
@@ -96,14 +109,41 @@ class NotificationsController(object):
         return float(res)
 
     @staticmethod
-    def num_unreconciled_ofx():
+    def pp_sum(sess=None):
+        """
+        Return the overall allocated sum for the current payperiod minus the
+        sum of all reconciled Transactions for the pay period.
+
+        :return: overall allocated sum for the current pay period minus the sum
+          of all reconciled Transactions for the pay period.
+        :rtype: float
+        """
+        if sess is None:
+            sess = db_session
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), sess)
+        allocated = float(pp.overall_sums['allocated'])
+        rec = 0.0
+        t = pp.filter_query(
+            sess.query(Transaction),
+            Transaction.date
+        ).filter(Transaction.reconcile.__ne__(null()))
+        for txn in t:
+            rec += float(txn.actual_amount)
+        logger.debug('PayPeriod=%s; allocated=%s; reconciled=%s',
+                     pp, allocated, rec)
+        return allocated - rec
+
+    @staticmethod
+    def num_unreconciled_ofx(sess=None):
         """
         Return the number of unreconciled OFXTransactions.
 
         :return: number of unreconciled OFXTransactions
         :rtype: int
         """
-        return OFXTransaction.unreconciled(db_session).count()
+        if sess is None:
+            sess = db_session
+        return OFXTransaction.unreconciled(sess).count()
 
     @staticmethod
     def get_notifications():
@@ -128,16 +168,20 @@ class NotificationsController(object):
             })
         accounts_bal = NotificationsController.budget_account_sum()
         standing_bal = NotificationsController.standing_budgets_sum()
-        if accounts_bal < standing_bal:
+        curr_pp = NotificationsController.pp_sum()
+        if accounts_bal < (standing_bal + curr_pp):
             res.append({
                 'classes': 'alert alert-danger',
                 'content': 'Combined balance of all <a href="/accounts">'
                            'budget-funding accounts</a> '
                            '(%s) is less than balance of all <a href='
-                           '"/budgets">standing budgets</a> (%s)!'
+                           '"/budgets">standing budgets</a> (%s) plus the '
+                           'current pay period allocated and unreconciled '
+                           'transactions (%s)!'
                            '' % (
                                currency(accounts_bal, grouping=True),
-                               currency(standing_bal, grouping=True)
+                               currency(standing_bal, grouping=True),
+                               currency(curr_pp, grouping=True)
                            )
             })
         unreconciled_ofx = NotificationsController.num_unreconciled_ofx()
