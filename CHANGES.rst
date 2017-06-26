@@ -8,6 +8,7 @@ Unreleased Changes
 * Fix logging exception in db_event_handlers on initial data load.
 * Switch ofxparse requirement to use upstream repo now that https://github.com/jseutter/ofxparse/pull/127 is merged.
 * `Issue #83 <https://github.com/jantman/biweeklybudget/issues/83>`_ - Fix 500 error preventing display of balance chart on ``/`` view when an account has a None ledger balance.
+* `Issue #86 <https://github.com/jantman/biweeklybudget/issues/86>`_ - Allow budget transfers to periodic budgets.
 
 0.1.2 (2017-05-28)
 ------------------

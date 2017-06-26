@@ -241,9 +241,6 @@ class BudgetTxfrFormHandler(FormHandlerView):
             errors['from_budget'].append('from_budget cannot be empty')
             have_errors = True
         to_budget = db_session.query(Budget).get(int(data['to_budget']))
-        if to_budget.is_periodic:
-            errors['to_budget'].append('cannot transfer to periodic budgets')
-            have_errors = True
         if data['to_budget'] == 'None':
             errors['to_budget'].append('to_budget cannot be empty')
             have_errors = True
