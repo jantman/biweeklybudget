@@ -89,7 +89,10 @@ class AcctBalanaceChartView(MethodView):
             if ds not in data:
                 data[ds] = copy(datedict)
                 data[ds]['date'] = ds
-            data[ds][bal.account.name] = float(bal.ledger)
+            if bal.ledger is None:
+                data[ds][bal.account.name] = 0.0
+            else:
+                data[ds][bal.account.name] = float(bal.ledger)
         resdata = []
         last = None
         for k in sorted(data.keys()):
