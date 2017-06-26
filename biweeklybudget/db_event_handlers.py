@@ -112,13 +112,13 @@ def handle_new_transaction(session):
         if budg.is_periodic:
             continue
         logger.debug(
-            'Session has new Transaction referencing standing budget id=%d',
+            'Session has new Transaction referencing standing budget id=%s',
             budg.id
         )
         old_amt = float(budg.current_balance)
         budg.current_balance = old_amt - float(obj.actual_amount)
         logger.info(
-            'New transaction (%s) for $%s against standing budget id=%d; '
+            'New transaction (%s) for $%s against standing budget id=%s; '
             'update budget current_balance from %s to %s', obj.description,
             obj.actual_amount, budg.id, old_amt, budg.current_balance
         )
