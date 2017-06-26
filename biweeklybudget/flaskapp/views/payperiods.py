@@ -104,15 +104,11 @@ class PayPeriodView(MethodView):
         :rtype: str
         """
         if pp.start_date == curr_pp.start_date:
-            logger.info('curr_pp=%s pp=%s return: (curr)', curr_pp, pp)
             return '(curr.)'
         if pp.start_date == curr_pp.next.start_date:
-            logger.info('curr_pp=%s pp=%s return: (next)', curr_pp, pp)
             return '(next)'
         if pp.start_date == curr_pp.previous.start_date:
-            logger.info('curr_pp=%s pp=%s return: (prev)', curr_pp, pp)
             return '(prev.)'
-        logger.info('curr_pp=%s pp=%s return: ""', curr_pp, pp)
         return ''
 
     def get(self, period_date):
@@ -178,13 +174,14 @@ class PeriodForDateView(MethodView):
             pp = BiweeklyPayPeriod.period_for_date(
                 datetime.now().date(), db_session
             )
+            logger.debug('Redirect to current payperiod: %s', pp)
         else:
             d = datetime.strptime(d_str, '%Y-%m-%d').date()
             pp = BiweeklyPayPeriod.period_for_date(d, db_session)
             logger.debug('Found period for %s (%s): %s', d_str, d, pp)
         return redirect(
             '/payperiod/%s' % pp.start_date.strftime('%Y-%m-%d'),
-            code=301
+            code=302
         )
 
 
