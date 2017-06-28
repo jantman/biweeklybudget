@@ -33,7 +33,7 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (cast_float(acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
+                                            <td>{{ (cast_float(acct.balance.ledger) - acct.unreconciled_sum)|reddollars|safe }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -75,9 +75,9 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.credit_limit|dollars }}</td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars }}</td>
+                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars|safe }}</td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
+                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars|safe }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

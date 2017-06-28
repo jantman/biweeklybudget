@@ -11,7 +11,7 @@
                 <div class="col-lg-8">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <i class="fa fa-bar-chart-o fa-fw"></i> Placeholder - Account Balances
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Account Balances
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
@@ -86,7 +86,7 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (cast_float(acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
+                                            <td>{{ (cast_float(acct.balance.ledger) - acct.unreconciled_sum)|reddollars|safe }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -125,8 +125,8 @@
                                                 <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars }}</td>
-                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars }}</td>
+                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars|safe }}</td>
+                                            <td>{{ (cast_float(acct.credit_limit + acct.balance.ledger) - acct.unreconciled_sum)|reddollars|safe }}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
