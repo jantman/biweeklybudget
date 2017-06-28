@@ -36,7 +36,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from datetime import datetime, timedelta
+from pytz import UTC
+
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+import biweeklybudget.models.base  # noqa
+from biweeklybudget.tests.conftest import engine
+from biweeklybudget.models import *
+from biweeklybudget.settings import PAY_PERIOD_START_DATE
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 
 
 @pytest.mark.acceptance
@@ -161,3 +169,252 @@ class TestIndexBudgets(AcceptanceHelper):
         assert selems[0][0].get_attribute(
             'innerHTML') == '<a href="/budgets/4">' \
                             'Standing1 (4)</a>'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestIndexPayPeriods(AcceptanceHelper):
+
+    def test_0_clean_db(self, testdb):
+        # clean the database
+        biweeklybudget.models.base.Base.metadata.reflect(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(engine)
+        biweeklybudget.models.base.Base.metadata.create_all(engine)
+
+    def test_1_add_account(self, testdb):
+        a = Account(
+            description='First Bank Account',
+            name='BankOne',
+            ofx_cat_memo_to_name=True,
+            ofxgetter_config_json='{"foo": "bar"}',
+            vault_creds_path='secret/foo/bar/BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(a)
+        a.set_balance(
+            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
+            ledger=1.0,
+            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
+        )
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_add_budgets(self, testdb):
+        testdb.add(Budget(
+            name='1Income',
+            is_periodic=True,
+            description='1Income',
+            starting_balance=1000.00,
+            is_income=True
+        ))
+        testdb.add(Budget(
+            name='2Periodic',
+            is_periodic=True,
+            description='2Periodic',
+            starting_balance=500.00
+        ))
+        testdb.add(Budget(
+            name='3Periodic',
+            is_periodic=True,
+            description='3Periodic',
+            starting_balance=0.00
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def pay_periods(self, db):
+        x = BiweeklyPayPeriod.period_for_date(
+            (PAY_PERIOD_START_DATE - timedelta(days=2)), db
+        )
+        periods = []
+        for i in range(0, 10):
+            periods.append(x)
+            x = x.next
+        return periods
+
+    def test_3_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        ibudget = testdb.query(Budget).get(1)
+        e1budget = testdb.query(Budget).get(2)
+        e2budget = testdb.query(Budget).get(3)
+        periods = self.pay_periods(testdb)
+        # previous pay period
+        ppdate = periods[0].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=100.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=250.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods[1].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=1850.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods[2].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=788.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        ppdate = periods[3].start_date
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=1)),
+            actual_amount=1400.00,
+            budgeted_amount=100.00,
+            description='prev income',
+            account=acct,
+            budget=ibudget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=2.00,
+            description='prev trans 1',
+            account=acct,
+            budget=e2budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=600.00,
+            budgeted_amount=500.00,
+            description='prev trans 2',
+            account=acct,
+            budget=e1budget
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_4_confirm_sums(self, testdb):
+        periods = self.pay_periods(testdb)
+        assert periods[0].overall_sums == {
+            'allocated': 750.0,
+            'spent': 850.0,
+            'income': 1000.0,
+            'remaining': 150.0
+        }
+        assert periods[1].overall_sums == {
+            'allocated': 2350.0,
+            'spent': 2450.0,
+            'income': 1400.0,
+            'remaining': -1050.0
+        }
+        assert periods[2].overall_sums == {
+            'allocated': 1288.0,
+            'spent': 1388.0,
+            'income': 1400.0,
+            'remaining': 12.0
+        }
+        assert periods[3].overall_sums == {
+            'allocated': 502.0,
+            'spent': 602.0,
+            'income': 1400.0,
+            'remaining': 798.0
+        }
+
+    def test_5_pay_periods_table(self, base_url, selenium, testdb):
+        periods = self.pay_periods(testdb)
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element_by_id('pay-period-table')
+        texts = self.tbody2textlist(table)
+        elems = self.tbody2elemlist(table)
+        expected = [
+            [
+                periods[1].start_date.strftime('%Y-%m-%d') + ' (current)',
+                '$2,350.00',
+                '$2,450.00',
+                '-$1,050.00'
+            ],
+            [
+                periods[2].start_date.strftime('%Y-%m-%d'),
+                '$1,288.00',
+                '$1,388.00',
+                '$12.00'
+            ],
+            [
+                periods[3].start_date.strftime('%Y-%m-%d'),
+                '$502.00',
+                '$602.00',
+                '$798.00'
+            ]
+        ]
+        for i in range(4, 10):
+            expected.append([
+                periods[i].start_date.strftime('%Y-%m-%d'),
+                '$500.00',
+                '$0.00',
+                '$500.00'
+            ])
+        assert texts == expected
+        # test links
+        links = [x[0].get_attribute('innerHTML') for x in elems]
+        expected = []
+        for idx, period in enumerate(periods):
+            if idx == 0:
+                continue
+            dstr = period.start_date.strftime('%Y-%m-%d')
+            s = '<a href="/payperiod/%s">%s</a>' % (dstr, dstr)
+            if idx == 1:
+                s += ' <em>(current)</em>'
+            expected.append(s)
+        assert links == expected
+        # test red text for negative dollar amounts
+        assert elems[0][3].get_attribute('innerHTML') == '<span ' \
+            'class="text-danger">-$1,050.00</span>'
+        # test highlighted row for current period
+        tbody = table.find_element_by_tag_name('tbody')
+        trs = tbody.find_elements_by_tag_name('tr')
+        assert trs[0].get_attribute('class') == 'info'

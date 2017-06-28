@@ -41,9 +41,11 @@ from copy import copy
 from sqlalchemy import asc
 
 from biweeklybudget.flaskapp.app import app
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.account import Account, AcctType, AccountBalance
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.db import db_session
+from biweeklybudget.utils import dtnow
 
 
 class IndexView(MethodView):
@@ -55,6 +57,19 @@ class IndexView(MethodView):
         standing = db_session.query(Budget).filter(
             Budget.is_active.__eq__(True), Budget.is_periodic.__eq__(False)
         ).order_by(Budget.name).all()
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        pp_curr_idx = 1
+        pp_next_idx = 2
+        pp_following_idx = 3
+        periods = [pp]
+        x = pp
+        # add another
+        for i in range(0, 8):
+            x = x.next
+            periods.append(x)
+        # trigger calculation/cache of data before passing on to jinja
+        for p in periods:
+            p.overall_sums
         return render_template(
             'index.html',
             bank_accounts=db_session.query(Account).filter(
@@ -66,7 +81,12 @@ class IndexView(MethodView):
             investment_accounts=db_session.query(Account).filter(
                 Account.acct_type == AcctType.Investment,
                 Account.is_active == True).all(),  # noqa
-            standing_budgets=standing
+            standing_budgets=standing,
+            periods=periods,
+            curr_pp=pp,
+            pp_curr_idx=pp_curr_idx,
+            pp_next_idx=pp_next_idx,
+            pp_following_idx=pp_following_idx
         )
 
 

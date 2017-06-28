@@ -54,6 +54,41 @@
                         <!-- /.panel -->
                     </div>
                     <!-- /.col-lg-6 -->
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Pay Periods <em><a href="/pay_period_for">(permalink to current pay period)</a></em></div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-bordered table-hover" id="pay-period-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Start Date</th>
+                                                <th>Allocated</th>
+                                                <th>Spent</th>
+                                                <th>Remaining</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for period in periods %}
+                                            {% if curr_pp.start_date == period.start_date %}
+                                            <tr class="info">
+                                                <td><a href="/payperiod/{{ period.start_date|dateymd }}">{{ period.start_date|dateymd }}</a> <em>(current)</em></td>
+                                            {% else %}
+                                            <tr>
+                                                <td><a href="/payperiod/{{ period.start_date|dateymd }}">{{ period.start_date|dateymd }}</a></td>
+                                            {% endif %}
+                                                <td>{{ period.overall_sums['allocated']|dollars }}</td>
+                                                <td>{{ period.overall_sums['spent']|dollars }}</td>
+                                                <td>{{ period.overall_sums['remaining']|reddollars|safe }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- /.table-responsive -->
+                        </div>
+                        <!-- /.panel -->
+                    </div>
+                    <!-- /.col-lg-6 -->
                 </div>
                 <!-- /.col-lg-8 -->
                 <div class="col-lg-4">
