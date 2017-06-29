@@ -9,6 +9,7 @@ Files
    jsdoc.budget_transfer_modal
    jsdoc.budgets_modal
    jsdoc.custom
+   jsdoc.formBuilder
    jsdoc.forms
    jsdoc.ofx
    jsdoc.payperiod_modal
