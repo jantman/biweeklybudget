@@ -92,7 +92,7 @@ class JSDocumenter(object):
         funcs_per_file = defaultdict(type([]))
         for longname in self.app._sphinxjs_doclets_by_longname.keys():
             d = self.app._sphinxjs_doclets_by_longname[longname]
-            if d['kind'] != 'function':
+            if d['kind'] not in ['function', 'class']:
                 continue
             funcs_per_file[d['meta']['filename']].append(longname)
         index = index_head
