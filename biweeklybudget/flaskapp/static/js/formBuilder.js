@@ -45,7 +45,7 @@ class FormBuilder {
      */
     constructor(id) {
         this.form_id = id;
-        this.html = '<form role="form" id="' + id + '">';
+        this.html = "<!-- begin FormBuilder id=" + id + " -->\n" + '<form role="form" id="' + id + '">';
     }
 
     /**
@@ -54,7 +54,7 @@ class FormBuilder {
      * @return {String} form HTML
      */
     render() {
-        return this.html + "</form>\n";
+        return this.html + "</form>\n<!-- end FormBuilder id=" + this.form_id + " -->\n";
     }
 
     /**

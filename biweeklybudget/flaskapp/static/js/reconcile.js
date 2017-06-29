@@ -436,14 +436,11 @@ function transNoOfx(trans_id) {
  * @param {number} trans_id - the ID of the Transaction
  */
 function transNoOfxDivForm(trans_id) {
-    var frm = '<form role="form" id="transForm">';
-    frm += '<p>Mark Transaction as reconciled with no OFX (i.e. Transaction that will never be seen on any OFX statement).</p>';
-    // id
-    frm += '<input type="hidden" id="trans_frm_id" name="id" value="' + trans_id + '">\n';
-    // note
-    frm += '<div class="form-group"><label for="trans_frm_note" class="control-label">Note</label><input class="form-control" id="trans_frm_note" name="note" type="text"></div>\n';
-    frm += '</form>\n';
-    return frm;
+    return new FormBuilder('transForm')
+        .addP('Mark Transaction as reconciled with no OFX (i.e. Transaction that will never be seen on any OFX statement).')
+        .addHidden('trans_frm_id', 'id', trans_id)
+        .addText('trans_frm_note', 'note', 'Note')
+        .render();
 }
 
 /**
