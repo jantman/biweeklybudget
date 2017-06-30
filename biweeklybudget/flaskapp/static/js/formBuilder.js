@@ -106,18 +106,21 @@ class FormBuilder {
      * @param {Object} options
      * @param {String} options.htmlClass - The HTML class to apply to the element
      * @param {String} options.helpBlock - Content for block of help text after input
+     * @param {String} options.groupHtml - Additional HTML to add to the outermost
+     *  form-group div. This is where we'd usually add a default style/display.
      * @return {FormBuilder} this
      */
     addCurrency(id, name, label, opts = {}) {
-        opts = $.extend({ htmlClass: 'form-control', helpBlock: null }, opts);
-        this.html += '<div class="form-group">' +
-            '<label for="' + id + '" class="control-label">' + label + '</label>' +
+        opts = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, opts);
+        this.html += '<div class="form-group" id="' + id + '_group"';
+        if (opts['groupHtml'] !== null) { this.html += ' ' + opts['groupHtml']; }
+        this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
             '<div class="input-group">' +
             '<span class="input-group-addon">$</span>' +
             '<input class="' + opts['htmlClass'] + '" id="' + id + '" name="' + name + '" type="text">' +
             '</div>';
-        if (opts['help_block'] !== null) {
-            this.html += '<p class="help-block">' + opts['help_block'] + "</p>";
+        if (opts['helpBlock'] !== null) {
+            this.html += '<p class="help-block">' + opts['helpBlock'] + "</p>";
         }
         this.html += '</div>\n';
         return this;
@@ -145,16 +148,15 @@ class FormBuilder {
     /**
      * Add a select element to the form.
      *
-     * Options can either be an object or an array of objects. If an object, its
-     * keys are used for the textual content of each option, and its values are
-     * used for the option value. If an array of objects, order is preserved and
-     * each object must have ``value`` and ``label`` keys, and can optionally
-     * have a ``selected`` key with a boolean value.
-     *
      * @param {String} id - The id of the form element
      * @param {String} name - The name of the form element
      * @param {String} label - The label text for the form element
      * @param {Array} options - the options for the select, array of objects
+     *  (order is preserved) each having the following attributes:
+     * @param {String} options.label - the label for the option
+     * @param {String} options.value - the value for the option
+     * @param {Boolean} options.selected - whether the option should be the
+     *  default selected value *(optional; defaults to False)*
      * @return {FormBuilder} this
      */
     addSelect(id, name, label, options) {
@@ -195,6 +197,58 @@ class FormBuilder {
             built.push(tmp);
         });
         return this.addSelect(id, name, label, built);
+    }
+
+    /**
+     * Add an inline radio button set to the form.
+     *
+     * Options is an Array of Objects, each object having keys ``id``, ``value``
+     * and ``label``. Optional keys are ``checked`` (Boolean) and ``onchange``,
+     * which will have its value placed literally in the HTML.
+     *
+     * @param {String} name - The name of the form element
+     * @param {String} label - The label text for the form element
+     * @param {Array} options - the options for the select; array of objects
+     *  each having the following attributes:
+     * @param {String} options.id - the ID for the option
+     * @param {String} options.value - the value for the option
+     * @param {String} options.label - the label for the option
+     * @param {Boolean} options.checked - whether the option should be checked
+     *  by default *(optional; defaults to false)*
+     * @param {String} options.inputHtml - extra HTML string to include in the
+     *  actual ``input`` element *(optional; defaults to null)*
+     * @return {FormBuilder} this
+     */
+    addRadioInline(name, label, options) {
+        this.html += '<div class="form-group"><label class="control-label">' + label + ' </label> ';
+        for (var idx in options) {
+            var o = options[idx];
+            this.html += '<label class="radio-inline" for="' + o['id'] + '">' +
+                '<input type="radio" name="' + name + '" id="' + o['id'] + '" value="' + o['value'] + '"';
+            if ('inputHtml' in o) { this.html += ' ' + o['inputHtml']; }
+            if ('checked' in o && o['checked'] === true ) { this.html += ' checked'; }
+            this.html += '>' + o['label'] + '</label>';
+        }
+        this.html += '</div>\n';
+        return this;
+    }
+
+    /**
+     * Add a checkbox to the form.
+     *
+     * @param {String} id - The id of the form element
+     * @param {String} name - The name of the form element
+     * @param {String} label - The label text for the form element
+     * @param {Boolean} checked - Whether to default to checked or not
+     * @return {FormBuilder} this
+     */
+    addCheckbox(id, name, label, checked = false) {
+        this.html += '<div class="form-group">' +
+            '<label class="checkbox-inline control-label" for="' + id + '">' +
+            '<input type="checkbox" id="' + id + '" name="' + name + '"';
+        if (checked === true) { this.html += ' checked'; }
+        this.html += '> ' + label + '</label></div>\n';
+        return this;
     }
 
 }

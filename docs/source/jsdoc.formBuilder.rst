@@ -12,7 +12,20 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addCurrency(id, name, label, options)
+.. js:function:: FormBuilder.addCheckbox(id, name, label, checked)
+
+   Add a checkbox to the form.
+
+   :param String id: The id of the form element
+   :param String name: The name of the form element
+   :param String label: The label text for the form element
+   :param Boolean checked: Whether to default to checked or not
+   :returns: **FormBuilder** -- this
+   
+
+   
+
+.. js:function:: FormBuilder.addCurrency(id, name, label, opts)
 
    Add a text ``input`` for currency to the form.
 
@@ -22,6 +35,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
    :param Object options: 
    :param String options.htmlClass: The HTML class to apply to the element
    :param String options.helpBlock: Content for block of help text after input
+   :param String options.groupHtml: Additional HTML to add to the outermost form-group div. This is where we'd usually add a default style/display.
    :returns: **FormBuilder** -- this
    
 
@@ -78,20 +92,38 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
+.. js:function:: FormBuilder.addRadioInline(name, label, options)
+
+   Add an inline radio button set to the form.
+   
+   Options is an Array of Objects, each object having keys ``id``, ``value``
+   and ``label``. Optional keys are ``checked`` (Boolean) and ``onchange``,
+   which will have its value placed literally in the HTML.
+
+   :param String name: The name of the form element
+   :param String label: The label text for the form element
+   :param Array options: the options for the select; array of objects each having the following attributes:
+   :param String options.id: the ID for the option
+   :param String options.value: the value for the option
+   :param String options.label: the label for the option
+   :param Boolean options.checked: whether the option should be checked by default *(optional; defaults to false)*
+   :param String options.inputHtml: extra HTML string to include in the actual ``input`` element *(optional; defaults to null)*
+   :returns: **FormBuilder** -- this
+   
+
+   
+
 .. js:function:: FormBuilder.addSelect(id, name, label, options)
 
    Add a select element to the form.
-   
-   Options can either be an object or an array of objects. If an object, its
-   keys are used for the textual content of each option, and its values are
-   used for the option value. If an array of objects, order is preserved and
-   each object must have ``value`` and ``label`` keys, and can optionally
-   have a ``selected`` key with a boolean value.
 
    :param String id: The id of the form element
    :param String name: The name of the form element
    :param String label: The label text for the form element
-   :param Array options: the options for the select, array of objects
+   :param Array options: the options for the select, array of objects (order is preserved) each having the following attributes:
+   :param String options.label: the label for the option
+   :param String options.value: the value for the option
+   :param Boolean options.selected: whether the option should be the default selected value *(optional; defaults to False)*
    :returns: **FormBuilder** -- this
    
 

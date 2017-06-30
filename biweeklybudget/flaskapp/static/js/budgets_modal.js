@@ -40,11 +40,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  */
 function budgetModalDivHandleType() {
     if($('#budget_frm_type_standing').is(':checked')) {
-        $('#budget_frm_group_starting_balance').hide();
-        $('#budget_frm_group_current_balance').show();
+        $('#budget_frm_starting_balance_group').hide();
+        $('#budget_frm_current_balance_group').show();
     } else {
-        $('#budget_frm_group_current_balance').hide();
-        $('#budget_frm_group_starting_balance').show();
+        $('#budget_frm_current_balance_group').hide();
+        $('#budget_frm_starting_balance_group').show();
     }
 }
 
@@ -52,25 +52,23 @@ function budgetModalDivHandleType() {
  * Generate the HTML for the form on the Modal
  */
 function budgetModalDivForm() {
-    var frm = '<form role="form" id="budgetForm">';
-    // id
-    frm += '<input type="hidden" id="budget_frm_id" name="id" value="">\n';
-    // name
-    frm += '<div class="form-group"><label for="budget_frm_name" class="control-label">Name</label><input class="form-control" id="budget_frm_name" name="name" type="text"></div>\n';
-    // type
-    frm += '<div class="form-group"><label class="control-label">Type </label> <label class="radio-inline" for="budget_frm_type_periodic"><input type="radio" name="is_periodic" id="budget_frm_type_periodic" value="true" onchange="budgetModalDivHandleType()" checked>Periodic</label><label class="radio-inline" for="budget_frm_type_standing"><input type="radio" name="is_periodic" id="budget_frm_type_standing" value="false" onchange="budgetModalDivHandleType()">Standing</label></div>\n';
-    // description
-    frm += '<div class="form-group"><label for="budget_frm_description" class="control-label">Description</label><input class="form-control" id="budget_frm_description" name="description" type="text"></div>\n';
-    // starting balance (for periodic)
-    frm += '<div class="form-group" id="budget_frm_group_starting_balance"><label for="budget_frm_starting_balance" class="control-label">Starting Balance</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budget_frm_starting_balance" name="starting_balance"></div></div>\n';
-    // current balance (for standing)
-    frm += '<div class="form-group" id="budget_frm_group_current_balance" style="display: none;"><label for="budget_frm_current_balance" class="control-label">Current Balance</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budget_frm_current_balance" name="current_balance"></div></div>\n';
-    // is_active checkbox
-    frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_active"><input type="checkbox" id="budget_frm_active" name="is_active" checked> Active?</label>\n';
-    // is_income checkbox
-    frm += '<div class="form-group"><label class="checkbox-inline control-label" for="budget_frm_income"><input type="checkbox" id="budget_frm_income" name="is_income"> Income?</label>\n';
-    frm += '</form>\n';
-    return frm;
+    return new FormBuilder('budgetForm')
+        .addHidden('budget_frm_id', 'id', '')
+        .addText('budget_frm_name', 'name', 'Name')
+        .addRadioInline(
+            'is_periodic',
+            'Type',
+            [
+                { id: 'budget_frm_type_periodic', label: 'Periodic', value: 'true', inputHtml: 'onchange="budgetModalDivHandleType()"', checked: true },
+                { id: 'budget_frm_type_standing', label: 'Standing', value: 'false', inputHtml: 'onchange="budgetModalDivHandleType()"' }
+            ]
+        )
+        .addText('budget_frm_description', 'description', 'Description')
+        .addCurrency('budget_frm_starting_balance', 'starting_balance', 'Starting Balance')
+        .addCurrency('budget_frm_current_balance', 'current_balance', 'Current Balance', { groupHtml: 'style="display: none;"' })
+        .addCheckbox('budget_frm_active', 'is_active', 'Active?', true)
+        .addCheckbox('budget_frm_income', 'is_income', 'Income?')
+        .render();
 }
 
 /**
