@@ -39,44 +39,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Generate the HTML for the form on the Modal
  */
 function budgetTransferDivForm() {
-    var frm = '<form role="form" id="budgetTransferForm">';
-    // date
-    frm += '<div class="form-group" id="budg_txfr_frm_group_date">';
-    frm += '<label for="budg_txfr_frm_date" class="control-label">Date</label><div class="input-group date" id="budg_txfr_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="budg_txfr_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
-    frm += '</div>\n';
-    // amount
-    frm += '<div class="form-group"><label for="budg_txfr_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="budg_txfr_frm_amount" name="amount"></div><p class="help-block">Transfer amount relative to from account; must be positive.</p></div>\n';
-    // account
-    frm += '<div class="form-group"><label for="budg_txfr_frm_account" class="control-label">Account</label>';
-    frm += '<select id="budg_txfr_frm_account" name="account" class="form-control">';
-    frm += '<option value="None" selected="selected"></option>';
-    Object.keys(acct_names_to_id).forEach(function (key) {
-        frm += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
-    });
-    frm += '</select>';
-    frm += '</div>\n';
-    // from budget
-    frm += '<div class="form-group"><label for="budg_txfr_frm_from_budget" class="control-label">From Budget</label>';
-    frm += '<select id="budg_txfr_frm_from_budget" name="from_budget" class="form-control">';
-    frm += '<option value="None" selected="selected"></option>';
-    Object.keys(budget_names_to_id).forEach(function (key) {
-        frm += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
-    });
-    frm += '</select>';
-    frm += '</div>\n';
-    // to budget
-    frm += '<div class="form-group"><label for="budg_txfr_frm_to_budget" class="control-label">To Budget</label>';
-    frm += '<select id="budg_txfr_frm_to_budget" name="to_budget" class="form-control">';
-    frm += '<option value="None" selected="selected"></option>';
-    Object.keys(budget_names_to_id).forEach(function (key) {
-        frm += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
-    });
-    frm += '</select>';
-    frm += '</div>\n';
-    // notes
-    frm += '<div class="form-group"><label for="budg_txfr_frm_notes" class="control-label">Notes</label><input class="form-control" id="budg_txfr_frm_notes" name="notes" type="text"></div>\n';
-    frm += '</form>\n';
-    return frm;
+    return new FormBuilder('budgetTransferForm')
+        .addDatePicker('budg_txfr_frm_date', 'date', 'Date')
+        .addCurrency('budg_txfr_frm_amount', 'amount', 'Amount', { helpBlock: 'Transfer amount relative to from account; must be positive.' })
+        .addLabelToValueSelect('budg_txfr_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('budg_txfr_frm_from_budget', 'from_budget', 'From Budget', budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('budg_txfr_frm_to_budget', 'to_budget', 'To Budget', budget_names_to_id, 'None', true)
+        .addText('budg_txfr_frm_notes', 'notes', 'Notes')
+        .render();
 }
 
 /**
@@ -87,7 +57,7 @@ function budgetTransferModal() {
     $('#modalBody').empty();
     $('#modalBody').append(budgetTransferDivForm());
     $('#budg_txfr_frm_date').val(isoformat(new Date()));
-    $('#budg_txfr_frm_group_date_input').datepicker({
+    $('#budg_txfr_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
         todayHighlight: true,

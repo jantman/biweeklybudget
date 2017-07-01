@@ -39,39 +39,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Generate the HTML for the form on the Modal
  */
 function transModalDivForm() {
-    var frm = '<form role="form" id="transForm">';
-    // id
-    frm += '<input type="hidden" id="trans_frm_id" name="id" value="">\n';
-    // date
-    frm += '<div class="form-group" id="trans_frm_group_date">';
-    frm += '<label for="trans_frm_date" class="control-label">Date</label><div class="input-group date" id="trans_frm_group_date_input"><span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="trans_frm_date" name="date" type="text" size="12" maxlength="10"></div>';
-    frm += '</div>\n';
-    // amount
-    frm += '<div class="form-group"><label for="trans_frm_amount" class="control-label">Amount</label><div class="input-group"><span class="input-group-addon">$</span><input type="text" class="form-control" id="trans_frm_amount" name="amount"></div><p class="help-block">Transaction amount (positive for expenses, negative for income).</p></div>\n';
-    // description
-    frm += '<div class="form-group"><label for="trans_frm_description" class="control-label">Description</label><input class="form-control" id="trans_frm_description" name="description" type="text"></div>\n';
-    // account
-    frm += '<div class="form-group"><label for="trans_frm_account" class="control-label">Account</label>';
-    frm += '<select id="trans_frm_account" name="account" class="form-control">';
-    frm += '<option value="None" selected="selected"></option>';
-    Object.keys(acct_names_to_id).forEach(function (key) {
-        frm += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
-    });
-    frm += '</select>';
-    frm += '</div>\n';
-    // budget
-    frm += '<div class="form-group"><label for="trans_frm_budget" class="control-label">Budget</label>';
-    frm += '<select id="trans_frm_budget" name="budget" class="form-control">';
-    frm += '<option value="None" selected="selected"></option>';
-    Object.keys(budget_names_to_id).forEach(function (key) {
-        frm += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
-    });
-    frm += '</select>';
-    frm += '</div>\n';
-    // notes
-    frm += '<div class="form-group"><label for="trans_frm_notes" class="control-label">Notes</label><input class="form-control" id="trans_frm_notes" name="notes" type="text"></div>\n';
-    frm += '</form>\n';
-    return frm;
+    return new FormBuilder('transForm')
+        .addHidden('trans_frm_id', 'id', '')
+        .addDatePicker('trans_frm_date', 'date', 'Date')
+        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
+        .addText('trans_frm_description', 'description', 'Description')
+        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
+        .addText('trans_frm_notes', 'notes', 'Notes')
+        .render();
 }
 
 /**
@@ -104,7 +80,7 @@ function transModal(id, dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(transModalDivForm());
     $('#trans_frm_date').val(isoformat(new Date()));
-    $('#trans_frm_group_date_input').datepicker({
+    $('#trans_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
         todayHighlight: true,

@@ -132,11 +132,11 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == '100'
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed()
+            'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed() is False
+            'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
@@ -215,11 +215,11 @@ class TestEditPeriodic2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == '234'
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed()
+            'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed() is False
+            'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
@@ -249,11 +249,11 @@ class TestEditPeriodic3(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == '10.23'
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed()
+            'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed() is False
+            'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id(
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
@@ -282,11 +282,11 @@ class TestEditStanding1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed() is False
+            'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == '1284.23'
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed()
+            'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
@@ -314,11 +314,11 @@ class TestEditStanding2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed() is False
+            'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == '9482.29'
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed()
+            'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
@@ -348,11 +348,11 @@ class TestEditStanding3(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed() is False
+            'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == '-92.29'
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed()
+            'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
@@ -391,11 +391,11 @@ class TestEditIncome(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == '2345.67'
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed()
+            'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed() is False
+            'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id('budget_frm_income').is_selected()
 
@@ -471,11 +471,11 @@ class TestDirectURLPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance').get_attribute('value') == '100'
         assert selenium.find_element_by_id(
-            'budget_frm_group_starting_balance').is_displayed()
+            'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
-            'budget_frm_group_current_balance').is_displayed() is False
+            'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False

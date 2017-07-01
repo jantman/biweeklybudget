@@ -12,6 +12,8 @@ Unreleased Changes
 * `Issue #74 <https://github.com/jantman/biweeklybudget/issues/74>`_ - Warning notification for low balance should take current pay period's overall allocated sum, minus reconciled transactions, into account.
 * Fix some template bugs that were causing HTML to be escaped into plaintext.
 * `Issue #15 <https://github.com/jantman/biweeklybudget/issues/15>`_ - Add pay period totals table to index page.
+* Refactor form generation in UI to use new FormBuilder javascript class (DRY).
+* Fix date-sensitive acceptance test.
 
 0.1.2 (2017-05-28)
 ------------------
