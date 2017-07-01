@@ -119,7 +119,7 @@ FormBuilder.prototype.addCurrency = function(id, name, label, options) {
     if(options === undefined) { options = {}; }
     options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, options);
     this.html += '<div class="form-group" id="' + id + '_group"';
-    if (options.groupHtml !== null) { this.html += ' ' + optiobs.groupHtml; }
+    if (options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">$</span>' +
