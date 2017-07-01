@@ -101,10 +101,10 @@ FormBuilder.prototype.addText = function(id, name, label) {
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
  * @param {Object} options
- * @param {String} options.htmlClass - The HTML class to apply to the element
- * @param {String} options.helpBlock - Content for block of help text after input
+ * @param {String} options.htmlClass - The HTML class to apply to the element; defaults to ``form-control``.
+ * @param {String} options.helpBlock - Content for block of help text after input; defaults to null.
  * @param {String} options.groupHtml - Additional HTML to add to the outermost
- *  form-group div. This is where we'd usually add a default style/display.
+ *  form-group div. This is where we'd usually add a default style/display. Defaults to null.
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addCurrency = function(id, name, label, opts) {
