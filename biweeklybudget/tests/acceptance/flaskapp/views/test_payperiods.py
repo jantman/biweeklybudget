@@ -40,6 +40,7 @@ import os
 from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
+from calendar import timegm
 from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
@@ -132,41 +133,19 @@ class TestFindPayPeriod(AcceptanceHelper):
         self.get(selenium, base_url + '/payperiods')
         start_date = PAY_PERIOD_START_DATE
         print("PayPeriod start date: %s" % start_date)
+        # figure out the date to select
         send_date = start_date + timedelta(days=4)
-        if send_date.month > dtnow().month:
-            print("Using datepicker cal3")
-            div_id = 'cal3'
-            exp_month_th = send_date.strftime('%B %Y')
-        else:
-            print("Using datepicker cal2")
-            div_id = 'cal2'
-            exp_month_th = dtnow().strftime('%B %Y')
-        daysdiv = selenium.find_element_by_xpath(
-            '//div[@id="%s"]//div[@class="datepicker-days"]' % div_id
+        print("send_date: %s" % send_date)
+        # craft a millisecond timestamp for 00:00:00 on that date
+        send_dt = datetime(
+            send_date.year, send_date.month, send_date.day, 0, 0, 0
         )
-        tbl = daysdiv.find_elements_by_tag_name('table')[0]
-        # month
-        assert tbl.find_elements_by_tag_name(
-            'thead')[0].find_elements_by_tag_name(
-            'tr')[1].find_elements_by_tag_name('th')[1].text == exp_month_th
-        tbody = tbl.find_elements_by_tag_name('tbody')[0]
-        print('Looking for datepicker TD for date %s' % send_date)
-        for e in tbody.find_elements_by_tag_name('td'):
-            if (
-                e.get_attribute('class') != 'day' and
-                e.get_attribute('class') != 'today day'
-            ):
-                continue
-            if e.text.strip() == str(send_date.day):
-                parent = e.find_element_by_xpath('..')
-                print("Found date TD: %s - parent: %s" % (
-                    e.get_attribute('innerHTML'),
-                    parent.get_attribute('innerHTML')
-                ))
-                e.click()
-                break
-        else:
-            raise RuntimeError("Unable to find td for date %d", send_date.day)
+        send_tsmillis = timegm(send_dt.timetuple()) * 1000
+        print("send_tsmillis: %s" % send_tsmillis)
+        date_td = selenium.find_element_by_xpath(
+            '//td[@data-date="%s"]' % send_tsmillis
+        )
+        date_td.click()
         self.wait_for_load_complete(selenium)
         assert selenium.current_url == \
             base_url + '/payperiod/' + start_date.strftime('%Y-%m-%d')
