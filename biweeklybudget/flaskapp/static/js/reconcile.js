@@ -346,7 +346,7 @@ function makeTransFromOfx(acct_id, fitid) {
             );
         }
     ).show();
-    $('#trans_frm_group_date_input').datepicker({
+    $('#trans_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
         todayHighlight: true,

@@ -25,7 +25,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addCurrency(id, name, label, opts)
+.. js:function:: FormBuilder.addCurrency(id, name, label, options)
 
    Add a text ``input`` for currency to the form.
 
@@ -33,21 +33,23 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
    :param String name: The name of the form element
    :param String label: The label text for the form element
    :param Object options: 
-   :param String options.htmlClass: The HTML class to apply to the element
-   :param String options.helpBlock: Content for block of help text after input
-   :param String options.groupHtml: Additional HTML to add to the outermost form-group div. This is where we'd usually add a default style/display.
+   :param String options.htmlClass: The HTML class to apply to the element; defaults to ``form-control``.
+   :param String options.helpBlock: Content for block of help text after input; defaults to null.
+   :param String options.groupHtml: Additional HTML to add to the outermost form-group div. This is where we'd usually add a default style/display. Defaults to null.
    :returns: **FormBuilder** -- this
    
 
    
 
-.. js:function:: FormBuilder.addDatePicker(id, name, label)
+.. js:function:: FormBuilder.addDatePicker(id, name, label, options)
 
    Add a date picker input to the form.
 
    :param String id: The id of the form element
    :param String name: The name of the form element
    :param String label: The label text for the form element
+   :param Object options: 
+   :param String options.groupHtml: Additional HTML to add to the outermost
    :returns: **FormBuilder** -- this
    
 
@@ -129,13 +131,16 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addText(id, name, label)
+.. js:function:: FormBuilder.addText(id, name, label, options)
 
    Add a text ``input`` to the form.
 
    :param String id: The id of the form element
    :param String name: The name of the form element
    :param String label: The label text for the form element
+   :param Object options: 
+   :param String options.groupHtml: Additional HTML to add to the outermost
+   :param String options.inputHtml: extra HTML string to include in the actual ``input`` element *(optional; defaults to null)*
    :returns: **FormBuilder** -- this
    
 

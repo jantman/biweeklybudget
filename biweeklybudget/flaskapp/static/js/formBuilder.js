@@ -84,13 +84,21 @@ FormBuilder.prototype.addHidden = function(id, name, value) {
  * @param {String} id - The id of the form element
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
+ * @param {Object} options
+ * @param {String} options.groupHtml - Additional HTML to add to the outermost
+ * @param {String} options.inputHtml - extra HTML string to include in the
+ *  actual ``input`` element *(optional; defaults to null)*
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addText = function(id, name, label) {
-    this.html += '<div class="form-group">' +
-        '<label for="' + id + '" class="control-label">' + label + '</label>' +
-        '<input class="form-control" id="' + id + '" name="' + name + '" type="text">' +
-        '</div>\n';
+FormBuilder.prototype.addText = function(id, name, label, options) {
+    if(options === undefined) { options = {}; }
+    options = $.extend({ groupHtml: null, inputHtml: null }, options);
+    this.html += '<div class="form-group"'
+    if(options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
+    this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
+        '<input class="form-control" id="' + id + '" name="' + name + '" type="text"';
+    if(options.inputHtml !== null) { this.html += ' ' + options.inputHtml; }
+    this.html += '></div>\n';
     return this;
 };
 
@@ -107,18 +115,18 @@ FormBuilder.prototype.addText = function(id, name, label) {
  *  form-group div. This is where we'd usually add a default style/display. Defaults to null.
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addCurrency = function(id, name, label, opts) {
-    if(opts === undefined) { opts = {}; }
-    opts = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, opts);
+FormBuilder.prototype.addCurrency = function(id, name, label, options) {
+    if(options === undefined) { options = {}; }
+    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, options);
     this.html += '<div class="form-group" id="' + id + '_group"';
-    if (opts.groupHtml !== null) { this.html += ' ' + opts.groupHtml; }
+    if (options.groupHtml !== null) { this.html += ' ' + optiobs.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">$</span>' +
-        '<input class="' + opts.htmlClass + '" id="' + id + '" name="' + name + '" type="text">' +
+        '<input class="' + options.htmlClass + '" id="' + id + '" name="' + name + '" type="text">' +
         '</div>';
-    if (opts.helpBlock !== null) {
-        this.html += '<p class="help-block">' + opts.helpBlock + "</p>";
+    if (options.helpBlock !== null) {
+        this.html += '<p class="help-block">' + options.helpBlock + "</p>";
     }
     this.html += '</div>\n';
     return this;
@@ -130,9 +138,13 @@ FormBuilder.prototype.addCurrency = function(id, name, label, opts) {
  * @param {String} id - The id of the form element
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
+ * @param {Object} options
+ * @param {String} options.groupHtml - Additional HTML to add to the outermost
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addDatePicker = function(id, name, label) {
+FormBuilder.prototype.addDatePicker = function(id, name, label, options) {
+    if(options === undefined) { options = {}; }
+    options = $.extend({ groupHtml: null }, options);
     this.html += '<div class="form-group" id="' + id + '_group">' +
         '<label for="' + id + '" class="control-label">' + label + '</label>' +
         '<div class="input-group date" id="' + id + '_input_group">' +
