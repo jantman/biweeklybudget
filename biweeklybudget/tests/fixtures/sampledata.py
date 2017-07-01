@@ -71,6 +71,7 @@ class SampleDataLoader(object):
             note='reconcile notes',
             reconciled_at=datetime(2017, 4, 10, 8, 9, 11, tzinfo=UTC)
         ))
+        self._fuellog()
         self.db.flush()
         self.db.commit()
 
@@ -612,3 +613,29 @@ class SampleDataLoader(object):
             ]
         }
         return self._add_account(acct, statements, transactions)
+
+    def _fuellog(self):
+        v1 = Vehicle(name='Veh1')
+        self.db.add(v1)
+        v2 = Vehicle(name='Veh2')
+        self.db.add(v2)
+        v3 = Vehicle(name='Veh3Inactive', is_active=False)
+        self.db.add(v3)
+        start_dt = dtnow()
+        for veh, veh_str in {v1: 'v1', v2: 'v2', v3: 'v3'}.items():
+            for i in range(0, 10):
+                dt = start_dt + timedelta(days=i)
+                self.db.add(FuelFill(
+                    date=dt.date(),
+                    vehicle=veh,
+                    odometer_miles=(1000 + (i * 10)),
+                    traveled_miles=(100 + i),
+                    level_before=(i * 10),
+                    level_after=(100 - i),
+                    fill_location='fill_loc %s %d' % (veh_str, i),
+                    cost_per_gallon=(2.0 + (i * 0.1)),
+                    total_cost=((2.0 + (i * 0.1)) * (1 + i)),
+                    gallons=(1.0 + i),
+                    reported_mpg=(20 + i),
+                    notes='notes %s %d' % (veh_str, i)
+                ))
