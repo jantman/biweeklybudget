@@ -141,6 +141,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
    :param Object options: 
    :param String options.groupHtml: Additional HTML to add to the outermost
    :param String options.inputHtml: extra HTML string to include in the actual ``input`` element *(optional; defaults to null)*
+   :param String options.helpBlock: Content for block of help text after input; defaults to null.
    :returns: **FormBuilder** -- this
    
 
