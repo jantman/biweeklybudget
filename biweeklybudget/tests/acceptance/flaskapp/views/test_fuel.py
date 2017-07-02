@@ -227,16 +227,16 @@ class TestFuelLogView(AcceptanceHelper):
             [
                 '<a href="javascript:vehicleModal(1)">1</a>',
                 '<a href="javascript:vehicleModal(1)">Veh1</a>',
-                'True'
+                'true'
             ],
             [
                 '<a href="javascript:vehicleModal(2)">2</a>',
                 '<a href="javascript:vehicleModal(2)">Veh2</a>',
-                'True'
+                'true'
             ],
             [
                 '<a href="javascript:vehicleModal(3)">3</a>',
                 '<a href="javascript:vehicleModal(3)">Veh3Inactive</a>',
-                'False'
+                'false'
             ]
         ]

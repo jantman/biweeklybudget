@@ -119,7 +119,7 @@ class FuelAjax(SearchableAjaxView):
         # Ok, build our filter...
         veh_filter = args['columns'][1]['search']['value']
         if veh_filter != '' and veh_filter != 'None':
-            qs = qs.filter(FuelFill.account_id == veh_filter)
+            qs = qs.filter(FuelFill.vehicle_id == veh_filter)
         # search
         if s != '' and s != 'FILTERHACK':
             if len(s) < 3:
