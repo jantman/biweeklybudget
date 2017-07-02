@@ -240,3 +240,151 @@ class TestFuelLogView(AcceptanceHelper):
                 'false'
             ]
         ]
+
+
+@pytest.mark.acceptance
+class TestVehicleModal(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+        self.baseurl = base_url
+        self.dt = dtnow()
+        self.get(selenium, base_url + '/fuel')
+
+    def test_00_verify_db(self, testdb):
+        b = testdb.query(Vehicle).get(1)
+        assert b is not None
+        assert b.name == 'Veh1'
+        assert b.is_active is True
+        b = testdb.query(Vehicle).get(3)
+        assert b is not None
+        assert b.name == 'Veh3Inactive'
+        assert b.is_active is False
+
+    def test_01_populate_modal(self, selenium):
+        self.get(selenium, self.baseurl + '/fuel')
+        link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Vehicle 1'
+        assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
+            'value') == '1'
+        assert selenium.find_element_by_id(
+            'vehicle_frm_name').get_attribute('value') == 'Veh1'
+        assert selenium.find_element_by_id('vehicle_frm_active').is_selected()
+
+    def test_02_edit_modal_inactive(self, selenium):
+        self.get(selenium, self.baseurl + '/fuel')
+        link = selenium.find_element_by_xpath('//a[text()="Veh3Inactive"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Vehicle 3'
+        assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
+            'value') == '3'
+        assert selenium.find_element_by_id(
+            'vehicle_frm_name').get_attribute('value') == 'Veh3Inactive'
+        assert selenium.find_element_by_id(
+            'vehicle_frm_active').is_selected() is False
+        name = selenium.find_element_by_id('vehicle_frm_name')
+        name.clear()
+        name.send_keys('Veh3Edited')
+        selenium.find_element_by_id('vehicle_frm_active').click()
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Vehicle 3 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'vehicles-table')
+        # test that the table is updated
+        table = selenium.find_element_by_id('vehicles-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="javascript:vehicleModal(1)">1</a>',
+                '<a href="javascript:vehicleModal(1)">Veh1</a>',
+                'true'
+            ],
+            [
+                '<a href="javascript:vehicleModal(2)">2</a>',
+                '<a href="javascript:vehicleModal(2)">Veh2</a>',
+                'true'
+            ],
+            [
+                '<a href="javascript:vehicleModal(3)">3</a>',
+                '<a href="javascript:vehicleModal(3)">Veh3Edited</a>',
+                'true'
+            ]
+        ]
+
+    def test_03_verify_db(self, testdb):
+        b = testdb.query(Vehicle).get(3)
+        assert b is not None
+        assert b.name == 'Veh3Edited'
+        assert b.is_active is True
+
+    def test_04_modal_add(self, selenium):
+        self.get(selenium, self.baseurl + '/fuel')
+        link = selenium.find_element_by_id('btn-add-vehicle')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Vehicle'
+        name = selenium.find_element_by_id('vehicle_frm_name')
+        name.clear()
+        name.send_keys('Vehicle4')
+        selenium.find_element_by_id('vehicle_frm_active').click()
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Vehicle 4 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'vehicles-table')
+        # test that the table is updated
+        table = selenium.find_element_by_id('vehicles-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="javascript:vehicleModal(1)">1</a>',
+                '<a href="javascript:vehicleModal(1)">Veh1</a>',
+                'true'
+            ],
+            [
+                '<a href="javascript:vehicleModal(2)">2</a>',
+                '<a href="javascript:vehicleModal(2)">Veh2</a>',
+                'true'
+            ],
+            [
+                '<a href="javascript:vehicleModal(3)">3</a>',
+                '<a href="javascript:vehicleModal(3)">Veh3Edited</a>',
+                'true'
+            ],
+            [
+                '<a href="javascript:vehicleModal(4)">4</a>',
+                '<a href="javascript:vehicleModal(4)">Vehicle4</a>',
+                'false'
+            ]
+        ]

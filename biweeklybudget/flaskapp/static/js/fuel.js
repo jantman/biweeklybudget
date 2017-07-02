@@ -35,6 +35,99 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function fuelModalDivForm() {
+    return new FormBuilder('fuelLogForm')
+        .addHidden('trans_frm_id', 'id', '')
+        .addDatePicker('trans_frm_date', 'date', 'Date')
+        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
+        .addText('trans_frm_description', 'description', 'Description')
+        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
+        .addText('trans_frm_notes', 'notes', 'Notes')
+        .render();
+}
+
+/**
+ * Show the modal to add a fuel log entry. This function calls
+ * :js:func:`fuelModalDivForm` to generate the form HTML,
+ * :js:func:`schedModalDivFillAndShow` to populate the form for editing,
+ * and :js:func:`handleForm` to handle the Submit action.
+ *
+ * @param {(Object|null)} dataTableObj - passed on to :js:func:`handleForm`
+ */
+function fuelLogModal(dataTableObj) {
+    $('#modalBody').empty();
+    $('#modalBody').append(fuelModalDivForm());
+    $('#trans_frm_date').val(isoformat(new Date()));
+    $('#trans_frm_date_input_group').datepicker({
+        todayBtn: "linked",
+        autoclose: true,
+        todayHighlight: true,
+        format: 'yyyy-mm-dd'
+    });
+    $('#modalSaveButton').click(function() {
+        handleForm('modalBody', 'fuelLogForm', '/forms/fuel', dataTableObj);
+    }).show();
+    $('#trans_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
+    $('#modalLabel').text('Add Fuel Fill');
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function vehicleModalDivForm() {
+    return new FormBuilder('vehicleForm')
+        .addHidden('vehicle_frm_id', 'id', '')
+        .addText('vehicle_frm_name', 'name', 'Name')
+        .addCheckbox('vehicle_frm_active', 'is_active', 'Active?', true)
+        .render();
+}
+
+/**
+ * Ajax callback to fill in the modalDiv with data on a Vehicle.
+ */
+function vehicleModalDivFillAndShow(msg) {
+    $('#modalLabel').text('Edit Vehicle ' + msg['id']);
+    $('#vehicle_frm_id').val(msg['id']);
+    $('#vehicle_frm_name').val(msg['name']);
+    if(msg['is_active'] === true) {
+        $('#vehicle_frm_active').prop('checked', true);
+    } else {
+        $('#vehicle_frm_active').prop('checked', false);
+    }
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Show the Vehicle modal popup, optionally populated with
+ * information for one Vehicle. This function calls
+ * :js:func:`vehicleModalDivForm` to generate the form HTML,
+ * :js:func:`vehicleModalDivFillAndShow` to populate the form for editing,
+ * and :js:func:`handleForm` to handle the Submit action.
+ *
+ * @param {number} id - the ID of the Vehicle to show a modal for,
+ *   or null to show modal to add a new Vehicle.
+ */
+function vehicleModal(id) {
+    $('#modalBody').empty();
+    $('#modalBody').append(vehicleModalDivForm());
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        handleForm('modalBody', 'vehicleForm', '/forms/vehicle', null);
+    }).show();
+    if(id) {
+        var url = "/ajax/vehicle/" + id;
+        $.ajax(url).done(vehicleModalDivFillAndShow);
+    } else {
+        $('#modalLabel').text('Add New Vehicle');
+        $("#modalDiv").modal('show');
+    }
+}
+
 // for the DataTable
 var mytable;
 
@@ -128,72 +221,11 @@ $(document).ready(function() {
         mytable.fnFilter(selectedVal, 1, false);
     });
 
-    $('#btn_add_trans').click(function() {
-        transModal(null, mytable);
+    $('#btn-add-fuel').click(function() {
+        fuelLogModal(mytable);
+    });
+
+    $('#btn-add-vehicle').click(function() {
+        vehicleModal(null);
     });
 });
-
-/**
- * Generate the HTML for the form on the Modal
- */
-function transModalDivForm() {
-    return new FormBuilder('transForm')
-        .addHidden('trans_frm_id', 'id', '')
-        .addDatePicker('trans_frm_date', 'date', 'Date')
-        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
-        .addText('trans_frm_description', 'description', 'Description')
-        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
-        .addText('trans_frm_notes', 'notes', 'Notes')
-        .render();
-}
-
-/**
- * Ajax callback to fill in the modalDiv with data on a budget.
- */
-function transModalDivFillAndShow(msg) {
-    $('#modalLabel').text('Edit Transaction ' + msg['id']);
-    $('#trans_frm_id').val(msg['id']);
-    $('#trans_frm_description').val(msg['description']);
-    $('#trans_frm_date').val(msg['date']['str']);
-    $('#trans_frm_amount').val(msg['actual_amount']);
-    $('#trans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
-    $('#trans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
-    $('#trans_frm_notes').val(msg['notes']);
-    $("#modalDiv").modal('show');
-}
-
-/**
- * Show the ScheduledTransaction modal popup, optionally populated with
- * information for one ScheduledTransaction. This function calls
- * :js:func:`schedModalDivForm` to generate the form HTML,
- * :js:func:`schedModalDivFillAndShow` to populate the form for editing,
- * and :js:func:`handleForm` to handle the Submit action.
- *
- * @param {number} id - the ID of the ScheduledTransaction to show a modal for,
- *   or null to show modal to add a new ScheduledTransaction.
- * @param {(Object|null)} dataTableObj - passed on to :js:func:`handleForm`
- */
-function transModal(id, dataTableObj) {
-    $('#modalBody').empty();
-    $('#modalBody').append(transModalDivForm());
-    $('#trans_frm_date').val(isoformat(new Date()));
-    $('#trans_frm_date_input_group').datepicker({
-        todayBtn: "linked",
-        autoclose: true,
-        todayHighlight: true,
-        format: 'yyyy-mm-dd'
-    });
-    $('#modalSaveButton').off();
-    $('#modalSaveButton').click(function() {
-        handleForm('modalBody', 'transForm', '/forms/transaction', dataTableObj);
-    }).show();
-    if(id) {
-        var url = "/ajax/transactions/" + id;
-        $.ajax(url).done(transModalDivFillAndShow);
-    } else {
-        $('#modalLabel').text('Add New Transaction');
-        $('#trans_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
-        $("#modalDiv").modal('show');
-    }
-}

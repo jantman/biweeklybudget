@@ -181,8 +181,96 @@ class FuelAjax(SearchableAjaxView):
         return jsonify(table.json())
 
 
+class VehicleAjax(MethodView):
+    """
+    Handle GET /ajax/vehicle/<int:vehicle_id> endpoint.
+    """
+
+    def get(self, vehicle_id):
+        v = db_session.query(Vehicle).get(vehicle_id)
+        return jsonify(v.as_dict)
+
+
+class VehicleFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/vehicle
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        logger.warning(data)
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data.get('name', '').strip() == '':
+            errors['name'].append('Name cannot be empty')
+            have_errors = True
+        if data.get('id', '').strip() == '':
+            v = db_session.query(Vehicle).filter(
+                Vehicle.name.__eq__(data.get('name'))
+            ).all()
+            if len(v) > 0:
+                errors['name'].append('Name must be unique')
+                have_errors = True
+        else:
+            v = db_session.query(Vehicle).filter(
+                Vehicle.name.__eq__(data.get('name')),
+                Vehicle.id.__ne__(int(data.get('id')))
+            ).all()
+            if len(v) > 0:
+                errors['name'].append('Name must be unique')
+                have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing Vehicle
+            veh = db_session.query(Vehicle).get(int(data['id']))
+            if veh is None:
+                raise RuntimeError("Error: no Vehicle with ID %s" % data['id'])
+            action = 'updating Vehicle ' + data['id']
+        else:
+            veh = Vehicle()
+            action = 'creating new Vehicle'
+        veh.name = data['name'].strip()
+        if data['is_active'] == 'true':
+            veh.is_active = True
+        else:
+            veh.is_active = False
+        logger.info('%s: %s', action, veh.as_dict)
+        db_session.add(veh)
+        db_session.commit()
+        return 'Successfully saved Vehicle %d in database.' % veh.id
+
+
 app.add_url_rule('/fuel', view_func=FuelView.as_view('fuel_view'))
 app.add_url_rule(
     '/ajax/fuelLog',
     view_func=FuelAjax.as_view('fuel_ajax')
+)
+app.add_url_rule(
+    '/ajax/vehicle/<int:vehicle_id>',
+    view_func=VehicleAjax.as_view('vehicle_ajax')
+)
+app.add_url_rule(
+    '/forms/vehicle',
+    view_func=VehicleFormHandler.as_view('vehicle_form')
 )
