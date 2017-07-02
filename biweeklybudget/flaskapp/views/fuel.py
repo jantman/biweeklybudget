@@ -39,9 +39,10 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
-from sqlalchemy import or_
+from sqlalchemy import or_, asc
 from decimal import Decimal, ROUND_FLOOR
 from datetime import datetime
+from copy import copy
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
@@ -364,6 +365,79 @@ class FuelLogFormHandler(FormHandlerView):
         }
 
 
+class FuelMPGChartView(MethodView):
+    """
+    Handle GET /ajax/chart-data/fuel-economy endpoint.
+    """
+
+    def get(self):
+        vehicles = {
+            x.id: x.name for x in
+            db_session.query(
+                Vehicle
+            ).filter(Vehicle.is_active.__eq__(True)).all()
+        }
+        veh_names = vehicles.values()
+        datedict = {x: None for x in veh_names}
+        data = {}
+        mpgs = db_session.query(
+            FuelFill
+        ).filter(
+            FuelFill.vehicle.has(is_active=True),
+            FuelFill.calculated_mpg.__ne__(None)
+        ).order_by(asc(FuelFill.date), asc(FuelFill.odometer_miles))
+        for mpg in mpgs.all():
+            ds = mpg.date.strftime('%Y-%m-%d')
+            if ds not in data:
+                data[ds] = copy(datedict)
+                data[ds]['date'] = ds
+            if mpg.calculated_mpg is None:
+                data[ds][mpg.vehicle.name] = 0.0
+            else:
+                data[ds][mpg.vehicle.name] = float(mpg.calculated_mpg)
+        resdata = []
+        last = None
+        for k in sorted(data.keys()):
+            if last is None:
+                last = data[k]
+                continue
+            d = copy(data[k])
+            for subk in veh_names:
+                if d[subk] is None:
+                    d[subk] = last[subk]
+            last = d
+            resdata.append(d)
+        res = {
+            'data': resdata,
+            'keys': sorted(veh_names)
+        }
+        return jsonify(res)
+
+
+class FuelPriceChartView(MethodView):
+    """
+    Handle GET /ajax/chart-data/fuel-prices endpoint.
+    """
+
+    def get(self):
+        resdata = []
+        prices = db_session.query(
+            FuelFill
+        ).filter(
+            FuelFill.cost_per_gallon.__ne__(None)
+        ).order_by(asc(FuelFill.date))
+        for point in prices.all():
+            ds = point.date.strftime('%Y-%m-%d')
+            resdata.append({
+                'date': ds,
+                'price': float(point.cost_per_gallon)
+            })
+        res = {
+            'data': resdata
+        }
+        return jsonify(res)
+
+
 app.add_url_rule('/fuel', view_func=FuelView.as_view('fuel_view'))
 app.add_url_rule(
     '/ajax/fuelLog',
@@ -380,4 +454,12 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/fuel',
     view_func=FuelLogFormHandler.as_view('fuel_form')
+)
+app.add_url_rule(
+    '/ajax/chart-data/fuel-economy',
+    view_func=FuelMPGChartView.as_view('fuel_mpg_chart_view')
+)
+app.add_url_rule(
+    '/ajax/chart-data/fuel-prices',
+    view_func=FuelPriceChartView.as_view('fuel_price_chart_view')
 )

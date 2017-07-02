@@ -10,6 +10,9 @@
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
 
+    <!-- Morris Charts CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
+
     <script>
         var acct_names_to_id = {};
         {% for name in accts.keys()|sort %}
@@ -28,10 +31,34 @@
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="graph-row">
-                <div class="col-lg-12">
-                    GRAPH HERE.
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Fuel Economy
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="mpg-chart"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
                 </div>
-                <!-- /.col-lg-12 -->
+                <!-- /.col-lg-6 -->
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Fuel Prices
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="fuel-price-chart"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-6 -->
             </div>
             <!-- /.row -->
             <div class="row" id="content-row">
@@ -131,4 +158,8 @@ var fuel_budget_id = {{ settings.FUEL_BUDGET_ID }};
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/formBuilder.js"></script>
 <script src="/static/js/fuel.js"></script>
+<!-- Morris Charts JavaScript -->
+<script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
+<script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+<script src="/static/js/fuel_charts.js"></script>
 {% endblock %}
