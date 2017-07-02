@@ -77,7 +77,7 @@ class TestNotifications(object):
             num_unreconciled_ofx=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
-            mocks['budget_account_sum'].return_value = 100
+            mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 0
             res = NotificationsController.get_notifications()
@@ -92,7 +92,7 @@ class TestNotifications(object):
                 num_unreconciled_ofx=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 1
-            mocks['budget_account_sum'].return_value = 100
+            mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 28
             res = NotificationsController.get_notifications()
@@ -118,7 +118,7 @@ class TestNotifications(object):
                 num_unreconciled_ofx=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 3
-            mocks['budget_account_sum'].return_value = 100
+            mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 28
             res = NotificationsController.get_notifications()
