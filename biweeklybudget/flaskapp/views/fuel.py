@@ -41,12 +41,14 @@ from flask import render_template, jsonify, request
 from datatables import DataTable
 from sqlalchemy import or_
 from decimal import Decimal, ROUND_FLOOR
+from datetime import datetime
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
@@ -260,6 +262,108 @@ class VehicleFormHandler(FormHandlerView):
         return 'Successfully saved Vehicle %d in database.' % veh.id
 
 
+class FuelLogFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/fuel
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        errors = {k: [] for k in data.keys()}
+        errors = self._validate_date_ymd('date', data, errors)
+        if data['add_trans'] == 'true':
+            if data['account'] == 'None':
+                errors['account'].append('Transactions must have an account')
+            if data['budget'] == 'None':
+                errors['budget'].append('Transactions must have a budget')
+        if db_session.query(Vehicle).get(int(data['vehicle'])) is None:
+            errors['vehicle'].append('Invalid Vehicle ID %s' % data['vehicle'])
+        errors = self._validate_int('odometer_miles', data, errors)
+        errors = self._validate_int('reported_miles', data, errors)
+        errors = self._validate_not_empty('fill_location', data, errors)
+        errors = self._validate_float('cost_per_gallon', data, errors)
+        errors = self._validate_float('total_cost', data, errors)
+        errors = self._validate_float('gallons', data, errors)
+        errors = self._validate_float('reported_mpg', data, errors)
+        errors = self._validate_int('vehicle', data, errors)
+        errors = self._validate_int('level_before', data, errors)
+        errors = self._validate_int('level_after', data, errors)
+        if len(errors['total_cost']) == 0 and float(data['total_cost']) == 0:
+            errors['total_cost'].append('Total Cost cannot be zero')
+        for v in errors.values():
+            if len(v) > 0:
+                return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        total = float(data['total_cost'])
+        dt = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        veh_name = db_session.query(Vehicle).get(int(data['vehicle'])).name
+        fill = FuelFill()
+        fill.date = dt
+        fill.vehicle_id = int(data['vehicle'])
+        fill.odometer_miles = int(data['odometer_miles'])
+        fill.reported_miles = int(data['reported_miles'])
+        fill.level_before = int(data['level_before'])
+        fill.level_after = int(data['level_after'])
+        fill.fill_location = data['fill_location'].strip()
+        fill.cost_per_gallon = float(data['cost_per_gallon'])
+        fill.total_cost = total
+        fill.gallons = float(data['gallons'])
+        fill.reported_mpg = float(data['reported_mpg'])
+        fill.notes = data['notes'].strip()
+        logger.info('Creating new FuelFill: %s', fill.as_dict)
+        db_session.add(fill)
+        db_session.commit()
+        fill.calculate_mpg()
+        db_session.commit()
+        if data['add_trans'] != 'true':
+            return {
+                'success_message': 'Successfully saved FuelFill %d '
+                                   'in database.' % fill.id,
+                'success': True,
+                'fill_id': fill.id
+            }
+        trans = Transaction()
+        budg = db_session.query(Budget).get(int(data['budget']))
+        trans.description = '%s - FuelFill #%d (%s)' % (
+            data['fill_location'].strip(), fill.id, veh_name
+        )
+        trans.date = dt
+        trans.actual_amount = total
+        trans.account_id = int(data['account'])
+        trans.budget = budg
+        trans.notes = data['notes'].strip()
+        logger.info('Creating new Transaction for FuelFill: %s', trans.as_dict)
+        db_session.add(trans)
+        db_session.commit()
+        return {
+            'success_message': 'Successfully saved FuelFill %d '
+                               ' and Transaction %d in database.' % (
+                                  fill.id, trans.id),
+            'success': True,
+            'trans_id': trans.id,
+            'fill_id': fill.id
+        }
+
+
 app.add_url_rule('/fuel', view_func=FuelView.as_view('fuel_view'))
 app.add_url_rule(
     '/ajax/fuelLog',
@@ -272,4 +376,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/vehicle',
     view_func=VehicleFormHandler.as_view('vehicle_form')
+)
+app.add_url_rule(
+    '/forms/fuel',
+    view_func=FuelLogFormHandler.as_view('fuel_form')
 )

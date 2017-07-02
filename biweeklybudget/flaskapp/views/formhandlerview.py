@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from flask.views import MethodView
 from flask import jsonify, request
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,87 @@ class FormHandlerView(MethodView):
           field
         """
         raise NotImplementedError()
+
+    def _validate_int(self, key, data, errors):
+        """
+        Validate an integer field.
+
+        :param key: the key in data to look at
+        :type key: str
+        :param data: the form data
+        :type data: dict
+        :param err_list: list of error messages for the field
+        :type err_list: dict
+        :return: updated err_list
+        :rtype: dict
+        """
+        try:
+            x = int(data[key])
+            assert data[key] == '%d' % x
+        except Exception:
+            errors[key].append('Invalid integer value: "%s"' % data[key])
+        return errors
+
+    def _validate_float(self, key, data, errors):
+        """
+        Validate a float field.
+
+        :param key: the key in data to look at
+        :type key: str
+        :param data: the form data
+        :type data: dict
+        :param err_list: list of error messages for the field
+        :type err_list: dict
+        :return: updated err_list
+        :rtype: dict
+        """
+        try:
+            x = float(data[key])
+            assert data[key] == '%s' % x
+        except Exception:
+            errors[key].append('Invalid float value: "%s"' % data[key])
+        return errors
+
+    def _validate_date_ymd(self, key, data, errors):
+        """
+        Validate a YYYY-mm-dd date field.
+
+        :param key: the key in data to look at
+        :type key: str
+        :param data: the form data
+        :type data: dict
+        :param err_list: list of error messages for the field
+        :type err_list: dict
+        :return: updated err_list
+        :rtype: dict
+        """
+        if data[key].strip() == '':
+            errors[key].append('Date cannot be empty')
+            return errors
+        try:
+            datetime.strptime(data[key], '%Y-%m-%d').date()
+        except Exception:
+            errors[key].append(
+                'Date "%s" is not valid (YYYY-MM-DD)' % data[key]
+            )
+        return errors
+
+    def _validate_not_empty(self, key, data, errors):
+        """
+        Validate that a string is not empty.
+
+        :param key: the key in data to look at
+        :type key: str
+        :param data: the form data
+        :type data: dict
+        :param err_list: list of error messages for the field
+        :type err_list: dict
+        :return: updated err_list
+        :rtype: dict
+        """
+        if data[key].strip() == '':
+            errors[key].append('Cannot be empty')
+        return errors
 
     def submit(self, data):
         """

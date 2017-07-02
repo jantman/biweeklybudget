@@ -46,14 +46,14 @@ from biweeklybudget.models.transaction import Transaction
 
 
 LEVEL_OPTS = [
-    ['10', '1/10'], ['20', '2/10'], ['30', '3/10'],
+    ['0', '0/10'], ['10', '1/10'], ['20', '2/10'], ['30', '3/10'],
     ['40', '4/10'], ['50', '5/10'], ['60', '6/10'], ['70', '7/10'],
     ['80', '8/10'], ['90', '9/10'], ['100', '10/10']
 ]
 
 
 @pytest.mark.acceptance
-class DONOTTestFuel(AcceptanceHelper):
+class TestFuel(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -77,7 +77,7 @@ class DONOTTestFuel(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestFuelLogView(AcceptanceHelper):
+class TestFuelLogView(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -250,13 +250,8 @@ class DONOTTestFuelLogView(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DONOTTestVehicleModal(AcceptanceHelper):
-
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
-        self.baseurl = base_url
-        self.dt = dtnow()
-        self.get(selenium, base_url + '/fuel')
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestVehicleModal(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(Vehicle).get(1)
@@ -268,8 +263,8 @@ class DONOTTestVehicleModal(AcceptanceHelper):
         assert b.name == 'Veh3Inactive'
         assert b.is_active is False
 
-    def test_01_populate_modal(self, selenium):
-        self.get(selenium, self.baseurl + '/fuel')
+    def test_01_populate_modal(self, base_url, selenium):
+        self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -281,8 +276,8 @@ class DONOTTestVehicleModal(AcceptanceHelper):
             'vehicle_frm_name').get_attribute('value') == 'Veh1'
         assert selenium.find_element_by_id('vehicle_frm_active').is_selected()
 
-    def test_02_edit_modal_inactive(self, selenium):
-        self.get(selenium, self.baseurl + '/fuel')
+    def test_02_edit_modal_inactive(self, base_url, selenium):
+        self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh3Inactive"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -342,8 +337,8 @@ class DONOTTestVehicleModal(AcceptanceHelper):
         assert b.name == 'Veh3Edited'
         assert b.is_active is True
 
-    def test_04_modal_add(self, selenium):
-        self.get(selenium, self.baseurl + '/fuel')
+    def test_04_modal_add(self, base_url, selenium):
+        self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -435,8 +430,8 @@ class TestFuelLogModal(AcceptanceHelper):
             selenium.find_element_by_id('fuel_frm_level_before')
         )
         opts = [[o.get_attribute('value'), o.text] for o in lvl_before.options]
-        assert opts == [['None', '']] + LEVEL_OPTS
-        assert lvl_before.first_selected_option.get_attribute('value') == 'None'
+        assert opts == LEVEL_OPTS
+        assert lvl_before.first_selected_option.get_attribute('value') == '0'
         lvl_after = Select(
             selenium.find_element_by_id('fuel_frm_level_after')
         )
@@ -480,15 +475,213 @@ class TestFuelLogModal(AcceptanceHelper):
             ['6', 'Standing3 Inactive']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
+        notes = selenium.find_element_by_id('fuel_frm_notes')
+        assert notes.get_attribute('value') == ''
 
-    def test_02_add_no_trans(self):
-        pass
+    def test_02_add_no_trans(self, base_url, selenium):
+        self.get(selenium, base_url + '/fuel')
+        link = selenium.find_element_by_id('btn-add-fuel')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add Fuel Fill'
+        veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
+        veh_sel.select_by_value('2')
+        date = selenium.find_element_by_id('fuel_frm_date')
+        date.clear()
+        date.send_keys(
+            (dtnow() - timedelta(days=3)).date().strftime('%Y-%m-%d')
+        )
+        odo = selenium.find_element_by_id('fuel_frm_odo_miles')
+        odo.clear()
+        odo.send_keys('1123')
+        rep_mi = selenium.find_element_by_id('fuel_frm_reported_miles')
+        rep_mi.clear()
+        rep_mi.send_keys('123')
+        lvl_before = Select(
+            selenium.find_element_by_id('fuel_frm_level_before')
+        )
+        lvl_before.select_by_value('50')
+        lvl_after = Select(
+            selenium.find_element_by_id('fuel_frm_level_after')
+        )
+        lvl_after.select_by_value('90')
+        fill_loc = selenium.find_element_by_id('fuel_frm_fill_loc')
+        fill_loc.clear()
+        fill_loc.send_keys('Fill Location')
+        cpg = selenium.find_element_by_id('fuel_frm_cost_per_gallon')
+        cpg.clear()
+        cpg.send_keys('1.239')
+        cost = selenium.find_element_by_id('fuel_frm_total_cost')
+        cost.clear()
+        cost.send_keys('12.34')
+        gals = selenium.find_element_by_id('fuel_frm_gallons')
+        gals.clear()
+        gals.send_keys('6.789')
+        rep_mpg = selenium.find_element_by_id('fuel_frm_reported_mpg')
+        rep_mpg.clear()
+        rep_mpg.send_keys('34.5')
+        add_trans = selenium.find_element_by_id('fuel_frm_add_trans')
+        add_trans.click()
+        assert add_trans.is_selected() is False
+        acct_sel = Select(body.find_element_by_id('fuel_frm_account'))
+        acct_sel.select_by_value('3')
+        budget_sel = Select(body.find_element_by_id('fuel_frm_budget'))
+        budget_sel.select_by_value('1')
+        notes = selenium.find_element_by_id('fuel_frm_notes')
+        notes.clear()
+        notes.send_keys('My Notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved FuelFill 7 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that datatable was updated
+        table = selenium.find_element_by_id('table-fuel-log')
+        odo_reads = [y[2] for y in self.tbody2textlist(table)]
+        assert odo_reads == [
+            '1,011', '1,012', '1,001', '1,002', '1,123'
+        ]
 
-    def test_03_verify_db(self):
-        pass
+    def test_03_verify_db(self, testdb):
+        ids = [
+            t.id for t in testdb.query(FuelFill).all()
+        ]
+        assert len(ids) == 7
+        assert max(ids) == 7
+        fill = testdb.query(FuelFill).get(7)
+        assert fill.date == (dtnow() - timedelta(days=3)).date()
+        assert fill.vehicle_id == 2
+        assert fill.odometer_miles == 1123
+        assert fill.reported_miles == 123
+        assert fill.level_before == 50
+        assert fill.level_after == 90
+        assert fill.fill_location == 'Fill Location'
+        assert float(fill.cost_per_gallon) == 1.239
+        assert float(fill.total_cost) == 12.34
+        assert float(fill.gallons) == 6.789
+        assert float(fill.reported_mpg) == 34.5
+        assert fill.notes == 'My Notes'
+        # calculated values
+        assert fill.calculated_miles == 111
+        assert float(fill.calculated_mpg) == 16.349
+        trans_ids = [
+            x.id for x in testdb.query(Transaction).all()
+        ]
+        assert len(trans_ids) == 3
+        assert max(trans_ids) == 3
 
-    def test_04_add_with_trans(self):
-        pass
+    def test_04_add_with_trans(self, base_url, selenium):
+        self.get(selenium, base_url + '/fuel')
+        link = selenium.find_element_by_id('btn-add-fuel')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add Fuel Fill'
+        veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
+        veh_sel.select_by_value('1')
+        date = selenium.find_element_by_id('fuel_frm_date')
+        date.clear()
+        date.send_keys(
+            (dtnow() - timedelta(days=2)).date().strftime('%Y-%m-%d')
+        )
+        odo = selenium.find_element_by_id('fuel_frm_odo_miles')
+        odo.clear()
+        odo.send_keys('1256')
+        rep_mi = selenium.find_element_by_id('fuel_frm_reported_miles')
+        rep_mi.clear()
+        rep_mi.send_keys('345')
+        lvl_before = Select(
+            selenium.find_element_by_id('fuel_frm_level_before')
+        )
+        lvl_before.select_by_value('10')
+        lvl_after = Select(
+            selenium.find_element_by_id('fuel_frm_level_after')
+        )
+        lvl_after.select_by_value('100')
+        fill_loc = selenium.find_element_by_id('fuel_frm_fill_loc')
+        fill_loc.clear()
+        fill_loc.send_keys('Fill Location2')
+        cpg = selenium.find_element_by_id('fuel_frm_cost_per_gallon')
+        cpg.clear()
+        cpg.send_keys('1.459')
+        cost = selenium.find_element_by_id('fuel_frm_total_cost')
+        cost.clear()
+        cost.send_keys('14.82')
+        gals = selenium.find_element_by_id('fuel_frm_gallons')
+        gals.clear()
+        gals.send_keys('5.678')
+        rep_mpg = selenium.find_element_by_id('fuel_frm_reported_mpg')
+        rep_mpg.clear()
+        rep_mpg.send_keys('28.3')
+        add_trans = selenium.find_element_by_id('fuel_frm_add_trans')
+        assert add_trans.is_selected()
+        acct_sel = Select(body.find_element_by_id('fuel_frm_account'))
+        acct_sel.select_by_value('3')
+        budget_sel = Select(body.find_element_by_id('fuel_frm_budget'))
+        budget_sel.select_by_value('1')
+        notes = selenium.find_element_by_id('fuel_frm_notes')
+        notes.clear()
+        notes.send_keys('My Notes2')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved FuelFill 8 ' \
+                                 'and Transaction 4 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # test that datatable was updated
+        table = selenium.find_element_by_id('table-fuel-log')
+        odo_reads = [y[2] for y in self.tbody2textlist(table)]
+        assert odo_reads == [
+            '1,011', '1,012', '1,001', '1,002', '1,256', '1,123'
+        ]
 
-    def test_05_verify_db(self):
-        pass
+    def test_05_verify_db(self, testdb):
+        ids = [
+            t.id for t in testdb.query(FuelFill).all()
+        ]
+        assert len(ids) == 8
+        assert max(ids) == 8
+        fill = testdb.query(FuelFill).get(8)
+        assert fill.date == (dtnow() - timedelta(days=2)).date()
+        assert fill.vehicle_id == 1
+        assert fill.odometer_miles == 1256
+        assert fill.reported_miles == 345
+        assert fill.level_before == 10
+        assert fill.level_after == 100
+        assert fill.fill_location == 'Fill Location2'
+        assert float(fill.cost_per_gallon) == 1.459
+        assert float(fill.total_cost) == 14.82
+        assert float(fill.gallons) == 5.678
+        assert float(fill.reported_mpg) == 28.3
+        assert fill.notes == 'My Notes2'
+        # calculated values
+        assert fill.calculated_miles == 245
+        assert float(fill.calculated_mpg) == 43.148
+        trans_ids = [
+            x.id for x in testdb.query(Transaction).all()
+        ]
+        assert len(trans_ids) == 4
+        assert max(trans_ids) == 4
+        trans = testdb.query(Transaction).get(4)
+        assert trans.date == (dtnow() - timedelta(days=2)).date()
+        assert float(trans.actual_amount) == 14.82
+        assert trans.budgeted_amount is None
+        assert trans.description == 'Fill Location2 - FuelFill #8 (Veh1)'
+        assert trans.notes == 'My Notes2'
+        assert trans.account_id == 3
+        assert trans.budget_id == 1
+        assert trans.scheduled_trans_id is None
