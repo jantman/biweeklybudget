@@ -40,13 +40,13 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  */
 function fuelModalDivForm() {
     return new FormBuilder('fuelLogForm')
-        .addHidden('trans_frm_id', 'id', '')
-        .addDatePicker('trans_frm_date', 'date', 'Date')
-        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
-        .addText('trans_frm_description', 'description', 'Description')
-        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
-        .addText('trans_frm_notes', 'notes', 'Notes')
+        // vehicle should default to the first active
+        .addDatePicker('fuel_frm_date', 'date', 'Date')
+        .addCurrency('fuel_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
+        .addText('fuel_frm_description', 'description', 'Description')
+        .addLabelToValueSelect('fuel_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('fuel_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
+        .addText('fuel_frm_notes', 'notes', 'Notes')
         .render();
 }
 
@@ -61,8 +61,8 @@ function fuelModalDivForm() {
 function fuelLogModal(dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(fuelModalDivForm());
-    $('#trans_frm_date').val(isoformat(new Date()));
-    $('#trans_frm_date_input_group').datepicker({
+    $('#fuel_frm_date').val(isoformat(new Date()));
+    $('#fuel_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
         todayHighlight: true,
@@ -71,7 +71,7 @@ function fuelLogModal(dataTableObj) {
     $('#modalSaveButton').click(function() {
         handleForm('modalBody', 'fuelLogForm', '/forms/fuel', dataTableObj);
     }).show();
-    $('#trans_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
+    $('#fuel_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
     $('#modalLabel').text('Add Fuel Fill');
     $("#modalDiv").modal('show');
 }
