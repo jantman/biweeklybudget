@@ -135,7 +135,6 @@ Release Checklist
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
-   * ``python setup.py register -r https://testpypi.python.org/pypi``
    * ``python setup.py sdist bdist_wheel``
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
@@ -153,7 +152,7 @@ Release Checklist
 15. Build and push the new Docker image:
 
    * Check out the git tag: ``git checkout X.Y.Z``
-   * Build the Docker image: ``tox -e docker``
+   * Build the Docker image: ``DOCKER_BUILD_VER=X.Y.Z tox -e docker``
    * Follow the instructions from that script to push the image to the
      Docker Hub and tag a "latest" version.
 

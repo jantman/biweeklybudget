@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.2.0 (2017-07-02)
 ------------------
 
 * Fix ``/pay_period_for`` redirect to be a 302 instead of 301, add redirect logging, remove some old debug logging from that view.

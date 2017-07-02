@@ -127,3 +127,11 @@ To reconcile an OFX transaction with a Transaction, just drag and drop.
 .. image:: reconcile-drag_sm.png
    :target: reconcile-drag.png
 
+Fuel Log
+--------
+
+Vehicle fuel log and fuel economy tracking.
+
+.. image:: fuel_sm.png
+   :target: fuel.png
+
