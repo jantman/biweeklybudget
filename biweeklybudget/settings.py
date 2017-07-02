@@ -58,7 +58,8 @@ _TIMEDELTA_VARS = [
     'STALE_DATA_TIMEDELTA'
 ]
 _INT_VARS = [
-    'DEFAULT_ACCOUNT_ID'
+    'DEFAULT_ACCOUNT_ID',
+    'FUEL_BUDGET_ID'
 ]
 _STRING_VARS = [
     'DB_CONNSTRING',
@@ -75,6 +76,10 @@ DB_CONNSTRING = None
 #: int - Account ID to show first in dropdown lists. This must be the database
 #: ID of a valid account.
 DEFAULT_ACCOUNT_ID = 1
+
+#: int - Budget ID to select as default when inputting Fuel Log entries. This
+#: must be the database ID of a valid budget.
+FUEL_BUDGET_ID = 1
 
 #: :py:class:`datetime.date` - The starting date of one pay period (generally
 #: the first pay period represented in data in this app). The dates of all pay

@@ -92,3 +92,7 @@ RECONCILE_BEGIN_DATE = date(2017, 1, 1)
 
 #: Account ID to show first in dropdown lists
 DEFAULT_ACCOUNT_ID = 1
+
+#: int - Budget ID to select as default when inputting Fuel Log entries. This
+#: must be the database ID of a valid budget.
+FUEL_BUDGET_ID = 2

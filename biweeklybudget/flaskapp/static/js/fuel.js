@@ -39,11 +39,54 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Generate the HTML for the form on the Modal
  */
 function fuelModalDivForm() {
+    var vehicleOptions = {};
+    Object.keys(vehicles).forEach(function (key) {
+        if( vehicles[key].is_active == "True" ) {
+            vehicleOptions[vehicles[key].name] = key;
+        }
+    });
     return new FormBuilder('fuelLogForm')
-        // vehicle should default to the first active
+        .addLabelToValueSelect('fuel_frm_vehicle', 'vehicle', 'Vehicle', vehicleOptions, null, false)
         .addDatePicker('fuel_frm_date', 'date', 'Date')
-        .addCurrency('fuel_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
-        .addText('fuel_frm_description', 'description', 'Description')
+        .addText(
+            'fuel_frm_odo_miles', 'odometer_miles', 'Odometer Mileage',
+            {
+                inputHtml: 'size="8" maxlength="8"',
+                helpBlock: 'Current vehicle odometer reading'
+            }
+        )
+        .addText(
+            'fuel_frm_reported_miles', 'reported_miles', 'Reported Distance',
+            {
+                inputHtml: 'size="8" maxlength="8"',
+                helpBlock: 'Distance since last fill, as reported by vehicle'
+            }
+        )
+        .addLabelToValueSelect(
+            'fuel_frm_level_before', 'level_before', 'Starting Fuel Level',
+            {'1/10': 10, '2/10': 20, '3/10': 30, '4/10': 40, '5/10': 50, '6/10': 60, '7/10': 70, '8/10': 80, '9/10': 90, '10/10': 100},
+            'None', true
+        )
+        .addLabelToValueSelect(
+            'fuel_frm_level_after', 'level_after', 'Ending Fuel Level',
+            {'1/10': 10, '2/10': 20, '3/10': 30, '4/10': 40, '5/10': 50, '6/10': 60, '7/10': 70, '8/10': 80, '9/10': 90, '10/10': 100},
+            100, false
+        )
+        .addText('fuel_frm_fill_loc', 'fill_location', 'Fill Location')
+        .addCurrency('fuel_frm_cost_per_gallon', 'cost_per_gallon', 'Cost Per Gallon')
+        .addCurrency('fuel_frm_total_cost', 'total_cost', 'Total Cost')
+        .addText(
+            'fuel_frm_gallons', 'gallons', 'Gallons',
+            { inputHtml: 'size="8" maxlength="8"' }
+        )
+        .addText(
+            'fuel_frm_reported_mpg', 'reported_mpg', 'Reported MPG',
+            {
+                inputHtml: 'size="8" maxlength="8"',
+                helpBlock: 'MPG reported by vehicle'
+            }
+        )
+        .addCheckbox('fuel_frm_add_trans', 'add_trans', 'Add Transaction?', true)
         .addLabelToValueSelect('fuel_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
         .addLabelToValueSelect('fuel_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
         .addText('fuel_frm_notes', 'notes', 'Notes')
@@ -72,6 +115,7 @@ function fuelLogModal(dataTableObj) {
         handleForm('modalBody', 'fuelLogForm', '/forms/fuel', dataTableObj);
     }).show();
     $('#fuel_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
+    $('#fuel_frm_budget option[value=' + fuel_budget_id + ']').prop('selected', 'selected').change();
     $('#modalLabel').text('Add Fuel Fill');
     $("#modalDiv").modal('show');
 }
