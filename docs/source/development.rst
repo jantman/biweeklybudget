@@ -135,7 +135,6 @@ Release Checklist
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
-   * ``python setup.py register -r https://testpypi.python.org/pypi``
    * ``python setup.py sdist bdist_wheel``
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
