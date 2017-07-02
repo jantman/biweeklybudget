@@ -207,6 +207,12 @@ class Screenshotter(object):
             'description': 'To reconcile an OFX transaction with a Transaction,'
                            ' just drag and drop.',
             'preshot_func': '_reconcile_drag_preshot'
+        },
+        {
+            'path': '/fuel',
+            'filename': 'fuel',
+            'title': 'Fuel Log',
+            'description': 'Vehicle fuel log and fuel economy tracking.'
         }
     ]
 
