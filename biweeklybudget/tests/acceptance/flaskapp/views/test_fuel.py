@@ -308,7 +308,7 @@ class TestVehicleModal(AcceptanceHelper):
         htmls = []
         for row in elems:
             htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
+                [y.get_attribute('innerHTML') for y in row]
             )
         assert htmls == [
             [
@@ -363,7 +363,7 @@ class TestVehicleModal(AcceptanceHelper):
         htmls = []
         for row in elems:
             htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
+                [y.get_attribute('innerHTML') for y in row]
             )
         assert htmls == [
             [
