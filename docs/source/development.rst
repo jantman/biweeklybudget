@@ -153,7 +153,7 @@ Release Checklist
 15. Build and push the new Docker image:
 
    * Check out the git tag: ``git checkout X.Y.Z``
-   * Build the Docker image: ``tox -e docker``
+   * Build the Docker image: ``DOCKER_BUILD_VER=X.Y.Z tox -e docker``
    * Follow the instructions from that script to push the image to the
      Docker Hub and tag a "latest" version.
 
