@@ -14,6 +14,7 @@ Unreleased Changes
 * `Issue #15 <https://github.com/jantman/biweeklybudget/issues/15>`_ - Add pay period totals table to index page.
 * Refactor form generation in UI to use new FormBuilder javascript class (DRY).
 * Fix date-sensitive acceptance test.
+* `Issue #87 <https://github.com/jantman/biweeklybudget/issues/87>`_ - Add fuel log / fuel economy tracking.
 
 0.1.2 (2017-05-28)
 ------------------
