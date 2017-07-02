@@ -11,6 +11,7 @@ Files
    jsdoc.custom
    jsdoc.formBuilder
    jsdoc.forms
+   jsdoc.fuel
    jsdoc.ofx
    jsdoc.payperiod_modal
    jsdoc.reconcile

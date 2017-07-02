@@ -36,13 +36,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
-from datetime import timedelta, date, datetime
-from pytz import UTC
+from datetime import timedelta
 from selenium.webdriver.support.ui import Select
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
-from biweeklybudget.models.fuel import FuelFill, Vehicle
+from biweeklybudget.models.fuel import Vehicle
 
 
 @pytest.mark.acceptance
