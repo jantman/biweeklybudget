@@ -824,7 +824,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
             st8_day = 28
         st = ScheduledTransaction(
@@ -981,9 +982,10 @@ class TestCurrentPayPeriod(AcceptanceHelper):
     def test_07_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
-            st8_day = 28
+            st8_date = st8_date.replace(day=28)
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -1026,7 +1028,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
+                st8_date.strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -1519,7 +1521,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
             st8_day = 28
         st = ScheduledTransaction(
@@ -1669,9 +1672,10 @@ class TestBudgetTransfer(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
-            st8_day = 28
+            st8_date = st8_date.replace(day=28)
         table = selenium.find_element_by_id('trans-table')
         htmls = self.inner_htmls(self.tbody2elemlist(table))
         assert htmls == self.sort_trans_rows([
@@ -1709,7 +1713,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
+                st8_date.strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -1962,9 +1966,10 @@ class TestBudgetTransfer(AcceptanceHelper):
     def test_16_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
-            st8_day = 28
+            st8_date = st8_date.replace(day=28)
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -2007,7 +2012,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
+                st8_date.strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',
@@ -2110,7 +2115,8 @@ class TestSkipScheduled(AcceptanceHelper):
             PAY_PERIOD_START_DATE, testdb
         )
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
             st8_day = 28
         st = ScheduledTransaction(
@@ -2255,9 +2261,10 @@ class TestSkipScheduled(AcceptanceHelper):
     def test_06_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         ppdate = pp.start_date
-        st8_day = (ppdate + timedelta(days=5)).day
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
         if st8_day > 28:
-            st8_day = 28
+            st8_date = st8_date.replace(day=28)
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -2300,7 +2307,7 @@ class TestSkipScheduled(AcceptanceHelper):
                 '&nbsp;'
             ],
             [
-                ppdate.replace(day=st8_day).strftime('%Y-%m-%d'),
+                st8_date.strftime('%Y-%m-%d'),
                 '$22.22',
                 '<em>(sched)</em> <a href="javascript:schedModal(8, null);">'
                 'ST8 day_of_month (8)</a>',

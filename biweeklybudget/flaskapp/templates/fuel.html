@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Fuel Log - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- DataTables CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
+
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <!-- Morris Charts CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
+
+    <script>
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = {{ accts[name] }};
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for name in budgets.keys()|sort %}
+        budget_names_to_id["{{ name }}"] = {{ budgets[name] }};
+        {% endfor %}
+        var vehicles = {};
+        {% for id in vehicles.keys()|sort %}
+        vehicles[{{ id }}] = { name: "{{ vehicles[id]['name'] }}", is_active: "{{ vehicles[id]['is_active'] }}" };
+        {% endfor %}
+    </script>
+{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <div class="row" id="graph-row">
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Fuel Economy
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="mpg-chart"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-6 -->
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-bar-chart-o fa-fw"></i> Fuel Prices
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div id="fuel-price-chart"></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-6 -->
+            </div>
+            <!-- /.row -->
+            <div class="row" id="content-row">
+                <div class="col-lg-12">
+                    <div class="panel panel-info">
+                        <div class="panel-heading" style="margin-bottom: 1em;">Fuel Fills - <button type="button" class="btn btn-xs btn-primary" id="btn-add-fuel">Add Entry</button></div>
+                        <table id="table-fuel-log" class="table table-striped table-bordered table-hover" width="100%">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Odometer Mi.</th>
+                                <th>Mi. Traveled (from veh.)</th>
+                                <th>Mi. Traveled (calc.)</th>
+                                <th>Start Fuel Level</th>
+                                <th>End Fuel Level</th>
+                                <th>Location</th>
+                                <th>$/Gal.</th>
+                                <th>Total Cost</th>
+                                <th>Total Gallons</th>
+                                <th>MPG (from veh.)</th>
+                                <th>MPG (calc.)</th>
+                                <th>Notes</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Odometer Mi.</th>
+                                <th>Mi. Traveled (from veh.)</th>
+                                <th>Mi. Traveled (calc.)</th>
+                                <th>Start Fuel Level</th>
+                                <th>End Fuel Level</th>
+                                <th>Location</th>
+                                <th>$/Gal.</th>
+                                <th>Total Cost</th>
+                                <th>Total Gallons</th>
+                                <th>MPG (from veh.)</th>
+                                <th>MPG (calc.)</th>
+                                <th>Notes</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <!-- /panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+            <div class="row" id="vehicle-row" style="padding-top: 2em;">
+                <div class="col-lg-12">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">Vehicles - <button type="button" class="btn btn-xs btn-primary" id="btn-add-vehicle">Add Vehicle</button></div>
+                        <div class="table-responsive">
+                                <table class="table table-bordered" id="vehicles-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Active?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for k in vehicles.keys()|sort %}
+                                        <tr>
+                                            <td><a href="javascript:vehicleModal({{ k }})">{{ k }}</a></td>
+                                            <td><a href="javascript:vehicleModal({{ k }})">{{ vehicles[k]['name'] }}</a></td>
+                                            <td>{{ vehicles[k]['is_active'] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div> <!-- /.panel panel-default -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- DataTables JavaScript -->
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
+    <!-- BootStrap DatePicker JS -->
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+<script>
+var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
+var fuel_budget_id = {{ settings.FUEL_BUDGET_ID }};
+</script>
+
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/formBuilder.js"></script>
+<script src="/static/js/fuel.js"></script>
+<!-- Morris Charts JavaScript -->
+<script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
+<script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+<script src="/static/js/fuel_charts.js"></script>
+{% endblock %}

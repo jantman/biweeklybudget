@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.reconcile_rule import ReconcileRule

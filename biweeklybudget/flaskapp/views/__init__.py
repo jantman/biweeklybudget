@@ -44,3 +44,4 @@ from .reconcile import *
 from .scheduled import *
 from .transactions import *
 from .help import *
+from .fuel import *

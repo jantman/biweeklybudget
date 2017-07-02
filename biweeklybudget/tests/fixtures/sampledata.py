@@ -54,6 +54,13 @@ class SampleDataLoader(object):
         self.dt = dtnow()
 
     def load(self):
+        self._fuellog()
+        self.db.flush()
+        self.db.commit()
+        for f in self.db.query(FuelFill).all():
+            f.calculate_mpg()
+        self.db.flush()
+        self.db.commit()
         self.accounts = {
             'BankOne': self._bank_one(),
             'BankTwoStale': self._bank_two_stale(),
@@ -612,3 +619,30 @@ class SampleDataLoader(object):
             ]
         }
         return self._add_account(acct, statements, transactions)
+
+    def _fuellog(self):
+        v1 = Vehicle(name='Veh1')
+        self.db.add(v1)
+        v2 = Vehicle(name='Veh2')
+        self.db.add(v2)
+        v3 = Vehicle(name='Veh3Inactive', is_active=False)
+        self.db.add(v3)
+        start_dt = dtnow()
+        for veh_num, veh in {1: v1, 2: v2, 3: v3}.items():
+            veh_str = 'v%d' % veh_num
+            for i in range(0, 2):
+                dt = start_dt + timedelta(days=i)
+                self.db.add(FuelFill(
+                    date=dt.date(),
+                    vehicle=veh,
+                    odometer_miles=(1000 + (i * 10) + veh_num),
+                    reported_miles=(100 + (i * 10) + veh_num),
+                    level_before=(i * 10) + veh_num,
+                    level_after=(100 - (i * 10) - veh_num),
+                    fill_location='fill_loc %s %d' % (veh_str, i),
+                    cost_per_gallon=(2.0 + (i * 0.1) + (veh_num * 0.01)),
+                    total_cost=((2.0 + (i * 0.1) + (veh_num * 0.01)) * (1 + i)),
+                    gallons=(i * 10) + veh_num,
+                    reported_mpg=(20 + i) + (veh_num * 0.1),
+                    notes='notes %s %d' % (veh_str, i)
+                ))

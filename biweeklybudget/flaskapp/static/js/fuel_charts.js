@@ -36,13 +36,27 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 */
 
 $(function() {
-  $.ajax('/ajax/chart-data/account-balances').done(function(ajaxdata) {
+  $.ajax('/ajax/chart-data/fuel-economy').done(function(ajaxdata) {
     Morris.Line({
-      element: 'account-balance-chart',
+      element: 'mpg-chart',
       data: ajaxdata['data'],
       xkey: 'date',
       ykeys: ajaxdata['keys'],
       labels: ajaxdata['keys'],
+      pointSize: 2,
+      hideHover: 'auto',
+      resize: true,
+      continuousLine: true
+    });
+  });
+
+  $.ajax('/ajax/chart-data/fuel-prices').done(function(ajaxdata) {
+    Morris.Line({
+      element: 'fuel-price-chart',
+      data: ajaxdata['data'],
+      xkey: 'date',
+      ykeys: ['price'],
+      labels: ['price'],
       pointSize: 2,
       hideHover: 'auto',
       resize: true,
