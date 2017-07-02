@@ -32,7 +32,8 @@ def upgrade():
         sa.Column('date', sa.Date(), nullable=True),
         sa.Column('vehicle_id', sa.Integer(), nullable=True),
         sa.Column('odometer_miles', sa.Integer(), nullable=True),
-        sa.Column('traveled_miles', sa.SmallInteger(), nullable=True),
+        sa.Column('reported_miles', sa.SmallInteger(), nullable=True),
+        sa.Column('calculated_miles', sa.SmallInteger(), nullable=True),
         sa.Column('level_before', sa.SmallInteger(), nullable=True),
         sa.Column('level_after', sa.SmallInteger(), nullable=True),
         sa.Column('fill_location', sa.String(length=254), nullable=True),
@@ -53,6 +54,11 @@ def upgrade():
         ),
         sa.Column(
             'reported_mpg',
+            sa.Numeric(precision=10, scale=4),
+            nullable=True
+        ),
+        sa.Column(
+            'calculated_mpg',
             sa.Numeric(precision=10, scale=4),
             nullable=True
         ),

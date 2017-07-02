@@ -54,6 +54,13 @@ class SampleDataLoader(object):
         self.dt = dtnow()
 
     def load(self):
+        self._fuellog()
+        self.db.flush()
+        self.db.commit()
+        for f in self.db.query(FuelFill).all():
+            f.calculate_mpg()
+        self.db.flush()
+        self.db.commit()
         self.accounts = {
             'BankOne': self._bank_one(),
             'BankTwoStale': self._bank_two_stale(),
@@ -71,7 +78,6 @@ class SampleDataLoader(object):
             note='reconcile notes',
             reconciled_at=datetime(2017, 4, 10, 8, 9, 11, tzinfo=UTC)
         ))
-        self._fuellog()
         self.db.flush()
         self.db.commit()
 
@@ -622,20 +628,21 @@ class SampleDataLoader(object):
         v3 = Vehicle(name='Veh3Inactive', is_active=False)
         self.db.add(v3)
         start_dt = dtnow()
-        for veh, veh_str in {v1: 'v1', v2: 'v2', v3: 'v3'}.items():
-            for i in range(0, 10):
+        for veh_num, veh in {1: v1, 2: v2, 3: v3}.items():
+            veh_str = 'v%d' % veh_num
+            for i in range(0, 2):
                 dt = start_dt + timedelta(days=i)
                 self.db.add(FuelFill(
                     date=dt.date(),
                     vehicle=veh,
-                    odometer_miles=(1000 + (i * 10)),
-                    traveled_miles=(100 + i),
-                    level_before=(i * 10),
-                    level_after=(100 - i),
+                    odometer_miles=(1000 + (i * 10) + veh_num),
+                    reported_miles=(100 + (i * 10) + veh_num),
+                    level_before=(i * 10) + veh_num,
+                    level_after=(100 - (i * 10) - veh_num),
                     fill_location='fill_loc %s %d' % (veh_str, i),
-                    cost_per_gallon=(2.0 + (i * 0.1)),
-                    total_cost=((2.0 + (i * 0.1)) * (1 + i)),
-                    gallons=(1.0 + i),
-                    reported_mpg=(20 + i),
+                    cost_per_gallon=(2.0 + (i * 0.1) + (veh_num * 0.01)),
+                    total_cost=((2.0 + (i * 0.1) + (veh_num * 0.01)) * (1 + i)),
+                    gallons=(i * 10) + veh_num,
+                    reported_mpg=(20 + i) + (veh_num * 0.1),
                     notes='notes %s %d' % (veh_str, i)
                 ))

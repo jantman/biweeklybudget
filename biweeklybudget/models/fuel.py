@@ -35,12 +35,17 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import logging
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Date, ForeignKey, SmallInteger, Numeric
+    Column, Integer, String, Boolean, Date, ForeignKey, SmallInteger, Numeric,
+    desc, inspect
 )
-from sqlalchemy.orm import relationship
+from decimal import Decimal, ROUND_FLOOR
+from sqlalchemy.orm import relationship, validates
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.utils import dtnow
+
+logger = logging.getLogger(__name__)
 
 
 class Vehicle(Base, ModelAsDict):
@@ -90,7 +95,10 @@ class FuelFill(Base, ModelAsDict):
     odometer_miles = Column(Integer)
 
     #: Number of miles the vehicle thinks it's traveled since the last fill.
-    traveled_miles = Column(SmallInteger)
+    reported_miles = Column(SmallInteger)
+
+    #: Number of miles actually traveled since the last fill.
+    calculated_miles = Column(SmallInteger)
 
     #: Fuel level before fill, as a percentage (Integer 0-100)
     level_before = Column(SmallInteger)
@@ -113,6 +121,9 @@ class FuelFill(Base, ModelAsDict):
     #: MPG as reported by the vehicle itself
     reported_mpg = Column(Numeric(precision=10, scale=4))
 
+    #: Calculated MPG, based on last fill
+    calculated_mpg = Column(Numeric(precision=10, scale=4))
+
     #: Notes
     notes = Column(String(254))
 
@@ -120,3 +131,76 @@ class FuelFill(Base, ModelAsDict):
         return "<FuelFill(id=%s, vehicle=%s, date=%s)>" % (
             self.id, self.vehicle_id, self.date
         )
+
+    @validates('gallons')
+    def validate_gallons(self, _, value):
+        assert value > 0
+        return value
+
+    @validates('odometer_miles')
+    def validate_odometer_miles(self, _, value):
+        prev = self._previous_entry()
+        if prev is None:
+            logger.warning(
+                'Previous fill is None; cannot validate odometer_miles'
+            )
+            return value
+        assert self.odometer_miles > prev.odometer_miles
+        return value
+
+    def _previous_entry(self):
+        """
+        Get the previous fill for this vehicle by odometer reading, or None.
+
+        :return: the previous fill for this vehicle, by odometer reading, or
+          None.
+        :rtype: biweeklybudget.models.fuel.FuelFill
+        """
+        if self.vehicle is None:
+            logger.warning(
+                'vehicle is None; cannot obtain previous fill for %s', self
+            )
+            return None
+        if self.odometer_miles is None:
+            logger.warning(
+                'odometer_miles is None; cannot obtain previous fill for %s',
+                self
+            )
+            return None
+        return inspect(self).session.query(FuelFill).filter(
+            FuelFill.vehicle.__eq__(self.vehicle),
+            FuelFill.odometer_miles.__lt__(self.odometer_miles)
+        ).order_by(
+            desc(FuelFill.odometer_miles)
+        ).first()
+
+    def calculate_mpg(self):
+        """
+        Calculate ``calculated_mpg`` field.
+
+        :returns: True if recalculate, False if unable to calculate
+        :rtype: bool
+        """
+        if self.gallons is None:
+            logger.warning(
+                'Gallons is none; cannot recalculate MPG for %s', self
+            )
+            return False
+        if self.odometer_miles is None:
+            logger.warning(
+                'odometer_miles is none; cannot recalculate MPG for %s', self
+            )
+            return False
+        prev = self._previous_entry()
+        if prev is None:
+            logger.warning('Previous entry is None; cannot recalculate MPG '
+                           'for %s', self)
+            return False
+        distance = self.odometer_miles - prev.odometer_miles
+        self.calculated_miles = distance
+        self.calculated_mpg = (
+            (distance * Decimal(1.0)) / self.gallons
+        ).quantize(Decimal('.001'), rounding=ROUND_FLOOR)
+        logger.debug('Calculate MPG for fill %d: distance=%s mpg=%s',
+                     self.id, distance, self.calculated_mpg)
+        inspect(self).session.add(self)

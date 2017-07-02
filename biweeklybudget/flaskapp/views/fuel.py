@@ -37,302 +37,152 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from flask.views import MethodView
-from flask import render_template, jsonify
+from flask import render_template, jsonify, request
+from datatables import DataTable
 from datetime import datetime
+from sqlalchemy import or_
+from decimal import Decimal, ROUND_FLOOR
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.account import Account
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
+from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+
 
 logger = logging.getLogger(__name__)
 
 
-class BudgetsView(MethodView):
+class FuelView(MethodView):
     """
-    Render the GET /budgets view using the ``budgets.html`` template.
+    Render the GET /fuel view using the ``fuel.html`` template.
     """
 
     def get(self):
-        standing = db_session.query(Budget).filter(
-            Budget.is_periodic.__eq__(False)
-        ).order_by(Budget.name).all()
-        periodic = db_session.query(Budget).filter(
-            Budget.is_periodic.__eq__(True)
-        ).order_by(Budget.name).all()
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         budgets = {}
         for b in db_session.query(Budget).all():
-            k = b.name
             if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
+                budgets['%s (income)' % b.name] = b.id
+            else:
+                budgets[b.name] = b.id
+        vehicles = {
+            v.id: {'name': v.name, 'is_active': v.is_active}
+            for v in db_session.query(Vehicle).all()
+        }
         return render_template(
-            'budgets.html',
-            standing=standing,
-            periodic=periodic,
+            'fuel.html',
             accts=accts,
-            budgets=budgets
+            budgets=budgets,
+            vehicles=vehicles
         )
 
 
-class OneBudgetView(MethodView):
+class FuelAjax(SearchableAjaxView):
     """
-    Render the GET /budgets/<int:budget_id> view using the ``budgets.html``
-    template.
-    """
-
-    def get(self, budget_id):
-        standing = db_session.query(Budget).filter(
-            Budget.is_periodic.__eq__(False)
-        ).order_by(Budget.name).all()
-        periodic = db_session.query(Budget).filter(
-            Budget.is_periodic.__eq__(True)
-        ).order_by(Budget.name).all()
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
-        budgets = {}
-        for b in db_session.query(Budget).all():
-            k = b.name
-            if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
-        return render_template(
-            'budgets.html',
-            standing=standing,
-            periodic=periodic,
-            budget_id=budget_id,
-            accts=accts,
-            budgets=budgets
-        )
-
-
-class BudgetAjax(MethodView):
-    """
-    Handle GET /ajax/budget/<int:budget_id> endpoint.
+    Handle GET /ajax/fuelLog endpoint.
     """
 
-    def get(self, budget_id):
-        budget = db_session.query(Budget).get(budget_id)
-        return jsonify(budget.as_dict)
-
-
-class BudgetFormHandler(FormHandlerView):
-    """
-    Handle POST /forms/budget
-    """
-
-    def validate(self, data):
+    def _filterhack(self, qs, s, args):
         """
-        Validate the form data. Return None if it is valid, or else a hash of
-        field names to list of error strings for each field.
+        DataTables 1.10.12 has built-in support for filtering based on a value
+        in a specific column; when this is done, the filter value is set in
+        ``columns[N][search][value]`` where N is the column number. However,
+        the python datatables package used here only supports the global
+        ``search[value]`` input, not the per-column one.
 
-        :param data: submitted form data
-        :type data: dict
-        :return: None if no errors, or hash of field name to errors for that
-          field
+        However, the DataTable search is implemented by passing a callable
+        to ``table.searchable()`` which takes two arguments, the current Query
+        that's being built, and the user's ``search[value]`` input; this must
+        then return a Query object with the search applied.
+
+        In python datatables 0.4.9, this code path is triggered on
+        ``if callable(self.search_func) and search.get("value", None):``
+
+        As such, we can "trick" the table to use per-column searching (currently
+        only if global searching is not being used) by examining the per-column
+        search values in the request, and setting the search function to one
+        (this method) that uses those values instead of the global
+        ``search[value]``.
+
+        :param qs: Query currently being built
+        :type qs: ``sqlalchemy.orm.query.Query``
+        :param s: user search value
+        :type s: str
+        :param args: args
+        :type args: dict
+        :return: Query with searching applied
+        :rtype: ``sqlalchemy.orm.query.Query``
         """
-        have_errors = False
-        errors = {k: [] for k in data.keys()}
-        if data.get('name', '').strip() == '':
-            errors['name'].append('Name cannot be empty')
-            have_errors = True
-        if (
-            data['is_periodic'] == 'true' and
-            data['starting_balance'].strip() == ''
-        ):
-            errors['starting_balances'].append(
-                'Starting balance must be specified for periodic budgets.'
+        # Ok, build our filter...
+        veh_filter = args['columns'][1]['search']['value']
+        if veh_filter != '' and veh_filter != 'None':
+            qs = qs.filter(FuelFill.account_id == veh_filter)
+        # search
+        if s != '' and s != 'FILTERHACK':
+            if len(s) < 3:
+                return qs
+            s = '%' + s + '%'
+            qs = qs.filter(or_(
+                FuelFill.notes.like(s)),
+                FuelFill.fill_location.like(s)
             )
-            have_errors = True
-        if (
-            data['is_periodic'] == 'false' and
-            data['current_balance'].strip() == ''
-        ):
-            errors['current_balances'].append(
-                'Current balance must be specified for standing budgets.'
-            )
-            have_errors = True
-        if have_errors:
-            return errors
-        return None
+        return qs
 
-    def submit(self, data):
+    def get(self):
         """
-        Handle form submission; create or update models in the DB. Raises an
-        Exception for any errors.
-
-        :param data: submitted form data
-        :type data: dict
-        :return: message describing changes to DB (i.e. link to created record)
-        :rtype: str
+        Render and return JSON response for GET /ajax/ofx
         """
-        if 'id' in data and data['id'].strip() != '':
-            # updating an existing budget
-            budget = db_session.query(Budget).get(int(data['id']))
-            if budget is None:
-                raise RuntimeError("Error: no Budget with ID %s" % data['id'])
-            action = 'updating Budget ' + data['id']
-        else:
-            budget = Budget()
-            action = 'creating new Budget'
-        budget.name = data['name'].strip()
-        budget.description = data['description'].strip()
-        if data['is_periodic'] == 'true':
-            budget.is_periodic = True
-            budget.starting_balance = data['starting_balance']
-        else:
-            budget.is_periodic = False
-            budget.current_balance = data['current_balance']
-        if data['is_active'] == 'true':
-            budget.is_active = True
-        else:
-            budget.is_active = False
-        if data['is_income'] == 'true':
-            budget.is_income = True
-        else:
-            budget.is_income = False
-        logger.info('%s: %s', action, budget.as_dict)
-        db_session.add(budget)
-        db_session.commit()
-        return 'Successfully saved Budget %d in database.' % budget.id
-
-
-class BudgetTxfrFormHandler(FormHandlerView):
-    """
-    Handle POST /forms/budget_transfer
-    """
-
-    def validate(self, data):
-        """
-        Validate the form data. Return None if it is valid, or else a hash of
-        field names to list of error strings for each field.
-
-        :param data: submitted form data
-        :type data: dict
-        :return: None if no errors, or hash of field name to errors for that
-          field
-        """
-        have_errors = False
-        errors = {k: [] for k in data.keys()}
-        if data['date'].strip() == '':
-            errors['date'].append('Transactions must have a date')
-            have_errors = True
-        else:
-            try:
-                datetime.strptime(data['date'], '%Y-%m-%d').date()
-            except Exception:
-                errors['date'].append(
-                    'Date "%s" is not valid (YYYY-MM-DD)' % data['date']
-                )
-                have_errors = True
-        if float(data['amount']) == 0:
-            errors['amount'].append('Amount cannot be zero')
-            have_errors = True
-        if float(data['amount']) < 0:
-            errors['amount'].append('Amount cannot be negative')
-            have_errors = True
-        if data['account'] == 'None':
-            errors['account'].append('Transactions must have an account')
-            have_errors = True
-        if data['from_budget'] == 'None':
-            errors['from_budget'].append('from_budget cannot be empty')
-            have_errors = True
-        to_budget = db_session.query(Budget).get(int(data['to_budget']))
-        if to_budget is None:
-            errors['to_budget'].append('to_budget ID does not exist')
-            have_errors = True
-        if data['to_budget'] == 'None':
-            errors['to_budget'].append('to_budget cannot be empty')
-            have_errors = True
-        if have_errors:
-            return errors
-        return None
-
-    def submit(self, data):
-        """
-        Handle form submission; create or update models in the DB. Raises an
-        Exception for any errors.
-
-        :param data: submitted form data
-        :type data: dict
-        :return: message describing changes to DB (i.e. link to created record)
-        :rtype: str
-        """
-        # get the data
-        trans_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        amt = float(data['amount'])
-        acct = db_session.query(Account).get(int(data['account']))
-        if acct is None:
-            raise RuntimeError(
-                "Error: no Account with ID %s" % data['account']
-            )
-        from_budget = db_session.query(Budget).get(int(data['from_budget']))
-        if from_budget is None:
-            raise RuntimeError(
-                "Error: no Budget with ID %s" % data['from_budget']
-            )
-        to_budget = db_session.query(Budget).get(int(data['to_budget']))
-        if to_budget is None:
-            raise RuntimeError(
-                "Error: no Budget with ID %s" % data['to_budget']
-            )
-        notes = data['notes'].strip()
-        desc = 'Budget Transfer - %s from %s (%d) to %s (%d)' % (
-            amt, from_budget.name, from_budget.id, to_budget.name,
-            to_budget.id
+        args = request.args.to_dict()
+        args_dict = self._args_dict(args)
+        if self._have_column_search(args_dict) and args['search[value]'] == '':
+            args['search[value]'] = 'FILTERHACK'
+        table = DataTable(
+            args,
+            FuelFill,
+            db_session.query(FuelFill).filter(
+                FuelFill.vehicle.has(is_active=True)
+            ),
+            [
+                (
+                    'date',
+                    lambda i: i.date.strftime('%Y-%m-%d')
+                ),
+                (
+                    'vehicle',
+                    'vehicle.name'
+                ),
+                'odometer_miles',
+                'reported_miles',
+                'calculated_miles',
+                'level_before',
+                'level_after',
+                'fill_location',
+                'cost_per_gallon',
+                'total_cost',
+                (
+                    'gallons',
+                    lambda i: i.gallons.quantize(
+                        Decimal('.001'), rounding=ROUND_FLOOR
+                    )
+                ),
+                'reported_mpg',
+                'calculated_mpg',
+                'notes'
+            ]
         )
-        logger.info(desc)
-        t1 = Transaction(
-            date=trans_date,
-            actual_amount=amt,
-            budgeted_amount=amt,
-            description=desc,
-            account=acct,
-            budget=from_budget,
-            notes=notes
+        table.add_data(
+            vehicle_id=lambda o: o.vehicle_id
         )
-        db_session.add(t1)
-        t2 = Transaction(
-            date=trans_date,
-            actual_amount=(-1 * amt),
-            budgeted_amount=(-1 * amt),
-            description=desc,
-            account=acct,
-            budget=to_budget,
-            notes=notes
-        )
-        db_session.add(t2)
-        db_session.add(TxnReconcile(
-            transaction=t1,
-            note=desc
-        ))
-        db_session.add(TxnReconcile(
-            transaction=t2,
-            note=desc
-        ))
-        db_session.commit()
-        return 'Successfully saved Transactions %d and %d in database.' % (
-            t1.id, t2.id
-        )
+        if args['search[value]'] != '':
+            table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
+        return jsonify(table.json())
 
 
-app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
+app.add_url_rule('/fuel', view_func=FuelView.as_view('fuel_view'))
 app.add_url_rule(
-    '/budgets/<int:budget_id>',
-    view_func=OneBudgetView.as_view('one_budget_view')
-)
-app.add_url_rule(
-    '/ajax/budget/<int:budget_id>',
-    view_func=BudgetAjax.as_view('budget_ajax')
-)
-app.add_url_rule(
-    '/forms/budget',
-    view_func=BudgetFormHandler.as_view('budget_form')
-)
-app.add_url_rule(
-    '/forms/budget_transfer',
-    view_func=BudgetTxfrFormHandler.as_view('budget_transfer_form')
+    '/ajax/fuelLog',
+    view_func=FuelAjax.as_view('fuel_ajax')
 )
