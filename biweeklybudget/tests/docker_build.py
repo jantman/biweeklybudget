@@ -240,13 +240,12 @@ class DockerImageBuilder(object):
         logger.info('Image "%s" built and tested.', img_tag)
         if self.build_ver is not None:
             print("To push release image to Docker Hub:")
-            print('docker push %s:%s' % (self.image_name, img_tag))
+            print('docker tag %s:%s %s:%s' % (
+                self.image_name, img_tag, self.image_name, self.build_ver
+            ))
+            print('docker push %s:%s' % (self.image_name, self.build_ver))
             print('docker tag %s:%s %s:latest' % (
                 self.image_name, img_tag, self.image_name
-            ))
-            print('docker push %s:latest' % self.image_name)
-            print('docker tag %s:%s %s:latest' % (
-                self.build_ver, img_tag, self.image_name
             ))
             print('docker push %s:latest' % self.image_name)
         return img_tag
