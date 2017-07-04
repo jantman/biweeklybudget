@@ -18,6 +18,7 @@ Submodules
    biweeklybudget.models.fuel
    biweeklybudget.models.ofx_statement
    biweeklybudget.models.ofx_transaction
+   biweeklybudget.models.projects
    biweeklybudget.models.reconcile_rule
    biweeklybudget.models.scheduled_transaction
    biweeklybudget.models.transaction

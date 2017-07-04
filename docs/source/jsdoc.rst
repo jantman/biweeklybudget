@@ -14,6 +14,7 @@ Files
    jsdoc.fuel
    jsdoc.ofx
    jsdoc.payperiod_modal
+   jsdoc.projects
    jsdoc.reconcile
    jsdoc.reconcile_modal
    jsdoc.scheduled_modal
