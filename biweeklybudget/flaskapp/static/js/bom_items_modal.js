@@ -34,3 +34,68 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
+
+/**
+ * Generate the HTML for the form on the Modal
+ */
+function bomItemModalDivForm() {
+    return new FormBuilder('bomItemForm')
+        .addHidden('bom_frm_id', 'id', '')
+        .addHidden('bom_frm_project_id', 'project_id', project_id)
+        .addText('bom_frm_name', 'name', 'Name')
+        .addText('bom_frm_notes', 'notes', 'Notes')
+        .addText('bom_frm_quantity', 'quantity', 'Quantity')
+        .addCurrency('bom_frm_unit_cost', 'unit_cost', 'Unit Cost')
+        .addText('bom_frm_url', 'url', 'URL')
+        .addCheckbox('bom_frm_active', 'is_active', 'Active?', true)
+        .render();
+}
+
+/**
+ * Ajax callback to fill in the modalDiv with data on a BoM Item.
+ */
+function bomItemModalDivFillAndShow(msg) {
+    $('#modalLabel').text('Edit BoM Item ' + msg['id']);
+    $('#bom_frm_id').val(msg['id']);
+    $('#bom_frm_project_id').val(msg['project_id']);
+    $('#bom_frm_name').val(msg['name']);
+    $('#bom_frm_notes').val(msg['notes']);
+    $('#bom_frm_quantity').val(msg['quantity']);
+    $('#bom_frm_unit_cost').val(msg['unit_cost']);
+    $('#bom_frm_url').val(msg['url']);
+    if(msg['is_active'] === true) {
+        $('#bom_frm_active').prop('checked', true);
+    } else {
+        $('#bom_frm_active').prop('checked', false);
+    }
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Show the BoM Item modal popup, optionally populated with
+ * information for one BoM Item. This function calls
+ * :js:func:`bomItemModalDivForm` to generate the form HTML,
+ * :js:func:`bomItemModalDivFillAndShow` to populate the form for editing,
+ * and :js:func:`handleForm` to handle the Submit action.
+ *
+ * @param {number} id - the ID of the BoM Item to show a modal for,
+ *   or null to show modal to add a new Transaction.
+ */
+function bomItemModal(id) {
+    $('#modalBody').empty();
+    $('#modalBody').append(bomItemModalDivForm());
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        handleForm('modalBody', 'bomItemForm', '/forms/bom_item', function() {
+            reloadProject();
+            mytable.api().ajax.reload();
+        });
+    }).show();
+    if(id) {
+        var url = "/ajax/projects/bom_item/" + id;
+        $.ajax(url).done(bomItemModalDivFillAndShow);
+    } else {
+        $('#modalLabel').text('Add New BoM Item');
+        $("#modalDiv").modal('show');
+    }
+}

@@ -43,7 +43,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
 @pytest.mark.acceptance
-class DONOTTestProjects(AcceptanceHelper):
+class TestProjects(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -68,7 +68,7 @@ class DONOTTestProjects(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class DONOTTestProjectsView(AcceptanceHelper):
+class TestProjectsView(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(Project).get(1)
@@ -500,11 +500,123 @@ class TestOneProjectView(AcceptanceHelper):
         rows = self.tbody2trlist(table)
         assert 'inactive' not in rows[0].get_attribute('class')
 
-    def test_03_edit_item(self, base_url, selenium):
-        # test that the Remaining and Total boxes updated too
-        assert 1 == 0
+    def test_03_populate_modal(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects/1')
+        editlink = selenium.find_element_by_xpath(
+            '//a[@onclick="bomItemModal(3)"]'
+        )
+        editlink.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit BoM Item 3'
+        id = body.find_element_by_id('bom_frm_id')
+        assert id.get_attribute('value') == '3'
+        proj_id = body.find_element_by_id('bom_frm_project_id')
+        assert proj_id.get_attribute('value') == '1'
+        name = body.find_element_by_id('bom_frm_name')
+        assert name.get_attribute('value') == 'P1Item3'
+        notes = body.find_element_by_id('bom_frm_notes')
+        assert notes.get_attribute('value') == 'P1Item3Notes'
+        quantity = body.find_element_by_id('bom_frm_quantity')
+        assert quantity.get_attribute('value') == '2'
+        cost = body.find_element_by_id('bom_frm_unit_cost')
+        assert cost.get_attribute('value') == '1234.56'
+        url = body.find_element_by_id('bom_frm_url')
+        assert url.get_attribute('value') == 'http://item3.p1.com'
+        active = body.find_element_by_id('bom_frm_active')
+        assert active.is_selected() is False
 
-    def test_04_verify_db(self, testdb):
+    def test_04_edit_item(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects/1')
+        editlink = selenium.find_element_by_xpath(
+            '//a[@onclick="bomItemModal(3)"]'
+        )
+        editlink.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit BoM Item 3'
+        id = body.find_element_by_id('bom_frm_id')
+        assert id.get_attribute('value') == '3'
+        proj_id = body.find_element_by_id('bom_frm_project_id')
+        assert proj_id.get_attribute('value') == '1'
+        name = body.find_element_by_id('bom_frm_name')
+        name.send_keys('Edited')
+        notes = body.find_element_by_id('bom_frm_notes')
+        notes.clear()
+        notes.send_keys('Foo')
+        quantity = body.find_element_by_id('bom_frm_quantity')
+        quantity.clear()
+        quantity.send_keys('3')
+        cost = body.find_element_by_id('bom_frm_unit_cost')
+        cost.clear()
+        cost.send_keys('2.22')
+        url = body.find_element_by_id('bom_frm_url')
+        assert url.get_attribute('value') == 'http://item3.p1.com'
+        url.send_keys('/edited')
+        active = body.find_element_by_id('bom_frm_active')
+        assert active.is_selected() is False
+        active.click()
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved BoMItem 3 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # Table
+        table = selenium.find_element_by_id('table-items')
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<span style="float: left;">P1Item1</span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(1)">(edit)</a></span>',
+                '1',
+                '$11.11',
+                '$11.11',
+                'P1Item1Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item2.p1.com">P1Item2</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(2)">(edit)</a></span>',
+                '3',
+                '$22.22',
+                '$66.66',
+                'P1Item2Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item3.p1.com/edited">P1Item3Edited</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(3)">(edit)</a></span>',
+                '3',
+                '$2.22',
+                '$6.66',
+                'Foo',
+                'yes'
+            ],
+        ]
+        rows = self.tbody2trlist(table)
+        assert 'inactive' not in rows[0].get_attribute('class')
+        assert 'inactive' not in rows[1].get_attribute('class')
+        assert 'inactive' not in rows[2].get_attribute('class')
+        self.wait_for_jquery_done(selenium)
+        assert selenium.find_element_by_id(
+            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element_by_id(
+            'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
+        assert selenium.find_element_by_id(
+            'div-total-amount').get_attribute('innerHTML') == '$84.43'
+
+    def test_05_verify_db(self, testdb):
         b = testdb.query(Project).get(1)
         assert b is not None
         assert b.name == 'P1'
@@ -534,18 +646,111 @@ class TestOneProjectView(AcceptanceHelper):
         i = testdb.query(BoMItem).get(3)
         assert i is not None
         assert i.project_id == 1
-        assert i.name == 'P1Item3'
-        assert i.notes == 'P1Item3Notes'
-        assert float(i.unit_cost) == 1234.56
-        assert i.quantity == 2
-        assert i.url == 'http://item3.p1.com'
-        assert i.is_active is False
+        assert i.name == 'P1Item3Edited'
+        assert i.notes == 'Foo'
+        assert float(i.unit_cost) == 2.22
+        assert i.quantity == 3
+        assert i.url == 'http://item3.p1.com/edited'
+        assert i.is_active is True
 
-    def test_05_add_item(self, base_url, selenium):
-        # test that the Remaining and Total boxes updated too
-        assert 1 == 0
+    def test_06_add_item(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects/1')
+        editlink = selenium.find_element_by_id('btn_add_item')
+        editlink.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New BoM Item'
+        id = body.find_element_by_id('bom_frm_id')
+        assert id.get_attribute('value') == ''
+        proj_id = body.find_element_by_id('bom_frm_project_id')
+        assert proj_id.get_attribute('value') == '1'
+        name = body.find_element_by_id('bom_frm_name')
+        name.send_keys('NewItem4')
+        notes = body.find_element_by_id('bom_frm_notes')
+        notes.clear()
+        notes.send_keys('FourNotes')
+        quantity = body.find_element_by_id('bom_frm_quantity')
+        quantity.clear()
+        quantity.send_keys('5')
+        cost = body.find_element_by_id('bom_frm_unit_cost')
+        cost.clear()
+        cost.send_keys('12.34')
+        url = body.find_element_by_id('bom_frm_url')
+        url.send_keys('http://item4.com')
+        active = body.find_element_by_id('bom_frm_active')
+        assert active.is_selected()
+        active.click()
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved BoMItem 6 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+        # Table
+        table = selenium.find_element_by_id('table-items')
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<span style="float: left;">P1Item1</span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(1)">(edit)</a></span>',
+                '1',
+                '$11.11',
+                '$11.11',
+                'P1Item1Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item2.p1.com">P1Item2</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(2)">(edit)</a></span>',
+                '3',
+                '$22.22',
+                '$66.66',
+                'P1Item2Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item3.p1.com/edited">P1Item3Edited</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(3)">(edit)</a></span>',
+                '3',
+                '$2.22',
+                '$6.66',
+                'Foo',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item4.com">NewItem4</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(6)">(edit)</a></span>',
+                '5',
+                '$12.34',
+                '$61.70',
+                'FourNotes',
+                '<span style="color: #a94442;">NO</span>'
+            ]
+        ]
+        rows = self.tbody2trlist(table)
+        assert 'inactive' not in rows[0].get_attribute('class')
+        assert 'inactive' not in rows[1].get_attribute('class')
+        assert 'inactive' not in rows[2].get_attribute('class')
+        assert selenium.find_element_by_id(
+            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element_by_id(
+            'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
+        assert selenium.find_element_by_id(
+            'div-total-amount').get_attribute('innerHTML') == '$146.13'
 
-    def test_06_verify_db(self, testdb):
+    def test_07_verify_db(self, testdb):
         b = testdb.query(Project).get(1)
         assert b is not None
         assert b.name == 'P1'
@@ -553,7 +758,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert b.is_active is True
         assert len(
             testdb.query(BoMItem).filter(BoMItem.project_id.__eq__(1)).all()
-        ) == 3
+        ) == 4
         i = testdb.query(BoMItem).get(1)
         assert i is not None
         assert i.project_id == 1
@@ -575,9 +780,18 @@ class TestOneProjectView(AcceptanceHelper):
         i = testdb.query(BoMItem).get(3)
         assert i is not None
         assert i.project_id == 1
-        assert i.name == 'P1Item3'
-        assert i.notes == 'P1Item3Notes'
-        assert float(i.unit_cost) == 1234.56
-        assert i.quantity == 2
-        assert i.url == 'http://item3.p1.com'
+        assert i.name == 'P1Item3Edited'
+        assert i.notes == 'Foo'
+        assert float(i.unit_cost) == 2.22
+        assert i.quantity == 3
+        assert i.url == 'http://item3.p1.com/edited'
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(6)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'NewItem4'
+        assert i.notes == 'FourNotes'
+        assert float(i.unit_cost) == 12.34
+        assert i.quantity == 5
+        assert i.url == 'http://item4.com'
         assert i.is_active is False

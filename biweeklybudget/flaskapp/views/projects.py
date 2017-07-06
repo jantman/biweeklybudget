@@ -232,7 +232,7 @@ class BoMItemView(MethodView):
 
 class BoMItemsAjax(SearchableAjaxView):
     """
-    Handle GET /ajax/projects/bom_items/<int:project_id> endpoint.
+    Handle GET /ajax/projects/<int:project_id>/bom_items endpoint.
     """
 
     def _filterhack(self, qs, s, args):
@@ -281,7 +281,7 @@ class BoMItemsAjax(SearchableAjaxView):
     def get(self, project_id):
         """
         Render and return JSON response for
-        GET /ajax/projects/bom_items/<int:project_id>
+        GET /ajax/projects/<int:project_id>/bom_items
         """
         args = request.args.to_dict()
         args_dict = self._args_dict(args)
@@ -317,7 +317,90 @@ class ProjectAjax(MethodView):
     """
 
     def get(self, project_id):
-        return jsonify(db_session.query(Project).get(project_id).as_dict)
+        proj = db_session.query(Project).get(project_id)
+        d = proj.as_dict
+        d['total_cost'] = proj.total_cost
+        d['remaining_cost'] = proj.remaining_cost
+        return jsonify(d)
+
+
+class BoMItemAjax(MethodView):
+    """
+    Render the GET /ajax/projects/bom_item/<int:id> JSON view.
+    """
+
+    def get(self, id):
+        return jsonify(db_session.query(BoMItem).get(id).as_dict)
+
+
+class BoMItemFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/bom_item
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        errors = {k: [] for k in data.keys()}
+        if data.get('name', '').strip() == '':
+            errors['name'].append('name cannot be empty')
+        errors = self._validate_int('quantity', data, errors)
+        errors = self._validate_int('project_id', data, errors)
+        if len(errors['quantity']) < 1:
+            if int(data['quantity']) < 0:
+                errors['quantity'].append('Quantity cannot be negative')
+        errors = self._validate_float('unit_cost', data, errors)
+        for v in errors.values():
+            if len(v) > 0:
+                return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing BoMItem
+            item = db_session.query(BoMItem).get(int(data['id']))
+            if item is None:
+                raise RuntimeError("Error: no BoMItem with ID "
+                                   "%s" % data['id'])
+            action = 'updating BoMItem ' + data['id']
+        else:
+            item = BoMItem()
+            action = 'creating new BoMItem'
+        item.project = db_session.query(Project).get(int(data['project_id']))
+        item.name = data['name'].strip()
+        item.notes = data['notes'].strip()
+        item.quantity = int(data['quantity'].strip())
+        item.unit_cost = float(data['unit_cost'].strip())
+        item.url = data['url'].strip()
+        if data['is_active'] == 'true':
+            item.is_active = True
+        else:
+            item.is_active = False
+        logger.info('%s: %s', action, item.as_dict)
+        db_session.add(item)
+        db_session.commit()
+        return {
+            'success_message': 'Successfully saved BoMItem %d '
+                               'in database.' % item.id,
+            'success': True,
+            'id': item.id
+        }
 
 
 app.add_url_rule('/projects', view_func=ProjectsView.as_view('projects'))
@@ -338,6 +421,14 @@ app.add_url_rule(
     view_func=ProjectAjax.as_view('ajax_project_view')
 )
 app.add_url_rule(
-    '/ajax/projects/bom_items/<int:project_id>',
+    '/ajax/projects/<int:project_id>/bom_items',
     view_func=BoMItemsAjax.as_view('bom_items_ajax')
+)
+app.add_url_rule(
+    '/ajax/projects/bom_item/<int:id>',
+    view_func=BoMItemAjax.as_view('bom_item_ajax')
+)
+app.add_url_rule(
+    '/forms/bom_item',
+    view_func=BoMItemFormHandler.as_view('bom_item_form')
 )

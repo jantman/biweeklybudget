@@ -39,7 +39,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Reload the top-level project information on the page.
  */
 function reloadProject() {
-    console.log('reload project');
+    $.ajax({
+        type: "GET",
+        url: "/ajax/projects/" + project_id,
+        success: function(data) {
+            $('#div-remaining-amount').text(fmt_currency(data.remaining_cost));
+            $('#div-total-amount').text(fmt_currency(data.total_cost));
+        }
+    });
 }
 
 // for the DataTable
@@ -49,7 +56,7 @@ $(document).ready(function() {
     mytable = $('#table-items').dataTable({
         processing: true,
         serverSide: true,
-        ajax: "/ajax/projects/bom_items/" + project_id,
+        ajax: "/ajax/projects/" + project_id + "/bom_items",
         columns: [
             {
                 data: "name",
@@ -77,7 +84,7 @@ $(document).ready(function() {
                 data: "unit_cost",
                 "render": function(data, type, row) {
                     if(type === "display" || type === "filter") {
-                        return '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+                        return fmt_currency(data);
                     } else {
                         return data;
                     }
@@ -87,7 +94,7 @@ $(document).ready(function() {
                 data: "line_cost",
                 "render": function(data, type, row) {
                     if(type === "display" || type === "filter") {
-                        return '$' + row.DT_RowData.line_cost.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+                        return fmt_currency(row.DT_RowData.line_cost);
                     } else {
                         return row.DT_RowData.line_cost;
                     }
@@ -128,13 +135,9 @@ $(document).ready(function() {
     $('#table-items_length').parent().addClass('col-sm-4');
     $('#table-items_filter').parent().removeClass('col-sm-6');
     $('#table-items_filter').parent().addClass('col-sm-4');
-    $('<div class="col-sm-4"><p><button type="button" class="btn btn-primary" id="btn_add_trans">Add Item</button></p></div>').insertAfter($('#table-items_length').parent());
+    $('<div class="col-sm-4"><p><button type="button" class="btn btn-primary" id="btn_add_item">Add Item</button></p></div>').insertAfter($('#table-items_length').parent());
 
-/*
-    $('#btn_add_trans').click(function() {
-        transModal(null, mytable);
+    $('#btn_add_item').click(function() {
+        bomItemModal(null);
     });
-    */
-
-    reloadProject();
 });
