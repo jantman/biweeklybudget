@@ -43,7 +43,7 @@ from sqlalchemy import or_
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
-from biweeklybudget.models.projects import Project
+from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
@@ -102,14 +102,14 @@ class ProjectsAjax(SearchableAjaxView):
                 return qs
             s = '%' + s + '%'
             qs = qs.filter(or_(
-                Project.notes.like(s)),
+                Project.notes.like(s),
                 Project.name.like(s)
-            )
+            ))
         return qs
 
     def get(self):
         """
-        Render and return JSON response for GET /ajax/ofx
+        Render and return JSON response for GET /ajax/projects
         """
         args = request.args.to_dict()
         args_dict = self._args_dict(args)
@@ -212,6 +212,114 @@ class ProjectsFormHandler(FormHandlerView):
         return 'Successfully saved Project %d in database.' % proj.id
 
 
+class BoMItemView(MethodView):
+    """
+    Render the GET /project/<int:project_id> view using the ``bomitem.html``
+    template.
+    """
+
+    def get(self, project_id):
+        proj = db_session.query(Project).get(project_id)
+        return render_template(
+            'bomitem.html',
+            project_id=project_id,
+            project_name=proj.name,
+            project_notes=proj.notes,
+            remaining=proj.remaining_cost,
+            total=proj.total_cost
+        )
+
+
+class BoMItemsAjax(SearchableAjaxView):
+    """
+    Handle GET /ajax/projects/bom_items/<int:project_id> endpoint.
+    """
+
+    def _filterhack(self, qs, s, args):
+        """
+        DataTables 1.10.12 has built-in support for filtering based on a value
+        in a specific column; when this is done, the filter value is set in
+        ``columns[N][search][value]`` where N is the column number. However,
+        the python datatables package used here only supports the global
+        ``search[value]`` input, not the per-column one.
+
+        However, the DataTable search is implemented by passing a callable
+        to ``table.searchable()`` which takes two arguments, the current Query
+        that's being built, and the user's ``search[value]`` input; this must
+        then return a Query object with the search applied.
+
+        In python datatables 0.4.9, this code path is triggered on
+        ``if callable(self.search_func) and search.get("value", None):``
+
+        As such, we can "trick" the table to use per-column searching (currently
+        only if global searching is not being used) by examining the per-column
+        search values in the request, and setting the search function to one
+        (this method) that uses those values instead of the global
+        ``search[value]``.
+
+        :param qs: Query currently being built
+        :type qs: ``sqlalchemy.orm.query.Query``
+        :param s: user search value
+        :type s: str
+        :param args: args
+        :type args: dict
+        :return: Query with searching applied
+        :rtype: ``sqlalchemy.orm.query.Query``
+        """
+        # search
+        if s != '' and s != 'FILTERHACK':
+            if len(s) < 3:
+                return qs
+            s = '%' + s + '%'
+            qs = qs.filter(or_(
+                BoMItem.notes.like(s),
+                BoMItem.name.like(s),
+                BoMItem.url.like(s)
+            ))
+        return qs
+
+    def get(self, project_id):
+        """
+        Render and return JSON response for
+        GET /ajax/projects/bom_items/<int:project_id>
+        """
+        args = request.args.to_dict()
+        args_dict = self._args_dict(args)
+        if self._have_column_search(args_dict) and args['search[value]'] == '':
+            args['search[value]'] = 'FILTERHACK'
+        table = DataTable(
+            args,
+            BoMItem,
+            db_session.query(BoMItem).filter(
+                BoMItem.project_id.__eq__(project_id)
+            ),
+            [
+                'name',
+                'quantity',
+                'unit_cost',
+                'is_active',
+                'notes',
+                'url',
+                'id'
+            ]
+        )
+        table.add_data(
+            line_cost=lambda o: float(o.unit_cost) * o.quantity
+        )
+        if args['search[value]'] != '':
+            table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
+        return jsonify(table.json())
+
+
+class ProjectAjax(MethodView):
+    """
+    Render the GET /ajax/projects/<int:project_id> JSON view.
+    """
+
+    def get(self, project_id):
+        return jsonify(db_session.query(Project).get(project_id).as_dict)
+
+
 app.add_url_rule('/projects', view_func=ProjectsView.as_view('projects'))
 app.add_url_rule(
     '/forms/projects',
@@ -220,4 +328,16 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/projects',
     view_func=ProjectsAjax.as_view('projects_ajax')
+)
+app.add_url_rule(
+    '/projects/<int:project_id>',
+    view_func=BoMItemView.as_view('bom_item_view')
+)
+app.add_url_rule(
+    '/ajax/projects/<int:project_id>',
+    view_func=ProjectAjax.as_view('ajax_project_view')
+)
+app.add_url_rule(
+    '/ajax/projects/bom_items/<int:project_id>',
+    view_func=BoMItemsAjax.as_view('bom_items_ajax')
 )

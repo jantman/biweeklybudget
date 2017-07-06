@@ -134,6 +134,19 @@ class AcceptanceHelper(object):
             rows.append(row)
         return rows
 
+    def tbody2trlist(self, elem):
+        """
+        Given a webdriver ``table`` element, return a list of table rows, top to
+        bottom.
+
+        :param elem: table element
+        :type elem: selenium.webdriver.remote.webelement.WebElement
+        :return: list of ``tr`` WebElements
+        :rtype: list
+        """
+        tbody = elem.find_element_by_tag_name('tbody')
+        return [x for x in tbody.find_elements_by_tag_name('tr')]
+
     def tbody2elemlist(self, elem):
         """
         Given a webdriver ``table`` element, return a list of table rows, top to

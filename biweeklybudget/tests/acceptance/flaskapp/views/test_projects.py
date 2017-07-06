@@ -43,7 +43,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
 @pytest.mark.acceptance
-class TestProjects(AcceptanceHelper):
+class DONOTTestProjects(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -68,7 +68,7 @@ class TestProjects(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestProjectsView(AcceptanceHelper):
+class DONOTTestProjectsView(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(Project).get(1)
@@ -376,3 +376,208 @@ class TestProjectsView(AcceptanceHelper):
         assert testdb.query(BoMItem).with_entities(
             func.max(BoMItem.id)
         ).scalar() == 5
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestOneProjectView(AcceptanceHelper):
+
+    def test_00_verify_db(self, testdb):
+        b = testdb.query(Project).get(1)
+        assert b is not None
+        assert b.name == 'P1'
+        assert b.notes == 'ProjectOne'
+        assert b.is_active is True
+        assert len(
+            testdb.query(BoMItem).filter(BoMItem.project_id.__eq__(1)).all()
+        ) == 3
+        i = testdb.query(BoMItem).get(1)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item1'
+        assert i.notes == 'P1Item1Notes'
+        assert float(i.unit_cost) == 11.11
+        assert i.quantity == 1
+        assert i.url is None
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(2)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item2'
+        assert i.notes == 'P1Item2Notes'
+        assert float(i.unit_cost) == 22.22
+        assert i.quantity == 3
+        assert i.url == 'http://item2.p1.com'
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(3)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item3'
+        assert i.notes == 'P1Item3Notes'
+        assert float(i.unit_cost) == 1234.56
+        assert i.quantity == 2
+        assert i.url == 'http://item3.p1.com'
+        assert i.is_active is False
+
+    def test_01_table(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects/1')
+        # Top headings
+        assert selenium.find_element_by_id(
+            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element_by_id(
+            'div-remaining-amount').get_attribute('innerHTML') == '$77.77'
+        assert selenium.find_element_by_id(
+            'div-total-amount').get_attribute('innerHTML') == '$2,546.89'
+        # Table
+        table = selenium.find_element_by_id('table-items')
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<span style="float: left;">P1Item1</span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(1)">(edit)</a></span>',
+                '1',
+                '$11.11',
+                '$11.11',
+                'P1Item1Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item2.p1.com">P1Item2</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(2)">(edit)</a></span>',
+                '3',
+                '$22.22',
+                '$66.66',
+                'P1Item2Notes',
+                'yes'
+            ],
+            [
+                '<span style="float: left;">'
+                '<a href="http://item3.p1.com">P1Item3</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(3)">(edit)</a></span>',
+                '2',
+                '$1,234.56',
+                '$2,469.12',
+                'P1Item3Notes',
+                '<span style="color: #a94442;">NO</span>'
+            ],
+        ]
+        rows = self.tbody2trlist(table)
+        assert 'inactive' not in rows[0].get_attribute('class')
+        assert 'inactive' not in rows[1].get_attribute('class')
+        assert 'inactive' in rows[2].get_attribute('class')
+
+    def test_02_search(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects/1')
+        search = self.retry_stale(
+            selenium.find_element_by_xpath,
+            '//input[@type="search"]'
+        )
+        search.send_keys('Item2')
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        table = self.retry_stale(
+            selenium.find_element_by_id,
+            'table-items'
+        )
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<span style="float: left;">'
+                '<a href="http://item2.p1.com">P1Item2</a></span>'
+                '<span style="float: right;">'
+                '<a href="#" onclick="bomItemModal(2)">(edit)</a></span>',
+                '3',
+                '$22.22',
+                '$66.66',
+                'P1Item2Notes',
+                'yes'
+            ]
+        ]
+        rows = self.tbody2trlist(table)
+        assert 'inactive' not in rows[0].get_attribute('class')
+
+    def test_03_edit_item(self, base_url, selenium):
+        # test that the Remaining and Total boxes updated too
+        assert 1 == 0
+
+    def test_04_verify_db(self, testdb):
+        b = testdb.query(Project).get(1)
+        assert b is not None
+        assert b.name == 'P1'
+        assert b.notes == 'ProjectOne'
+        assert b.is_active is True
+        assert len(
+            testdb.query(BoMItem).filter(BoMItem.project_id.__eq__(1)).all()
+        ) == 3
+        i = testdb.query(BoMItem).get(1)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item1'
+        assert i.notes == 'P1Item1Notes'
+        assert float(i.unit_cost) == 11.11
+        assert i.quantity == 1
+        assert i.url is None
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(2)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item2'
+        assert i.notes == 'P1Item2Notes'
+        assert float(i.unit_cost) == 22.22
+        assert i.quantity == 3
+        assert i.url == 'http://item2.p1.com'
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(3)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item3'
+        assert i.notes == 'P1Item3Notes'
+        assert float(i.unit_cost) == 1234.56
+        assert i.quantity == 2
+        assert i.url == 'http://item3.p1.com'
+        assert i.is_active is False
+
+    def test_05_add_item(self, base_url, selenium):
+        # test that the Remaining and Total boxes updated too
+        assert 1 == 0
+
+    def test_06_verify_db(self, testdb):
+        b = testdb.query(Project).get(1)
+        assert b is not None
+        assert b.name == 'P1'
+        assert b.notes == 'ProjectOne'
+        assert b.is_active is True
+        assert len(
+            testdb.query(BoMItem).filter(BoMItem.project_id.__eq__(1)).all()
+        ) == 3
+        i = testdb.query(BoMItem).get(1)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item1'
+        assert i.notes == 'P1Item1Notes'
+        assert float(i.unit_cost) == 11.11
+        assert i.quantity == 1
+        assert i.url is None
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(2)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item2'
+        assert i.notes == 'P1Item2Notes'
+        assert float(i.unit_cost) == 22.22
+        assert i.quantity == 3
+        assert i.url == 'http://item2.p1.com'
+        assert i.is_active is True
+        i = testdb.query(BoMItem).get(3)
+        assert i is not None
+        assert i.project_id == 1
+        assert i.name == 'P1Item3'
+        assert i.notes == 'P1Item3Notes'
+        assert float(i.unit_cost) == 1234.56
+        assert i.quantity == 2
+        assert i.url == 'http://item3.p1.com'
+        assert i.is_active is False
