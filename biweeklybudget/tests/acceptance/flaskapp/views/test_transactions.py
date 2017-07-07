@@ -96,7 +96,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             ],
             [
                 self.dt.date().strftime('%Y-%m-%d'),
-                '$-333.33',
+                '-$333.33',
                 'T2',
                 'BankTwoStale (2)',
                 'Standing1 (4)',

@@ -86,7 +86,7 @@ class TestSchedTransDefault(AcceptanceHelper):
                 'yes',
                 'per period',
                 '1 per period',
-                '$-333.33',
+                '-$333.33',
                 'ST3',
                 'BankTwoStale (2)',
                 'Standing1 (4)'

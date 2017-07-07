@@ -108,8 +108,8 @@ class TestProjectsView(AcceptanceHelper):
             ],
             [
                 '<a href="/projects/2">P2</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(2);" href="#">'
                 '(deactivate)</a>',
                 'ProjectTwo'
@@ -117,7 +117,7 @@ class TestProjectsView(AcceptanceHelper):
             [
                 '<a href="/projects/3">P3Inactive</a>',
                 '$5.34',
-                '$3',
+                '$3.00',
                 'NO <a onclick="activateProject(3);" href="#">'
                 '(activate)</a>',
                 'ProjectThreeInactive'
@@ -142,7 +142,7 @@ class TestProjectsView(AcceptanceHelper):
             [
                 '<a href="/projects/3">P3Inactive</a>',
                 '$5.34',
-                '$3',
+                '$3.00',
                 'NO <a onclick="activateProject(3);" href="#">(activate)</a>',
                 'ProjectThreeInactive'
             ]
@@ -167,8 +167,8 @@ class TestProjectsView(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/projects/4">NewP</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(4);" href="#">'
                 '(deactivate)</a>',
                 'My New Project'
@@ -183,8 +183,8 @@ class TestProjectsView(AcceptanceHelper):
             ],
             [
                 '<a href="/projects/2">P2</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(2);" href="#">'
                 '(deactivate)</a>',
                 'ProjectTwo'
@@ -192,7 +192,7 @@ class TestProjectsView(AcceptanceHelper):
             [
                 '<a href="/projects/3">P3Inactive</a>',
                 '$5.34',
-                '$3',
+                '$3.00',
                 'NO <a onclick="activateProject(3);" href="#">'
                 '(activate)</a>',
                 'ProjectThreeInactive'
@@ -242,16 +242,16 @@ class TestProjectsView(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/projects/4">NewP</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(4);" href="#">'
                 '(deactivate)</a>',
                 'My New Project'
             ],
             [
                 '<a href="/projects/2">P2</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(2);" href="#">'
                 '(deactivate)</a>',
                 'ProjectTwo'
@@ -267,7 +267,7 @@ class TestProjectsView(AcceptanceHelper):
             [
                 '<a href="/projects/3">P3Inactive</a>',
                 '$5.34',
-                '$3',
+                '$3.00',
                 'NO <a onclick="activateProject(3);" href="#">'
                 '(activate)</a>',
                 'ProjectThreeInactive'
@@ -317,16 +317,16 @@ class TestProjectsView(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/projects/4">NewP</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(4);" href="#">'
                 '(deactivate)</a>',
                 'My New Project'
             ],
             [
                 '<a href="/projects/2">P2</a>',
-                '$0',
-                '$0',
+                '$0.00',
+                '$0.00',
                 'yes <a onclick="deactivateProject(2);" href="#">'
                 '(deactivate)</a>',
                 'ProjectTwo'
@@ -334,7 +334,7 @@ class TestProjectsView(AcceptanceHelper):
             [
                 '<a href="/projects/3">P3Inactive</a>',
                 '$5.34',
-                '$3',
+                '$3.00',
                 'yes <a onclick="deactivateProject(3);" href="#">'
                 '(deactivate)</a>',
                 'ProjectThreeInactive'
