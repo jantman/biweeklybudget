@@ -145,6 +145,109 @@ function handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id) 
 }
 
 /**
+ * Generic function to handle form submission with server-side validation of
+ * an inline (non-modal) form.
+ *
+ * See the Python server-side code for further information.
+ *
+ * @param {string} container_id - The ID of the container element (div) that is
+ *  the visual parent of the form. On successful submission, this element will
+ *  be emptied and replaced with a success message.
+ * @param {string} form_id - The ID of the form itself.
+ * @param {string} post_url - Relative URL to post form data to.
+ * @param {Object} dataTableObj - passed on to ``handleFormSubmitted()``
+ */
+function handleInlineForm(container_id, form_id, post_url, dataTableObj) {
+    var data = serializeForm(form_id);
+    $('.formfeedback').remove();
+    if($('#formStatus')) { $('#formStatus').empty(); }
+    $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
+    $.ajax({
+        type: "POST",
+        url: post_url,
+        data: data,
+        success: function(data) {
+            handleInlineFormSubmitted(data, container_id, form_id, dataTableObj);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            handleInlineFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
+        }
+    });
+}
+
+/**
+ * Handle the response from the API URL that the form data is POSTed to, for an
+ * inline (non-modal) form.
+ *
+ * This should either display a success message, or one or more error messages.
+ *
+ * @param {Object} data - response data
+ * @param {string} container_id - the ID of the modal container on the page
+ * @param {string} form_id - the ID of the form on the page
+ * @param {Object} dataTableObj - A reference to the DataTable on the page, that
+ *   needs to be refreshed. If null, reload the whole page. If a function, call
+ *   that function. If false, do nothing.
+ */
+function handleInlineFormSubmitted(data, container_id, form_id, dataTableObj) {
+    if($('#formStatus').length == 0) { $('#' + container_id).prepend('<div id="formStatus"></div>'); }
+    if(data.hasOwnProperty('error_message')) {
+        $('#formStatus').html(
+            '<div class="alert alert-danger formfeedback">' +
+            '<strong>Server Error: </strong> ' + data.error_message + '</div>'
+        );
+    } else if (data.hasOwnProperty('errors')) {
+        var form = $('#' + form_id);
+        Object.keys(data.errors).forEach(function (key) {
+            var elem = form.find('[name=' + key + ']');
+            data.errors[key].forEach( function(msg) {
+                elem.parent().append('<p class="text-danger formfeedback">' + msg + '</p>');
+                elem.parent().addClass('has-error');
+            });
+        });
+    } else {
+        $('#formStatus').empty();
+        $('#formStatus').append('<div class="alert alert-success">' + data.success_message + '</div>');
+        var oneitem_re = /\/\d+$/;
+        if (dataTableObj === null || typeof dataTableObj == 'undefined') {
+            // dataTableObj is null, refresh the page
+            if (oneitem_re.test(window.location.href)) {
+                // don't reload if it will just show the modal again
+                var url = window.location.href.replace(/\/\d+$/, "");
+                window.location = url;
+            } else {
+                location.reload();
+            }
+        } else if (isFunction(dataTableObj)) {
+            // if it's a function, call it.
+            dataTableObj(data);
+        } else if (dataTableObj === false) {
+            // do nothing
+        } else if (dataTableObj !== null) {
+            dataTableObj.api().ajax.reload();
+        } else {
+            console.log("ERROR: dataTableObj unknown type");
+            console.log(dataTableObj);
+        }
+        setTimeout(
+            function() { $('#formStatus').empty(); },
+            2000
+        );
+    }
+}
+
+/**
+ * Handle an error in the HTTP request to submit the inline (non-modal) form.
+ */
+function handleInlineFormError(jqXHR, textStatus, errorThrown, container_id, form_id) {
+    console.log("Form submission error: %s (%s)", textStatus, errorThrown);
+    if($('#formStatus').length == 0) { $('#' + container_id).prepend('<div id="formStatus"></div>'); }
+    $('#formStatus').html(
+        '<div class="alert alert-danger formfeedback"><strong>Error submitting ' +
+        'form:</strong> ' + textStatus + ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
+    );
+}
+
+/**
  * Given the ID of a form, return an Object (hash/dict) of all data from it,
  * to POST to the server.
  *

@@ -61,6 +61,7 @@ class SampleDataLoader(object):
             f.calculate_mpg()
         self.db.flush()
         self.db.commit()
+        self._projects()
         self.accounts = {
             'BankOne': self._bank_one(),
             'BankTwoStale': self._bank_two_stale(),
@@ -646,3 +647,54 @@ class SampleDataLoader(object):
                     reported_mpg=(20 + i) + (veh_num * 0.1),
                     notes='notes %s %d' % (veh_str, i)
                 ))
+
+    def _projects(self):
+        # P1 - Active=77.77 Total=2546.89
+        p1 = Project(name='P1', notes='ProjectOne')
+        self.db.add(p1)
+        self.db.add(BoMItem(
+            project=p1,
+            name='P1Item1',
+            notes='P1Item1Notes',
+            unit_cost=11.11
+        ))
+        self.db.add(BoMItem(
+            project=p1,
+            name='P1Item2',
+            notes='P1Item2Notes',
+            unit_cost=22.22,
+            quantity=3,
+            url='http://item2.p1.com'
+        ))
+        self.db.add(BoMItem(
+            project=p1,
+            name='P1Item3',
+            notes='P1Item3Notes',
+            unit_cost=1234.56,
+            quantity=2,
+            url='http://item3.p1.com',
+            is_active=False
+        ))
+        p2 = Project(name='P2', notes='ProjectTwo')
+        self.db.add(p2)
+        # P3 - Active=3.0 Total=5.34
+        p3 = Project(
+            name='P3Inactive', notes='ProjectThreeInactive', is_active=False
+        )
+        self.db.add(p3)
+        self.db.add(BoMItem(
+            project=p3,
+            name='P3Item2',
+            notes='P3Item2Notes',
+            unit_cost=1.0,
+            quantity=3,
+            url='http://item2.p3.com'
+        ))
+        self.db.add(BoMItem(
+            project=p3,
+            name='P3Item3',
+            notes='P3Item3Notes',
+            unit_cost=2.34,
+            url='http://item3.p3.com',
+            is_active=False
+        ))

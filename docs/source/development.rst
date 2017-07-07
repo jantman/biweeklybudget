@@ -102,6 +102,8 @@ Database Debugging
 If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by
 SQLAlchemy will be logged at INFO level.
 
+To get an interactive Python shell with the database initialized, use ``python -i bin/db_tester.py``.
+
 Docker Image Build
 ------------------
 

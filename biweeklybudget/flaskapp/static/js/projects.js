@@ -38,28 +38,67 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 // for the DataTable
 var mytable;
 
+/**
+ * Handler for when a project is added via the form.
+ */
+function handleProjectAdded() {
+    $('#proj_frm_name').val("");
+    $('#proj_frm_notes').val("");
+    mytable.api().ajax.reload();
+}
+
+/**
+ * Handler for links to activate a project.
+ */
+function activateProject(proj_id) {
+    $.ajax({
+        type: "POST",
+        url: '/forms/projects',
+        data: { id: proj_id, action: 'activate'},
+        success: function(data) {
+            mytable.api().ajax.reload();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
+            alert('Error submitting form: ' + textStatus + ': ' + jqXHR.status + ' ' + errorThrown);
+        }
+    });
+}
+
+/**
+ * Handler for links to deactivate a project.
+ */
+function deactivateProject(proj_id) {
+    $.ajax({
+        type: "POST",
+        url: '/forms/projects',
+        data: { id: proj_id, action: 'deactivate'},
+        success: function(data) {
+            mytable.api().ajax.reload();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id);
+            alert('Error submitting form: ' + textStatus + ': ' + jqXHR.status + ' ' + errorThrown);
+        }
+    });
+}
+
 $(document).ready(function() {
-    mytable = $('#table-scheduled-txn').dataTable({
+    mytable = $('#table-projects').dataTable({
         processing: true,
         serverSide: true,
-        ajax: "/ajax/scheduled",
+        ajax: "/ajax/projects",
         columns: [
             {
-                data: "is_active",
+                data: "name",
                 "render": function(data, type, row) {
-                    if (type === "display" || type === "filter") {
-                        if (data === false) {
-                            return '<span style="color: #a94442;">NO</span>';
-                        }
-                        return 'yes';
-                    }
-                    return data;
+                    return type === "display" || type === "filter" ?
+                        '<a href="/projects/' + row.DT_RowData.id + '">' + data + '</a>' :
+                        data;
                 }
             },
-            { data: "schedule_type" },
-            { data: "recurrence_str" },
             {
-                data: "amount",
+                data: "total_cost",
                 "render": function(data, type, row) {
                     return type === "display" || type === "filter" ?
                         fmt_currency(data) :
@@ -67,46 +106,31 @@ $(document).ready(function() {
                 }
             },
             {
-                data: "description",
+                data: "remaining_cost",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "javascript:schedModal(" + row.DT_RowData.id + ", mytable)").text(data)).html();
+                    return type === "display" || type === "filter" ?
+                        fmt_currency(data) :
+                        data;
                 }
             },
             {
-                data: "account",
+                data: "is_active",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "/accounts/" + row.DT_RowData.acct_id).text(data)).html();
+                    if(type !== "display" && type !== "filter") { return data; }
+                    if(data === true) {
+                        return 'yes <a onclick="deactivateProject(' + row.DT_RowData.id + ');" href="#">(deactivate)</a>';
+                    } else {
+                        return 'NO <a onclick="activateProject(' + row.DT_RowData.id + ');" href="#">(activate)</a>';
+                    }
                 }
             },
-            {
-                data: "budget",
-                "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "/budgets/" + row.DT_RowData.budget_id).text(data)).html();
-                }
-            }
+            { data: "notes" }
         ],
-        order: [[ 0, "desc"], [ 1, "desc"], [2, "asc"], [3, "asc"]],
-        bInfo: true,
-        "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            if(aData.is_active === false) {
-                $(nRow).addClass('inactive');
-            }
-        }
+        order: [[3, "desc"], [ 0, "asc"]],
+        bInfo: true
     });
 
-    $('#table-scheduled-txn_length').parent().removeClass('col-sm-6');
-    $('#table-scheduled-txn_length').parent().addClass('col-sm-4');
-    $('#table-scheduled-txn_filter').parent().removeClass('col-sm-6');
-    $('#table-scheduled-txn_filter').parent().addClass('col-sm-4');
-    var acctsel = '<div class="col-sm-4"><div id="table-scheduled-txn_acct_filter" class="dataTables_length"><label>Type: <select name="type_filter" id="type_filter" class="form-control input-sm" aria-controls="table-scheduled-txn"><option value="None" selected="selected"></option><option value="date">Date</option><option value="monthly">Monthly</option><option value="per period">Per Period</option>';
-    acctsel += '</select></label></div></div>';
-    $(acctsel).insertAfter($('#table-scheduled-txn_length').parent());
-    $('#type_filter').on('change', function() {
-        var selectedVal = $(this).val();
-        mytable.fnFilter(selectedVal, 1, false);
-    });
-
-    $('#btn_add_sched').click(function() {
-        schedModal(null, mytable);
+    $('#formSaveButton').click(function() {
+        handleInlineForm('add_project_frm_div', 'add_project_frm', '/forms/projects', handleProjectAdded);
     });
 });

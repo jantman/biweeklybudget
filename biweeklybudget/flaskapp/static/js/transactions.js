@@ -49,7 +49,7 @@ $(document).ready(function() {
                 data: "amount",
                 "render": function(data, type, row) {
                     return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
+                        fmt_currency(data) :
                         data;
                 }
             },
@@ -85,10 +85,10 @@ $(document).ready(function() {
                 data: "budgeted_amount",
                 "render": function(data, type, row) {
                     if(type === "display" || type === "filter") {
-                        if(data == row.amount || data === null ) {
+                        if(data === row.amount || data === null ) {
                             return '&nbsp';
                         } else {
-                            return '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
+                            return fmt_currency(data);
                         }
                     } else {
                         return data;

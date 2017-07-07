@@ -113,7 +113,7 @@ biweeklybudget provides the following setuptools entrypoints (command-line
 script wrappers in ``bin/``). First setup your environment according to the
 instructions above.
 
-* ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work.
+* ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work. To get an interactive session, use ``python -i bin/db_tester.py``.
 * ``loaddata`` - Entrypoint for dropping **all** existing data and loading test fixture data, or your base data. This is an awful, manual hack right now.
 * ``ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
 * ``ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB. See :ref:`OFX <ofx>`.

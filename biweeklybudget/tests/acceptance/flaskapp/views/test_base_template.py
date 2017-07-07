@@ -92,6 +92,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             ('/budgets', 'Budgets'),
             ('/scheduled', 'Scheduled'),
             ('/fuel', 'Fuel Log'),
+            ('/projects', 'Projects / BoM'),
             ('/help', 'Help/Docs/Code (AGPL)')
         ]
 

@@ -128,7 +128,7 @@ class FormHandlerView(MethodView):
         """
         try:
             x = float(data[key])
-            assert data[key] == '%s' % x
+            assert data[key].startswith('%s' % x)
         except Exception:
             errors[key].append('Invalid float value: "%s"' % data[key])
         return errors
