@@ -85,10 +85,10 @@ $(document).ready(function() {
                 data: "budgeted_amount",
                 "render": function(data, type, row) {
                     if(type === "display" || type === "filter") {
-                        if(data == row.amount || data === null ) {
+                        if(data === row.amount || data === null ) {
                             return '&nbsp';
                         } else {
-                            fmt_currency(data);
+                            return fmt_currency(data);
                         }
                     } else {
                         return data;
