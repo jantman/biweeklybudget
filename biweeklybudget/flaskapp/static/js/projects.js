@@ -101,7 +101,7 @@ $(document).ready(function() {
                 data: "total_cost",
                 "render": function(data, type, row) {
                     return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
+                        fmt_currency(data) :
                         data;
                 }
             },
@@ -109,7 +109,7 @@ $(document).ready(function() {
                 data: "remaining_cost",
                 "render": function(data, type, row) {
                     return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
+                        fmt_currency(data) :
                         data;
                 }
             },
