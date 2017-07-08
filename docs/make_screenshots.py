@@ -213,6 +213,18 @@ class Screenshotter(object):
             'filename': 'fuel',
             'title': 'Fuel Log',
             'description': 'Vehicle fuel log and fuel economy tracking.'
+        },
+        {
+            'path': '/projects',
+            'filename': 'projects',
+            'title': 'Project Tracking',
+            'description': 'Track projects and their cost.'
+        },
+        {
+            'path': '/projects/1',
+            'filename': 'bom',
+            'title': 'Projects - Bill of Materials',
+            'description': 'Track individual items/materials for projects.'
         }
     ]
 
