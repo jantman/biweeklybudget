@@ -37,7 +37,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import func
-from sqlalchemy.sql.expression import null
 from locale import currency
 
 from biweeklybudget.db import db_session
@@ -45,7 +44,6 @@ from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 
 logger = logging.getLogger(__name__)
@@ -91,6 +89,24 @@ class NotificationsController(object):
         return sum
 
     @staticmethod
+    def budget_account_unreconciled(sess=None):
+        """
+        Return the sum of unreconciled txns for all is_budget_source accounts.
+
+        :return: Combined unreconciled amount of all budget source accounts
+        :rtype: float
+        """
+        if sess is None:
+            sess = db_session
+        sum = 0
+        for acct in sess.query(Account).filter(
+                Account.is_budget_source.__eq__(True),
+                Account.is_active.__eq__(True)
+        ):
+            sum += acct.unreconciled_sum
+        return sum
+
+    @staticmethod
     def standing_budgets_sum(sess=None):
         """
         Return the sum of current balances of all standing budgets.
@@ -122,16 +138,10 @@ class NotificationsController(object):
             sess = db_session
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), sess)
         allocated = float(pp.overall_sums['allocated'])
-        rec = 0.0
-        t = pp.filter_query(
-            sess.query(Transaction),
-            Transaction.date
-        ).filter(Transaction.reconcile.__ne__(null()))
-        for txn in t:
-            rec += float(txn.actual_amount)
-        logger.debug('PayPeriod=%s; allocated=%s; reconciled=%s',
-                     pp, allocated, rec)
-        return allocated - rec
+        spent = float(pp.overall_sums['spent'])
+        logger.debug('PayPeriod=%s; allocated=%s; spent=%s',
+                     pp, allocated, spent)
+        return allocated - spent
 
     @staticmethod
     def num_unreconciled_ofx(sess=None):
@@ -167,21 +177,30 @@ class NotificationsController(object):
                                                                       a)
             })
         accounts_bal = NotificationsController.budget_account_sum()
+        unrec_amt = NotificationsController.budget_account_unreconciled()
         standing_bal = NotificationsController.standing_budgets_sum()
         curr_pp = NotificationsController.pp_sum()
-        if accounts_bal < (standing_bal + curr_pp):
+        logger.info('accounts_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
+                    accounts_bal, standing_bal, curr_pp, unrec_amt)
+        if accounts_bal < (standing_bal + curr_pp + unrec_amt):
             res.append({
                 'classes': 'alert alert-danger',
                 'content': 'Combined balance of all <a href="/accounts">'
                            'budget-funding accounts</a> '
-                           '(%s) is less than balance of all <a href='
-                           '"/budgets">standing budgets</a> (%s) plus the '
-                           'current pay period allocated and unreconciled '
-                           'transactions (%s)!'
+                           '(%s) is less than all allocated funds total of '
+                           '%s (%s <a href="/budgets">standing budgets</a>; '
+                           '%s <a href="/pay_period_for">current pay '
+                           'period remaining</a>; %s <a href="/reconcile">'
+                           'unreconciled</a>)!'
                            '' % (
                                currency(accounts_bal, grouping=True),
+                               currency(
+                                   (standing_bal + curr_pp + unrec_amt),
+                                   grouping=True
+                               ),
                                currency(standing_bal, grouping=True),
-                               currency(curr_pp, grouping=True)
+                               currency(curr_pp, grouping=True),
+                               currency(unrec_amt, grouping=True)
                            )
             })
         unreconciled_ofx = NotificationsController.num_unreconciled_ofx()

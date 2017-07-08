@@ -74,12 +74,16 @@ class TestNotifications(object):
             num_stale_accounts=DEFAULT,
             budget_account_sum=DEFAULT,
             standing_budgets_sum=DEFAULT,
-            num_unreconciled_ofx=DEFAULT
+            num_unreconciled_ofx=DEFAULT,
+            budget_account_unreconciled=DEFAULT,
+            pp_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
             mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = 0
+            mocks['pp_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == []
 
@@ -89,12 +93,16 @@ class TestNotifications(object):
                 num_stale_accounts=DEFAULT,
                 budget_account_sum=DEFAULT,
                 standing_budgets_sum=DEFAULT,
-                num_unreconciled_ofx=DEFAULT
+                num_unreconciled_ofx=DEFAULT,
+                budget_account_unreconciled=DEFAULT,
+                pp_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 1
             mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 28
+            mocks['budget_account_unreconciled'].return_value = 0
+            mocks['pp_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == [
             {
@@ -115,12 +123,16 @@ class TestNotifications(object):
                 num_stale_accounts=DEFAULT,
                 budget_account_sum=DEFAULT,
                 standing_budgets_sum=DEFAULT,
-                num_unreconciled_ofx=DEFAULT
+                num_unreconciled_ofx=DEFAULT,
+                budget_account_unreconciled=DEFAULT,
+                pp_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 3
             mocks['budget_account_sum'].return_value = 1000
             mocks['standing_budgets_sum'].return_value = 1
             mocks['num_unreconciled_ofx'].return_value = 28
+            mocks['budget_account_unreconciled'].return_value = 0
+            mocks['pp_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == [
             {

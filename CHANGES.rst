@@ -15,6 +15,8 @@ Changelog
 * Refactor form generation in UI to use new FormBuilder javascript class (DRY).
 * Fix date-sensitive acceptance test.
 * `Issue #87 <https://github.com/jantman/biweeklybudget/issues/87>`_ - Add fuel log / fuel economy tracking.
+* `Issue #88 <https://github.com/jantman/biweeklybudget/issues/88>`_ - Add tracking of cost for Projects and Bills of Materials (BoM) for them.
+* `Issue #74 <https://github.com/jantman/biweeklybudget/issues/74>`_ - Another attempt at working over-balance notification.
 
 0.1.2 (2017-05-28)
 ------------------
