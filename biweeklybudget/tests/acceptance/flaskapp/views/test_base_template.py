@@ -54,7 +54,7 @@ from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 
 @pytest.mark.acceptance
-class DoNotTestBaseTemplateNavigation(AcceptanceHelper):
+class TestBaseTemplateNavigation(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -98,7 +98,7 @@ class DoNotTestBaseTemplateNavigation(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DoNotTestBaseTemplateNotifications(AcceptanceHelper):
+class TestBaseTemplateNotifications(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -122,7 +122,7 @@ class DoNotTestBaseTemplateNotifications(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestBaseTmplUnreconciledNotification(AcceptanceHelper):
+class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
     def test_00_clean_db(self, testdb):
         # clean the database
@@ -218,7 +218,7 @@ class DoNotTestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class DoNotTestBudgetOverBalanceNotification(AcceptanceHelper):
+class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):
         b = testdb.query(Budget).get(4)

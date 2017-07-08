@@ -37,7 +37,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import func
-from sqlalchemy.sql.expression import null
 from locale import currency
 
 from biweeklybudget.db import db_session
@@ -45,7 +44,6 @@ from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 
 logger = logging.getLogger(__name__)
