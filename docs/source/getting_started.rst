@@ -117,3 +117,4 @@ instructions above.
 * ``loaddata`` - Entrypoint for dropping **all** existing data and loading test fixture data, or your base data. This is an awful, manual hack right now.
 * ``ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
 * ``ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB. See :ref:`OFX <ofx>`.
+* ``wishlist2project`` - For any projects with "Notes" fields matching an Amazon wishlist URL of a public wishlist (``^https://www.amazon.com/gp/registry/wishlist/``), synchronize the wishlist items to the project. Requires ``wishlist==0.1.2``.

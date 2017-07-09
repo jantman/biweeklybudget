@@ -238,7 +238,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         assert stand_bal == 132939.07
         pp_bal = NotificationsController.pp_sum(testdb)
         # floating point awfulness
-        assert "%.2f" % pp_bal == '222.20'
+        assert "%.2f" % pp_bal == '11.76'
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == -333.33
 
@@ -250,8 +250,8 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
-                           'total of $132,827.94 ($132,939.07 standing ' \
-                           'budgets; $222.20 current pay period remaining; ' \
+                           'total of $132,617.50 ($132,939.07 standing ' \
+                           'budgets; $11.76 current pay period remaining; ' \
                            '-$333.33 unreconciled)!'
         a = div.find_elements_by_tag_name('a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
@@ -323,7 +323,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         assert stand_bal == 11099.85
         pp_bal = NotificationsController.pp_sum(testdb)
         # floating point awfulness
-        assert "%.2f" % pp_bal == '222.20'
+        assert "%.2f" % pp_bal == '11.76'
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == 33666.67
 
@@ -335,8 +335,8 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
-                           'total of $44,988.72 ($11,099.85 standing ' \
-                           'budgets; $222.20 current pay period remaining; ' \
+                           'total of $44,778.28 ($11,099.85 standing ' \
+                           'budgets; $11.76 current pay period remaining; ' \
                            '$33,666.67 unreconciled)!'
         a = div.find_elements_by_tag_name('a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'

@@ -64,7 +64,11 @@ Main Features
 +++++++++++++
 
 * Budgeting on a biweekly (fortnightly; every other week) basis, for those of us who are paid that way.
-* Optional automatic downloading of transactions/statements from your financial institutions.
+* Periodic (per-pay-period) or standing budgets.
+* Optional automatic downloading of transactions/statements from your financial institutions and reconciling transactions (bank, credit, and investment accounts).
+* Scheduled transactions - specific date or recurring (date-of-month, or number of times per pay period).
+* Tracking of vehicle fuel fills (fuel log) and graphing of fuel economy.
+* Cost tracking for multiple projects, including bills-of-materials for them. Optional synchronization from Amazon Wishlists to projects.
 
 Requirements
 ------------

@@ -33,4 +33,5 @@ Submodules
    biweeklybudget.settings_example
    biweeklybudget.utils
    biweeklybudget.version
+   biweeklybudget.wishlist2project
 

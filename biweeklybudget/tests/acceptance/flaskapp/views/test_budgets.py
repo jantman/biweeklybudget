@@ -765,11 +765,11 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
         pp = BiweeklyPayPeriod.period_for_date(datetime.now(), testdb)
-        assert float(pp.budget_sums[2]['allocated']) == 444.44
+        assert float(pp.budget_sums[2]['allocated']) == 222.22
         assert float(pp.budget_sums[2]['budget_amount']) == 234.0
-        assert float(pp.budget_sums[2]['remaining']) == -210.44
+        assert "%.2f" % float(pp.budget_sums[2]['remaining']) == '11.78'
         assert float(pp.budget_sums[2]['spent']) == 222.22
-        assert float(pp.budget_sums[2]['trans_total']) == 444.44
+        assert float(pp.budget_sums[2]['trans_total']) == 222.22
         link = selenium.find_element_by_id('btn_budget_txfr')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -858,13 +858,15 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
 
     def test_3_verify_db(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(datetime.now(), testdb)
-        assert float(pp.budget_sums[2]['allocated']) == 320.99
+        d = datetime.now().date()
+        pp = BiweeklyPayPeriod.period_for_date(d, testdb)
+        print('Found period for %s: %s' % (d, pp))
+        assert float(pp.budget_sums[2]['allocated']) == 98.77
         assert float(pp.budget_sums[2]['budget_amount']) == 234.0
         # ugh, floating point issues...
-        assert "%.2f" % pp.budget_sums[2]['remaining'] == '-86.99'
+        assert "%.2f" % pp.budget_sums[2]['remaining'] == '135.23'
         assert float(pp.budget_sums[2]['spent']) == 98.77
-        assert float(pp.budget_sums[2]['trans_total']) == 320.99
+        assert float(pp.budget_sums[2]['trans_total']) == 98.77
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
         t1 = testdb.query(Transaction).get(4)
         assert t1.date == datetime.now().date()

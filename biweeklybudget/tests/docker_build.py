@@ -97,7 +97,7 @@ RUN /usr/local/bin/pip install virtualenv
 RUN /usr/local/bin/virtualenv /app && \
     /app/bin/pip install -r /tmp/requirements.txt && \
     /app/bin/pip install {install} && \
-    /app/bin/pip install gunicorn==19.7.1
+    /app/bin/pip install gunicorn==19.7.1 wishlist
 
 ENV DEBIAN_FRONTEND=noninteractive
 
