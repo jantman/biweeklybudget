@@ -54,7 +54,7 @@ from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 
 @pytest.mark.acceptance
-class DoNotTestBaseTemplateNavigation(AcceptanceHelper):
+class TestBaseTemplateNavigation(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -98,7 +98,7 @@ class DoNotTestBaseTemplateNavigation(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DoNotTestBaseTemplateNotifications(AcceptanceHelper):
+class TestBaseTemplateNotifications(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -122,7 +122,7 @@ class DoNotTestBaseTemplateNotifications(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestBaseTmplUnreconciledNotification(AcceptanceHelper):
+class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
     def test_00_clean_db(self, testdb):
         # clean the database
@@ -218,7 +218,7 @@ class DoNotTestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class DoNotTestBudgetOverBalanceNotification(AcceptanceHelper):
+class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):
         b = testdb.query(Budget).get(4)
@@ -238,7 +238,7 @@ class DoNotTestBudgetOverBalanceNotification(AcceptanceHelper):
         assert stand_bal == 132939.07
         pp_bal = NotificationsController.pp_sum(testdb)
         # floating point awfulness
-        assert "%.2f" % pp_bal == '222.20'
+        assert "%.2f" % pp_bal == '11.76'
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == -333.33
 
@@ -250,8 +250,8 @@ class DoNotTestBudgetOverBalanceNotification(AcceptanceHelper):
         )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
-                           'total of $132,827.94 ($132,939.07 standing ' \
-                           'budgets; $222.20 current pay period remaining; ' \
+                           'total of $132,617.50 ($132,939.07 standing ' \
+                           'budgets; $11.76 current pay period remaining; ' \
                            '-$333.33 unreconciled)!'
         a = div.find_elements_by_tag_name('a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
