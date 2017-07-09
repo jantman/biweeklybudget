@@ -45,13 +45,6 @@ from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.db import init_db, db_session, cleanup_db
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 
-try:
-    from wishlist.core import Wishlist
-except ImportError:
-    sys.stderr.write('ERROR: wishlist could not be imported. Please '
-                     '"pip install wishlist".\n')
-    raise SystemExit(1)
-
 logger = logging.getLogger(__name__)
 
 # suppress requests logging
@@ -65,6 +58,12 @@ class WishlistToProject(object):
     def __init__(self):
         atexit.register(cleanup_db)
         init_db()
+        try:
+            from wishlist.core import Wishlist
+        except ImportError:
+            sys.stderr.write('ERROR: wishlist could not be imported. Please '
+                             '"pip install wishlist".\n')
+            raise SystemExit(1)
         self._wlist = Wishlist()
 
     def run(self):
