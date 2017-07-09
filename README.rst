@@ -68,7 +68,7 @@ Main Features
 * Optional automatic downloading of transactions/statements from your financial institutions and reconciling transactions (bank, credit, and investment accounts).
 * Scheduled transactions - specific date or recurring (date-of-month, or number of times per pay period).
 * Tracking of vehicle fuel fills (fuel log) and graphing of fuel economy.
-* Cost tracking for multiple projects, including bills-of-materials for them.
+* Cost tracking for multiple projects, including bills-of-materials for them. Optional synchronization from Amazon Wishlists to projects.
 
 Requirements
 ------------
