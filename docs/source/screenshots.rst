@@ -135,3 +135,19 @@ Vehicle fuel log and fuel economy tracking.
 .. image:: fuel_sm.png
    :target: fuel.png
 
+Project Tracking
+----------------
+
+Track projects and their cost.
+
+.. image:: projects_sm.png
+   :target: projects.png
+
+Projects - Bill of Materials
+----------------------------
+
+Track individual items/materials for projects.
+
+.. image:: bom_sm.png
+   :target: bom.png
+

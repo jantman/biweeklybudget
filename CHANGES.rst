@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.3.0 (2017-07-09)
+------------------
+
+* `Issue #88 <https://github.com/jantman/biweeklybudget/issues/88>`_ - Add tracking of cost for Projects and Bills of Materials (BoM) for them.
+* Add script / entry point to sync Amazon Wishlist with a Project.
+* `Issue #74 <https://github.com/jantman/biweeklybudget/issues/74>`_ - Another attempt at working over-balance notification.
+
 0.2.0 (2017-07-02)
 ------------------
 
@@ -15,8 +22,6 @@ Changelog
 * Refactor form generation in UI to use new FormBuilder javascript class (DRY).
 * Fix date-sensitive acceptance test.
 * `Issue #87 <https://github.com/jantman/biweeklybudget/issues/87>`_ - Add fuel log / fuel economy tracking.
-* `Issue #88 <https://github.com/jantman/biweeklybudget/issues/88>`_ - Add tracking of cost for Projects and Bills of Materials (BoM) for them.
-* `Issue #74 <https://github.com/jantman/biweeklybudget/issues/74>`_ - Another attempt at working over-balance notification.
 
 0.1.2 (2017-05-28)
 ------------------
