@@ -123,14 +123,16 @@ class OfxGetter(object):
             ofxdata = self._get_ofx_scraper(account_name, days=days)
         else:
             acct = self._accounts[account_name]
-            logger.debug(
-                'Disabling logging for ofxclient, which has bad logging'
-            )
-            oldlvl = logging.getLogger().getEffectiveLevel()
-            logging.getLogger().setLevel(logging.WARNING)
+            if logger.getEffectiveLevel() != logging.DEBUG:
+                logger.debug(
+                    'Disabling logging for ofxclient, which has bad logging'
+                )
+                oldlvl = logging.getLogger().getEffectiveLevel()
+                logging.getLogger().setLevel(logging.WARNING)
             ofxdata = acct.download(days=days).read()
-            logging.getLogger().setLevel(oldlvl)
-            logger.debug('Re-enabling ofxclient logging')
+            if logger.getEffectiveLevel() != logging.DEBUG:
+                logging.getLogger().setLevel(oldlvl)
+                logger.debug('Re-enabling ofxclient logging')
         if write_to_file:
             fname = self._write_ofx_file(account_name, ofxdata)
         self._ofx_to_db(account_name, fname, ofxdata)
