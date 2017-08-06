@@ -172,7 +172,7 @@ class PeriodForDateView(MethodView):
         d_str = request.args.get('date', None)
         if d_str is None:
             pp = BiweeklyPayPeriod.period_for_date(
-                datetime.now().date(), db_session
+                dtnow().date(), db_session
             )
             logger.debug('Redirect to current payperiod: %s', pp)
         else:
