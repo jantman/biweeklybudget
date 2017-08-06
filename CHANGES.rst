@@ -5,6 +5,8 @@ Unreleased Changes
 ------------------
 
 * Have ``ofxgetter`` enable ofxclient logging when running at DEBUG level (``-vv``).
+* Bump ofxclient requirement to my `vanguard-fix <https://github.com/jantman/ofxclient/tree/vanguard-fix>`_ branch
+  for `PR #47 <https://github.com/captin411/ofxclient/pull/47>`_.
 
 0.3.0 (2017-07-09)
 ------------------
