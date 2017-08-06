@@ -44,6 +44,7 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from selenium.webdriver.support.ui import Select
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.utils import dtnow
 
 
 @pytest.mark.acceptance
@@ -627,7 +628,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
-            'budg_txfr_frm_date').get_attribute('value') == datetime.now(
+            'budg_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
         amt = body.find_element_by_id('budg_txfr_frm_amount')
         amt.clear()
@@ -711,7 +712,7 @@ class TestBudgetTransfer(AcceptanceHelper):
     def test_3_verify_db(self, testdb):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
         t1 = testdb.query(Transaction).get(4)
-        assert t1.date == datetime.now().date()
+        assert t1.date == dtnow().date()
         assert float(t1.actual_amount) == 123.45
         assert float(t1.budgeted_amount) == 123.45
         assert t1.description == desc
@@ -725,7 +726,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(5)
-        assert t2.date == datetime.now().date()
+        assert t2.date == dtnow().date()
         assert float(t2.actual_amount) == -123.45
         assert float(t2.budgeted_amount) == -123.45
         assert t2.description == desc
@@ -764,7 +765,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         ptable = selenium.find_element_by_id('table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
-        pp = BiweeklyPayPeriod.period_for_date(datetime.now(), testdb)
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
         assert float(pp.budget_sums[2]['allocated']) == 222.22
         assert float(pp.budget_sums[2]['budget_amount']) == 234.0
         assert "%.2f" % float(pp.budget_sums[2]['remaining']) == '11.78'
@@ -776,7 +777,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
-            'budg_txfr_frm_date').get_attribute('value') == datetime.now(
+            'budg_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
         amt = body.find_element_by_id('budg_txfr_frm_amount')
         amt.clear()
@@ -858,7 +859,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
 
     def test_3_verify_db(self, testdb):
-        d = datetime.now().date()
+        d = dtnow().date()
         pp = BiweeklyPayPeriod.period_for_date(d, testdb)
         print('Found period for %s: %s' % (d, pp))
         assert float(pp.budget_sums[2]['allocated']) == 98.77
@@ -869,7 +870,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert float(pp.budget_sums[2]['trans_total']) == 98.77
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
         t1 = testdb.query(Transaction).get(4)
-        assert t1.date == datetime.now().date()
+        assert t1.date == dtnow().date()
         assert float(t1.actual_amount) == 123.45
         assert float(t1.budgeted_amount) == 123.45
         assert t1.description == desc
@@ -883,7 +884,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(5)
-        assert t2.date == datetime.now().date()
+        assert t2.date == dtnow().date()
         assert float(t2.actual_amount) == -123.45
         assert float(t2.budgeted_amount) == -123.45
         assert t2.description == desc

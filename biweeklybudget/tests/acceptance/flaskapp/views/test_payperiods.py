@@ -1413,7 +1413,7 @@ class TestMakeTransModal(AcceptanceHelper):
         # this default is populated by JS, which will use localtime
         assert body.find_element_by_id(
             'schedtotrans_frm_date').get_attribute(
-            'value') == datetime.now().strftime('%Y-%m-%d')
+            'value') == dtnow().strftime('%Y-%m-%d')
         assert body.find_element_by_id(
             'schedtotrans_frm_amount').get_attribute('value') == '11.11'
         assert body.find_element_by_id(
@@ -1786,7 +1786,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
             'budg_txfr_frm_date').get_attribute('value') == \
-            datetime.now().date().strftime('%Y-%m-%d')
+            dtnow().date().strftime('%Y-%m-%d')
         amt = body.find_element_by_id('budg_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
@@ -1862,7 +1862,7 @@ class TestBudgetTransfer(AcceptanceHelper):
     def test_10_verify_db(self, testdb):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
         t1 = testdb.query(Transaction).get(8)
-        assert t1.date == datetime.now().date()
+        assert t1.date == dtnow().date()
         assert float(t1.actual_amount) == 123.45
         assert float(t1.budgeted_amount) == 123.45
         assert t1.description == desc
@@ -1876,7 +1876,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(9)
-        assert t2.date == datetime.now().date()
+        assert t2.date == dtnow().date()
         assert float(t2.actual_amount) == -123.45
         assert float(t2.budgeted_amount) == -123.45
         assert t2.description == desc
@@ -2061,7 +2061,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ],
             [
-                datetime.now().date().strftime('%Y-%m-%d'),
+                dtnow().date().strftime('%Y-%m-%d'),
                 '$123.45',
                 '<a href="javascript:transModal(8, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
@@ -2072,7 +2072,7 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="javascript:txnReconcileModal(3)">Yes (3)</a>'
             ],
             [
-                datetime.now().date().strftime('%Y-%m-%d'),
+                dtnow().date().strftime('%Y-%m-%d'),
                 '-$123.45',
                 '<a href="javascript:transModal(9, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
