@@ -7,6 +7,9 @@ Unreleased Changes
 * Have ``ofxgetter`` enable ofxclient logging when running at DEBUG level (``-vv``).
 * Bump ofxclient requirement to my `vanguard-fix <https://github.com/jantman/ofxclient/tree/vanguard-fix>`_ branch
   for `PR #47 <https://github.com/captin411/ofxclient/pull/47>`_.
+* `Issue #101 <https://github.com/jantman/biweeklybudget/issues/101>`_ - Fix static example amounts on ``/projects`` view.
+* `Issue #103 <https://github.com/jantman/biweeklybudget/issues/103>`_ - Show most recent MPG in notification box after adding fuel fill.
+* `Issue #97 <https://github.com/jantman/biweeklybudget/issues/97>`_ - Fix integration tests that are date-specific and break on certain dates (run all integration tests as if it were a fixed date).
 
 0.3.0 (2017-07-09)
 ------------------
