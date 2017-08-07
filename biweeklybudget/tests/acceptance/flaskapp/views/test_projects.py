@@ -95,6 +95,10 @@ class TestProjectsView(AcceptanceHelper):
 
     def test_01_table(self, base_url, selenium):
         self.get(selenium, base_url + '/projects')
+        assert selenium.find_element_by_id(
+            'active-remaining-cost').get_attribute('innerHTML') == '$77.77'
+        assert selenium.find_element_by_id(
+            'active-total-cost').get_attribute('innerHTML') == '$2,546.89'
         table = selenium.find_element_by_id('table-projects')
         htmls = self.inner_htmls(self.tbody2elemlist(table))
         assert htmls == [

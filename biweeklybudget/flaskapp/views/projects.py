@@ -57,7 +57,18 @@ class ProjectsView(MethodView):
     """
 
     def get(self):
-        return render_template('projects.html')
+        total_active = 0.0
+        remain_active = 0.0
+        for p in db_session.query(Project).filter(
+                Project.is_active.__eq__(True)
+        ).all():
+            total_active += p.total_cost
+            remain_active += p.remaining_cost
+        return render_template(
+            'projects.html',
+            total_active=total_active,
+            remain_active=remain_active
+        )
 
 
 class ProjectsAjax(SearchableAjaxView):
