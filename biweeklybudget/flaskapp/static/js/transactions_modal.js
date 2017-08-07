@@ -79,7 +79,7 @@ function transModalDivFillAndShow(msg) {
 function transModal(id, dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(transModalDivForm());
-    $('#trans_frm_date').val(isoformat(new Date()));
+    $('#trans_frm_date').val(isoformat(BIWEEKLYBUDGET_DEFAULT_DATE));
     $('#trans_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,

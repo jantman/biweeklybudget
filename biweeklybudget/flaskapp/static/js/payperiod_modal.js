@@ -78,7 +78,7 @@ function schedToTransModalDivFillAndShow(msg) {
 function schedToTransModal(id, payperiod_start_date) {
     $('#modalBody').empty();
     $('#modalBody').append(schedToTransModalDivForm());
-    $('#schedtotrans_frm_date').val(isoformat(new Date()));
+    $('#schedtotrans_frm_date').val(isoformat(BIWEEKLYBUDGET_DEFAULT_DATE));
     $('#schedtotrans_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,

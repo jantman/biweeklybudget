@@ -104,7 +104,7 @@ function fuelModalDivForm() {
 function fuelLogModal(dataTableObj) {
     $('#modalBody').empty();
     $('#modalBody').append(fuelModalDivForm());
-    $('#fuel_frm_date').val(isoformat(new Date()));
+    $('#fuel_frm_date').val(isoformat(BIWEEKLYBUDGET_DEFAULT_DATE));
     $('#fuel_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,

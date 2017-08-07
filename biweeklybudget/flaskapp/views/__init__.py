@@ -46,3 +46,4 @@ from .transactions import *
 from .help import *
 from .fuel import *
 from .projects import *
+from .utils import *

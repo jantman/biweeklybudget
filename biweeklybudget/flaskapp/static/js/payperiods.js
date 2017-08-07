@@ -3,8 +3,8 @@
 $('.calendar').map(function(index) {
   $(this).datepicker({
   	defaultViewDate: {
-      year: (new Date()).getFullYear(),
-      month: (new Date()).getMonth() + (index - 1),
+      year: BIWEEKLYBUDGET_DEFAULT_DATE.getFullYear(),
+      month: BIWEEKLYBUDGET_DEFAULT_DATE.getMonth() + (index - 1),
       date: 1
     },
     multidate: true,
