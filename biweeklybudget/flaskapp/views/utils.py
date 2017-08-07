@@ -35,33 +35,28 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from flask.views import MethodView
+from biweeklybudget.settings import BIWEEKLYBUDGET_TEST_TIMESTAMP
 from biweeklybudget.utils import dtnow
-from pytz import utc
-from datetime import datetime
-from freezegun import freeze_time
-import sys
-
-# https://code.google.com/p/mock/issues/detail?id=249
-# py>=3.4 should use unittest.mock not the mock package on pypi
-if (
-        sys.version_info[0] < 3 or
-        sys.version_info[0] == 3 and sys.version_info[1] < 4
-):
-    from mock import patch
-else:
-    from unittest.mock import patch
+from biweeklybudget.flaskapp.app import app
 
 
-class TestDtNow(object):
+class DateTestJS(MethodView):
+    """
+    Handle GET /utils/datetest.js endpoint.
+    """
 
-    @freeze_time('2016-05-13 11:21:32', tz_offset=0)
-    @patch('biweeklybudget.utils.settings.BIWEEKLYBUDGET_TEST_TIMESTAMP', None)
-    def test_dtnow(self):
-        assert dtnow() == datetime(
-            2016, 5, 13, 11, 21, 32, tzinfo=utc
+    def get(self):
+        print(BIWEEKLYBUDGET_TEST_TIMESTAMP)
+        if BIWEEKLYBUDGET_TEST_TIMESTAMP is None:
+            return 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date();'
+        dt = dtnow()
+        return 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date(%s, %s, %s);' % (
+            dt.year, (dt.month - 1), dt.day
         )
 
-    def test_dtnow_test(self):
-        assert dtnow() == datetime(
-            2017, 7, 28, 6, 24, 44, tzinfo=utc
-        )
+
+app.add_url_rule(
+    '/utils/datetest.js',
+    view_func=DateTestJS.as_view('date_test_js')
+)

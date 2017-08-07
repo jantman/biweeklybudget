@@ -17,8 +17,7 @@
 		return new Date(Date.UTC.apply(Date, arguments));
 	}
 	function UTCToday(){
-		var today = new Date();
-		return UTCDate(today.getFullYear(), today.getMonth(), today.getDate());
+		return UTCDate(BIWEEKLYBUDGET_DEFAULT_DATE.getFullYear(), BIWEEKLYBUDGET_DEFAULT_DATE.getMonth(), BIWEEKLYBUDGET_DEFAULT_DATE.getDate());
 	}
 	function isUTCEquals(date1, date2) {
 		return (

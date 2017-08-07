@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-from datetime import timedelta, datetime, date
+from datetime import timedelta, date
 
 #: Address to connect to Vault at, for OFX credentials
 VAULT_ADDR = 'http://127.0.0.1:8200'
@@ -67,24 +67,12 @@ else:
 #: :py:class:`datetime.timedelta` beyond which OFX data will be considered old
 STALE_DATA_TIMEDELTA = timedelta(days=2)
 
-
-def find_last_friday(d):
-    """
-    Return the datetime of the last Friday before ``d``.
-
-    :param d: date to find the Friday before
-    :type d: datetime
-    :return: datetime of the Friday closest to d
-    :rtype: datetime
-    """
-    s = d - timedelta(days=2)
-    while s.weekday() != 4:
-        s = s - timedelta(days=1)
-    return s
-
-#: The starting date of one pay period. The dates of all pay periods will be
-#: determined based on an interval from this date.
-PAY_PERIOD_START_DATE = find_last_friday(datetime.now()).date()
+#: int - FOR ACCEPTANCE TESTS ONLY - This is used to "fudge" the current time
+#: to the specified integer timestamp. Used for acceptance tests only. Do NOT
+#: set this outside of acceptance testing.
+# Tests run as 1501223084 - Friday, July 28, 2017 6:24:44 AM UTC
+BIWEEKLYBUDGET_TEST_TIMESTAMP = 1501223084
+PAY_PERIOD_START_DATE = date(2017, 7, 21)
 
 #: When listing unreconciled transactions that need to be reconciled, any
 #: :py:class:`~.OFXTransaction` before this date will be ignored.

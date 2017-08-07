@@ -56,7 +56,7 @@ function budgetTransferDivForm() {
 function budgetTransferModal() {
     $('#modalBody').empty();
     $('#modalBody').append(budgetTransferDivForm());
-    $('#budg_txfr_frm_date').val(isoformat(new Date()));
+    $('#budg_txfr_frm_date').val(isoformat(BIWEEKLYBUDGET_DEFAULT_DATE));
     $('#budg_txfr_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,

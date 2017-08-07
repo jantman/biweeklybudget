@@ -59,7 +59,8 @@ _TIMEDELTA_VARS = [
 ]
 _INT_VARS = [
     'DEFAULT_ACCOUNT_ID',
-    'FUEL_BUDGET_ID'
+    'FUEL_BUDGET_ID',
+    'BIWEEKLYBUDGET_TEST_TIMESTAMP'
 ]
 _STRING_VARS = [
     'DB_CONNSTRING',
@@ -109,6 +110,11 @@ TOKEN_PATH = None
 
 #: string - *(optional)* Address to connect to Vault at, for OFX credentials.
 VAULT_ADDR = None
+
+#: int - FOR ACCEPTANCE TESTS ONLY - This is used to "fudge" the current time
+#: to the specified integer timestamp. Used for acceptance tests only. Do NOT
+#: set this outside of acceptance testing.
+BIWEEKLYBUDGET_TEST_TIMESTAMP = None
 
 if 'SETTINGS_MODULE' in os.environ:
     logger.debug('Attempting to import settings module %s',

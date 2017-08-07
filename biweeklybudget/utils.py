@@ -69,6 +69,11 @@ def dtnow():
     :return: current datetime
     :rtype: datetime.datetime
     """
+    # This is for acceptance tests... :(
+    if settings.BIWEEKLYBUDGET_TEST_TIMESTAMP is not None:
+        return datetime.fromtimestamp(
+            int(settings.BIWEEKLYBUDGET_TEST_TIMESTAMP), pytz.utc
+        )
     return datetime.utcnow().replace(tzinfo=pytz.utc)
 
 

@@ -549,6 +549,8 @@ class TestFuelLogModal(AcceptanceHelper):
         assert odo_reads == [
             '1,011', '1,012', '1,001', '1,002', '1,123'
         ]
+        notif = selenium.find_element_by_id('last_mpg_notice')
+        assert notif.get_attribute('innerHTML') == 'Last fill MPG: 16.349'
 
     def test_03_verify_db(self, testdb):
         ids = [

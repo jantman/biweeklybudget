@@ -340,7 +340,8 @@ class FuelLogFormHandler(FormHandlerView):
                 'success_message': 'Successfully saved FuelFill %d '
                                    'in database.' % fill.id,
                 'success': True,
-                'fill_id': fill.id
+                'fill_id': fill.id,
+                'calculated_mpg': fill.calculated_mpg
             }
         trans = Transaction()
         budg = db_session.query(Budget).get(int(data['budget']))
@@ -361,7 +362,8 @@ class FuelLogFormHandler(FormHandlerView):
                                   fill.id, trans.id),
             'success': True,
             'trans_id': trans.id,
-            'fill_id': fill.id
+            'fill_id': fill.id,
+            'calculated_mpg': fill.calculated_mpg
         }
 
 
