@@ -112,7 +112,14 @@ function fuelLogModal(dataTableObj) {
         format: 'yyyy-mm-dd'
     });
     $('#modalSaveButton').click(function() {
-        handleForm('modalBody', 'fuelLogForm', '/forms/fuel', dataTableObj);
+        handleForm('modalBody', 'fuelLogForm', '/forms/fuel', function(data) {
+            // reload the table
+            dataTableObj.api().ajax.reload();
+            // reload the chart
+            updateCharts();
+            if(! $('#last_mpg_notice').length){ $('#notifications-row > div.col-lg-12').append('<div class="alert alert-info" id="last_mpg_notice"></div>'); }
+            $('#last_mpg_notice').html('Last fill MPG: ' + data['calculated_mpg']);
+        });
     }).show();
     $('#fuel_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
     $('#fuel_frm_budget option[value=' + fuel_budget_id + ']').prop('selected', 'selected').change();

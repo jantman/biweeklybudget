@@ -35,9 +35,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
-$(function() {
+var ecoChart;
+var priceChart;
+
+function initCharts() {
   $.ajax('/ajax/chart-data/fuel-economy').done(function(ajaxdata) {
-    Morris.Line({
+    ecoChart = Morris.Line({
       element: 'mpg-chart',
       data: ajaxdata['data'],
       xkey: 'date',
@@ -51,7 +54,7 @@ $(function() {
   });
 
   $.ajax('/ajax/chart-data/fuel-prices').done(function(ajaxdata) {
-    Morris.Line({
+    priceChart = Morris.Line({
       element: 'fuel-price-chart',
       data: ajaxdata['data'],
       xkey: 'date',
@@ -64,4 +67,18 @@ $(function() {
       continuousLine: true
     });
   });
+}
+
+function updateCharts() {
+  $.ajax('/ajax/chart-data/fuel-economy').done(function(ajaxdata) {
+    ecoChart.setData(ajaxdata['data']);
+  });
+
+  $.ajax('/ajax/chart-data/fuel-prices').done(function(ajaxdata) {
+    priceChart.setData(ajaxdata['data']);
+  });
+}
+
+$(function() {
+  initCharts();
 });
