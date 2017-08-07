@@ -39,12 +39,29 @@ from biweeklybudget.utils import dtnow
 from pytz import utc
 from datetime import datetime
 from freezegun import freeze_time
+import sys
+
+# https://code.google.com/p/mock/issues/detail?id=249
+# py>=3.4 should use unittest.mock not the mock package on pypi
+if (
+        sys.version_info[0] < 3 or
+        sys.version_info[0] == 3 and sys.version_info[1] < 4
+):
+    from mock import patch
+else:
+    from unittest.mock import patch
 
 
 class TestDtNow(object):
 
     @freeze_time('2016-05-13 11:21:32', tz_offset=0)
+    @patch('biweeklybudget.utils.settings.BIWEEKLYBUDGET_TEST_TIMESTAMP', None)
     def test_dtnow(self):
         assert dtnow() == datetime(
             2016, 5, 13, 11, 21, 32, tzinfo=utc
+        )
+
+    def test_dtnow_test(self):
+        assert dtnow() == datetime(
+            2017, 7, 28, 6, 24, 44, tzinfo=utc
         )

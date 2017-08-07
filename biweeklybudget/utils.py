@@ -72,8 +72,8 @@ def dtnow():
     # This is for acceptance tests... :(
     if settings.BIWEEKLYBUDGET_TEST_TIMESTAMP is not None:
         return datetime.fromtimestamp(
-            int(settings.BIWEEKLYBUDGET_TEST_TIMESTAMP)
-        ).replace(tzinfo=pytz.utc)
+            int(settings.BIWEEKLYBUDGET_TEST_TIMESTAMP), pytz.utc
+        )
     return datetime.utcnow().replace(tzinfo=pytz.utc)
 
 
