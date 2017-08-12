@@ -59,7 +59,7 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
-from biweeklybudget.tests.unit.test_interest import InterestData
+from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,

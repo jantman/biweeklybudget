@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-import os
 from datetime import timedelta
 from decimal import Decimal
 
