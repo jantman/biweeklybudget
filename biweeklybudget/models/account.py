@@ -314,7 +314,7 @@ class Account(Base, ModelAsDict):
         Return the most recent interest charge from OFX data.
 
         :return: latest interest charge
-        :rtype: biweeklybudget.models.OFXTransaction
+        :rtype: biweeklybudget.models.ofx_transaction.OFXTransaction
         """
         sess = inspect(self).session
         t = sess.query(OFXTransaction).filter(

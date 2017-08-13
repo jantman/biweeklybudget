@@ -221,7 +221,7 @@ class OFXTransaction(Base, ModelAsDict):
         Return the first OFXStatement on or after `self.date_posted`.
 
         :return: first OFXStatement on or after `self.date_posted`
-        :rtype: biweeklybudget.models.OFXStatement
+        :rtype: biweeklybudget.models.ofx_statement.OFXStatement
         """
         sess = inspect(self).session
         return sess.query(OFXStatement).filter(
