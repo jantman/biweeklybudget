@@ -108,6 +108,26 @@ class Account(Base, ModelAsDict):
     #: credit limit, for credit accounts
     credit_limit = Column(Numeric(precision=10, scale=4))
 
+    #: Finance rate (APR) for credit accounts
+    apr = Column(Numeric(precision=5, scale=4))
+
+    #: Name of the :py:class:`biweeklybudget.interest._InterestCalculation`
+    #: subclass used to calculate interest for this account.
+    interest_class_name = Column(String(70))
+
+    #: Name of the :py:class:`biweeklybudget.interest._BillingPeriod`
+    #: subclass used to calculate the billing periods for this account.
+    billing_period_class_name = Column(String(70))
+
+    #: JSON-serialized dictionary of arguments for the
+    #: :py:class:`biweeklybudget.interest._BillingPeriod` subclass constructor;
+    #: dict with keys "args" and "kwargs".
+    billing_period_class_args = Column(Text)
+
+    #: Name of the :py:class:`biweeklybudget.interest._MinPaymentFormula`
+    #: subclass used to calculate minimum payments for this account.
+    min_payment_class_name = Column(String(70))
+
     #: whether or not the account is active and can be used, or historical
     is_active = Column(Boolean, default=True)
 
