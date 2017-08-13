@@ -445,7 +445,7 @@ class SampleDataLoader(object):
             acct_type=AcctType.Credit,
             credit_limit=5500,
             is_active=True,
-            apr=Decimal('0.0100'),
+            apr=Decimal('0.1000'),
             interest_class_name='AdbCompoundedDaily',
             billing_period_class_name='BillingPeriodNumDays',
             billing_period_class_args='{"args": [30]}',

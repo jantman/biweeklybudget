@@ -293,3 +293,16 @@ class Account(Base, ModelAsDict):
         for t in self.unreconciled:
             total += float(t.actual_amount)
         return total
+
+    @property
+    def billing_period_class_args_deserialized(self):
+        """
+        Return the JSON-deserialized `billing_period_class_args`.
+
+        :return: JSON-deserialized `billing_period_class_args`
+        :rtype: dict
+        """
+        try:
+            return json.loads(self.billing_period_class_args)
+        except Exception:
+            return {}

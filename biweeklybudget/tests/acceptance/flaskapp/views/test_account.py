@@ -194,7 +194,11 @@ class TestAccountCreditOne(AcceptanceHelper):
             ['Description', 'First Credit Card, limit 2000'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$952.06'],
-            ['Credit Limit', '$2,000.00']
+            ['Credit Limit', '$2,000.00'],
+            ['APR', '1.00%'],
+            ['Interest Class', 'AdbCompoundedDaily'],
+            ['Billing Period Class', 'BillingPeriodNumDays(30)'],
+            ['Minimum Payment Class', 'MinPaymentAmEx']
         ]
         assert texts[4][0] == 'Last OFX Data'
         assert '(13 hours ago)' in texts[4][1]
@@ -246,7 +250,11 @@ class TestAccountCreditTwo(AcceptanceHelper):
             ['Description', 'Credit 2 limit 5500'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$5,498.65'],
-            ['Credit Limit', '$5,500.00']
+            ['Credit Limit', '$5,500.00'],
+            ['APR', '10.00%'],
+            ['Interest Class', 'AdbCompoundedDaily'],
+            ['Billing Period Class', 'BillingPeriodNumDays(30)'],
+            ['Minimum Payment Class', 'MinPaymentDiscover']
         ]
         assert texts[4][0] == 'Last OFX Data'
         assert '(a day ago)' in texts[4][1]

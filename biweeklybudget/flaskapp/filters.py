@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from locale import currency
 from jinja2.runtime import Undefined
+import json
 
 from humanize import naturaltime
 
@@ -176,3 +177,20 @@ def acct_icon_filter(acct):
         return 'glyphicon glyphicon-piggy-bank'
     if acct.acct_type == AcctType.Cash:
         return 'fa fa-dollar fa-fw'
+
+
+@app.template_filter('decimal_to_percent')
+def decimal_to_percent(d):
+    d = d * 100
+    return '%.2f' % d
+
+
+@app.template_filter('dict_to_class_args')
+def dict_to_class_args(j):
+    if 'args' not in j and 'kwargs' not in j:
+        return ''
+    args = j.get('args', [])
+    s = ', '.join(['%s' % a for a in args])
+    kwargs = j.get('kwargs', {})
+    s += ', '.join(['%s=%s' % (k, kwargs[k]) for k in kwargs.keys()])
+    return s

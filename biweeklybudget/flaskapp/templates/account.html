@@ -36,6 +36,22 @@
                                             <th>Credit Limit</th>
                                             <td>{{ acct.credit_limit|dollars }}</td>
                                         </tr>
+                                        <tr>
+                                            <th>APR</th>
+                                            <td>{{ acct.apr|decimal_to_percent }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Interest Class</th>
+                                            <td>{{ acct.interest_class_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Billing Period Class</th>
+                                            <td>{{ acct.billing_period_class_name }}({{ acct.billing_period_class_args_deserialized|dict_to_class_args }})</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Minimum Payment Class</th>
+                                            <td>{{ acct.min_payment_class_name }}</td>
+                                        </tr>
                                         {% endif %}
                                         <tr>
                                             <th>Last OFX Data</th>
