@@ -207,7 +207,7 @@ class TestAccountCreditOne(AcceptanceHelper):
             ['Active?', 'True'],
             ['OFXGetter Config', 'None'],
             ['reconcile_trans', 'True'],
-            ['negate_ofx_amounts', 'False'],
+            ['negate_ofx_amounts', 'True'],
             ['ofx_cat_memo_to_name', 'False'],
             [
                 'Interest Charge regex',

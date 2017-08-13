@@ -404,16 +404,16 @@ class SampleDataLoader(object):
         statements = [
             OFXStatement(
                 account=acct,
-                filename='/stmt/CreditOne/0',
-                file_mtime=(self.dt - timedelta(hours=13)),
+                filename='/stmt/CreditOne/3',
+                file_mtime=(self.dt - timedelta(days=1)),
                 currency='USD',
                 bankid='CreditOne',
                 acct_type='Credit',
                 acctid='CreditOneAcctId',
                 type='Credit',
-                as_of=(self.dt - timedelta(hours=13)),
-                ledger_bal=-952.06,
-                ledger_bal_as_of=(self.dt - timedelta(hours=13)),
+                as_of=(self.dt - timedelta(days=1)),
+                ledger_bal=-435.29,
+                ledger_bal_as_of=(self.dt - timedelta(days=1)),
             ),
             OFXStatement(
                 account=acct,
@@ -430,23 +430,23 @@ class SampleDataLoader(object):
             ),
             OFXStatement(
                 account=acct,
-                filename='/stmt/CreditOne/3',
-                file_mtime=(self.dt - timedelta(days=1)),
+                filename='/stmt/CreditOne/0',
+                file_mtime=(self.dt - timedelta(hours=13)),
                 currency='USD',
                 bankid='CreditOne',
                 acct_type='Credit',
                 acctid='CreditOneAcctId',
                 type='Credit',
-                as_of=(self.dt - timedelta(days=1)),
-                ledger_bal=-435.29,
-                ledger_bal_as_of=(self.dt - timedelta(days=1)),
+                as_of=(self.dt - timedelta(hours=13)),
+                ledger_bal=-952.06,
+                ledger_bal_as_of=(self.dt - timedelta(hours=13)),
             )
         ]
         transactions = {
             0: [
                 OFXTransaction(
                     account=acct,
-                    statement=statements[0],
+                    statement=statements[2],
                     fitid='T1',
                     trans_type='Purchase',
                     date_posted=(self.dt - timedelta(hours=22)),
@@ -460,7 +460,7 @@ class SampleDataLoader(object):
                 ),
                 OFXTransaction(
                     account=acct,
-                    statement=statements[0],
+                    statement=statements[2],
                     fitid='T2',
                     trans_type='credit',
                     date_posted=(self.dt - timedelta(days=2)),
@@ -471,7 +471,7 @@ class SampleDataLoader(object):
                 ),
                 OFXTransaction(
                     account=acct,
-                    statement=statements[0],
+                    statement=statements[2],
                     fitid='T3',
                     trans_type='debit',
                     date_posted=(self.dt - timedelta(hours=13)),

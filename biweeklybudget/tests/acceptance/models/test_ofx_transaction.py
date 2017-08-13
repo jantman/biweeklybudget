@@ -46,8 +46,9 @@ class TestFirstStatementByDate(AcceptanceHelper):
         trans = testdb.query(OFXTransaction).get((3, 'T2'))
         assert trans is not None
         assert trans.amount == Decimal('52.00')
-        assert trans.statement_id == 4
+        assert trans.statement_id == 6
         assert trans.statement.filename == '/stmt/CreditOne/0'
         res = trans.first_statement_by_date
         assert res is not None
+        assert res.id == 4
         assert res.filename == '/stmt/CreditOne/3'

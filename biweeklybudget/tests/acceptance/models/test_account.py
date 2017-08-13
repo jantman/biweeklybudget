@@ -54,7 +54,7 @@ class TestLastOFXInterestCharge(AcceptanceHelper):
         assert latest_interest.account_id == 3
         assert latest_interest.fitid == 'T3'
         assert latest_interest.account_amount == Decimal('16.25')
-        assert latest_interest.statement_id == 4
+        assert latest_interest.statement_id == 6
 
     def test_credit_two(self, testdb):
         acct = testdb.query(Account).get(4)
@@ -64,4 +64,4 @@ class TestLastOFXInterestCharge(AcceptanceHelper):
         assert latest_interest.account_id == 4
         assert latest_interest.fitid == '001'
         assert latest_interest.account_amount == Decimal('28.53')
-        assert latest_interest.statement_id == 6
+        assert latest_interest.statement_id == 7
