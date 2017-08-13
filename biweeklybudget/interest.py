@@ -39,7 +39,48 @@ import logging
 from datetime import timedelta
 from decimal import Decimal
 
+from biweeklybudget.models import Account, AcctType
+
 logger = logging.getLogger(__name__)
+
+
+class InterestHelper(object):
+
+    def __init__(self, db_sess):
+        """
+        Initialize interest calculation helper.
+
+        :param db_sess: Database Session
+        :type db_sess: sqlalchemy.orm.session.Session
+        """
+        self._sess = db_sess
+        self._accounts = self._get_credit_accounts()
+
+    @property
+    def accounts(self):
+        """
+        Return a dict of `account_id` to :py:class:`~.Account` for all Credit
+        type accounts with OFX data present.
+
+        :return: dict of account_id to Account instance
+        :rtype: dict
+        """
+        return self._accounts
+
+    def _get_credit_accounts(self):
+        """
+        Return a dict of `account_id` to :py:class:`~.Account` for all Credit
+        type accounts with OFX data present.
+
+        :return: dict of account_id to Account instance
+        :rtype: dict
+        """
+        accts = self._sess.query(Account).filter(
+            Account.acct_type.__eq__(AcctType.Credit),
+            Account.is_active.__eq__(True)
+        ).all()
+        res = {a.id: a for a in accts}
+        return res
 
 
 class _InterestCalculation(object):
