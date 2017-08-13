@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.models.dbsetting import DBSetting
 
 
 @pytest.mark.acceptance
@@ -61,3 +62,47 @@ class TestCreditPayoffs(AcceptanceHelper):
         div = selenium.find_element_by_id('notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSettings(AcceptanceHelper):
+
+    def test_00_verify_db(self, testdb):
+        b = testdb.query(DBSetting).get('credit-payoff')
+        assert b is None
+
+    def foo(self, base_url, selenium):
+        self.get(selenium, base_url + '/projects')
+        assert selenium.find_element_by_id(
+            'active-remaining-cost').get_attribute('innerHTML') == '$77.77'
+        assert selenium.find_element_by_id(
+            'active-total-cost').get_attribute('innerHTML') == '$2,546.89'
+        table = selenium.find_element_by_id('table-projects')
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<a href="/projects/1">P1</a>',
+                '$2,546.89',
+                '$77.77',
+                'yes <a onclick="deactivateProject(1);" href="#">'
+                '(deactivate)</a>',
+                'ProjectOne'
+            ],
+            [
+                '<a href="/projects/2">P2</a>',
+                '$0.00',
+                '$0.00',
+                'yes <a onclick="deactivateProject(2);" href="#">'
+                '(deactivate)</a>',
+                'ProjectTwo'
+            ],
+            [
+                '<a href="/projects/3">P3Inactive</a>',
+                '$5.34',
+                '$3.00',
+                'NO <a onclick="activateProject(3);" href="#">'
+                '(activate)</a>',
+                'ProjectThreeInactive'
+            ]
+        ]
