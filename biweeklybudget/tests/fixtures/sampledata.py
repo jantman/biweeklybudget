@@ -427,6 +427,19 @@ class SampleDataLoader(object):
                 as_of=(self.dt - timedelta(days=30, hours=13)),
                 ledger_bal=-876.54,
                 ledger_bal_as_of=(self.dt - timedelta(days=30, hours=13)),
+            ),
+            OFXStatement(
+                account=acct,
+                filename='/stmt/CreditOne/3',
+                file_mtime=(self.dt - timedelta(days=1)),
+                currency='USD',
+                bankid='CreditOne',
+                acct_type='Credit',
+                acctid='CreditOneAcctId',
+                type='Credit',
+                as_of=(self.dt - timedelta(days=1)),
+                ledger_bal=-435.29,
+                ledger_bal_as_of=(self.dt - timedelta(days=1)),
             )
         ]
         transactions = {

@@ -45,6 +45,7 @@ from sqlalchemy.sql.expression import null
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import dtnow
 import json
 import enum
@@ -306,3 +307,23 @@ class Account(Base, ModelAsDict):
             return json.loads(self.billing_period_class_args)
         except Exception:
             return {}
+
+    @property
+    def latest_ofx_interest_charge(self):
+        """
+        Return the most recent interest charge from OFX data.
+
+        :return: latest interest charge
+        :rtype: biweeklybudget.models.OFXTransaction
+        """
+        sess = inspect(self).session
+        t = sess.query(OFXTransaction).filter(
+            or_(
+                OFXTransaction.name.op('regexp')(self.re_interest_charge),
+                OFXTransaction.description.op('regexp')(
+                    self.re_interest_charge
+                ),
+            ),
+            OFXTransaction.account.__eq__(self),
+        ).order_by(OFXTransaction.date_posted.desc()).first()
+        return t
