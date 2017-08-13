@@ -91,7 +91,7 @@ class TestOFXDefault(AcceptanceHelper):
             '38328',
             'CreditOneT3Desc',
             'T3',
-            '4',
+            '6',
             (self.dt - timedelta(hours=13)).strftime('%Y-%m-%d'),
             ''
         ]
@@ -104,7 +104,7 @@ class TestOFXDefault(AcceptanceHelper):
             '38328',
             'CreditOneT1Desc',
             'T1',
-            '4',
+            '6',
             (self.dt - timedelta(hours=13)).strftime('%Y-%m-%d'),
             ''
         ]
@@ -294,7 +294,7 @@ class TestOFXTransModal(AcceptanceHelper):
             ['MCC', 'T1mcc'],
             ['SIC', 'T1sic'],
             ['OFX Statement'],
-            ['ID', '4'],
+            ['ID', '6'],
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
@@ -336,7 +336,7 @@ class TestOFXTransURL(AcceptanceHelper):
             ['MCC', 'T1mcc'],
             ['SIC', 'T1sic'],
             ['OFX Statement'],
-            ['ID', '4'],
+            ['ID', '6'],
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
