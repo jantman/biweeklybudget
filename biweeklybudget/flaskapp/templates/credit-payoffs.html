@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Credit Card Payoffs - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <!-- Bootstrap Datepicker CSS -->
+    <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <div class="row" id="form-row">
+                Foo.
+            </div> <!-- /.row -->
+{% endblock %}
+{% block extra_foot_script %}
+    <!-- BootStrap DatePicker JS -->
+    <script src="/utils/datetest.js"></script>
+    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+    <script src="/static/js/custom.js"></script>
+{% endblock %}

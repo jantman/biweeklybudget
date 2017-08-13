@@ -35,16 +35,27 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from .accounts import *
-from .budgets import *
-from .credit_payoffs import *
-from .index import *
-from .ofx import *
-from .payperiods import *
-from .reconcile import *
-from .scheduled import *
-from .transactions import *
-from .help import *
-from .fuel import *
-from .projects import *
-from .utils import *
+import logging
+
+from flask.views import MethodView
+from flask import render_template
+
+from biweeklybudget.flaskapp.app import app
+
+logger = logging.getLogger(__name__)
+
+
+class CreditPayoffsView(MethodView):
+    """
+    Render the top-level GET /accounts/credit-payoff view using
+    ``credit-payoffs.html`` template.
+    """
+
+    def get(self):
+        return render_template('credit-payoffs.html')
+
+
+app.add_url_rule(
+    '/accounts/credit-payoff',
+    view_func=CreditPayoffsView.as_view('credit_payoffs_view')
+)

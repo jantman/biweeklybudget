@@ -35,16 +35,29 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from .accounts import *
-from .budgets import *
-from .credit_payoffs import *
-from .index import *
-from .ofx import *
-from .payperiods import *
-from .reconcile import *
-from .scheduled import *
-from .transactions import *
-from .help import *
-from .fuel import *
-from .projects import *
-from .utils import *
+import pytest
+from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+
+
+@pytest.mark.acceptance
+class TestCreditPayoffs(AcceptanceHelper):
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+
+    def test_heading(self, selenium):
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        assert heading.text == 'Credit Card Payoffs - BiweeklyBudget'
+
+    def test_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
+
+    def test_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'
