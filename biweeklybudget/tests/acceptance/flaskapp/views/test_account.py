@@ -190,7 +190,7 @@ class TestAccountCreditOne(AcceptanceHelper):
         table = panel.find_element_by_tag_name('table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
-        assert texts[0:4] == [
+        assert texts[0:8] == [
             ['Description', 'First Credit Card, limit 2000'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$952.06'],
@@ -200,10 +200,10 @@ class TestAccountCreditOne(AcceptanceHelper):
             ['Billing Period Class', 'BillingPeriodNumDays(30)'],
             ['Minimum Payment Class', 'MinPaymentAmEx']
         ]
-        assert texts[4][0] == 'Last OFX Data'
-        assert '(13 hours ago)' in texts[4][1]
-        assert elems[4][1].get_attribute('class') == 'data_age'
-        assert texts[5:] == [
+        assert texts[8][0] == 'Last OFX Data'
+        assert '(13 hours ago)' in texts[8][1]
+        assert elems[8][1].get_attribute('class') == 'data_age'
+        assert texts[9:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', 'None'],
             ['reconcile_trans', 'True'],
@@ -246,7 +246,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
         table = panel.find_element_by_tag_name('table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
-        assert texts[0:4] == [
+        assert texts[0:8] == [
             ['Description', 'Credit 2 limit 5500'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$5,498.65'],
@@ -256,10 +256,10 @@ class TestAccountCreditTwo(AcceptanceHelper):
             ['Billing Period Class', 'BillingPeriodNumDays(30)'],
             ['Minimum Payment Class', 'MinPaymentDiscover']
         ]
-        assert texts[4][0] == 'Last OFX Data'
-        assert '(a day ago)' in texts[4][1]
-        assert elems[4][1].get_attribute('class') == 'data_age'
-        assert texts[5:] == [
+        assert texts[8][0] == 'Last OFX Data'
+        assert '(a day ago)' in texts[8][1]
+        assert elems[8][1].get_attribute('class') == 'data_age'
+        assert texts[9:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
             ['reconcile_trans', 'True'],
