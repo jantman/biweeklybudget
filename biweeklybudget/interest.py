@@ -182,7 +182,7 @@ class BillingPeriodNumDays(_BillingPeriod):
         :param num_days: number of days in the billing period
         :type num_days: int
         """
-        super(BillingPeriodNumDays).__init__()
+        super(BillingPeriodNumDays, self).__init__()
         self.num_days = num_days
         self._end_date = end_date
         self._start_date = end_date - timedelta(days=self.num_days)
@@ -244,7 +244,7 @@ class MinPaymentAmEx(_MinPaymentFormula):
     description = 'AmEx - Greatest of Interest Plus 1% of Principal, or $35'
 
     def __init__(self):
-        super(MinPaymentAmEx).__init__()
+        super(MinPaymentAmEx, self).__init__()
 
     def calculate(self, balance, interest):
         """
@@ -279,7 +279,7 @@ class MinPaymentDiscover(_MinPaymentFormula):
                   'Interest, or $35'
 
     def __init__(self):
-        super(MinPaymentDiscover).__init__()
+        super(MinPaymentDiscover, self).__init__()
 
     def calculate(self, balance, interest):
         """
@@ -319,7 +319,7 @@ class MinPaymentCiti(_MinPaymentFormula):
                   'plus interest and fees, or $25, or Principal'
 
     def __init__(self):
-        super(MinPaymentCiti).__init__()
+        super(MinPaymentCiti, self).__init__()
 
     def calculate(self, balance, interest):
         """
@@ -387,7 +387,7 @@ class MinPaymentMethod(_PayoffMethod):
 
         :param max_total_payment: IGNORED.
         """
-        super(MinPaymentMethod).__init__()
+        super(MinPaymentMethod, self).__init__()
 
     def find_payments(self, statements):
         """
@@ -414,7 +414,7 @@ class FixedPaymentMethod(_PayoffMethod):
         :param pay_amount: The amount to pay on each statement.
         :type pay_amount: decimal.Decimal
         """
-        super(FixedPaymentMethod).__init__()
+        super(FixedPaymentMethod, self).__init__()
         self.amount = pay_amount
 
     def find_payments(self, statements):
@@ -443,7 +443,7 @@ class LowestBalanceFirstMethod(_PayoffMethod):
         :param max_total_payment: maximum total payment for all statements
         :type max_total_payment: decimal.Decimal
         """
-        super(LowestBalanceFirstMethod).__init__()
+        super(LowestBalanceFirstMethod, self).__init__()
         self._max_total = max_total_payment
 
     def find_payments(self, statements):
