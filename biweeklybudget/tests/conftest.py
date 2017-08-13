@@ -212,7 +212,10 @@ I REALLY wish pytest still supported yield tests, this is sooooo messy!
 
 
 def pytest_generate_tests(metafunc):
-    if metafunc.function.__name__.startswith('test_calculate'):
+    if (
+        metafunc.function.__name__.startswith('test_calculate') and
+        metafunc.module.__name__ == 'biweeklybudget.tests.unit.test_interest'
+    ):
         if metafunc.cls.__name__ == 'TestDataAmEx':
             param_for_adbdaily_calc(metafunc, InterestData.amex)
         if metafunc.cls.__name__ == 'TestDataCiti':
