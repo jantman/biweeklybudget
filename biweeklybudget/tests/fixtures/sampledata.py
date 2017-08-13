@@ -40,6 +40,7 @@ from biweeklybudget.models.account import AcctType
 from biweeklybudget.utils import dtnow
 from datetime import timedelta, datetime
 from pytz import UTC
+from decimal import Decimal
 
 
 class SampleDataLoader(object):
@@ -392,7 +393,12 @@ class SampleDataLoader(object):
             ofx_cat_memo_to_name=False,
             acct_type=AcctType.Credit,
             credit_limit=2000.00,
-            is_active=True
+            is_active=True,
+            apr=Decimal('0.0100'),
+            interest_class_name='AdbCompoundedDaily',
+            billing_period_class_name='BillingPeriodNumDays',
+            billing_period_class_args='{"args": [30]}',
+            min_payment_class_name='MinPaymentAmEx'
         )
         statements = [
             OFXStatement(
@@ -438,7 +444,12 @@ class SampleDataLoader(object):
             vault_creds_path='/foo/bar',
             acct_type=AcctType.Credit,
             credit_limit=5500,
-            is_active=True
+            is_active=True,
+            apr=Decimal('0.0100'),
+            interest_class_name='AdbCompoundedDaily',
+            billing_period_class_name='BillingPeriodNumDays',
+            billing_period_class_args='{"args": [30]}',
+            min_payment_class_name='MinPaymentDiscover'
         )
         statements = [
             OFXStatement(
