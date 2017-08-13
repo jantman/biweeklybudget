@@ -25,4 +25,5 @@ Submodules
    biweeklybudget.flaskapp.views.scheduled
    biweeklybudget.flaskapp.views.searchableajaxview
    biweeklybudget.flaskapp.views.transactions
+   biweeklybudget.flaskapp.views.utils
 

@@ -25,6 +25,7 @@ Submodules
    biweeklybudget.db
    biweeklybudget.db_event_handlers
    biweeklybudget.initdb
+   biweeklybudget.interest
    biweeklybudget.load_data
    biweeklybudget.ofxgetter
    biweeklybudget.ofxupdater

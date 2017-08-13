@@ -50,7 +50,7 @@ class _InterestCalculation(object):
     def __init__(self, apr):
         """
         :param apr: Annual Percentage Rate as a decimal
-        :type apr: Decimal
+        :type apr: decimal.Decimal
         """
         self._apr = apr
 
@@ -68,7 +68,7 @@ class _InterestCalculation(object):
         Calculate compound interest for the specified principal.
 
         :param principal: balance at beginning of statement period
-        :type principal: Decimal
+        :type principal: decimal.Decimal
         :param first_d: date of beginning of statement period
         :type first_d: datetime.date
         :param last_d: last date of statement period
@@ -76,8 +76,9 @@ class _InterestCalculation(object):
         :param transactions: dict of datetime.date to float amount adjust
           the balance by on the specified dates.
         :type transactions: dict
-        :return: result of compound interest
-        :rtype: InterestResult
+        :return: dict describing the result: end_balance (float),
+          interest_paid (float)
+        :rtype: dict
         """
         raise NotImplementedError("Must implement in subclass")
 
@@ -95,7 +96,7 @@ class AdbCompoundedDaily(_InterestCalculation):
         Calculate compound interest for the specified principal.
 
         :param principal: balance at beginning of statement period
-        :type principal: Decimal
+        :type principal: decimal.Decimal
         :param first_d: date of beginning of statement period
         :type first_d: datetime.date
         :param last_d: last date of statement period
@@ -270,8 +271,8 @@ class MinPaymentDiscover(_MinPaymentFormula):
     - $35; or
     - 2% of the New Balance shown on your billing statement; or
     - $20, plus any of the following charges as shown on your billing statement:
-     fees for any debt protection product that you enrolled in on or after
-     2/1/2015; Interest Charges; and Late Fees.
+    fees for any debt protection product that you enrolled in on or after
+    2/1/2015; Interest Charges; and Late Fees.
     """
 
     #: human-readable string description of the formula
@@ -307,7 +308,7 @@ class MinPaymentCiti(_MinPaymentFormula):
     - $25;
     - The new balance, if it's less than $25;
     - 1 percent of the new balance, plus the current statement's interest
-      charges or minimum interest charges, plus late fees;
+    charges or minimum interest charges, plus late fees;
     - 1.5% of the new balance, rounded to the nearest dollar amount.
 
     In all cases, add past fees and finance charges due, plus any amount in
