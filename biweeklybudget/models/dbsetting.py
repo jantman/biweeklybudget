@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, String, Text, Boolean, ForeignKey, Numeric, Boolean, inspect, func
+    Column, String, Text, Boolean
 )
 from biweeklybudget.models.base import Base, ModelAsDict
 
