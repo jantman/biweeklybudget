@@ -36,8 +36,32 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+import re
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.dbsetting import DBSetting
+
+
+def get_increases(selenium, form_ids):
+    vals = {}
+    id_re = re.compile(r'^payoff_increase_frm_(\d+)$')
+    for frmid in form_ids:
+        m = id_re.match(frmid)
+        if m is None:
+            continue
+        _id = int(m.group(1))
+
+        vals[_id] = {
+            'enabled': selenium.find_element_by_id(
+                'payoff_increase_frm_%s_enable' % _id
+            ).is_selected(),
+            'date': selenium.find_element_by_id(
+                'payoff_increase_frm_%s_date' % _id
+            ).get_attribute('value'),
+            'amount': selenium.find_element_by_id(
+                'payoff_increase_frm_%s_amt' % _id
+            ).get_attribute('value')
+        }
+    return vals
 
 
 @pytest.mark.acceptance
@@ -65,44 +89,29 @@ class TestCreditPayoffs(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSettings(AcceptanceHelper):
+@pytest.mark.usefixtures('testflask')
+class TestNoSettings(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(DBSetting).get('credit-payoff')
         assert b is None
 
-    def foo(self, base_url, selenium):
-        self.get(selenium, base_url + '/projects')
+    def test_01_no_config(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
         assert selenium.find_element_by_id(
-            'active-remaining-cost').get_attribute('innerHTML') == '$77.77'
-        assert selenium.find_element_by_id(
-            'active-total-cost').get_attribute('innerHTML') == '$2,546.89'
-        table = selenium.find_element_by_id('table-projects')
-        htmls = self.inner_htmls(self.tbody2elemlist(table))
-        assert htmls == [
-            [
-                '<a href="/projects/1">P1</a>',
-                '$2,546.89',
-                '$77.77',
-                'yes <a onclick="deactivateProject(1);" href="#">'
-                '(deactivate)</a>',
-                'ProjectOne'
-            ],
-            [
-                '<a href="/projects/2">P2</a>',
-                '$0.00',
-                '$0.00',
-                'yes <a onclick="deactivateProject(2);" href="#">'
-                '(deactivate)</a>',
-                'ProjectTwo'
-            ],
-            [
-                '<a href="/projects/3">P3Inactive</a>',
-                '$5.34',
-                '$3.00',
-                'NO <a onclick="activateProject(3);" href="#">'
-                '(activate)</a>',
-                'ProjectThreeInactive'
-            ]
+            'payoff_frm_min_pymt').get_attribute('value') == '144.98'
+        form_ids = [
+            s.get_attribute('id')
+            for s in selenium.find_elements_by_tag_name('form')
         ]
+        assert sorted(form_ids) == [
+            'min_payment_frm',
+            'payoff_increase_frm_1'
+        ]
+        assert get_increases(selenium, form_ids) == {
+            1: {
+                'enabled': False,
+                'date': '',
+                'amount': ''
+            }
+        }

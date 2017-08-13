@@ -36,11 +36,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+from decimal import Decimal, ROUND_UP
 
 from flask.views import MethodView
 from flask import render_template
 
 from biweeklybudget.flaskapp.app import app
+from biweeklybudget.db import db_session
+from biweeklybudget.interest import InterestHelper
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +55,12 @@ class CreditPayoffsView(MethodView):
     """
 
     def get(self):
-        return render_template('credit-payoffs.html')
+        ih = InterestHelper(db_session)
+        mps = sum(ih.min_payments.values())
+        return render_template(
+            'credit-payoffs.html',
+            monthly_pymt_sum=mps.quantize(Decimal('.01'), rounding=ROUND_UP)
+        )
 
 
 app.add_url_rule(

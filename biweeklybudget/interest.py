@@ -132,6 +132,50 @@ class InterestHelper(object):
             res[a_id] = stmt.minimum_payment
         return res
 
+    def calculate_payoffs(self):
+        """
+        Calculate payoffs for each account/statement.
+
+        :return: dict of payoff information. Keys are payoff method names.
+        Values are dicts, with keys "description" (str description of the
+        payoff method), "doc" (the docstring of the class), and "results".
+        The "results" dict has integer `account_id` as the key, and values are
+        dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
+        "total_interest" (Decimal).
+        :rtype: dict
+        """
+        res = {}
+        for name, d in PAYOFF_METHOD_NAMES.items():
+            cls = d['cls']
+            if not cls.show_in_ui:
+                continue
+            res[name] = {
+                'description': d['description'],
+                'doc': d['doc'],
+                'results': self._calc_payoff_method(cls)
+            }
+        return res
+
+    def _calc_payoff_method(self, cls):
+        """
+        Calculate payoffs using one method.
+
+        :param cls: payoff method class
+        :type cls: biweeklybudget.interest._PayoffMethod
+        :return: Dict with integer `account_id` as the key, and values are
+        dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
+        "total_interest" (Decimal).
+        :rtype: dict
+        """
+        raise NotImplementedError()
+        accts = self.accounts
+        balances = {
+            x: self._statements[x].principal for x in self._statements.keys()
+        }
+        res = {}
+        calc = calculate_payoffs(cls, self._statements.values())
+        return res
+
 
 class _InterestCalculation(object):
 
@@ -471,7 +515,8 @@ class MinPaymentMethod(_PayoffMethod):
     Pay only the minimum on each statement.
     """
 
-    description = 'Minimum Payment'
+    description = 'Minimum Payment Only'
+    show_in_ui = True
 
     def __init__(self, max_total_payment=None):
         """
@@ -500,6 +545,7 @@ class FixedPaymentMethod(_PayoffMethod):
     """
 
     description = 'TESTING ONLY - Fixed Payment for All Statements'
+    show_in_ui = False
 
     def __init__(self, pay_amount):
         """
@@ -529,6 +575,7 @@ class LowestBalanceFirstMethod(_PayoffMethod):
     """
 
     description = 'Lowest to Highest Balance (a.k.a. Snowball Method)'
+    show_in_ui = False
 
     def __init__(self, max_total_payment):
         """
