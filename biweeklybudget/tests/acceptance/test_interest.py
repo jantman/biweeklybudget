@@ -36,16 +36,21 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from datetime import date
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
-from biweeklybudget.interest import InterestHelper
+from biweeklybudget.interest import (
+    InterestHelper, CCStatement, BillingPeriodNumDays, AdbCompoundedDaily,
+    MinPaymentAmEx, MinPaymentDiscover
+)
 from biweeklybudget.models import Account
 
 
 @pytest.mark.acceptance
 class TestInterestHelper(AcceptanceHelper):
 
-    def test_init(self, testdb):
+    def test_init_accounts(self, testdb):
         cls = InterestHelper(testdb)
         assert cls._sess == testdb
         res = cls.accounts
@@ -54,3 +59,43 @@ class TestInterestHelper(AcceptanceHelper):
         assert res[3].id == 3
         assert isinstance(res[4], Account)
         assert res[4].id == 4
+
+    def test_init_statements(self, testdb):
+        cls = InterestHelper(testdb)
+        res = cls._statements
+        assert sorted(res.keys()) == [3, 4]
+        s3 = res[3]
+        assert isinstance(s3, CCStatement)
+        assert isinstance(s3._billing_period, BillingPeriodNumDays)
+        assert s3._billing_period.num_days == 30
+        assert s3._billing_period._end_date == date(2017, 7, 27)
+        assert s3._billing_period._start_date == date(2017, 6, 27)
+        assert isinstance(s3._interest_cls, AdbCompoundedDaily)
+        assert s3._interest_cls.apr == Decimal('0.0100')
+        assert isinstance(s3._min_pay_cls, MinPaymentAmEx)
+        assert s3._orig_principal == Decimal('952.06')
+        assert s3._min_pay is None
+        assert s3._transactions == {}
+        assert s3._principal == Decimal('952.06')
+        assert s3._interest_amt == Decimal('16.25')
+        s4 = res[4]
+        assert isinstance(s4, CCStatement)
+        assert isinstance(s4._billing_period, BillingPeriodNumDays)
+        assert s4._billing_period.num_days == 30
+        assert s4._billing_period._end_date == date(2017, 7, 26)
+        assert s4._billing_period._start_date == date(2017, 6, 26)
+        assert isinstance(s4._interest_cls, AdbCompoundedDaily)
+        assert s4._interest_cls.apr == Decimal('0.1000')
+        assert isinstance(s4._min_pay_cls, MinPaymentDiscover)
+        assert s4._orig_principal == Decimal('5498.65')
+        assert s4._min_pay is None
+        assert s4._transactions == {}
+        assert s4._principal == Decimal('5498.65')
+        assert s4._interest_amt == Decimal('28.53')
+
+    def test_min_payments(self, testdb):
+        cls = InterestHelper(testdb)
+        assert cls.min_payments == {
+            3: Decimal('35'),
+            4: Decimal('109.9730')
+        }

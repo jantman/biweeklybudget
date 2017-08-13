@@ -55,6 +55,7 @@ class InterestHelper(object):
         """
         self._sess = db_sess
         self._accounts = self._get_credit_accounts()
+        self._statements = self._make_statements(self._accounts)
 
     @property
     def accounts(self):
@@ -80,6 +81,55 @@ class InterestHelper(object):
             Account.is_active.__eq__(True)
         ).all()
         res = {a.id: a for a in accts}
+        return res
+
+    def _make_statements(self, accounts):
+        """
+        Make :py:class:`~.CCStatement` instances for each account; return a
+        dict of `account_id` to CCStatement instance.
+
+        :param accounts: dict of (int) account_id to Account instance
+        :type accounts: dict
+        :return: dict of (int) account_id to CCStatement instance
+        :rtype: dict
+        """
+        res = {}
+        for a_id, acct in accounts.items():
+            icharge = acct.latest_ofx_interest_charge
+            istmt = icharge.first_statement_by_date
+            icls = INTEREST_CALCULATION_NAMES[acct.interest_class_name]['cls'](
+                acct.apr
+            )
+            bpa = acct.billing_period_class_args_deserialized
+            bpargs = bpa.get('args', [])
+            bpargs.insert(0, icharge.date_posted.date())
+            bpkwargs = bpa.get('kwargs', {})
+            bill_period = BILLING_PERIOD_NAMES[
+                acct.billing_period_class_name]['cls'](*bpargs, **bpkwargs)
+            min_pay_cls = MIN_PAYMENT_FORMULA_NAMES[
+                acct.min_payment_class_name]['cls']()
+            res[a_id] = CCStatement(
+                icls,
+                abs(istmt.ledger_bal),
+                min_pay_cls,
+                bill_period,
+                end_balance=abs(istmt.ledger_bal),
+                interest_amt=abs(icharge.account_amount)
+            )
+        return res
+
+    @property
+    def min_payments(self):
+        """
+        Return a dict of `account_id` to minimum payment for the latest
+        statement, for each account.
+
+        :return: dict of `account_id` to minimum payment (Decimal)
+        :rtype: dict
+        """
+        res = {}
+        for a_id, stmt in self._statements.items():
+            res[a_id] = stmt.minimum_payment
         return res
 
 
@@ -697,7 +747,8 @@ def subclass_dict(klass):
     for cls in klass.__subclasses__():
         d[cls.__name__] = {
             'description': cls.description,
-            'doc': cls.__doc__.strip()
+            'doc': cls.__doc__.strip(),
+            'cls': cls
         }
     return d
 

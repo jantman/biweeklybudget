@@ -655,7 +655,8 @@ class TestModuleConstants(object):
         assert INTEREST_CALCULATION_NAMES == {
             'AdbCompoundedDaily': {
                 'description': AdbCompoundedDaily.description,
-                'doc': AdbCompoundedDaily.__doc__.strip()
+                'doc': AdbCompoundedDaily.__doc__.strip(),
+                'cls': AdbCompoundedDaily
             }
         }
 
@@ -663,7 +664,8 @@ class TestModuleConstants(object):
         assert BILLING_PERIOD_NAMES == {
             'BillingPeriodNumDays': {
                 'description': BillingPeriodNumDays.description,
-                'doc': BillingPeriodNumDays.__doc__.strip()
+                'doc': BillingPeriodNumDays.__doc__.strip(),
+                'cls': BillingPeriodNumDays
             }
         }
 
@@ -671,15 +673,18 @@ class TestModuleConstants(object):
         assert MIN_PAYMENT_FORMULA_NAMES == {
             'MinPaymentAmEx': {
                 'description': MinPaymentAmEx.description,
-                'doc': MinPaymentAmEx.__doc__.strip()
+                'doc': MinPaymentAmEx.__doc__.strip(),
+                'cls': MinPaymentAmEx
             },
             'MinPaymentDiscover': {
                 'description': MinPaymentDiscover.description,
-                'doc': MinPaymentDiscover.__doc__.strip()
+                'doc': MinPaymentDiscover.__doc__.strip(),
+                'cls': MinPaymentDiscover
             },
             'MinPaymentCiti': {
                 'description': MinPaymentCiti.description,
-                'doc': MinPaymentCiti.__doc__.strip()
+                'doc': MinPaymentCiti.__doc__.strip(),
+                'cls': MinPaymentCiti
             }
         }
 
@@ -687,15 +692,18 @@ class TestModuleConstants(object):
         assert PAYOFF_METHOD_NAMES == {
             'MinPaymentMethod': {
                 'description': MinPaymentMethod.description,
-                'doc': MinPaymentMethod.__doc__.strip()
+                'doc': MinPaymentMethod.__doc__.strip(),
+                'cls': MinPaymentMethod
             },
             'FixedPaymentMethod': {
                 'description': FixedPaymentMethod.description,
-                'doc': FixedPaymentMethod.__doc__.strip()
+                'doc': FixedPaymentMethod.__doc__.strip(),
+                'cls': FixedPaymentMethod
             },
             'LowestBalanceFirstMethod': {
                 'description': LowestBalanceFirstMethod.description,
-                'doc': LowestBalanceFirstMethod.__doc__.strip()
+                'doc': LowestBalanceFirstMethod.__doc__.strip(),
+                'cls': LowestBalanceFirstMethod
             }
         }
 
