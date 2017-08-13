@@ -7,7 +7,90 @@
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="form-row">
-                Foo.
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-settings">
+                        <div class="panel-heading">
+                            <i class="fa fa-gear fa-fw"></i> Settings
+                        </div> <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <form id="min_payment_frm" class="form-inline" style="padding-bottom: 2em;">
+                                <fieldset disabled>
+                                    <div class="form-group">
+                                        <label for="payoff_frm_min_pymt" class="control-label">Sum Of Minimum Monthly Payment(s)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-addon">$</span><input class="form-control" id="payoff_frm_min_pymt" name="payoff_frm_min_pymt" type="text" size="8" style="width: auto;">
+                                        </div> <!-- /.input-group -->
+                                    </div> <!-- /.form-group -->
+                                </fieldset>
+                            </form> <!-- /#min_payment_frm -->
+                            <form id="payoff_increase_frm_1" class="form-inline">
+                                <div class="form-group">
+                                    <label for="payoff_increase_frm_1_enable" class="control-label sr-only">Enable Payment Increase 1</label>
+                                    <input type="checkbox" id="payoff_increase_frm_1_enable" name="payoff_increase_frm_1_enable" onchange="setChanged()">
+                                    Starting on
+                                    <label for="payoff_increase_frm_1_date" class="control-label sr-only">Payment Increase 1 Date</label>
+                                    <div class="input-group date" id="payoff_increase_frm_1_date_input_group">
+                                        <span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="payoff_increase_frm_1_date" name="payoff_increase_frm_1_date" type="text" size="12" maxlength="10" style="width: auto;" onchange="setChanged()">
+                                    </div> <!-- /.input-group -->
+                                    , increase sum of monthly payments by
+                                    <label for="payoff_increase_frm_1_amt" class="control-label sr-only">Payment Increase 1 Amount</label>
+                                    <div class="input-group">
+                                        <span class="input-group-addon">$</span><input class="form-control" id="payoff_increase_frm_1_amt" name="payoff_increase_frm_1_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">
+                                    </div> <!-- /.input-group -->
+                                    .
+                                </div> <!-- /.form-group -->
+                            </form> <!-- /#payoff_increase_frm_1 -->
+                            <div style="padding-top: 1em;"><em><a onclick="addIncrease()">(add another increase)</a></em></div>
+                        </div> <!-- /.panel-body -->
+                        <div class="panel-footer">
+                            <button type="button" class="btn btn-sm btn-default disabled" id="btn_recalc_payoffs" onclick="recalcPayoffs()">Save & Recalculate</button>
+                        </div> <!-- /.panel-footer -->
+                    </div> <!-- /panel -->
+                </div> <!-- /.col-lg-12 -->
+            </div> <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Some Calculation Method</strong> <em>- Some description</em>
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Time To Pay Off</th>
+                                            <th>Total Payments</th>
+                                            <th>Total Interest</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>CreditOne</td>
+                                            <td>X years</td>
+                                            <td>$X,XXX.XX</td>
+                                            <td>$X,XXX.XX</td>
+                                        </tr>
+                                        <tr>
+                                            <td>CreditTwo</td>
+                                            <td>X years</td>
+                                            <td>$X,XXX.XX</td>
+                                            <td>$X,XXX.XX</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Totals</th>
+                                            <th>X years</th>
+                                            <th>$X,XXX.XX</th>
+                                            <th>$X,XXX.XX</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div> <!-- /.table-responsive -->
+                        </div> <!-- /.panel-body -->
+                    </div> <!-- /.panel -->
+                </div> <!-- /.col-lg-12 -->
             </div> <!-- /.row -->
 {% endblock %}
 {% block extra_foot_script %}
