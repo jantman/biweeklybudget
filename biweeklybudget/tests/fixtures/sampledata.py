@@ -395,6 +395,7 @@ class SampleDataLoader(object):
             credit_limit=2000.00,
             is_active=True,
             apr=Decimal('0.0100'),
+            negate_ofx_amounts=True,
             interest_class_name='AdbCompoundedDaily',
             billing_period_class_name='BillingPeriodNumDays',
             billing_period_class_args='{"args": [30]}',
@@ -413,6 +414,19 @@ class SampleDataLoader(object):
                 as_of=(self.dt - timedelta(hours=13)),
                 ledger_bal=-952.06,
                 ledger_bal_as_of=(self.dt - timedelta(hours=13)),
+            ),
+            OFXStatement(
+                account=acct,
+                filename='/stmt/CreditOne/1',
+                file_mtime=(self.dt - timedelta(days=30, hours=13)),
+                currency='USD',
+                bankid='CreditOne',
+                acct_type='Credit',
+                acctid='CreditOneAcctId',
+                type='Credit',
+                as_of=(self.dt - timedelta(days=30, hours=13)),
+                ledger_bal=-876.54,
+                ledger_bal_as_of=(self.dt - timedelta(days=30, hours=13)),
             )
         ]
         transactions = {
@@ -423,13 +437,59 @@ class SampleDataLoader(object):
                     fitid='T1',
                     trans_type='Purchase',
                     date_posted=(self.dt - timedelta(hours=22)),
-                    amount=123.81,
+                    amount=-123.81,
                     name='123.81 Credit Purchase T1',
                     memo='38328',
                     description='CreditOneT1Desc',
                     checknum=123,
                     mcc='T1mcc',
                     sic='T1sic'
+                ),
+                OFXTransaction(
+                    account=acct,
+                    statement=statements[0],
+                    fitid='T2',
+                    trans_type='credit',
+                    date_posted=(self.dt - timedelta(days=2)),
+                    amount=52.00,
+                    name='$52.00 Online Payment, thank you',
+                    memo='38328',
+                    description='CreditOneT2Desc'
+                ),
+                OFXTransaction(
+                    account=acct,
+                    statement=statements[0],
+                    fitid='T3',
+                    trans_type='debit',
+                    date_posted=(self.dt - timedelta(hours=13)),
+                    amount=-16.25,
+                    name='INTEREST CHARGED TO STANDARD PUR',
+                    memo='38328',
+                    description='CreditOneT3Desc'
+                )
+            ],
+            1: [
+                OFXTransaction(
+                    account=acct,
+                    statement=statements[1],
+                    fitid='T2-1',
+                    trans_type='credit',
+                    date_posted=(self.dt - timedelta(days=32)),
+                    amount=60.00,
+                    name='$60.00 Online Payment, thank you',
+                    memo='38328',
+                    description='CreditOneT2Desc'
+                ),
+                OFXTransaction(
+                    account=acct,
+                    statement=statements[1],
+                    fitid='T2-2',
+                    trans_type='debit',
+                    date_posted=(self.dt - timedelta(days=30, hours=13)),
+                    amount=-25.94,
+                    name='INTEREST CHARGED TO STANDARD PUR',
+                    memo='38328',
+                    description='CreditOneT3Desc'
                 )
             ]
         }
@@ -473,7 +533,7 @@ class SampleDataLoader(object):
                     statement=statements[0],
                     fitid='001',
                     trans_type='Purchase',
-                    date_posted=(self.dt - timedelta(days=6)),
+                    date_posted=(self.dt - timedelta(hours=36)),
                     amount=28.53,
                     name='Interest Charged',
                     memo=''
