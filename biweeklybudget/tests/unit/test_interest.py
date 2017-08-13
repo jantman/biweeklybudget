@@ -57,8 +57,10 @@ if (
         sys.version_info[0] < 3 or
         sys.version_info[0] == 3 and sys.version_info[1] < 4
 ):
+    PY34PLUS = False
     from mock import Mock, PropertyMock, call, patch
 else:
+    PY34PLUS = True
     from unittest.mock import Mock, PropertyMock, call, patch
 
 
@@ -1159,6 +1161,8 @@ class InterestData(object):
     ]
 
 
+@pytest.mark.skipif(PY34PLUS is False,
+                    reason='py3.4+ only due to Decimal rounding')
 class TestDataAmEx(object):
 
     def test_calculate(self, data):
@@ -1239,6 +1243,8 @@ class TestDataAmEx(object):
         assert pctdiff(res[0][1], data['payoffs'][1][2]) < Decimal('0.01')
 
 
+@pytest.mark.skipif(PY34PLUS is False,
+                    reason='py3.4+ only due to Decimal rounding')
 class TestDataCiti(object):
 
     def test_calculate(self, data):
@@ -1325,6 +1331,8 @@ class TestDataCiti(object):
         assert pctdiff(res[0][1], data['payoffs'][1][2]) < Decimal('0.01')
 
 
+@pytest.mark.skipif(PY34PLUS is False,
+                    reason='py3.4+ only due to Decimal rounding')
 class TestDataDiscover(object):
 
     def test_calculate(self, data):
