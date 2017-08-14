@@ -276,6 +276,47 @@ class AdbCompoundedDaily(_InterestCalculation):
         }
 
 
+class SimpleInterest(_InterestCalculation):
+    """
+    Simple interest, charged on balance at the end of the billing period.
+    """
+
+    #: Human-readable string name of the interest calculation type.
+    description = 'Interest charged once on the balance at end of period.'
+
+    def calculate(self, principal, first_d, last_d, transactions={}):
+        """
+        Calculate compound interest for the specified principal.
+
+        :param principal: balance at beginning of statement period
+        :type principal: decimal.Decimal
+        :param first_d: date of beginning of statement period
+        :type first_d: datetime.date
+        :param last_d: last date of statement period
+        :type last_d: datetime.date
+        :param transactions: dict of datetime.date to float amount adjust
+          the balance by on the specified dates.
+        :type transactions: dict
+        :return: dict describing the result: end_balance (float),
+          interest_paid (float)
+        :rtype: dict
+        """
+        num_days = 0
+        bal = principal
+
+        d = first_d
+        while d <= last_d:
+            num_days += 1
+            if d in transactions:
+                bal += transactions[d]
+            d += timedelta(days=1)
+        final = bal * self._apr * num_days / Decimal(365.0)
+        return {
+            'interest_paid': final,
+            'end_balance': bal + final
+        }
+
+
 class _BillingPeriod(object):
 
     #: human-readable string description of the billing period type

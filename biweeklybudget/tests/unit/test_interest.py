@@ -44,7 +44,7 @@ from decimal import Decimal
 
 from biweeklybudget.interest import (
     InterestHelper,
-    _InterestCalculation, AdbCompoundedDaily,
+    _InterestCalculation, AdbCompoundedDaily, SimpleInterest,
     _BillingPeriod, BillingPeriodNumDays,
     _MinPaymentFormula, MinPaymentAmEx, MinPaymentCiti, MinPaymentDiscover,
     _PayoffMethod, MinPaymentMethod, FixedPaymentMethod,
@@ -339,6 +339,45 @@ class TestAdbCompoundedDaily(object):
         assert res == {
             'end_balance': Decimal('107.5420752170470026908058809'),
             'interest_paid': Decimal('7.542074651086492634526111808')
+        }
+
+
+class TestSimpleInterest(object):
+
+    def test_description(self):
+        cls = SimpleInterest(Decimal('0.1200'))
+        assert hasattr(cls, 'description')
+
+    def test_repr(self):
+        cls = SimpleInterest(Decimal('0.1200'))
+        assert str(cls) == '<SimpleInterest(decimal.Decimal(\'0.1200\'))>'
+
+    def test_calculate(self):
+        cls = SimpleInterest(Decimal('0.0100'))
+        res = cls.calculate(
+            Decimal('100.00'),
+            date(2017, 1, 1),
+            (date(2017, 1, 1) + timedelta(days=364))
+        )
+        assert res == {
+            'end_balance': Decimal('101.0'),
+            'interest_paid': Decimal('1.0')
+        }
+
+    def test_calculate_transactions(self):
+        cls = SimpleInterest(Decimal('0.0100'))
+        end_d = date(2017, 1, 1) + timedelta(days=364)
+        res = cls.calculate(
+            Decimal('100.00'),
+            date(2017, 1, 1),
+            end_d,
+            transactions={
+                date(2017, 6, 1): Decimal('-50.00')
+            }
+        )
+        assert res == {
+            'end_balance': Decimal('50.5'),
+            'interest_paid': Decimal('0.5')
         }
 
 
@@ -875,6 +914,11 @@ class TestModuleConstants(object):
                 'description': AdbCompoundedDaily.description,
                 'doc': AdbCompoundedDaily.__doc__.strip(),
                 'cls': AdbCompoundedDaily
+            },
+            'SimpleInterest': {
+                'description': SimpleInterest.description,
+                'doc': SimpleInterest.__doc__.strip(),
+                'cls': SimpleInterest
             }
         }
 
