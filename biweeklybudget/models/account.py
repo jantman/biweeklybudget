@@ -35,6 +35,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import logging
 from sqlalchemy import (
     Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_
 )
@@ -50,6 +51,8 @@ from biweeklybudget.utils import dtnow
 import json
 import enum
 from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
+
+logger = logging.getLogger(__name__)
 
 
 class AcctType(enum.Enum):
@@ -326,4 +329,6 @@ class Account(Base, ModelAsDict):
             ),
             OFXTransaction.account.__eq__(self),
         ).order_by(OFXTransaction.date_posted.desc()).first()
+        logger.debug('Latest OFX Interest Charge for account %s: %s',
+                     self, t)
         return t

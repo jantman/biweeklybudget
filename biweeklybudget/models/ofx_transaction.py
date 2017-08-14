@@ -224,7 +224,10 @@ class OFXTransaction(Base, ModelAsDict):
         :rtype: biweeklybudget.models.ofx_statement.OFXStatement
         """
         sess = inspect(self).session
-        return sess.query(OFXStatement).filter(
+        res = sess.query(OFXStatement).filter(
             OFXStatement.account.__eq__(self.account),
             OFXStatement.as_of.__ge__(self.date_posted)
         ).order_by(OFXStatement.as_of.asc()).first()
+        logger.debug('First statement for %s: %s',
+                     self, res)
+        return res

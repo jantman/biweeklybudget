@@ -265,6 +265,30 @@ class TestInterestHelper(object):
             call(pm2)
         ]
 
+    def test_calculate_payoff_method(self):
+        mock_m = Mock()
+        with patch('%s.calculate_payoffs' % pbm) as mock_calc:
+            mock_calc.return_value = [
+                (28, Decimal('963.2130700030116938658705389')),
+                (164, Decimal('8764.660910733671904414120065'))
+            ]
+            res = self.cls._calc_payoff_method(mock_m)
+        assert res == {
+            3: {
+                'payoff_months': 28,
+                'total_payments': Decimal('963.2130700030116938658705389'),
+                'total_interest': Decimal('11.1530700030116938658705389')
+            },
+            4: {
+                'payoff_months': 164,
+                'total_payments': Decimal('8764.660910733671904414120065'),
+                'total_interest': Decimal('3266.010910733671904414120065')
+            }
+        }
+
+    def test_calculate_all_payoffs(self):
+        pass
+
 
 class DONOTTestInterestCalculation(object):
 

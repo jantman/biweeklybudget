@@ -167,13 +167,19 @@ class InterestHelper(object):
         "total_interest" (Decimal).
         :rtype: dict
         """
-        raise NotImplementedError()
         accts = self.accounts
         balances = {
             x: self._statements[x].principal for x in self._statements.keys()
         }
         res = {}
         calc = calculate_payoffs(cls, self._statements.values())
+        for idx, result in enumerate(calc):
+            a_id = list(self._statements.keys())[idx]
+            res[a_id] = {
+                'payoff_months': result[0],
+                'total_payments': result[1],
+                'total_interest': result[1] - balances[a_id],
+            }
         return res
 
 
