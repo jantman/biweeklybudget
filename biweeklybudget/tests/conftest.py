@@ -57,7 +57,6 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
-from biweeklybudget.flaskapp.app import app  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
 
@@ -175,6 +174,7 @@ def testflask():
     port = s.getsockname()[1]
     s.close()
 
+    from biweeklybudget.flaskapp.app import app  # noqa
     server = LiveServer(app, port)
     server.start()
     yield(server)
