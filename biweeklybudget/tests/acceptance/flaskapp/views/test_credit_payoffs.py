@@ -123,5 +123,5 @@ class TestNoSettings(AcceptanceHelper):
         assert texts == [
             ['CreditOne (3)', '2 years', '$963.21', '$11.15'],
             ['CreditTwo (4)', '14 years', '$8,764.66', '$3,266.01'],
-            ['Totals', '14 years', '$9,727.87', '$3,277,16']
+            ['Totals', '14 years', '$9,727.87', '$3,277.16']
         ]
