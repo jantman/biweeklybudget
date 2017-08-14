@@ -137,14 +137,15 @@ class InterestHelper(object):
         Calculate payoffs for each account/statement.
 
         :return: dict of payoff information. Keys are payoff method names.
-        Values are dicts, with keys "description" (str description of the
-        payoff method), "doc" (the docstring of the class), and "results".
-        The "results" dict has integer `account_id` as the key, and values are
-        dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
-        "total_interest" (Decimal).
+          Values are dicts, with keys "description" (str description of the
+          payoff method), "doc" (the docstring of the class), and "results".
+          The "results" dict has integer `account_id` as the key, and values are
+          dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
+          "total_interest" (Decimal).
         :rtype: dict
         """
         res = {}
+        max_total = sum(list(self.min_payments.values()))
         for name, d in PAYOFF_METHOD_NAMES.items():
             cls = d['cls']
             if not cls.show_in_ui:
@@ -152,7 +153,9 @@ class InterestHelper(object):
             res[name] = {
                 'description': d['description'],
                 'doc': d['doc'],
-                'results': self._calc_payoff_method(cls)
+                # @TODO - this really needs to come from the user,
+                # and also allow passing increases over time into the class.
+                'results': self._calc_payoff_method(cls(max_total))
             }
         return res
 
@@ -163,16 +166,15 @@ class InterestHelper(object):
         :param cls: payoff method class
         :type cls: biweeklybudget.interest._PayoffMethod
         :return: Dict with integer `account_id` as the key, and values are
-        dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
-        "total_interest" (Decimal).
+          dicts with keys "payoff_months" (int), "total_payments" (Decimal) and
+          "total_interest" (Decimal).
         :rtype: dict
         """
-        accts = self.accounts
         balances = {
             x: self._statements[x].principal for x in self._statements.keys()
         }
         res = {}
-        calc = calculate_payoffs(cls, self._statements.values())
+        calc = calculate_payoffs(cls, list(self._statements.values()))
         for idx, result in enumerate(calc):
             a_id = list(self._statements.keys())[idx]
             res[a_id] = {

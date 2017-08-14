@@ -261,8 +261,8 @@ class TestInterestHelper(object):
             }
         }
         assert mock_cpm.mock_calls == [
-            call(pm1),
-            call(pm2)
+            call(pm1.return_value),
+            call(pm2.return_value)
         ]
 
     def test_calculate_payoff_method(self):
@@ -286,11 +286,8 @@ class TestInterestHelper(object):
             }
         }
 
-    def test_calculate_all_payoffs(self):
-        pass
 
-
-class DONOTTestInterestCalculation(object):
+class TestInterestCalculation(object):
 
     def test_init(self):
         cls = _InterestCalculation(Decimal('1.23'))
@@ -305,7 +302,7 @@ class DONOTTestInterestCalculation(object):
         assert str(cls) == '<_InterestCalculation(decimal.Decimal(\'0.1000\'))>'
 
 
-class DONOTTestAdbCompoundedDaily(object):
+class TestAdbCompoundedDaily(object):
 
     def test_description(self):
         cls = AdbCompoundedDaily(Decimal('0.1000'))
@@ -345,7 +342,7 @@ class DONOTTestAdbCompoundedDaily(object):
         }
 
 
-class DONOTTestBillingPeriod(object):
+class TestBillingPeriod(object):
 
     def test_init(self):
         cls = _BillingPeriod()
@@ -373,7 +370,7 @@ class DONOTTestBillingPeriod(object):
         assert cls.payment_date == date(2017, 1, 10)
 
 
-class DONOTTestBillingPeriodNumDays(object):
+class TestBillingPeriodNumDays(object):
 
     def test_init(self):
         ed = date(2017, 1, 20)
@@ -404,7 +401,7 @@ class DONOTTestBillingPeriodNumDays(object):
         assert res.num_days == 10
 
 
-class DONOTTestMinPaymentFormula(object):
+class TestMinPaymentFormula(object):
 
     def test_init(self):
         res = _MinPaymentFormula()
@@ -415,7 +412,7 @@ class DONOTTestMinPaymentFormula(object):
         assert hasattr(cls, 'description')
 
 
-class DONOTTestMinPaymentAmEx(object):
+class TestMinPaymentAmEx(object):
 
     def test_init(self):
         cls = MinPaymentAmEx()
@@ -436,7 +433,7 @@ class DONOTTestMinPaymentAmEx(object):
         assert res == Decimal('35.00')
 
 
-class DONOTTestMinPaymentDiscover(object):
+class TestMinPaymentDiscover(object):
 
     def test_init(self):
         cls = MinPaymentDiscover()
@@ -462,7 +459,7 @@ class DONOTTestMinPaymentDiscover(object):
         assert res == Decimal('40.00')
 
 
-class DONOTTestMinPaymentCiti(object):
+class TestMinPaymentCiti(object):
 
     def test_init(self):
         cls = MinPaymentCiti()
@@ -488,7 +485,7 @@ class DONOTTestMinPaymentCiti(object):
         assert res == Decimal('25.00')
 
 
-class DONOTTestPayoffMethod(object):
+class TestPayoffMethod(object):
 
     def test_init(self):
         cls = _PayoffMethod(Decimal('1.23'))
@@ -500,7 +497,7 @@ class DONOTTestPayoffMethod(object):
         assert hasattr(cls, 'description')
 
 
-class DONOTTestMinPaymentMethod(object):
+class TestMinPaymentMethod(object):
 
     def test_init(self):
         cls = MinPaymentMethod()
@@ -523,7 +520,7 @@ class DONOTTestMinPaymentMethod(object):
         ]
 
 
-class DONOTTestFixedPaymentMethod(object):
+class TestFixedPaymentMethod(object):
 
     def test_init(self):
         cls = FixedPaymentMethod(Decimal('12.34'))
@@ -547,7 +544,7 @@ class DONOTTestFixedPaymentMethod(object):
         ]
 
 
-class DONOTTestLowestBalanceFirstMethod(object):
+class TestLowestBalanceFirstMethod(object):
 
     def test_init(self):
         cls = LowestBalanceFirstMethod(Decimal('100.00'))
@@ -597,7 +594,7 @@ class DONOTTestLowestBalanceFirstMethod(object):
             cls.find_payments([s1, s2, s3, s4])
 
 
-class DONOTTestCCStatement(object):
+class TestCCStatement(object):
 
     def test_init(self):
         b = Mock(spec_set=_BillingPeriod)
@@ -828,7 +825,7 @@ class DONOTTestCCStatement(object):
         ]
 
 
-class DONOTTestCalculatePayoffs(object):
+class TestCalculatePayoffs(object):
 
     def test_simple(self):
         def se_interest(bal, *args, **kwargs):
@@ -870,7 +867,7 @@ class DONOTTestCalculatePayoffs(object):
         ]
 
 
-class DONOTTestModuleConstants(object):
+class TestModuleConstants(object):
 
     def test_interest(self):
         assert INTEREST_CALCULATION_NAMES == {
@@ -929,7 +926,7 @@ class DONOTTestModuleConstants(object):
         }
 
 
-class DONOTTestAcceptanceData(object):
+class TestAcceptanceData(object):
 
     def setup(self):
         self.stmt_cc_one = CCStatement(
@@ -1445,7 +1442,7 @@ class InterestData(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataAmEx(object):
+class TestDataAmEx(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1527,7 +1524,7 @@ class DONOTTestDataAmEx(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataCiti(object):
+class TestDataCiti(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1615,7 +1612,7 @@ class DONOTTestDataCiti(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataDiscover(object):
+class TestDataDiscover(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])

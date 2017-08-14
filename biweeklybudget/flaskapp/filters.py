@@ -193,3 +193,10 @@ def dict_to_class_args(j):
     kwargs = j.get('kwargs', {})
     s += ', '.join(['%s=%s' % (k, kwargs[k]) for k in kwargs.keys()])
     return s
+
+
+@app.template_filter('monthsyears')
+def monthsyears(num):
+    if num < 12:
+        return '%d months' % num
+    return '%d years' % round(num / 12)

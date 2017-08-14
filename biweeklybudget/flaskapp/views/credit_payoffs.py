@@ -57,9 +57,40 @@ class CreditPayoffsView(MethodView):
     def get(self):
         ih = InterestHelper(db_session)
         mps = sum(ih.min_payments.values())
+        res = ih.calculate_payoffs()
+        payoffs = []
+        for methname in sorted(res.keys()):
+            tmp = {
+                'name': methname,
+                'description': res[methname]['description'],
+                'doc': res[methname]['doc'],
+                'results': []
+            }
+            total_pymt = Decimal('0')
+            total_int = Decimal('0')
+            max_mos = 0
+            for k in sorted(res[methname]['results'].keys()):
+                r = res[methname]['results'][k]
+                tmp['results'].append({
+                    'name': '%s (%d)' % (ih.accounts[k].name, k),
+                    'total_payments': r['total_payments'],
+                    'total_interest': r['total_interest'],
+                    'payoff_months': r['payoff_months']
+                })
+                total_pymt += r['total_payments']
+                total_int += r['total_interest']
+                if r['payoff_months'] > max_mos:
+                    max_mos = r['payoff_months']
+            tmp['total'] = {
+                'total_payments': total_pymt,
+                'total_interest': total_int,
+                'payoff_months': max_mos
+            }
+            payoffs.append(tmp)
         return render_template(
             'credit-payoffs.html',
-            monthly_pymt_sum=mps.quantize(Decimal('.01'), rounding=ROUND_UP)
+            monthly_pymt_sum=mps.quantize(Decimal('.01'), rounding=ROUND_UP),
+            payoffs=payoffs
         )
 
 
