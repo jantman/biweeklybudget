@@ -3,6 +3,10 @@
 {% block extra_head_css %}
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+
+    <script type="application/json" id="pymt_settings_json">
+        {{ pymt_settings_json|safe }}
+    </script>
 {% endblock %}
 {% block body %}
 {% macro payoffresult(res) -%}
@@ -82,24 +86,10 @@
                                     </div> <!-- /.form-group -->
                                 </fieldset>
                             </form> <!-- /#min_payment_frm -->
-                            <form id="payoff_increase_frm_1" class="form-inline">
-                                <div class="form-group">
-                                    <label for="payoff_increase_frm_1_enable" class="control-label sr-only">Enable Payment Increase 1</label>
-                                    <input type="checkbox" id="payoff_increase_frm_1_enable" name="payoff_increase_frm_1_enable" onchange="setChanged()">
-                                    Starting on
-                                    <label for="payoff_increase_frm_1_date" class="control-label sr-only">Payment Increase 1 Date</label>
-                                    <div class="input-group date" id="payoff_increase_frm_1_date_input_group">
-                                        <span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="payoff_increase_frm_1_date" name="payoff_increase_frm_1_date" type="text" size="12" maxlength="10" style="width: auto;" onchange="setChanged()">
-                                    </div> <!-- /.input-group -->
-                                    , increase sum of monthly payments by
-                                    <label for="payoff_increase_frm_1_amt" class="control-label sr-only">Payment Increase 1 Amount</label>
-                                    <div class="input-group">
-                                        <span class="input-group-addon">$</span><input class="form-control" id="payoff_increase_frm_1_amt" name="payoff_increase_frm_1_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">
-                                    </div> <!-- /.input-group -->
-                                    .
-                                </div> <!-- /.form-group -->
-                            </form> <!-- /#payoff_increase_frm_1 -->
-                            <div style="padding-top: 1em;"><em><a onclick="addIncrease()">(add another increase)</a></em></div>
+                            <div id="payoff_increase_forms"></div>
+                            <div style="padding-top: 1em; padding-bottom: 1em;"><em><a href="#" onclick="addIncrease()">(add another increase)</a></em></div>
+                            <div id="payoff_onetime_forms"></div>
+                            <div style="padding-top: 1em; padding-bottom: 1em;"><em><a href="#" onclick="addOnetime()">(add another one-time additional payment)</a></em></div>
                         </div> <!-- /.panel-body -->
                         <div class="panel-footer">
                             <button type="button" class="btn btn-sm btn-default disabled" id="btn_recalc_payoffs" onclick="recalcPayoffs()">Save & Recalculate</button>
@@ -116,4 +106,5 @@
     <script src="/utils/datetest.js"></script>
     <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
     <script src="/static/js/custom.js"></script>
+    <script src="/static/js/credit_payoffs.js"></script>
 {% endblock %}

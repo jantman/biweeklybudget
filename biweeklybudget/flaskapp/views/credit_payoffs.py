@@ -36,14 +36,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import json
 from decimal import Decimal, ROUND_UP
+from datetime import date
 
 from flask.views import MethodView
 from flask import render_template
 
+from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.interest import InterestHelper
+from biweeklybudget.models.dbsetting import DBSetting
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +58,15 @@ class CreditPayoffsView(MethodView):
     ``credit-payoffs.html`` template.
     """
 
-    def get(self):
-        ih = InterestHelper(db_session)
-        mps = sum(ih.min_payments.values())
+    def _payoffs_list(self, ih):
+        """
+        Return a payoffs list suitable for rendering.
+
+        :param ih: interest helper instance
+        :type ih: biweeklybudget.interest.InterestHelper
+        :return: list of payoffs suitable for rendering
+        :rtype: list
+        """
         res = ih.calculate_payoffs()
         payoffs = []
         for methname in sorted(res.keys()):
@@ -87,10 +97,22 @@ class CreditPayoffsView(MethodView):
                 'payoff_months': max_mos
             }
             payoffs.append(tmp)
+        return payoffs
+
+    def get(self):
+        pymt_settings_json = db_session.query(DBSetting).get('credit-payoff')
+        if pymt_settings_json is None:
+            pymt_settings_json = json.dumps({'increases': [], 'onetimes': []})
+        # @NOTE we'll need to convert these JSON values to the right
+        # (Decimal and date) types.
+        ih = InterestHelper(db_session)
+        mps = sum(ih.min_payments.values())
+        payoffs = self._payoffs_list(ih)
         return render_template(
             'credit-payoffs.html',
             monthly_pymt_sum=mps.quantize(Decimal('.01'), rounding=ROUND_UP),
-            payoffs=payoffs
+            payoffs=payoffs,
+            pymt_settings_json=pymt_settings_json
         )
 
 
