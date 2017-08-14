@@ -47,7 +47,6 @@ class DateTestJS(MethodView):
     """
 
     def get(self):
-        print(BIWEEKLYBUDGET_TEST_TIMESTAMP)
         if BIWEEKLYBUDGET_TEST_TIMESTAMP is None:
             return 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date();'
         dt = dtnow()
