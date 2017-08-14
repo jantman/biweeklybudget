@@ -37,7 +37,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from locale import currency
 from jinja2.runtime import Undefined
-
 from humanize import naturaltime
 
 from biweeklybudget.utils import dtnow
@@ -199,4 +198,4 @@ def dict_to_class_args(j):
 def monthsyears(num):
     if num < 12:
         return '%d months' % num
-    return '%d years' % round(num / 12)
+    return '%d years' % int(round(num / 12.0))
