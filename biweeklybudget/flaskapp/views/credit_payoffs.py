@@ -38,10 +38,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import json
 from decimal import Decimal, ROUND_UP
-from datetime import date
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, request, jsonify
 
 from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
 from biweeklybudget.flaskapp.app import app
@@ -100,11 +99,11 @@ class CreditPayoffsView(MethodView):
         return payoffs
 
     def get(self):
-        pymt_settings_json = db_session.query(DBSetting).get('credit-payoff')
-        if pymt_settings_json is None:
+        setting = db_session.query(DBSetting).get('credit-payoff')
+        if setting is None:
             pymt_settings_json = json.dumps({'increases': [], 'onetimes': []})
-        # @NOTE we'll need to convert these JSON values to the right
-        # (Decimal and date) types.
+        else:
+            pymt_settings_json = setting.value
         ih = InterestHelper(db_session)
         mps = sum(ih.min_payments.values())
         payoffs = self._payoffs_list(ih)
@@ -116,7 +115,56 @@ class CreditPayoffsView(MethodView):
         )
 
 
+class PayoffSettingsFormHandler(MethodView):
+    """
+    Handle POST /settings/credit-payoff
+    """
+
+    def post(self):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        data = request.get_json(force=True, silent=True)
+        if data is None:
+            logger.error('Error parsing request JSON')
+            return jsonify({
+                'success': False,
+                'error_message': 'Error parsing JSON'
+            })
+        setting = db_session.query(DBSetting).get('credit-payoff')
+        if setting is None:
+            setting = DBSetting(name='credit-payoff')
+            logger.info('new DBSetting name=credit-payoff')
+        else:
+            logger.info('Existing DBSetting name=credit-payoff value=%s',
+                        setting.value)
+        fixeddata = {'increases': [], 'onetimes': []}
+        for key in ['increases', 'onetimes']:
+            for d in sorted(data[key], key=lambda k: k['date']):
+                if d['date'] == '' or d['amount'] == '':
+                    continue
+                fixeddata[key].append(d)
+        val = json.dumps(fixeddata, cls=MagicJSONEncoder)
+        logger.info('Changing setting value to: %s', val)
+        setting.value = val
+        db_session.add(setting)
+        db_session.commit()
+        return jsonify({
+            'success': True,
+            'success_message': 'Successfully updated setting '
+                               '"credit-payoff" in database.'
+        })
+
+
 app.add_url_rule(
     '/accounts/credit-payoff',
     view_func=CreditPayoffsView.as_view('credit_payoffs_view')
+)
+app.add_url_rule(
+    '/settings/credit-payoff',
+    view_func=PayoffSettingsFormHandler.as_view('payoff_settings_form')
 )

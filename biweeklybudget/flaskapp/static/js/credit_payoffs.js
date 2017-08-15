@@ -59,15 +59,15 @@ function addIncrease(settings) {
   $('#payoff_increase_forms').append(s);
   if ( settings !== undefined ) {
     $('#payoff_increase_frm_' + idx + '_enable').prop('checked', settings['enabled']);
-    $('#payoff_increase_frm_' + idx + '_date').val(settings['date']['str']);
-    $('#payoff_increase_frm_' + idx + '_date').datepicker({
-        todayBtn: "linked",
-        autoclose: true,
-        todayHighlight: true,
-        format: 'yyyy-mm-dd'
-    });
+    $('#payoff_increase_frm_' + idx + '_date').val(settings['date']);
     $('#payoff_increase_frm_' + idx + '_amt').val(settings['amount']);
   }
+  $('#payoff_increase_frm_' + idx + '_date').datepicker({
+    todayBtn: "linked",
+    autoclose: true,
+    todayHighlight: true,
+    format: 'yyyy-mm-dd'
+  });
 }
 
 /**
@@ -103,15 +103,15 @@ function addOnetime(settings) {
   $('#payoff_onetime_forms').append(s);
   if ( settings !== undefined ) {
     $('#payoff_onetime_frm_' + idx + '_enable').prop('checked', settings['enabled']);
-    $('#payoff_onetime_frm_' + idx + '_date').val(settings['date']['str']);
-    $('#payoff_onetime_frm_' + idx + '_date').datepicker({
-        todayBtn: "linked",
-        autoclose: true,
-        todayHighlight: true,
-        format: 'yyyy-mm-dd'
-    });
+    $('#payoff_onetime_frm_' + idx + '_date').val(settings['date']);
     $('#payoff_onetime_frm_' + idx + '_amt').val(settings['amount']);
   }
+  $('#payoff_onetime_frm_' + idx + '_date').datepicker({
+    todayBtn: "linked",
+    autoclose: true,
+    todayHighlight: true,
+    format: 'yyyy-mm-dd'
+  });
 }
 
 /**
@@ -119,7 +119,65 @@ function addOnetime(settings) {
  * recalculate the payoff amounts.
  */
 function recalcPayoffs() {
-  console.log("recalcPayoffs() called");
+  formdata = serializeForms();
+  $('.formfeedback').remove();
+  $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
+  $.ajax({
+    type: "POST",
+    url: '/settings/credit-payoff',
+    data: JSON.stringify(formdata),
+    success: function(data) {
+        if(data.hasOwnProperty('error_message')) {
+            $('#settings-panel-body').prepend(
+                '<div class="alert alert-danger formfeedback">' +
+                '<strong>Server Error: </strong> ' + data.error_message + '</div>');
+        } else if (data.hasOwnProperty('errors')) {
+            var form = $('#' + form_id);
+            Object.keys(data.errors).forEach(function (key) {
+                var elem = form.find('[name=' + key + ']');
+                data.errors[key].forEach( function(msg) {
+                    elem.parent().append('<p class="text-danger formfeedback">' + msg + '</p>');
+                    elem.parent().addClass('has-error');
+                });
+            });
+        } else {
+          location.reload();
+        }
+    },
+    error: function(jqXHR, textStatus, errorThrown) {
+        if($('#formStatus').length == 0) { $('#settings-panel-body').prepend('<div id="formStatus"></div>'); }
+        $('#formStatus').html(
+            '<div class="alert alert-danger formfeedback"><strong>Error submitting ' +
+            'form:</strong> ' + textStatus + ': ' + jqXHR.status + ' ' + errorThrown + '</div>'
+        );
+    }
+  });
+}
+
+/**
+ * Serialize the form data into an object and return it.
+ *
+ * @return {Object} serialized forms.
+ */
+function serializeForms() {
+  var data = {"increases": [], "onetimes": []};
+  $('form[id^="payoff_increase_frm_"]').each(function(k, v) {
+    frmid = $(v).prop('id');
+    data["increases"].push({
+      "date": $('#' + frmid + '_date').val(),
+      "amount": $('#' + frmid + '_amt').val(),
+      "enabled": $('#' + frmid + '_enable').prop('checked')
+    });
+  });
+  $('form[id^="payoff_onetime_frm_"]').each(function(k, v) {
+    frmid = $(v).prop('id');
+    data["onetimes"].push({
+      "date": $('#' + frmid + '_date').val(),
+      "amount": $('#' + frmid + '_amt').val(),
+      "enabled": $('#' + frmid + '_enable').prop('checked')
+    });
+  });
+  return data;
 }
 
 /**
