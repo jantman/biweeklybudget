@@ -37,31 +37,57 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import re
+import json
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.dbsetting import DBSetting
 
 
-def get_increases(selenium, form_ids):
-    vals = {}
-    id_re = re.compile(r'^payoff_increase_frm_(\d+)$')
-    for frmid in form_ids:
-        m = id_re.match(frmid)
-        if m is None:
-            continue
-        _id = int(m.group(1))
+def get_payoff_forms(selenium):
+    form_ids = [
+        s.get_attribute('id')
+        for s in selenium.find_elements_by_tag_name('form')
+    ]
+    res = {}
+    for f_type in ['increase', 'onetime']:
+        vals = {}
+        id_re = re.compile(r'^payoff_' + f_type + r'_frm_(\d+)$')
+        for frmid in form_ids:
+            m = id_re.match(frmid)
+            if m is None:
+                continue
+            _id = int(m.group(1))
 
-        vals[_id] = {
-            'enabled': selenium.find_element_by_id(
-                'payoff_increase_frm_%s_enable' % _id
-            ).is_selected(),
-            'date': selenium.find_element_by_id(
-                'payoff_increase_frm_%s_date' % _id
-            ).get_attribute('value'),
-            'amount': selenium.find_element_by_id(
-                'payoff_increase_frm_%s_amt' % _id
-            ).get_attribute('value')
-        }
-    return vals
+            vals[_id] = {
+                'enabled': selenium.find_element_by_id(
+                    'payoff_%s_frm_%s_enable' % (f_type, _id)
+                ).is_selected(),
+                'date': selenium.find_element_by_id(
+                    'payoff_%s_frm_%s_date' % (f_type, _id)
+                ).get_attribute('value'),
+                'amount': selenium.find_element_by_id(
+                    'payoff_%s_frm_%s_amt' % (f_type, _id)
+                ).get_attribute('value')
+            }
+        res[f_type] = vals
+    return res
+
+
+def set_payoff_form(selenium, f_type, idx, enabled, date_s, amt):
+    is_enabled = selenium.find_element_by_id(
+        'payoff_%s_frm_%s_enable' % (f_type, idx)).is_selected()
+    if is_enabled != enabled:
+        selenium.find_element_by_id(
+            'payoff_%s_frm_%s_enable' % (f_type, idx)).click()
+        assert selenium.find_element_by_id(
+            'payoff_%s_frm_%s_enable' % (f_type, idx)).is_selected() == enabled
+    selenium.find_element_by_id(
+        'payoff_%s_frm_%s_date' % (f_type, idx)).clear()
+    selenium.find_element_by_id(
+        'payoff_%s_frm_%s_date' % (f_type, idx)).send_keys(date_s)
+    selenium.find_element_by_id(
+        'payoff_%s_frm_%s_amt' % (f_type, idx)).clear()
+    selenium.find_element_by_id(
+        'payoff_%s_frm_%s_amt' % (f_type, idx)).send_keys(amt)
 
 
 @pytest.mark.acceptance
@@ -106,13 +132,23 @@ class TestNoSettings(AcceptanceHelper):
         ]
         assert sorted(form_ids) == [
             'min_payment_frm',
-            'payoff_increase_frm_1'
+            'payoff_increase_frm_1',
+            'payoff_onetime_frm_1'
         ]
-        assert get_increases(selenium, form_ids) == {
-            1: {
-                'enabled': False,
-                'date': '',
-                'amount': ''
+        assert get_payoff_forms(selenium) == {
+            'increase': {
+                1: {
+                    'enabled': False,
+                    'date': '',
+                    'amount': ''
+                }
+            },
+            'onetime': {
+                1: {
+                    'enabled': False,
+                    'date': '',
+                    'amount': ''
+                }
             }
         }
 
@@ -125,3 +161,126 @@ class TestNoSettings(AcceptanceHelper):
             ['CreditTwo (4)', '14 years', '$8,764.66', '$3,266.01'],
             ['Totals', '14 years', '$9,727.87', '$3,277.16']
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestSettings(AcceptanceHelper):
+
+    def test_00_verify_db(self, testdb):
+        b = testdb.query(DBSetting).get('credit-payoff')
+        assert b is None
+
+    def test_01_no_config(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        form_ids = [
+            s.get_attribute('id')
+            for s in selenium.find_elements_by_tag_name('form')
+        ]
+        assert sorted(form_ids) == [
+            'min_payment_frm',
+            'payoff_increase_frm_1',
+            'payoff_onetime_frm_1'
+        ]
+        assert get_payoff_forms(selenium) == {
+            'increase': {
+                1: {
+                    'enabled': False,
+                    'date': '',
+                    'amount': ''
+                }
+            },
+            'onetime': {
+                1: {
+                    'enabled': False,
+                    'date': '',
+                    'amount': ''
+                }
+            }
+        }
+
+    def test_02_input_and_save(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        assert 'disabled' in selenium.find_element_by_id(
+            'btn_recalc_payoffs').get_attribute('class')
+        set_payoff_form(selenium, 'increase', 1, True, '2017-05-14', '12.34')
+        assert 'disabled' not in selenium.find_element_by_id(
+            'btn_recalc_payoffs').get_attribute('class')
+        selenium.find_element_by_link_text('(add another increase)').click()
+        set_payoff_form(selenium, 'increase', 2, False, '2017-06-27', '-56.78')
+        set_payoff_form(selenium, 'onetime', 1, False, '2017-07-21', '98.76')
+        selenium.find_element_by_link_text(
+            '(add another one-time additional payment)').click()
+        set_payoff_form(selenium, 'onetime', 2, True, '2017-07-04', '54.32')
+        selenium.find_element_by_id('btn_recalc_payoffs').click()
+        assert len(selenium.find_elements_by_class_name('formfeedback')) == 0
+
+    def test_03_verify_db(self, testdb):
+        b = testdb.query(DBSetting).get('credit-payoff')
+        assert b is not None
+        assert b.value == json.dumps({
+            'increases': [
+                {
+                    'enabled': True,
+                    'date': '2017-05-14',
+                    'amount': '12.34'
+                },
+                {
+                    'enabled': False,
+                    'date': '2017-06-27',
+                    'amount': '-56.78'
+                }
+            ],
+            'onetimes': [
+                {
+                    'enabled': True,
+                    'date': '2017-07-04',
+                    'amount': '54.32'
+                },
+                {
+                    'enabled': False,
+                    'date': '2017-07-21',
+                    'amount': '98.76'
+                }
+            ]
+        }, sort_keys=True)
+
+    def test_04_form_fill(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        form_ids = [
+            s.get_attribute('id')
+            for s in selenium.find_elements_by_tag_name('form')
+        ]
+        assert sorted(form_ids) == [
+            'min_payment_frm',
+            'payoff_increase_frm_1',
+            'payoff_increase_frm_2',
+            'payoff_onetime_frm_1',
+            'payoff_onetime_frm_2'
+        ]
+        assert get_payoff_forms(selenium) == {
+            'increase': {
+                1: {
+                    'enabled': True,
+                    'date': '2017-05-14',
+                    'amount': '12.34'
+                },
+                2: {
+                    'enabled': False,
+                    'date': '2017-06-27',
+                    'amount': '-56.78'
+                }
+            },
+            'onetime': {
+                1: {
+                    'enabled': True,
+                    'date': '2017-07-04',
+                    'amount': '54.32'
+                },
+                2: {
+                    'enabled': False,
+                    'date': '2017-07-21',
+                    'amount': '98.76'
+                }
+            }
+        }
