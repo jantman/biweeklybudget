@@ -617,13 +617,12 @@ class FixedPaymentMethod(_PayoffMethod):
         return [self.amount for _ in statements]
 
 
-class LowestBalanceFirstMethod(_PayoffMethod):
+class HighestBalanceFirstMethod(_PayoffMethod):
     """
-    Pay statements off from lowest to highest balance, a.k.a. the "snowball"
-    method.
+    Pay statements off from highest to lowest balance.
     """
 
-    description = 'Lowest to Highest Balance (a.k.a. Snowball Method)'
+    description = 'Highest to Lowest Balance'
     show_in_ui = False
 
     def __init__(self, max_total_payment):
@@ -631,7 +630,7 @@ class LowestBalanceFirstMethod(_PayoffMethod):
         :param max_total_payment: maximum total payment for all statements
         :type max_total_payment: decimal.Decimal
         """
-        super(LowestBalanceFirstMethod, self).__init__()
+        super(HighestBalanceFirstMethod, self).__init__()
         self._max_total = max_total_payment
 
     def find_payments(self, statements):
@@ -668,6 +667,57 @@ class LowestBalanceFirstMethod(_PayoffMethod):
         return res
 
 
+class LowestBalanceFirstMethod(_PayoffMethod):
+    """
+    Pay statements off from lowest to highest balance, a.k.a. the "snowball"
+    method.
+    """
+
+    description = 'Lowest to Highest Balance (a.k.a. Snowball Method)'
+    show_in_ui = False
+
+    def __init__(self, max_total_payment):
+        """
+        :param max_total_payment: maximum total payment for all statements
+        :type max_total_payment: decimal.Decimal
+        """
+        super(LowestBalanceFirstMethod, self).__init__()
+        self._max_total = max_total_payment
+
+    def find_payments(self, statements):
+        """
+        Given a list of statements, return a list of payment amounts to make
+        on each of the statements.
+
+        :param statements: statements to pay, list of :py:class:`~.CCStatement`
+        :type statements: list
+        :return: list of payment amounts to make, same order as ``statements``
+        :rtype: list
+        """
+        min_sum = sum([s.minimum_payment for s in statements])
+        if min_sum > self._max_total:
+            raise TypeError(
+                'ERROR: Max total payment of %s is less than sum of minimum '
+                'payments (%s)' % (self._max_total, min_sum)
+            )
+        min_bal = Decimal('+Infinity')
+        min_idx = None
+        for idx, stmt in enumerate(statements):
+            if stmt.principal < min_bal:
+                min_bal = stmt.principal
+                min_idx = idx
+        res = [None for _ in statements]
+        min_pay = self._max_total - (
+            min_sum - statements[min_idx].minimum_payment
+        )
+        for idx, stmt in enumerate(statements):
+            if idx == min_idx:
+                res[idx] = min_pay
+            else:
+                res[idx] = statements[idx].minimum_payment
+        return res
+
+
 def calculate_payoffs(payment_method, statements):
     """
     Calculate the amount of time (in years) and total amount of money required
@@ -690,11 +740,14 @@ def calculate_payoffs(payment_method, statements):
         payoffs[stmt] = {
             'months': 0, 'amt': Decimal('0.0'), 'idx': idx, 'done': False
         }
+        print('%d: bal=%s %s' % (idx, stmt.principal, payoffs[stmt]))
+    print('---')
     while len(unpaid(payoffs)) > 0:
         u = unpaid(payoffs)
         for stmt, p_amt in dict(
             zip(u, payment_method.find_payments(u))
         ).items():
+            print('%d: pay %s' % (payoffs[stmt]['idx'], p_amt))
             if stmt.principal <= Decimal('0'):
                 payoffs[stmt]['done'] = True
                 continue
@@ -708,6 +761,13 @@ def calculate_payoffs(payment_method, statements):
             new_s = stmt.pay(Decimal('-1') * p_amt)
             payoffs[new_s] = payoffs[stmt]
             del payoffs[stmt]
+        # BEGIN DEBUG
+        for stmt in sorted(payoffs, key=lambda x: payoffs[x]['idx']):
+            print('%d: bal=%s %s' % (
+                payoffs[stmt]['idx'], stmt.principal, payoffs[stmt])
+            )
+        print('---')
+        # END DEBUG
     return [
         (payoffs[s]['months'], payoffs[s]['amt'])
         for s in sorted(payoffs, key=lambda x: payoffs[x]['idx'])
@@ -772,6 +832,15 @@ class CCStatement(object):
                 self._principal = res['end_balance']
             if interest_amt is None:
                 self._interest_amt = res['interest_paid']
+
+    def __repr__(self):
+        return '<CCStatement(interest_cls=%s principal=%s min_payment_cls=%s ' \
+               'billing_period=%s transactions=%s end_balance=%s ' \
+               'interest_amt=%s' % (
+            self._interest_cls, self._principal, self._min_pay_cls,
+            self._billing_period, self._transactions, self._principal,
+            self._interest_amt
+        )
 
     @property
     def principal(self):

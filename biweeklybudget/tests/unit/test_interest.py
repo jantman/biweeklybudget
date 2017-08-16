@@ -82,7 +82,46 @@ def pctdiff(a, b):
     return abs(a - b) / abs(a)
 
 
-class TestInterestHelper(object):
+class FixedInterest(_InterestCalculation):
+    """
+    Test class for fixed interest amount.
+    """
+
+    #: Human-readable string name of the interest calculation type.
+    description = 'Test class for fixed interest amount.'
+
+    def calculate(self, principal, first_d, last_d, transactions={}):
+        """
+        Calculate compound interest for the specified principal.
+
+        :param principal: balance at beginning of statement period
+        :type principal: decimal.Decimal
+        :param first_d: date of beginning of statement period
+        :type first_d: datetime.date
+        :param last_d: last date of statement period
+        :type last_d: datetime.date
+        :param transactions: dict of datetime.date to float amount adjust
+          the balance by on the specified dates.
+        :type transactions: dict
+        :return: dict describing the result: end_balance (float),
+          interest_paid (float)
+        :rtype: dict
+        """
+        num_days = 0
+
+        d = first_d
+        while d <= last_d:
+            num_days += 1
+            if d in transactions:
+                principal += transactions[d]
+            d += timedelta(days=1)
+        return {
+            'interest_paid': self.apr,
+            'end_balance': principal + self.apr
+        }
+
+
+class DONOTTestInterestHelper(object):
 
     def setup(self):
         stmt3 = Mock(
@@ -287,7 +326,7 @@ class TestInterestHelper(object):
         }
 
 
-class TestInterestCalculation(object):
+class DONOTTestInterestCalculation(object):
 
     def test_init(self):
         cls = _InterestCalculation(Decimal('1.23'))
@@ -302,7 +341,7 @@ class TestInterestCalculation(object):
         assert str(cls) == '<_InterestCalculation(decimal.Decimal(\'0.1000\'))>'
 
 
-class TestAdbCompoundedDaily(object):
+class DONOTTestAdbCompoundedDaily(object):
 
     def test_description(self):
         cls = AdbCompoundedDaily(Decimal('0.1000'))
@@ -342,7 +381,7 @@ class TestAdbCompoundedDaily(object):
         }
 
 
-class TestSimpleInterest(object):
+class DONOTTestSimpleInterest(object):
 
     def test_description(self):
         cls = SimpleInterest(Decimal('0.1200'))
@@ -381,7 +420,7 @@ class TestSimpleInterest(object):
         }
 
 
-class TestBillingPeriod(object):
+class DONOTTestBillingPeriod(object):
 
     def test_init(self):
         cls = _BillingPeriod()
@@ -409,7 +448,7 @@ class TestBillingPeriod(object):
         assert cls.payment_date == date(2017, 1, 10)
 
 
-class TestBillingPeriodNumDays(object):
+class DONOTTestBillingPeriodNumDays(object):
 
     def test_init(self):
         ed = date(2017, 1, 20)
@@ -440,7 +479,7 @@ class TestBillingPeriodNumDays(object):
         assert res.num_days == 10
 
 
-class TestMinPaymentFormula(object):
+class DONOTTestMinPaymentFormula(object):
 
     def test_init(self):
         res = _MinPaymentFormula()
@@ -451,7 +490,7 @@ class TestMinPaymentFormula(object):
         assert hasattr(cls, 'description')
 
 
-class TestMinPaymentAmEx(object):
+class DONOTTestMinPaymentAmEx(object):
 
     def test_init(self):
         cls = MinPaymentAmEx()
@@ -472,7 +511,7 @@ class TestMinPaymentAmEx(object):
         assert res == Decimal('35.00')
 
 
-class TestMinPaymentDiscover(object):
+class DONOTTestMinPaymentDiscover(object):
 
     def test_init(self):
         cls = MinPaymentDiscover()
@@ -498,7 +537,7 @@ class TestMinPaymentDiscover(object):
         assert res == Decimal('40.00')
 
 
-class TestMinPaymentCiti(object):
+class DONOTTestMinPaymentCiti(object):
 
     def test_init(self):
         cls = MinPaymentCiti()
@@ -524,7 +563,7 @@ class TestMinPaymentCiti(object):
         assert res == Decimal('25.00')
 
 
-class TestPayoffMethod(object):
+class DONOTTestPayoffMethod(object):
 
     def test_init(self):
         cls = _PayoffMethod(Decimal('1.23'))
@@ -536,7 +575,7 @@ class TestPayoffMethod(object):
         assert hasattr(cls, 'description')
 
 
-class TestMinPaymentMethod(object):
+class DONOTTestMinPaymentMethod(object):
 
     def test_init(self):
         cls = MinPaymentMethod()
@@ -559,7 +598,7 @@ class TestMinPaymentMethod(object):
         ]
 
 
-class TestFixedPaymentMethod(object):
+class DONOTTestFixedPaymentMethod(object):
 
     def test_init(self):
         cls = FixedPaymentMethod(Decimal('12.34'))
@@ -583,7 +622,7 @@ class TestFixedPaymentMethod(object):
         ]
 
 
-class TestLowestBalanceFirstMethod(object):
+class DONOTTestLowestBalanceFirstMethod(object):
 
     def test_init(self):
         cls = LowestBalanceFirstMethod(Decimal('100.00'))
@@ -633,7 +672,7 @@ class TestLowestBalanceFirstMethod(object):
             cls.find_payments([s1, s2, s3, s4])
 
 
-class TestCCStatement(object):
+class DONOTTestCCStatement(object):
 
     def test_init(self):
         b = Mock(spec_set=_BillingPeriod)
@@ -864,7 +903,7 @@ class TestCCStatement(object):
         ]
 
 
-class TestCalculatePayoffs(object):
+class DONOTTestCalculatePayoffs(object):
 
     def test_simple(self):
         def se_interest(bal, *args, **kwargs):
@@ -906,7 +945,7 @@ class TestCalculatePayoffs(object):
         ]
 
 
-class TestModuleConstants(object):
+class DONOTTestModuleConstants(object):
 
     def test_interest(self):
         assert INTEREST_CALCULATION_NAMES == {
@@ -970,7 +1009,7 @@ class TestModuleConstants(object):
         }
 
 
-class TestAcceptanceData(object):
+class DONOTTestAcceptanceData(object):
 
     def setup(self):
         self.stmt_cc_one = CCStatement(
@@ -1020,6 +1059,94 @@ class TestAcceptanceData(object):
         assert res == [
             (28, Decimal('963.2130700030116938658705389')),
             (164, Decimal('8764.660910733671904414120065'))
+        ]
+
+
+class TestSimpleData(object):
+
+    def setup(self):
+        self.mpm = Mock(spec_set=MinPaymentAmEx)
+        self.mpm.calculate.return_value = Decimal('200.00')
+        self.stmt_cc_one = CCStatement(
+            FixedInterest(Decimal('10.00')),
+            Decimal('1000.00'),
+            self.mpm,
+            BillingPeriodNumDays(date(2017, 7, 1), 30),
+            transactions={},
+            end_balance=Decimal('1010.00'),
+            interest_amt=Decimal('10.00')
+        )
+        self.stmt_cc_two = CCStatement(
+            FixedInterest(Decimal('40.00')),
+            Decimal('2000.00'),
+            self.mpm,
+            BillingPeriodNumDays(date(2017, 6, 15), 30),
+            transactions={},
+            end_balance=Decimal('2040.00'),
+            interest_amt=Decimal('40.00')
+        )
+        self.mpm2 = Mock(spec_set=MinPaymentAmEx)
+        self.mpm2.calculate.return_value = Decimal('500.00')
+        self.stmt_cc_three = CCStatement(
+            FixedInterest(Decimal('100.00')),
+            Decimal('10000.00'),
+            self.mpm2,
+            BillingPeriodNumDays(date(2017, 6, 15), 30),
+            transactions={},
+            end_balance=Decimal('10100.00'),
+            interest_amt=Decimal('100.00')
+        )
+
+    def test_cc_one_minimum(self):
+        assert self.stmt_cc_one.minimum_payment == Decimal('200.0')
+
+    def test_cc_two_minimum(self):
+        assert self.stmt_cc_two.minimum_payment == Decimal('200.0')
+
+    def test_cc_three_minimum(self):
+        assert self.stmt_cc_three.minimum_payment == Decimal('500.0')
+
+    def test_cc_one_pay_min(self):
+        res = calculate_payoffs(
+            MinPaymentMethod(),
+            [self.stmt_cc_one]
+        )
+        assert res == [(6, Decimal('1060.0'))]
+
+    def test_cc_two_pay_min(self):
+        res = calculate_payoffs(
+            MinPaymentMethod(),
+            [self.stmt_cc_two]
+        )
+        assert res == [(13, Decimal('2520.0'))]
+
+    def test_cc_three_pay_min(self):
+        res = calculate_payoffs(
+            MinPaymentMethod(),
+            [self.stmt_cc_three]
+        )
+        assert res == [(25, Decimal('12500.0'))]
+
+    def test_combined_pay_min(self):
+        res = calculate_payoffs(
+            MinPaymentMethod(),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (13, Decimal('2520.0')),
+            (25, Decimal('12500.0'))
+        ]
+
+    def test_lowest_balance_first(self):
+        res = calculate_payoffs(
+            LowestBalanceFirstMethod(Decimal('1000.0')),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (4, Decimal('1040.0')),
+            (7, Decimal('2280.0')),
+            (15, Decimal('11500.0'))
         ]
 
 
@@ -1486,7 +1613,7 @@ class InterestData(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class TestDataAmEx(object):
+class DONOTTestDataAmEx(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1568,7 +1695,7 @@ class TestDataAmEx(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class TestDataCiti(object):
+class DONOTTestDataCiti(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1656,7 +1783,7 @@ class TestDataCiti(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class TestDataDiscover(object):
+class DONOTTestDataDiscover(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
