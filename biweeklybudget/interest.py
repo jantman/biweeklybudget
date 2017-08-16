@@ -623,7 +623,7 @@ class HighestBalanceFirstMethod(_PayoffMethod):
     """
 
     description = 'Highest to Lowest Balance'
-    show_in_ui = False
+    show_in_ui = True
 
     def __init__(self, max_total_payment):
         """
@@ -667,6 +667,56 @@ class HighestBalanceFirstMethod(_PayoffMethod):
         return res
 
 
+class HighestInterestRateFirstMethod(_PayoffMethod):
+    """
+    Pay statements off from highest to lowest interest rate.
+    """
+
+    description = 'Highest to Lowest Interest Rate'
+    show_in_ui = True
+
+    def __init__(self, max_total_payment):
+        """
+        :param max_total_payment: maximum total payment for all statements
+        :type max_total_payment: decimal.Decimal
+        """
+        super(HighestInterestRateFirstMethod, self).__init__()
+        self._max_total = max_total_payment
+
+    def find_payments(self, statements):
+        """
+        Given a list of statements, return a list of payment amounts to make
+        on each of the statements.
+
+        :param statements: statements to pay, list of :py:class:`~.CCStatement`
+        :type statements: list
+        :return: list of payment amounts to make, same order as ``statements``
+        :rtype: list
+        """
+        min_sum = sum([s.minimum_payment for s in statements])
+        if min_sum > self._max_total:
+            raise TypeError(
+                'ERROR: Max total payment of %s is less than sum of minimum '
+                'payments (%s)' % (self._max_total, min_sum)
+            )
+        max_apr = Decimal('0.00')
+        max_idx = None
+        for idx, stmt in enumerate(statements):
+            if stmt.apr > max_apr:
+                max_apr = stmt.apr
+                max_idx = idx
+        res = [None for _ in statements]
+        max_pay = self._max_total - (
+            min_sum - statements[max_idx].minimum_payment
+        )
+        for idx, stmt in enumerate(statements):
+            if idx == max_idx:
+                res[idx] = max_pay
+            else:
+                res[idx] = statements[idx].minimum_payment
+        return res
+
+
 class LowestBalanceFirstMethod(_PayoffMethod):
     """
     Pay statements off from lowest to highest balance, a.k.a. the "snowball"
@@ -674,7 +724,7 @@ class LowestBalanceFirstMethod(_PayoffMethod):
     """
 
     description = 'Lowest to Highest Balance (a.k.a. Snowball Method)'
-    show_in_ui = False
+    show_in_ui = True
 
     def __init__(self, max_total_payment):
         """
@@ -705,6 +755,56 @@ class LowestBalanceFirstMethod(_PayoffMethod):
         for idx, stmt in enumerate(statements):
             if stmt.principal < min_bal:
                 min_bal = stmt.principal
+                min_idx = idx
+        res = [None for _ in statements]
+        min_pay = self._max_total - (
+            min_sum - statements[min_idx].minimum_payment
+        )
+        for idx, stmt in enumerate(statements):
+            if idx == min_idx:
+                res[idx] = min_pay
+            else:
+                res[idx] = statements[idx].minimum_payment
+        return res
+
+
+class LowestInterestRateFirstMethod(_PayoffMethod):
+    """
+    Pay statements off from lowest to highest interest rate.
+    """
+
+    description = 'Lowest to Highest Interest Rate'
+    show_in_ui = True
+
+    def __init__(self, max_total_payment):
+        """
+        :param max_total_payment: maximum total payment for all statements
+        :type max_total_payment: decimal.Decimal
+        """
+        super(LowestInterestRateFirstMethod, self).__init__()
+        self._max_total = max_total_payment
+
+    def find_payments(self, statements):
+        """
+        Given a list of statements, return a list of payment amounts to make
+        on each of the statements.
+
+        :param statements: statements to pay, list of :py:class:`~.CCStatement`
+        :type statements: list
+        :return: list of payment amounts to make, same order as ``statements``
+        :rtype: list
+        """
+        min_sum = sum([s.minimum_payment for s in statements])
+        if min_sum > self._max_total:
+            raise TypeError(
+                'ERROR: Max total payment of %s is less than sum of minimum '
+                'payments (%s)' % (self._max_total, min_sum)
+            )
+        min_apr = Decimal('+Infinity')
+        min_idx = None
+        for idx, stmt in enumerate(statements):
+            if stmt.apr < min_apr:
+                min_apr = stmt.apr
                 min_idx = idx
         res = [None for _ in statements]
         min_pay = self._max_total - (

@@ -48,7 +48,8 @@ from biweeklybudget.interest import (
     _BillingPeriod, BillingPeriodNumDays,
     _MinPaymentFormula, MinPaymentAmEx, MinPaymentCiti, MinPaymentDiscover,
     _PayoffMethod, MinPaymentMethod, FixedPaymentMethod,
-    LowestBalanceFirstMethod,
+    LowestBalanceFirstMethod, HighestBalanceFirstMethod,
+    LowestInterestRateFirstMethod, HighestInterestRateFirstMethod,
     calculate_payoffs, CCStatement,
     INTEREST_CALCULATION_NAMES, BILLING_PERIOD_NAMES,
     MIN_PAYMENT_FORMULA_NAMES, PAYOFF_METHOD_NAMES
@@ -121,7 +122,7 @@ class FixedInterest(_InterestCalculation):
         }
 
 
-class DONOTTestInterestHelper(object):
+class TestInterestHelper(object):
 
     def setup(self):
         stmt3 = Mock(
@@ -271,6 +272,8 @@ class DONOTTestInterestHelper(object):
     def test_calculate_payoffs(self):
         pm1 = Mock()
         pm2 = Mock()
+        pm3 = Mock()
+        type(pm3).show_in_ui = False
         meth_names = {
             'PM1': {
                 'description': 'pm1desc',
@@ -281,6 +284,11 @@ class DONOTTestInterestHelper(object):
                 'description': 'pm2desc',
                 'doc': 'pm2doc',
                 'cls': pm2
+            },
+            'PM3': {
+                'description': 'pm3desc',
+                'doc': 'pm3doc',
+                'cls': pm3
             }
         }
         with patch('%s.PAYOFF_METHOD_NAMES' % pbm, meth_names):
@@ -326,7 +334,7 @@ class DONOTTestInterestHelper(object):
         }
 
 
-class DONOTTestInterestCalculation(object):
+class TestInterestCalculation(object):
 
     def test_init(self):
         cls = _InterestCalculation(Decimal('1.23'))
@@ -341,7 +349,7 @@ class DONOTTestInterestCalculation(object):
         assert str(cls) == '<_InterestCalculation(decimal.Decimal(\'0.1000\'))>'
 
 
-class DONOTTestAdbCompoundedDaily(object):
+class TestAdbCompoundedDaily(object):
 
     def test_description(self):
         cls = AdbCompoundedDaily(Decimal('0.1000'))
@@ -381,7 +389,7 @@ class DONOTTestAdbCompoundedDaily(object):
         }
 
 
-class DONOTTestSimpleInterest(object):
+class TestSimpleInterest(object):
 
     def test_description(self):
         cls = SimpleInterest(Decimal('0.1200'))
@@ -420,7 +428,7 @@ class DONOTTestSimpleInterest(object):
         }
 
 
-class DONOTTestBillingPeriod(object):
+class TestBillingPeriod(object):
 
     def test_init(self):
         cls = _BillingPeriod()
@@ -448,7 +456,7 @@ class DONOTTestBillingPeriod(object):
         assert cls.payment_date == date(2017, 1, 10)
 
 
-class DONOTTestBillingPeriodNumDays(object):
+class TestBillingPeriodNumDays(object):
 
     def test_init(self):
         ed = date(2017, 1, 20)
@@ -479,7 +487,7 @@ class DONOTTestBillingPeriodNumDays(object):
         assert res.num_days == 10
 
 
-class DONOTTestMinPaymentFormula(object):
+class TestMinPaymentFormula(object):
 
     def test_init(self):
         res = _MinPaymentFormula()
@@ -490,7 +498,7 @@ class DONOTTestMinPaymentFormula(object):
         assert hasattr(cls, 'description')
 
 
-class DONOTTestMinPaymentAmEx(object):
+class TestMinPaymentAmEx(object):
 
     def test_init(self):
         cls = MinPaymentAmEx()
@@ -511,7 +519,7 @@ class DONOTTestMinPaymentAmEx(object):
         assert res == Decimal('35.00')
 
 
-class DONOTTestMinPaymentDiscover(object):
+class TestMinPaymentDiscover(object):
 
     def test_init(self):
         cls = MinPaymentDiscover()
@@ -537,7 +545,7 @@ class DONOTTestMinPaymentDiscover(object):
         assert res == Decimal('40.00')
 
 
-class DONOTTestMinPaymentCiti(object):
+class TestMinPaymentCiti(object):
 
     def test_init(self):
         cls = MinPaymentCiti()
@@ -563,7 +571,7 @@ class DONOTTestMinPaymentCiti(object):
         assert res == Decimal('25.00')
 
 
-class DONOTTestPayoffMethod(object):
+class TestPayoffMethod(object):
 
     def test_init(self):
         cls = _PayoffMethod(Decimal('1.23'))
@@ -575,7 +583,7 @@ class DONOTTestPayoffMethod(object):
         assert hasattr(cls, 'description')
 
 
-class DONOTTestMinPaymentMethod(object):
+class TestMinPaymentMethod(object):
 
     def test_init(self):
         cls = MinPaymentMethod()
@@ -598,7 +606,7 @@ class DONOTTestMinPaymentMethod(object):
         ]
 
 
-class DONOTTestFixedPaymentMethod(object):
+class TestFixedPaymentMethod(object):
 
     def test_init(self):
         cls = FixedPaymentMethod(Decimal('12.34'))
@@ -622,7 +630,7 @@ class DONOTTestFixedPaymentMethod(object):
         ]
 
 
-class DONOTTestLowestBalanceFirstMethod(object):
+class TestLowestBalanceFirstMethod(object):
 
     def test_init(self):
         cls = LowestBalanceFirstMethod(Decimal('100.00'))
@@ -650,8 +658,8 @@ class DONOTTestLowestBalanceFirstMethod(object):
         assert cls.find_payments([s1, s2, s3, s4]) == [
             Decimal('2.00'),
             Decimal('5.00'),
-            Decimal('86.00'),
-            Decimal('7.00')
+            Decimal('2.00'),
+            Decimal('91.00')
         ]
 
     def test_find_payments_total_too_low(self):
@@ -672,7 +680,165 @@ class DONOTTestLowestBalanceFirstMethod(object):
             cls.find_payments([s1, s2, s3, s4])
 
 
-class DONOTTestCCStatement(object):
+class TestHighestBalanceFirstMethod(object):
+
+    def test_init(self):
+        cls = HighestBalanceFirstMethod(Decimal('100.00'))
+        assert isinstance(cls, _PayoffMethod)
+        assert cls._max_total == Decimal('100.00')
+
+    def test_description(self):
+        cls = HighestBalanceFirstMethod(Decimal('100.00'))
+        assert hasattr(cls, 'description')
+
+    def test_find_payments(self):
+        cls = HighestBalanceFirstMethod(Decimal('100.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        assert cls.find_payments([s1, s2, s3, s4]) == [
+            Decimal('2.00'),
+            Decimal('5.00'),
+            Decimal('86.00'),
+            Decimal('7.00')
+        ]
+
+    def test_find_payments_total_too_low(self):
+        cls = HighestBalanceFirstMethod(Decimal('3.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        with pytest.raises(TypeError):
+            cls.find_payments([s1, s2, s3, s4])
+
+
+class TestHighestInterestRateFirstMethod(object):
+
+    def test_init(self):
+        cls = HighestInterestRateFirstMethod(Decimal('100.00'))
+        assert isinstance(cls, _PayoffMethod)
+        assert cls._max_total == Decimal('100.00')
+
+    def test_description(self):
+        cls = HighestInterestRateFirstMethod(Decimal('100.00'))
+        assert hasattr(cls, 'description')
+
+    def test_find_payments(self):
+        cls = HighestInterestRateFirstMethod(Decimal('100.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).apr = PropertyMock(return_value=Decimal('0.0100'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).apr = PropertyMock(return_value=Decimal('0.0200'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).apr = PropertyMock(return_value=Decimal('0.0800'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).apr = PropertyMock(return_value=Decimal('0.0300'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        assert cls.find_payments([s1, s2, s3, s4]) == [
+            Decimal('2.00'),
+            Decimal('5.00'),
+            Decimal('86.00'),
+            Decimal('7.00')
+        ]
+
+    def test_find_payments_total_too_low(self):
+        cls = HighestInterestRateFirstMethod(Decimal('3.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        with pytest.raises(TypeError):
+            cls.find_payments([s1, s2, s3, s4])
+
+
+class TestLowestInterestRateFirstMethod(object):
+
+    def test_init(self):
+        cls = LowestInterestRateFirstMethod(Decimal('100.00'))
+        assert isinstance(cls, _PayoffMethod)
+        assert cls._max_total == Decimal('100.00')
+
+    def test_description(self):
+        cls = LowestInterestRateFirstMethod(Decimal('100.00'))
+        assert hasattr(cls, 'description')
+
+    def test_find_payments(self):
+        cls = LowestInterestRateFirstMethod(Decimal('100.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).apr = PropertyMock(return_value=Decimal('0.0100'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).apr = PropertyMock(return_value=Decimal('0.0200'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).apr = PropertyMock(return_value=Decimal('0.0800'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).apr = PropertyMock(return_value=Decimal('0.0300'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        assert cls.find_payments([s1, s2, s3, s4]) == [
+            Decimal('86.00'),
+            Decimal('5.00'),
+            Decimal('2.00'),
+            Decimal('7.00')
+        ]
+
+    def test_find_payments_total_too_low(self):
+        cls = LowestInterestRateFirstMethod(Decimal('3.00'))
+        s1 = Mock(spec_set=CCStatement)
+        type(s1).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s1).principal = PropertyMock(return_value=Decimal('10.00'))
+        s2 = Mock(spec_set=CCStatement)
+        type(s2).minimum_payment = PropertyMock(return_value=Decimal('5.00'))
+        type(s2).principal = PropertyMock(return_value=Decimal('25.00'))
+        s3 = Mock(spec_set=CCStatement)
+        type(s3).minimum_payment = PropertyMock(return_value=Decimal('2.00'))
+        type(s3).principal = PropertyMock(return_value=Decimal('1234.56'))
+        s4 = Mock(spec_set=CCStatement)
+        type(s4).minimum_payment = PropertyMock(return_value=Decimal('7.00'))
+        type(s4).principal = PropertyMock(return_value=Decimal('3.00'))
+        with pytest.raises(TypeError):
+            cls.find_payments([s1, s2, s3, s4])
+
+
+class TestCCStatement(object):
 
     def test_init(self):
         b = Mock(spec_set=_BillingPeriod)
@@ -722,6 +888,7 @@ class DONOTTestCCStatement(object):
                 {}
             )
         ]
+        assert 'CCStatement' in str(cls)
 
     def test_init_int_none(self):
         b = Mock(spec_set=_BillingPeriod)
@@ -903,7 +1070,7 @@ class DONOTTestCCStatement(object):
         ]
 
 
-class DONOTTestCalculatePayoffs(object):
+class TestCalculatePayoffs(object):
 
     def test_simple(self):
         def se_interest(bal, *args, **kwargs):
@@ -945,7 +1112,7 @@ class DONOTTestCalculatePayoffs(object):
         ]
 
 
-class DONOTTestModuleConstants(object):
+class TestModuleConstants(object):
 
     def test_interest(self):
         assert INTEREST_CALCULATION_NAMES == {
@@ -1001,15 +1168,30 @@ class DONOTTestModuleConstants(object):
                 'doc': FixedPaymentMethod.__doc__.strip(),
                 'cls': FixedPaymentMethod
             },
+            'HighestBalanceFirstMethod': {
+                'description': HighestBalanceFirstMethod.description,
+                'doc': HighestBalanceFirstMethod.__doc__.strip(),
+                'cls': HighestBalanceFirstMethod
+            },
             'LowestBalanceFirstMethod': {
                 'description': LowestBalanceFirstMethod.description,
                 'doc': LowestBalanceFirstMethod.__doc__.strip(),
                 'cls': LowestBalanceFirstMethod
+            },
+            'LowestInterestRateFirstMethod': {
+                'description': LowestInterestRateFirstMethod.description,
+                'doc': LowestInterestRateFirstMethod.__doc__.strip(),
+                'cls': LowestInterestRateFirstMethod
+            },
+            'HighestInterestRateFirstMethod': {
+                'description': HighestInterestRateFirstMethod.description,
+                'doc': HighestInterestRateFirstMethod.__doc__.strip(),
+                'cls': HighestInterestRateFirstMethod
             }
         }
 
 
-class DONOTTestAcceptanceData(object):
+class TestAcceptanceData(object):
 
     def setup(self):
         self.stmt_cc_one = CCStatement(
@@ -1147,6 +1329,39 @@ class TestSimpleData(object):
             (4, Decimal('1040.0')),
             (7, Decimal('2280.0')),
             (15, Decimal('11500.0'))
+        ]
+
+    def test_highest_balance_first(self):
+        res = calculate_payoffs(
+            HighestBalanceFirstMethod(Decimal('1000.0')),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (13, Decimal('2520.0')),
+            (16, Decimal('11600.0'))
+        ]
+
+    def test_lowest_interest_rate_first(self):
+        res = calculate_payoffs(
+            LowestInterestRateFirstMethod(Decimal('1000.0')),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (4, Decimal('1040.0')),
+            (7, Decimal('2280.0')),
+            (15, Decimal('11500.0'))
+        ]
+
+    def test_highest_interest_rate_first(self):
+        res = calculate_payoffs(
+            HighestInterestRateFirstMethod(Decimal('1000.0')),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (13, Decimal('2520.0')),
+            (16, Decimal('11600.0'))
         ]
 
 
@@ -1613,7 +1828,7 @@ class InterestData(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataAmEx(object):
+class TestDataAmEx(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1695,7 +1910,7 @@ class DONOTTestDataAmEx(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataCiti(object):
+class TestDataCiti(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
@@ -1783,7 +1998,7 @@ class DONOTTestDataCiti(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataDiscover(object):
+class TestDataDiscover(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
