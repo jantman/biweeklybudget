@@ -152,7 +152,51 @@ class TestNoSettings(AcceptanceHelper):
             }
         }
 
-    def test_02_min_payment(self, base_url, selenium):
+    def test_01_highest_balance_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id('table_HighestBalanceFirstMethod')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2 years', '$963.21', '$11.15'],
+            ['CreditTwo (4)', '5 years', '$6,992.95', '$1,494.30'],
+            ['Totals', '5 years', '$7,956.17', '$1,505.46']
+        ]
+
+    def test_02_highest_interest_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id(
+            'table_HighestInterestRateFirstMethod'
+        )
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2 years', '$963.21', '$11.15'],
+            ['CreditTwo (4)', '5 years', '$6,992.95', '$1,494.30'],
+            ['Totals', '5 years', '$7,956.17', '$1,505.46']
+        ]
+
+    def test_03_lowest_balance_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id('table_LowestBalanceFirstMethod')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2 years', '$961.11', '$9.05'],
+            ['CreditTwo (4)', '5 years', '$7,024.72', '$1,526.07'],
+            ['Totals', '5 years', '$7,875.82', '$1,535.11']
+        ]
+
+    def test_04_lowest_interest_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id(
+            'table_LowestInterestRateFirstMethod'
+        )
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2 years', '$961.11', '$9.05'],
+            ['CreditTwo (4)', '5 years', '$7,024.72', '$1,526.07'],
+            ['Totals', '5 years', '$7,875.82', '$1,535.11']
+        ]
+
+    def test_05_min_payment(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
         table = selenium.find_element_by_id('table_MinPaymentMethod')
         texts = self.tbody2textlist(table)

@@ -1243,6 +1243,46 @@ class TestAcceptanceData(object):
             (164, Decimal('8764.660910733671904414120065'))
         ]
 
+    def test_combined_pay_lowest_ir(self):
+        res = calculate_payoffs(
+            LowestInterestRateFirstMethod(Decimal('144.9730')),
+            [self.stmt_cc_one, self.stmt_cc_two]
+        )
+        assert res == [
+            (21, Decimal('961.1050412116919631554846205')),
+            (56, Decimal('7024.717417339814229117815511'))
+        ]
+
+    def test_combined_pay_lowest_bal(self):
+        res = calculate_payoffs(
+            LowestBalanceFirstMethod(Decimal('144.9730')),
+            [self.stmt_cc_one, self.stmt_cc_two]
+        )
+        assert res == [
+            (21, Decimal('961.1050412116919631554846205')),
+            (56, Decimal('7024.717417339814229117815511'))
+        ]
+
+    def test_combined_pay_highest_ir(self):
+        res = calculate_payoffs(
+            HighestInterestRateFirstMethod(Decimal('144.9730')),
+            [self.stmt_cc_one, self.stmt_cc_two]
+        )
+        assert res == [
+            (28, Decimal('963.2130700030116938658705389')),
+            (55, Decimal('6992.952524232966530901399220'))
+        ]
+
+    def test_combined_pay_highest_bal(self):
+        res = calculate_payoffs(
+            HighestBalanceFirstMethod(Decimal('144.9730')),
+            [self.stmt_cc_one, self.stmt_cc_two]
+        )
+        assert res == [
+            (28, Decimal('963.2130700030116938658705389')),
+            (55, Decimal('6992.952524232966530901399220'))
+        ]
+
 
 class TestSimpleData(object):
 

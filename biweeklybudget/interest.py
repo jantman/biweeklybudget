@@ -937,10 +937,10 @@ class CCStatement(object):
         return '<CCStatement(interest_cls=%s principal=%s min_payment_cls=%s ' \
                'billing_period=%s transactions=%s end_balance=%s ' \
                'interest_amt=%s' % (
-            self._interest_cls, self._principal, self._min_pay_cls,
-            self._billing_period, self._transactions, self._principal,
-            self._interest_amt
-        )
+                   self._interest_cls, self._principal, self._min_pay_cls,
+                   self._billing_period, self._transactions, self._principal,
+                   self._interest_amt
+               )
 
     @property
     def principal(self):
