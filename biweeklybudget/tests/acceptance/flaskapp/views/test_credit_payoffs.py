@@ -181,7 +181,7 @@ class TestNoSettings(AcceptanceHelper):
         assert texts == [
             ['CreditOne (3)', '2 years', '$961.11', '$9.05'],
             ['CreditTwo (4)', '5 years', '$7,024.72', '$1,526.07'],
-            ['Totals', '5 years', '$7,875.82', '$1,535.11']
+            ['Totals', '5 years', '$7,985.82', '$1,535.11']
         ]
 
     def test_04_lowest_interest_payment(self, base_url, selenium):
@@ -193,7 +193,7 @@ class TestNoSettings(AcceptanceHelper):
         assert texts == [
             ['CreditOne (3)', '2 years', '$961.11', '$9.05'],
             ['CreditTwo (4)', '5 years', '$7,024.72', '$1,526.07'],
-            ['Totals', '5 years', '$7,875.82', '$1,535.11']
+            ['Totals', '5 years', '$7,985.82', '$1,535.11']
         ]
 
     def test_05_min_payment(self, base_url, selenium):
