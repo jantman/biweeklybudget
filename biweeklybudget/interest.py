@@ -153,8 +153,6 @@ class InterestHelper(object):
             res[name] = {
                 'description': PAYOFF_METHOD_NAMES[name]['description'],
                 'doc': PAYOFF_METHOD_NAMES[name]['doc'],
-                # @TODO - this really needs to come from the user,
-                # and also allow passing increases over time into the class.
                 'results': self._calc_payoff_method(cls(max_total))
             }
         return res
