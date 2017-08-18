@@ -50,7 +50,7 @@ function addIncrease(settings) {
   s = s + '<div class="input-group date" id="payoff_increase_frm_' + idx + '_date_input_group">';
   s = s + '<span class="input-group-addon"><i class="fa fa-calendar fa-fw"></i></span><input class="form-control" id="payoff_increase_frm_' + idx + '_date" name="payoff_increase_frm_' + idx + '_date" type="text" size="12" maxlength="10" style="width: auto;" onchange="setChanged()">';
   s = s + '</div>';
-  s = s + ' , increase sum of monthly payments by ';
+  s = s + ' , increase sum of monthly payments to ';
   s = s + '<label for="payoff_increase_frm_' + idx + '_amt" class="control-label sr-only">Payment Increase ' + idx + ' Amount</label>';
   s = s + '<div class="input-group">';
   s = s + '<span class="input-group-addon">$</span><input class="form-control" id="payoff_increase_frm_' + idx + '_amt" name="payoff_increase_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
