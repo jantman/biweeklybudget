@@ -535,14 +535,23 @@ class _PayoffMethod(object):
     #: human-readable string name of the payoff method
     description = None
 
-    def __init__(self, max_total_payment=None):
+    def __init__(self, max_total_payment=None, increases={}, onetimes={}):
         """
         Initialize a payment method.
 
         :param max_total_payment: maximum total payment for all statements
         :type max_total_payment: decimal.Decimal
+        :param increases: dict of :py:class:`datetime.date` to
+          :py:class:`decimal.Decimal` for new max payment amount to take effect
+          on the specified date.
+        :type increases: dict of :py:class:`datetime.date` to
+          :py:class:`decimal.Decimal` for additional amounts to add to the first
+          maximum payment on or after the given date
+        :param onetimes: dict
         """
         self._max_total = max_total_payment
+        self._increases = increases
+        self._onetimes = onetimes
 
     def find_payments(self, statements):
         """
@@ -565,14 +574,6 @@ class MinPaymentMethod(_PayoffMethod):
     description = 'Minimum Payment Only'
     show_in_ui = True
 
-    def __init__(self, max_total_payment=None):
-        """
-        Initialize a payment method.
-
-        :param max_total_payment: IGNORED.
-        """
-        super(MinPaymentMethod, self).__init__()
-
     def find_payments(self, statements):
         """
         Given a list of statements, return a list of payment amounts to make
@@ -594,14 +595,6 @@ class FixedPaymentMethod(_PayoffMethod):
     description = 'TESTING ONLY - Fixed Payment for All Statements'
     show_in_ui = False
 
-    def __init__(self, pay_amount):
-        """
-        :param pay_amount: The amount to pay on each statement.
-        :type pay_amount: decimal.Decimal
-        """
-        super(FixedPaymentMethod, self).__init__()
-        self.amount = pay_amount
-
     def find_payments(self, statements):
         """
         Given a list of statements, return a list of payment amounts to make
@@ -612,7 +605,7 @@ class FixedPaymentMethod(_PayoffMethod):
         :return: list of payment amounts to make, same order as ``statements``
         :rtype: list
         """
-        return [self.amount for _ in statements]
+        return [self._max_total for _ in statements]
 
 
 class HighestBalanceFirstMethod(_PayoffMethod):
@@ -622,14 +615,6 @@ class HighestBalanceFirstMethod(_PayoffMethod):
 
     description = 'Highest to Lowest Balance'
     show_in_ui = True
-
-    def __init__(self, max_total_payment):
-        """
-        :param max_total_payment: maximum total payment for all statements
-        :type max_total_payment: decimal.Decimal
-        """
-        super(HighestBalanceFirstMethod, self).__init__()
-        self._max_total = max_total_payment
 
     def find_payments(self, statements):
         """
@@ -672,14 +657,6 @@ class HighestInterestRateFirstMethod(_PayoffMethod):
 
     description = 'Highest to Lowest Interest Rate'
     show_in_ui = True
-
-    def __init__(self, max_total_payment):
-        """
-        :param max_total_payment: maximum total payment for all statements
-        :type max_total_payment: decimal.Decimal
-        """
-        super(HighestInterestRateFirstMethod, self).__init__()
-        self._max_total = max_total_payment
 
     def find_payments(self, statements):
         """
@@ -724,14 +701,6 @@ class LowestBalanceFirstMethod(_PayoffMethod):
     description = 'Lowest to Highest Balance (a.k.a. Snowball Method)'
     show_in_ui = True
 
-    def __init__(self, max_total_payment):
-        """
-        :param max_total_payment: maximum total payment for all statements
-        :type max_total_payment: decimal.Decimal
-        """
-        super(LowestBalanceFirstMethod, self).__init__()
-        self._max_total = max_total_payment
-
     def find_payments(self, statements):
         """
         Given a list of statements, return a list of payment amounts to make
@@ -773,14 +742,6 @@ class LowestInterestRateFirstMethod(_PayoffMethod):
 
     description = 'Lowest to Highest Interest Rate'
     show_in_ui = True
-
-    def __init__(self, max_total_payment):
-        """
-        :param max_total_payment: maximum total payment for all statements
-        :type max_total_payment: decimal.Decimal
-        """
-        super(LowestInterestRateFirstMethod, self).__init__()
-        self._max_total = max_total_payment
 
     def find_payments(self, statements):
         """
