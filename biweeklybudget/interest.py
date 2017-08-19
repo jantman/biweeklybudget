@@ -784,7 +784,9 @@ def calculate_payoffs(payment_method, statements):
         payoffs[stmt] = {
             'months': 0, 'amt': Decimal('0.0'), 'idx': idx, 'done': False
         }
-        print('%d: bal=%s %s' % (idx, stmt.principal, payoffs[stmt]))
+        print('%d: bal=%s %s start=%s end=%s' % (
+            idx, stmt.principal, payoffs[stmt], stmt.start_date, stmt.end_date
+        ))
     print('---')
     while len(unpaid(payoffs)) > 0:
         u = unpaid(payoffs)
