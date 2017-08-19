@@ -1959,12 +1959,13 @@ class InterestData(object):
 
 @pytest.mark.skipif(PY34PLUS is False,
                     reason='py3.4+ only due to Decimal rounding')
-class DONOTTestDataAmEx(object):
+class TestDataAmEx(object):
 
     def test_calculate(self, data):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
+        bp._end_date = data['end']
         bp._start_date = data['start']
         res = CCStatement(
             icls,
@@ -1984,6 +1985,7 @@ class DONOTTestDataAmEx(object):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
+        bp._end_date = data['end']
         bp._start_date = data['start']
         res = CCStatement(
             icls,
@@ -2000,6 +2002,7 @@ class DONOTTestDataAmEx(object):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
+        bp._end_date = data['end']
         bp._start_date = data['start']
         stmt = CCStatement(
             icls,
@@ -2020,7 +2023,8 @@ class DONOTTestDataAmEx(object):
     def test_calculate_payoff_recommended(self, data):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
-        bp = _BillingPeriod(data['end'], 30)
+        bp = _BillingPeriod(data['end'])
+        bp._end_date = data['end']
         bp._start_date = data['start']
         stmt = CCStatement(
             icls,
