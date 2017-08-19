@@ -1404,6 +1404,126 @@ class TestSimpleData(object):
             (16, Decimal('11600.0'))
         ]
 
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_lowest_balance_first_with_increases(self):
+        res = calculate_payoffs(
+            LowestBalanceFirstMethod(
+                Decimal('1000.0'),
+                increases={
+                    date(): Decimal('1200.0'),  # bill 3
+                    date(): Decimal('1500.0'),  # bill 9
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (3, Decimal('1030.0')),
+            (6, Decimal('2240.0')),
+            (12, Decimal('11200.0'))
+        ]
+
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_highest_balance_first_with_increases(self):
+        res = calculate_payoffs(
+            HighestBalanceFirstMethod(
+                Decimal('1000.0'),
+                increases={
+                    date(): Decimal('1200.0'),  # bill 3
+                    date(): Decimal('1500.0'),  # bill 9
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (13, Decimal('2520.0')),
+            (12, Decimal('11200.0'))
+        ]
+
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_lowest_balance_first_with_onetimes(self):
+        res = calculate_payoffs(
+            LowestBalanceFirstMethod(
+                Decimal('1000.0'),
+                onetimes={
+                    date(): Decimal('500.0'),  # bill 2
+                    date(): Decimal('1000.0'),  # bill 5
+                    date(): Decimal('3000.0')  # bill 11
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (2, Decimal('1020.0')),
+            (5, Decimal('2200.0')),
+            (11, Decimal('11100.0'))
+        ]
+
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_highest_balance_first_with_onetimes(self):
+        res = calculate_payoffs(
+            HighestBalanceFirstMethod(
+                Decimal('1000.0'),
+                onetimes={
+                    date(): Decimal('500.0'),  # bill 2
+                    date(): Decimal('1000.0'),  # bill 5
+                    date(): Decimal('3000.0')  # bill 11
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (13, Decimal('2520.0')),
+            (11, Decimal('11100.0'))
+        ]
+
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_lowest_balance_first_with_increases_and_onetimes(self):
+        res = calculate_payoffs(
+            LowestBalanceFirstMethod(
+                Decimal('1000.0'),
+                onetimes={
+                    date(): Decimal('200.0'),  # bill 1
+                    date(): Decimal('1000.0'),  # bill 4
+                    date(): Decimal('1500.0')  # bill 11
+                },
+                increases={
+                    date(): Decimal('1200.0'),  # bill 3
+                    date(): Decimal('1500.0'),  # bill 9
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (3, Decimal('1030.0')),
+            (4, Decimal('2160.0')),
+            (11, Decimal('11100.0'))
+        ]
+
+    @pytest.mark.xfail(reason='Not Implemented Yet')
+    def test_highest_balance_first_with_increases_and_onetimes(self):
+        res = calculate_payoffs(
+            HighestBalanceFirstMethod(
+                Decimal('1000.0'),
+                onetimes={
+                    date(): Decimal('7000.0'),  # bill 5
+                    date(): Decimal('240.0'),  # bill 6
+                    date(): Decimal('1500.0')  # bill 11
+                },
+                increases={
+                    date(): Decimal('1200.0'),  # bill 3
+                    date(): Decimal('1500.0'),  # bill 9
+                }
+            ),
+            [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
+        )
+        assert res == [
+            (6, Decimal('1060.0')),
+            (6, Decimal('2240.0')),
+            (5, Decimal('10500.0'))
+        ]
+
 
 class InterestData(object):
     """
