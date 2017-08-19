@@ -29,22 +29,6 @@ def upgrade():
     op.add_column(
         'accounts',
         sa.Column(
-            'billing_period_class_args',
-            sa.Text(),
-            nullable=True
-        )
-    )
-    op.add_column(
-        'accounts',
-        sa.Column(
-            'billing_period_class_name',
-            sa.String(length=70),
-            nullable=True
-        )
-    )
-    op.add_column(
-        'accounts',
-        sa.Column(
             'interest_class_name',
             sa.String(length=70),
             nullable=True
@@ -63,6 +47,4 @@ def upgrade():
 def downgrade():
     op.drop_column('accounts', 'min_payment_class_name')
     op.drop_column('accounts', 'interest_class_name')
-    op.drop_column('accounts', 'billing_period_class_name')
-    op.drop_column('accounts', 'billing_period_class_args')
     op.drop_column('accounts', 'apr')

@@ -119,15 +119,6 @@ class Account(Base, ModelAsDict):
     #: subclass used to calculate interest for this account.
     interest_class_name = Column(String(70))
 
-    #: Name of the :py:class:`biweeklybudget.interest._BillingPeriod`
-    #: subclass used to calculate the billing periods for this account.
-    billing_period_class_name = Column(String(70))
-
-    #: JSON-serialized dictionary of arguments for the
-    #: :py:class:`biweeklybudget.interest._BillingPeriod` subclass constructor;
-    #: dict with keys "args" and "kwargs".
-    billing_period_class_args = Column(Text)
-
     #: Name of the :py:class:`biweeklybudget.interest._MinPaymentFormula`
     #: subclass used to calculate minimum payments for this account.
     min_payment_class_name = Column(String(70))
@@ -297,19 +288,6 @@ class Account(Base, ModelAsDict):
         for t in self.unreconciled:
             total += float(t.actual_amount)
         return total
-
-    @property
-    def billing_period_class_args_deserialized(self):
-        """
-        Return the JSON-deserialized `billing_period_class_args`.
-
-        :return: JSON-deserialized `billing_period_class_args`
-        :rtype: dict
-        """
-        try:
-            return json.loads(self.billing_period_class_args)
-        except Exception:
-            return {}
 
     @property
     def latest_ofx_interest_charge(self):
