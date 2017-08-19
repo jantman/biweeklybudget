@@ -41,6 +41,7 @@ from sqlalchemy.orm.session import Session
 import pytest
 from math import ceil
 from decimal import Decimal
+from copy import deepcopy
 
 from biweeklybudget.interest import (
     InterestHelper,
@@ -1965,8 +1966,8 @@ class TestDataAmEx(object):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
-        bp._end_date = data['end']
-        bp._start_date = data['start']
+        bp._end_date = deepcopy(data['end'])
+        bp._start_date = deepcopy(data['start'])
         res = CCStatement(
             icls,
             data['start_bal'],
@@ -1974,19 +1975,19 @@ class TestDataAmEx(object):
             bp,
             transactions=data['transactions']
         )
+        assert res.start_date == data['start']
+        assert res.end_date == data['end']
         assert pctdiff(
             round(res.principal, 2), data['end_balance']) < Decimal('0.01')
         assert pctdiff(
             round(res.interest, 2), data['interest_amt']) < Decimal('0.01')
-        assert res.start_date == data['start']
-        assert res.end_date == data['end']
 
     def test_calculate_min_payment(self, data):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
-        bp._end_date = data['end']
-        bp._start_date = data['start']
+        bp._end_date = deepcopy(data['end'])
+        bp._start_date = deepcopy(data['start'])
         res = CCStatement(
             icls,
             data['start_bal'],
@@ -1996,14 +1997,16 @@ class TestDataAmEx(object):
             end_balance=data['end_balance'],
             interest_amt=data['interest_amt']
         )
+        assert res.start_date == data['start']
+        assert res.end_date == data['end']
         assert int(res.minimum_payment) == data['payoffs'][0][0]
 
     def test_calculate_payoff_min(self, data):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
-        bp._end_date = data['end']
-        bp._start_date = data['start']
+        bp._end_date = deepcopy(data['end'])
+        bp._start_date = deepcopy(data['start'])
         stmt = CCStatement(
             icls,
             data['start_bal'],
@@ -2017,6 +2020,8 @@ class TestDataAmEx(object):
             MinPaymentMethod(),
             [stmt]
         )
+        assert stmt.start_date == data['start']
+        assert stmt.end_date == data['end']
         assert int(round(res[0][0]/12)) == data['payoffs'][0][1]
         assert pctdiff(res[0][1], data['payoffs'][0][2]) < Decimal('0.01')
 
@@ -2024,8 +2029,8 @@ class TestDataAmEx(object):
         icls = AdbCompoundedDaily(data['apr'])
         mpc = MinPaymentAmEx()
         bp = _BillingPeriod(data['end'])
-        bp._end_date = data['end']
-        bp._start_date = data['start']
+        bp._end_date = deepcopy(data['end'])
+        bp._start_date = deepcopy(data['start'])
         stmt = CCStatement(
             icls,
             data['start_bal'],
@@ -2039,6 +2044,8 @@ class TestDataAmEx(object):
             FixedPaymentMethod(data['payoffs'][1][0]),
             [stmt]
         )
+        assert stmt.start_date == data['start']
+        assert stmt.end_date == data['end']
         assert int(round(res[0][0]/12)) == data['payoffs'][1][1]
         assert pctdiff(res[0][1], data['payoffs'][1][2]) < Decimal('0.01')
 
