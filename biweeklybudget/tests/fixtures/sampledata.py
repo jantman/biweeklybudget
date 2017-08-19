@@ -397,8 +397,6 @@ class SampleDataLoader(object):
             apr=Decimal('0.0100'),
             negate_ofx_amounts=True,
             interest_class_name='AdbCompoundedDaily',
-            billing_period_class_name='BillingPeriodNumDays',
-            billing_period_class_args='{"args": [30]}',
             min_payment_class_name='MinPaymentAmEx'
         )
         statements = [
@@ -520,8 +518,6 @@ class SampleDataLoader(object):
             is_active=True,
             apr=Decimal('0.1000'),
             interest_class_name='AdbCompoundedDaily',
-            billing_period_class_name='BillingPeriodNumDays',
-            billing_period_class_args='{"args": [30]}',
             min_payment_class_name='MinPaymentDiscover'
         )
         statements = [
