@@ -38,6 +38,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from datetime import timedelta
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
+from calendar import monthrange
 
 from biweeklybudget.models import Account, AcctType
 
@@ -100,12 +102,7 @@ class InterestHelper(object):
             icls = INTEREST_CALCULATION_NAMES[acct.interest_class_name]['cls'](
                 acct.apr
             )
-            bpa = acct.billing_period_class_args_deserialized
-            bpargs = bpa.get('args', [])
-            bpargs.insert(0, icharge.date_posted.date())
-            bpkwargs = bpa.get('kwargs', {})
-            bill_period = BILLING_PERIOD_NAMES[
-                acct.billing_period_class_name]['cls'](*bpargs, **bpkwargs)
+            bill_period = _BillingPeriod(icharge.date_posted.date())
             min_pay_cls = MIN_PAYMENT_FORMULA_NAMES[
                 acct.min_payment_class_name]['cls']()
             res[a_id] = CCStatement(
@@ -320,9 +317,29 @@ class _BillingPeriod(object):
     #: human-readable string description of the billing period type
     description = None
 
-    def __init__(self):
-        self._start_date = None
-        self._end_date = None
+    def __init__(self, end_date, start_date=None):
+        """
+        Construct a billing period that is defined by a number of days.
+
+        :param end_date: end date of the billing period
+        :type end_date: datetime.date
+        :param start_date: start date for billing period; if specified, will
+          override calculation of start date
+        :type start_date: datetime.date
+        """
+        self._period_for_date = end_date
+        if start_date is None:
+            if end_date.day < 15:
+                self._start_date = end_date.replace(day=1)
+            else:
+                self._start_date = (end_date + relativedelta(
+                    months=1
+                )).replace(day=1)
+        else:
+            self._start_date = start_date
+        self._end_date = self._start_date.replace(
+            day=(monthrange(self._start_date.year, self._start_date.month)[1])
+        )
 
     @property
     def start_date(self):
@@ -333,42 +350,9 @@ class _BillingPeriod(object):
         return self._end_date
 
     @property
-    def next_period(self):
-        """
-        Return the next billing period after the specified billing period.
-
-        :return: next billing period
-        :rtype: _BillingPeriod
-        """
-        raise NotImplementedError()
-
-    @property
     def payment_date(self):
         period_length = (self._end_date - self._start_date).days
         return self._start_date + timedelta(days=int(period_length / 2))
-
-
-class BillingPeriodNumDays(_BillingPeriod):
-    """
-    Represents a billing period that is defined by a fixed number of days.
-    """
-
-    #: human-readable string description of the billing period type
-    description = 'Number of Days'
-
-    def __init__(self, end_date, num_days):
-        """
-        Construct a billing period that is defined by a number of days.
-
-        :param end_date: end date of the billing period
-        :type end_date: datetime.date
-        :param num_days: number of days in the billing period
-        :type num_days: int
-        """
-        super(BillingPeriodNumDays, self).__init__()
-        self.num_days = num_days
-        self._end_date = end_date
-        self._start_date = end_date - timedelta(days=self.num_days)
 
     @property
     def next_period(self):
@@ -378,8 +362,10 @@ class BillingPeriodNumDays(_BillingPeriod):
         :return: next billing period
         :rtype: BillingPeriodNumDays
         """
-        ed = self.end_date + timedelta(days=(self.num_days + 1))
-        return BillingPeriodNumDays(ed, self.num_days)
+        return _BillingPeriod(
+            self._end_date + relativedelta(months=1),
+            start_date=(self._end_date + timedelta(days=1))
+        )
 
     @property
     def prev_period(self):
@@ -389,9 +375,8 @@ class BillingPeriodNumDays(_BillingPeriod):
         :return: previous billing period
         :rtype: BillingPeriodNumDays
         """
-        return BillingPeriodNumDays(
-            (self.start_date - timedelta(days=1)), self.num_days
-        )
+        e = self._start_date - timedelta(days=1)
+        return _BillingPeriod(e, start_date=e.replace(day=1))
 
 
 class _MinPaymentFormula(object):
@@ -980,9 +965,6 @@ def subclass_dict(klass):
 #: Dict mapping interest calculation class names to their description and
 #: docstring.
 INTEREST_CALCULATION_NAMES = subclass_dict(_InterestCalculation)
-
-#: Dict mapping billing period class names to their description and docstring.
-BILLING_PERIOD_NAMES = subclass_dict(_BillingPeriod)
 
 #: Dict mapping Minimum Payment Formula class names to their description and
 #: docstring.
