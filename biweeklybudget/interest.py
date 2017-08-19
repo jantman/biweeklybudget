@@ -809,9 +809,10 @@ def calculate_payoffs(payment_method, statements):
             del payoffs[stmt]
         # BEGIN DEBUG
         for stmt in sorted(payoffs, key=lambda x: payoffs[x]['idx']):
-            print('%d: bal=%s %s' % (
-                payoffs[stmt]['idx'], stmt.principal, payoffs[stmt])
-            )
+            print('%d: bal=%s %s start=%s end=%s' % (
+                idx, stmt.principal, payoffs[stmt], stmt.start_date,
+                stmt.end_date
+            ))
         print('---')
         # END DEBUG
     return [
