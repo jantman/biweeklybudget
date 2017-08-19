@@ -611,7 +611,7 @@ class TestFixedPaymentMethod(object):
     def test_init(self):
         cls = FixedPaymentMethod(Decimal('12.34'))
         assert isinstance(cls, _PayoffMethod)
-        assert cls.amount == Decimal('12.34')
+        assert cls._max_total == Decimal('12.34')
 
     def test_description(self):
         cls = FixedPaymentMethod(Decimal('12.34'))
