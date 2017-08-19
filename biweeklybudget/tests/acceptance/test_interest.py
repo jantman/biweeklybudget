@@ -41,7 +41,7 @@ from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.interest import (
-    InterestHelper, CCStatement, BillingPeriodNumDays, AdbCompoundedDaily,
+    InterestHelper, CCStatement, _BillingPeriod, AdbCompoundedDaily,
     MinPaymentAmEx, MinPaymentDiscover
 )
 from biweeklybudget.models import Account
@@ -66,10 +66,9 @@ class TestInterestHelper(AcceptanceHelper):
         assert sorted(res.keys()) == [3, 4]
         s3 = res[3]
         assert isinstance(s3, CCStatement)
-        assert isinstance(s3._billing_period, BillingPeriodNumDays)
-        assert s3._billing_period.num_days == 30
-        assert s3._billing_period._end_date == date(2017, 7, 27)
-        assert s3._billing_period._start_date == date(2017, 6, 27)
+        assert isinstance(s3._billing_period, _BillingPeriod)
+        assert s3._billing_period._end_date == date(2017, 7, 31)
+        assert s3._billing_period._start_date == date(2017, 7, 1)
         assert isinstance(s3._interest_cls, AdbCompoundedDaily)
         assert s3._interest_cls.apr == Decimal('0.0100')
         assert isinstance(s3._min_pay_cls, MinPaymentAmEx)
@@ -80,10 +79,9 @@ class TestInterestHelper(AcceptanceHelper):
         assert s3._interest_amt == Decimal('16.25')
         s4 = res[4]
         assert isinstance(s4, CCStatement)
-        assert isinstance(s4._billing_period, BillingPeriodNumDays)
-        assert s4._billing_period.num_days == 30
-        assert s4._billing_period._end_date == date(2017, 7, 26)
-        assert s4._billing_period._start_date == date(2017, 6, 26)
+        assert isinstance(s4._billing_period, _BillingPeriod)
+        assert s4._billing_period._end_date == date(2017, 7, 31)
+        assert s4._billing_period._start_date == date(2017, 7, 1)
         assert isinstance(s4._interest_cls, AdbCompoundedDaily)
         assert s4._interest_cls.apr == Decimal('0.1000')
         assert isinstance(s4._min_pay_cls, MinPaymentDiscover)

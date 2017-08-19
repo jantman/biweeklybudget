@@ -425,11 +425,11 @@ class TestBillingPeriod(object):
 
     def test_init(self):
         cls = _BillingPeriod(date(2017, 1, 20))
-        assert cls._end_date == date(2017, 2, 28)
-        assert cls._start_date == date(2017, 2, 1)
-        cls = _BillingPeriod(date(2017, 1, 5))
         assert cls._end_date == date(2017, 1, 31)
         assert cls._start_date == date(2017, 1, 1)
+        cls = _BillingPeriod(date(2017, 1, 5))
+        assert cls._end_date == date(2016, 12, 31)
+        assert cls._start_date == date(2016, 12, 1)
 
     def test_description(self):
         cls = _BillingPeriod(date(2017, 1, 20))
@@ -1196,14 +1196,14 @@ class TestAcceptanceData(object):
             MinPaymentMethod(),
             [self.stmt_cc_one]
         )
-        assert res == [(28, Decimal('962.9988625702411101133192793'))]
+        assert res == [(28, Decimal('963.0134129663259560304255428'))]
 
     def test_cc_two_pay_min(self):
         res = calculate_payoffs(
             MinPaymentMethod(),
             [self.stmt_cc_two]
         )
-        assert res == [(162, Decimal('8664.861877369277471400473622'))]
+        assert res == [(162, Decimal('8666.307398441498144465534193'))]
 
     def test_combined_pay_min(self):
         res = calculate_payoffs(
@@ -1211,8 +1211,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (162, Decimal('8664.861877369277471400473622'))
+            (28, Decimal('963.0134129663259560304255428')),
+            (162, Decimal('8666.307398441498144465534193'))
         ]
 
     def test_combined_pay_lowest_ir(self):
@@ -1221,8 +1221,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (21, Decimal('960.9178327498502165965138131')),
-            (56, Decimal('6988.237124948955044765363412'))
+            (21, Decimal('960.9358774264952173529404070')),
+            (56, Decimal('6989.409862579702020000831215'))
         ]
 
     def test_combined_pay_lowest_bal(self):
@@ -1231,8 +1231,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (21, Decimal('960.9178327498502165965138131')),
-            (56, Decimal('6988.237124948955044765363412'))
+            (21, Decimal('960.9358774264952173529404070')),
+            (56, Decimal('6989.409862579702020000831215'))
         ]
 
     def test_combined_pay_highest_ir(self):
@@ -1241,8 +1241,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (55, Decimal('6956.345228060182432444990377'))
+            (28, Decimal('963.0134129663259560304255428')),
+            (55, Decimal('6957.598431791986846666601930'))
         ]
 
     def test_combined_pay_highest_bal(self):
@@ -1251,8 +1251,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (55, Decimal('6956.345228060182432444990377'))
+            (28, Decimal('963.0134129663259560304255428')),
+            (55, Decimal('6957.598431791986846666601930'))
         ]
 
 

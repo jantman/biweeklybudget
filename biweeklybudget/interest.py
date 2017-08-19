@@ -330,16 +330,24 @@ class _BillingPeriod(object):
         self._period_for_date = end_date
         if start_date is None:
             if end_date.day < 15:
-                self._start_date = end_date.replace(day=1)
+                # if end date is < 15, period is month before end_date
+                self._end_date = (end_date.replace(day=1) - timedelta(days=1))
+                self._start_date = self._end_date.replace(day=1)
             else:
-                self._start_date = (end_date + relativedelta(
-                    months=1
-                )).replace(day=1)
+                # if end date >= 15, period is month containing end_date
+                self._start_date = end_date.replace(day=1)
+                self._end_date = end_date.replace(
+                    day=(monthrange(
+                        end_date.year, end_date.month
+                    )[1])
+                )
         else:
             self._start_date = start_date
-        self._end_date = self._start_date.replace(
-            day=(monthrange(self._start_date.year, self._start_date.month)[1])
-        )
+            self._end_date = self._start_date.replace(
+                day=(monthrange(
+                    self._start_date.year, self._start_date.month
+                )[1])
+            )
 
     @property
     def start_date(self):
