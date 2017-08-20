@@ -39,6 +39,7 @@ import logging
 import json
 from decimal import Decimal, ROUND_UP
 from datetime import datetime
+from locale import currency
 
 from flask.views import MethodView
 from flask import render_template, request, jsonify
@@ -98,8 +99,14 @@ class CreditPayoffsView(MethodView):
             max_mos = 0
             for k in sorted(res[methname]['results'].keys()):
                 r = res[methname]['results'][k]
+                acct = ih.accounts[k]
+                icharge = acct.latest_ofx_interest_charge
+                istmt = icharge.first_statement_by_date
                 tmp['results'].append({
-                    'name': '%s (%d)' % (ih.accounts[k].name, k),
+                    'name': '%s (%d) (%s)' % (
+                        acct.name, k,
+                        currency(abs(istmt.ledger_bal), grouping=True)
+                    ),
                     'total_payments': r['total_payments'],
                     'total_interest': r['total_interest'],
                     'payoff_months': r['payoff_months']

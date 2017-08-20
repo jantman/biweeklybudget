@@ -157,8 +157,14 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_HighestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '4.6 years', '$6,956.35', '$1,457.70'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.6 years', '$6,956.35', '$1,457.70'
+            ],
             ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
@@ -169,8 +175,14 @@ class TestNoSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '4.6 years', '$6,956.35', '$1,457.70'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.6 years', '$6,956.35', '$1,457.70'
+            ],
             ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
@@ -179,8 +191,14 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_LowestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.8 years', '$960.92', '$8.86'],
-            ['CreditTwo (4)', '4.7 years', '$6,988.24', '$1,489.59'],
+            [
+                'CreditOne (3) ($952.06)',
+                '1.8 years', '$960.92', '$8.86'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.7 years', '$6,988.24', '$1,489.59'
+            ],
             ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
@@ -191,8 +209,14 @@ class TestNoSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.8 years', '$960.92', '$8.86'],
-            ['CreditTwo (4)', '4.7 years', '$6,988.24', '$1,489.59'],
+            [
+                'CreditOne (3) ($952.06)',
+                '1.8 years', '$960.92', '$8.86'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.7 years', '$6,988.24', '$1,489.59'
+            ],
             ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
@@ -201,8 +225,14 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_MinPaymentMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '13.5 years', '$8,664.86', '$3,166.21'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '13.5 years', '$8,664.86', '$3,166.21'
+            ],
             ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
         ]
 
@@ -334,8 +364,14 @@ class TestSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_HighestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '4.0 years', '$6,734.42', '$1,235.77'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.0 years', '$6,734.42', '$1,235.77'
+            ],
             ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
         ]
 
@@ -346,8 +382,14 @@ class TestSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '4.0 years', '$6,734.42', '$1,235.77'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.0 years', '$6,734.42', '$1,235.77'
+            ],
             ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
         ]
 
@@ -356,8 +398,14 @@ class TestSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_LowestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.3 years', '$958.10', '$6.04'],
-            ['CreditTwo (4)', '4.1 years', '$6,809.61', '$1,310.96'],
+            [
+                'CreditOne (3) ($952.06)',
+                '1.3 years', '$958.10', '$6.04'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.1 years', '$6,809.61', '$1,310.96'
+            ],
             ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
         ]
 
@@ -368,8 +416,14 @@ class TestSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.3 years', '$958.10', '$6.04'],
-            ['CreditTwo (4)', '4.1 years', '$6,809.61', '$1,310.96'],
+            [
+                'CreditOne (3) ($952.06)',
+                '1.3 years', '$958.10', '$6.04'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '4.1 years', '$6,809.61', '$1,310.96'
+            ],
             ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
         ]
 
@@ -378,7 +432,13 @@ class TestSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_MinPaymentMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
-            ['CreditTwo (4)', '13.5 years', '$8,664.86', '$3,166.21'],
+            [
+                'CreditOne (3) ($952.06)',
+                '2.3 years', '$963.00', '$10.94'
+            ],
+            [
+                'CreditTwo (4) ($5,498.65)',
+                '13.5 years', '$8,664.86', '$3,166.21'
+            ],
             ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
         ]
