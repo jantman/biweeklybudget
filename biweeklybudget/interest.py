@@ -792,16 +792,11 @@ def calculate_payoffs(payment_method, statements):
         payoffs[stmt] = {
             'months': 0, 'amt': Decimal('0.0'), 'idx': idx, 'done': False
         }
-        print('%d: bal=%s %s start=%s end=%s' % (
-            idx, stmt.principal, payoffs[stmt], stmt.start_date, stmt.end_date
-        ))
-    print('---')
     while len(unpaid(payoffs)) > 0:
         u = unpaid(payoffs)
         for stmt, p_amt in dict(
             zip(u, payment_method.find_payments(u))
         ).items():
-            print('%d: pay %s' % (payoffs[stmt]['idx'], p_amt))
             if stmt.principal <= Decimal('0'):
                 payoffs[stmt]['done'] = True
                 continue
@@ -815,14 +810,6 @@ def calculate_payoffs(payment_method, statements):
             new_s = stmt.pay(Decimal('-1') * p_amt)
             payoffs[new_s] = payoffs[stmt]
             del payoffs[stmt]
-        # BEGIN DEBUG
-        for stmt in sorted(payoffs, key=lambda x: payoffs[x]['idx']):
-            print('%d: bal=%s %s start=%s end=%s' % (
-                idx, stmt.principal, payoffs[stmt], stmt.start_date,
-                stmt.end_date
-            ))
-        print('---')
-        # END DEBUG
     return [
         (payoffs[s]['months'], payoffs[s]['amt'])
         for s in sorted(payoffs, key=lambda x: payoffs[x]['idx'])
