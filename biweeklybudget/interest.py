@@ -375,7 +375,7 @@ class _BillingPeriod(object):
         Return the next billing period after this one.
 
         :return: next billing period
-        :rtype: BillingPeriodNumDays
+        :rtype: _BillingPeriod
         """
         return _BillingPeriod(
             self._end_date + relativedelta(months=1),
@@ -388,7 +388,7 @@ class _BillingPeriod(object):
         Return the previous billing period before this one.
 
         :return: previous billing period
-        :rtype: BillingPeriodNumDays
+        :rtype: _BillingPeriod
         """
         e = self._start_date - timedelta(days=1)
         return _BillingPeriod(e, start_date=e.replace(day=1))
