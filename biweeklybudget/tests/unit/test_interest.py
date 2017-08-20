@@ -215,7 +215,9 @@ class TestInterestHelper(object):
             return_value = self.accts.values()
         self.cls = InterestHelper(self.mock_sess)
 
-    @pytest.mark.xfail('No interest amts for Discover; change how we find bal')
+    @pytest.mark.xfail(
+        reason='No interest amts for Discover; change how we find bal'
+    )
     def test_init(self):
         assert self.mock_sess.mock_calls[0] == call.query(Account)
         kall = self.mock_sess.mock_calls[1]
