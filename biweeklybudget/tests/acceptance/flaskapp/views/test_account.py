@@ -200,7 +200,7 @@ class TestAccountCreditOne(AcceptanceHelper):
             ['Minimum Payment Class', 'MinPaymentAmEx']
         ]
         assert texts[7][0] == 'Last OFX Data'
-        assert '(13 hours ago)' in texts[8][1]
+        assert '(13 hours ago)' in texts[7][1]
         assert elems[7][1].get_attribute('class') == 'data_age'
         assert texts[8:] == [
             ['Active?', 'True'],
@@ -255,7 +255,7 @@ class TestAccountCreditTwo(AcceptanceHelper):
             ['Minimum Payment Class', 'MinPaymentDiscover']
         ]
         assert texts[7][0] == 'Last OFX Data'
-        assert '(a day ago)' in texts[8][1]
+        assert '(a day ago)' in texts[7][1]
         assert elems[7][1].get_attribute('class') == 'data_age'
         assert texts[8:] == [
             ['Active?', 'True'],

@@ -566,6 +566,10 @@ class TestPayoffMethod(object):
         cls = _PayoffMethod()
         assert hasattr(cls, 'description')
 
+    def test_repr(self):
+        cls = _PayoffMethod()
+        assert 'PayoffMethod' in cls.__repr__()
+
 
 class TestMinPaymentMethod(object):
 
