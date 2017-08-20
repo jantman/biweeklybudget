@@ -38,9 +38,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 from biweeklybudget.models import *
 from biweeklybudget.models.account import AcctType
 from biweeklybudget.utils import dtnow
+from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
 from datetime import timedelta, datetime
 from pytz import UTC
 from decimal import Decimal
+import json
 
 
 class SampleDataLoader(object):
@@ -60,6 +62,17 @@ class SampleDataLoader(object):
         self.db.commit()
         for f in self.db.query(FuelFill).all():
             f.calculate_mpg()
+        self.db.flush()
+        self.db.commit()
+        self.db.add(
+            DBSetting(
+                name='prime_rate',
+                value=json.dumps({
+                    'value': '0.0050',
+                    'date': dtnow()
+                }, cls=MagicJSONEncoder)
+            )
+        )
         self.db.flush()
         self.db.commit()
         self._projects()
@@ -394,7 +407,7 @@ class SampleDataLoader(object):
             acct_type=AcctType.Credit,
             credit_limit=2000.00,
             is_active=True,
-            apr=Decimal('0.0100'),
+            prime_rate_margin=Decimal('0.0050'),
             negate_ofx_amounts=True,
             interest_class_name='AdbCompoundedDaily',
             min_payment_class_name='MinPaymentAmEx'

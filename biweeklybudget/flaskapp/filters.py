@@ -179,8 +179,10 @@ def acct_icon_filter(acct):
 
 @app.template_filter('decimal_to_percent')
 def decimal_to_percent(d):
+    if d is None:
+        return ''
     d = d * 100
-    return '%.2f' % d
+    return '%.2f%%' % d
 
 
 @app.template_filter('dict_to_class_args')

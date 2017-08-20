@@ -77,6 +77,22 @@ def dtnow():
     return datetime.utcnow().replace(tzinfo=pytz.utc)
 
 
+def decode_json_datetime(d):
+    """
+    Return a datetime.datetime for a datetime that was serialized with
+    :py:class:`~.MagicJSONEncoder`.
+
+    :param d: dict from deserialized JSON
+    :type d: dict
+    :return: datetime represented by dict
+    :rtype: datetime.datetime
+    """
+    return datetime(
+        d['year'], d['month'], d['date'], d['hour'], d['minute'], d['second'],
+        tzinfo=pytz.timezone(d['tzname'])
+    )
+
+
 def date_suffix(n):
     """
     Given an integer day of month (1 <= n <= 31), return that number with the

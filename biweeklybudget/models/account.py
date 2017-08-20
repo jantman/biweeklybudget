@@ -48,6 +48,7 @@ from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import dtnow
+from biweeklybudget.prime_rate import PrimeRateCalculator
 import json
 import enum
 from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
@@ -115,7 +116,7 @@ class Account(Base, ModelAsDict):
     #: Finance rate (APR) for credit accounts
     apr = Column(Numeric(precision=5, scale=4))
 
-    #: Margin added to the US Prime Rate to determine APR, for credit accounts
+    #: Margin added to the US Prime Rate to determine APR, for credit accounts.
     prime_rate_margin = Column(Numeric(precision=5, scale=4))
 
     #: Name of the :py:class:`biweeklybudget.interest._InterestCalculation`
@@ -318,10 +319,15 @@ class Account(Base, ModelAsDict):
     def effective_apr(self):
         """
         Return the effective APR for a credit account. If
-        :py:attr:`~.prime_rate_margin` is not Null, return it. Otherwise, return
-        :py:attr:`~.apr`.
+        :py:attr:`~.prime_rate_margin` is not Null, return that added to the
+        current US Prime Rate. Otherwise, return :py:attr:`~.apr`.
 
         :return: Effective account APR
         :rtype: decimal.Decimal
         """
+        if self.prime_rate_margin is not None:
+            sess = inspect(self).session
+            return PrimeRateCalculator(sess).calculate_apr(
+                self.prime_rate_margin
+            )
         return self.apr

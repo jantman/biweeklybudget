@@ -190,19 +190,21 @@ class TestAccountCreditOne(AcceptanceHelper):
         table = panel.find_element_by_tag_name('table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
-        assert texts[0:7] == [
+        assert texts[0:9] == [
             ['Description', 'First Credit Card, limit 2000'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$952.06'],
             ['Credit Limit', '$2,000.00'],
-            ['APR', '1.00%'],
+            ['APR', ''],
+            ['Prime Rate Margin', '0.50%'],
+            ['Effective APR (calculated)', '1.00%'],
             ['Interest Class', 'AdbCompoundedDaily'],
             ['Minimum Payment Class', 'MinPaymentAmEx']
         ]
-        assert texts[7][0] == 'Last OFX Data'
-        assert '(13 hours ago)' in texts[7][1]
-        assert elems[7][1].get_attribute('class') == 'data_age'
-        assert texts[8:] == [
+        assert texts[9][0] == 'Last OFX Data'
+        assert '(13 hours ago)' in texts[9][1]
+        assert elems[9][1].get_attribute('class') == 'data_age'
+        assert texts[10:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', 'None'],
             ['reconcile_trans', 'True'],
@@ -245,19 +247,21 @@ class TestAccountCreditTwo(AcceptanceHelper):
         table = panel.find_element_by_tag_name('table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
-        assert texts[0:7] == [
+        assert texts[0:9] == [
             ['Description', 'Credit 2 limit 5500'],
             ['Type', 'Credit'],
             ['Ledger Balance', '-$5,498.65'],
             ['Credit Limit', '$5,500.00'],
             ['APR', '10.00%'],
+            ['Prime Rate Margin', ''],
+            ['Effective APR (calculated)', '10.00%'],
             ['Interest Class', 'AdbCompoundedDaily'],
             ['Minimum Payment Class', 'MinPaymentDiscover']
         ]
-        assert texts[7][0] == 'Last OFX Data'
-        assert '(a day ago)' in texts[7][1]
-        assert elems[7][1].get_attribute('class') == 'data_age'
-        assert texts[8:] == [
+        assert texts[9][0] == 'Last OFX Data'
+        assert '(a day ago)' in texts[9][1]
+        assert elems[9][1].get_attribute('class') == 'data_age'
+        assert texts[10:] == [
             ['Active?', 'True'],
             ['OFXGetter Config', ''],
             ['reconcile_trans', 'True'],
