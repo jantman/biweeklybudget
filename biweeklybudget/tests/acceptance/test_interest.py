@@ -98,7 +98,7 @@ class TestInterestHelper(AcceptanceHelper):
             4: Decimal('109.9730')
         }
 
-    def test_payoffs(self, testdb):
+    def test_payoffs_simple(self, testdb):
         cls = InterestHelper(testdb)
         assert cls.calculate_payoffs() == {
             'HighestBalanceFirstMethod': {
