@@ -197,5 +197,5 @@ def dict_to_class_args(j):
 @app.template_filter('monthsyears')
 def monthsyears(num):
     if num < 12:
-        return '%d months' % num
-    return '%d years' % int(round(num / 12.0))
+        return '%f months' % num
+    return '%.1f years' % (num / 12.0)

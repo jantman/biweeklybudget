@@ -1205,6 +1205,11 @@ class TestAcceptanceData(object):
         )
         assert res == [(162, Decimal('8666.307398441498144465534193'))]
 
+    def test_cc_combined_minimum(self):
+        assert (
+            self.stmt_cc_one.minimum_payment + self.stmt_cc_two.minimum_payment
+        ) == Decimal('144.98')
+
     def test_combined_pay_min(self):
         res = calculate_payoffs(
             MinPaymentMethod(),
