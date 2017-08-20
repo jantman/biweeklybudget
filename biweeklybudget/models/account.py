@@ -115,6 +115,9 @@ class Account(Base, ModelAsDict):
     #: Finance rate (APR) for credit accounts
     apr = Column(Numeric(precision=5, scale=4))
 
+    #: Margin added to the US Prime Rate to determine APR, for credit accounts
+    prime_rate_margin = Column(Numeric(precision=5, scale=4))
+
     #: Name of the :py:class:`biweeklybudget.interest._InterestCalculation`
     #: subclass used to calculate interest for this account.
     interest_class_name = Column(String(70))
@@ -310,3 +313,15 @@ class Account(Base, ModelAsDict):
         logger.debug('Latest OFX Interest Charge for account %s: %s',
                      self, t)
         return t
+
+    @property
+    def effective_apr(self):
+        """
+        Return the effective APR for a credit account. If
+        :py:attr:`~.prime_rate_margin` is not Null, return it. Otherwise, return
+        :py:attr:`~.apr`.
+
+        :return: Effective account APR
+        :rtype: decimal.Decimal
+        """
+        return self.apr

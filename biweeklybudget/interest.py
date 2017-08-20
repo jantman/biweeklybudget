@@ -110,7 +110,7 @@ class InterestHelper(object):
             icharge = acct.latest_ofx_interest_charge
             istmt = icharge.first_statement_by_date
             icls = INTEREST_CALCULATION_NAMES[acct.interest_class_name]['cls'](
-                acct.apr
+                acct.effective_apr
             )
             bill_period = _BillingPeriod(icharge.date_posted.date())
             min_pay_cls = MIN_PAYMENT_FORMULA_NAMES[

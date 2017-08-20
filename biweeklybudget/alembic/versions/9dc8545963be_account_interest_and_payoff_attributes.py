@@ -29,6 +29,14 @@ def upgrade():
     op.add_column(
         'accounts',
         sa.Column(
+            'prime_rate_margin',
+            sa.Numeric(precision=5, scale=4),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'accounts',
+        sa.Column(
             'interest_class_name',
             sa.String(length=70),
             nullable=True
@@ -47,4 +55,5 @@ def upgrade():
 def downgrade():
     op.drop_column('accounts', 'min_payment_class_name')
     op.drop_column('accounts', 'interest_class_name')
+    op.drop_column('accounts', 'prime_rate_margin')
     op.drop_column('accounts', 'apr')

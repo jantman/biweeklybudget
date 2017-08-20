@@ -41,6 +41,14 @@
                                             <td>{{ acct.apr|decimal_to_percent }}%</td>
                                         </tr>
                                         <tr>
+                                            <th>Prime Rate Margin</th>
+                                            <td>{{ acct.prime_rate_margin|decimal_to_percent }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Effective APR (calculated)</th>
+                                            <td>{{ acct.effective_apr|decimal_to_percent</td>
+                                        </tr>
+                                        <tr>
                                             <th>Interest Class</th>
                                             <td>{{ acct.interest_class_name }}</td>
                                         </tr>
