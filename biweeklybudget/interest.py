@@ -571,6 +571,14 @@ class _PayoffMethod(object):
         :rtype: decimal.Decimal
         """
         res = self._max_total
+        for inc_d in sorted(self._increases.keys(), reverse=True):
+            if inc_d > period.payment_date:
+                continue
+            inc_amt = self._increases[inc_d]
+            logger.debug('Found increase of %s starting on %s, applied to '
+                         'period %s', inc_amt, inc_d, period)
+            res = inc_amt
+            break
         for ot_d, ot_amt in self._onetimes.items():
             if period.prev_period.payment_date < ot_d <= period.payment_date:
                 logger.debug('Found onetime of %s on %s in period %s',
@@ -835,9 +843,8 @@ def calculate_payoffs(payment_method, statements):
         }
     while len(unpaid(payoffs)) > 0:
         u = unpaid(payoffs)
-        for stmt, p_amt in dict(
-            zip(u, payment_method.find_payments(u))
-        ).items():
+        to_pay = payment_method.find_payments(u)
+        for stmt, p_amt in dict(zip(u, to_pay)).items():
             if stmt.principal <= Decimal('0'):
                 payoffs[stmt]['done'] = True
                 continue

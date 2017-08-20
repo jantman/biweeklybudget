@@ -1277,7 +1277,7 @@ class TestSimpleData(object):
             FixedInterest(Decimal('10.00')),
             Decimal('1000.00'),
             self.mpm,
-            _BillingPeriod(date(2017, 6, 3)),
+            _BillingPeriod(date(2017, 7, 3)),
             transactions={},
             end_balance=Decimal('1010.00'),
             interest_amt=Decimal('10.00')
@@ -1286,7 +1286,7 @@ class TestSimpleData(object):
             FixedInterest(Decimal('40.00')),
             Decimal('2000.00'),
             self.mpm,
-            _BillingPeriod(date(2017, 6, 14)),
+            _BillingPeriod(date(2017, 7, 14)),
             transactions={},
             end_balance=Decimal('2040.00'),
             interest_amt=Decimal('40.00')
@@ -1297,7 +1297,7 @@ class TestSimpleData(object):
             FixedInterest(Decimal('100.00')),
             Decimal('10000.00'),
             self.mpm2,
-            _BillingPeriod(date(2017, 6, 7)),
+            _BillingPeriod(date(2017, 7, 7)),
             transactions={},
             end_balance=Decimal('10100.00'),
             interest_amt=Decimal('100.00')
@@ -1388,7 +1388,6 @@ class TestSimpleData(object):
             (16, Decimal('11600.0'))
         ]
 
-    @pytest.mark.xfail(reason='Not Implemented Yet')
     def test_lowest_balance_first_with_increases(self):
         res = calculate_payoffs(
             LowestBalanceFirstMethod(
@@ -1406,7 +1405,6 @@ class TestSimpleData(object):
             (12, Decimal('11200.0'))
         ]
 
-    @pytest.mark.xfail(reason='Not Implemented Yet')
     def test_highest_balance_first_with_increases(self):
         res = calculate_payoffs(
             HighestBalanceFirstMethod(
@@ -1456,11 +1454,10 @@ class TestSimpleData(object):
         )
         assert res == [
             (6, Decimal('1060.0')),
-            (13, Decimal('2520.0')),
+            (12, Decimal('2480.0')),
             (11, Decimal('11100.0'))
         ]
 
-    @pytest.mark.xfail(reason='Not Implemented Yet')
     def test_lowest_balance_first_with_increases_and_onetimes(self):
         res = calculate_payoffs(
             LowestBalanceFirstMethod(
@@ -1483,15 +1480,13 @@ class TestSimpleData(object):
             (11, Decimal('11100.0'))
         ]
 
-    @pytest.mark.xfail(reason='Not Implemented Yet')
     def test_highest_balance_first_with_increases_and_onetimes(self):
         res = calculate_payoffs(
             HighestBalanceFirstMethod(
                 Decimal('1000.0'),
                 onetimes={
-                    date(2017, 6, 1): Decimal('200.0'),  # bill 1
-                    date(2017, 9, 1): Decimal('1000.0'),  # bill 4
-                    date(2018, 4, 1): Decimal('1500.0')  # bill 11
+                    date(2017, 10, 1): Decimal('7000.0'),  # bill 5
+                    date(2017, 11, 1): Decimal('240.0'),  # bill 6
                 },
                 increases={
                     date(2017, 8, 1): Decimal('1200.0'),  # bill 3
