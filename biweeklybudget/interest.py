@@ -351,6 +351,11 @@ class _BillingPeriod(object):
                 )[1])
             )
 
+    def __repr__(self):
+        return '<BillingPeriod(%s, start_date=%s)>' % (
+            self._end_date, self._start_date
+        )
+
     @property
     def start_date(self):
         return self._start_date
@@ -554,6 +559,27 @@ class _PayoffMethod(object):
             self._onetimes
         )
 
+    def max_total_for_period(self, period):
+        """
+        Given a :py:class:`~._BillingPeriod`, calculate the maximum total
+        payment for that period, including both `self._max_total` and the
+        increases and onetimes specified on the class constructor.
+
+        :param period: billing period to get maximum total payment for
+        :type period: _BillingPeriod
+        :return: maximum total payment for the period
+        :rtype: decimal.Decimal
+        """
+        res = self._max_total
+        for ot_d, ot_amt in self._onetimes.items():
+            if period.prev_period.payment_date < ot_d <= period.payment_date:
+                logger.debug('Found onetime of %s on %s in period %s',
+                             ot_amt, ot_d, period)
+                res += ot_amt
+        logger.debug('Period %s _max_total=%s max_total_for_period=%s',
+                     period, self._max_total, res)
+        return res
+
     def find_payments(self, statements):
         """
         Given a list of statements, return a list of payment amounts to make
@@ -627,11 +653,12 @@ class HighestBalanceFirstMethod(_PayoffMethod):
         :return: list of payment amounts to make, same order as ``statements``
         :rtype: list
         """
+        max_total = self.max_total_for_period(statements[0].billing_period)
         min_sum = sum([s.minimum_payment for s in statements])
-        if min_sum > self._max_total:
+        if min_sum > max_total:
             raise TypeError(
                 'ERROR: Max total payment of %s is less than sum of minimum '
-                'payments (%s)' % (self._max_total, min_sum)
+                'payments (%s)' % (max_total, min_sum)
             )
         max_bal = Decimal('0.00')
         max_idx = None
@@ -640,7 +667,7 @@ class HighestBalanceFirstMethod(_PayoffMethod):
                 max_bal = stmt.principal
                 max_idx = idx
         res = [None for _ in statements]
-        max_pay = self._max_total - (
+        max_pay = max_total - (
             min_sum - statements[max_idx].minimum_payment
         )
         for idx, stmt in enumerate(statements):
@@ -669,11 +696,12 @@ class HighestInterestRateFirstMethod(_PayoffMethod):
         :return: list of payment amounts to make, same order as ``statements``
         :rtype: list
         """
+        max_total = self.max_total_for_period(statements[0].billing_period)
         min_sum = sum([s.minimum_payment for s in statements])
-        if min_sum > self._max_total:
+        if min_sum > max_total:
             raise TypeError(
                 'ERROR: Max total payment of %s is less than sum of minimum '
-                'payments (%s)' % (self._max_total, min_sum)
+                'payments (%s)' % (max_total, min_sum)
             )
         max_apr = Decimal('0.00')
         max_idx = None
@@ -682,7 +710,7 @@ class HighestInterestRateFirstMethod(_PayoffMethod):
                 max_apr = stmt.apr
                 max_idx = idx
         res = [None for _ in statements]
-        max_pay = self._max_total - (
+        max_pay = max_total - (
             min_sum - statements[max_idx].minimum_payment
         )
         for idx, stmt in enumerate(statements):
@@ -712,11 +740,12 @@ class LowestBalanceFirstMethod(_PayoffMethod):
         :return: list of payment amounts to make, same order as ``statements``
         :rtype: list
         """
+        max_total = self.max_total_for_period(statements[0].billing_period)
         min_sum = sum([s.minimum_payment for s in statements])
-        if min_sum > self._max_total:
+        if min_sum > max_total:
             raise TypeError(
                 'ERROR: Max total payment of %s is less than sum of minimum '
-                'payments (%s)' % (self._max_total, min_sum)
+                'payments (%s)' % (max_total, min_sum)
             )
         min_bal = Decimal('+Infinity')
         min_idx = None
@@ -725,7 +754,7 @@ class LowestBalanceFirstMethod(_PayoffMethod):
                 min_bal = stmt.principal
                 min_idx = idx
         res = [None for _ in statements]
-        min_pay = self._max_total - (
+        min_pay = max_total - (
             min_sum - statements[min_idx].minimum_payment
         )
         for idx, stmt in enumerate(statements):
@@ -754,11 +783,12 @@ class LowestInterestRateFirstMethod(_PayoffMethod):
         :return: list of payment amounts to make, same order as ``statements``
         :rtype: list
         """
+        max_total = self.max_total_for_period(statements[0].billing_period)
         min_sum = sum([s.minimum_payment for s in statements])
-        if min_sum > self._max_total:
+        if min_sum > max_total:
             raise TypeError(
                 'ERROR: Max total payment of %s is less than sum of minimum '
-                'payments (%s)' % (self._max_total, min_sum)
+                'payments (%s)' % (max_total, min_sum)
             )
         min_apr = Decimal('+Infinity')
         min_idx = None
@@ -767,7 +797,7 @@ class LowestInterestRateFirstMethod(_PayoffMethod):
                 min_apr = stmt.apr
                 min_idx = idx
         res = [None for _ in statements]
-        min_pay = self._max_total - (
+        min_pay = max_total - (
             min_sum - statements[min_idx].minimum_payment
         )
         for idx, stmt in enumerate(statements):
@@ -898,6 +928,16 @@ class CCStatement(object):
     @property
     def principal(self):
         return self._principal
+
+    @property
+    def billing_period(self):
+        """
+        Return the Billing Period for this statement.
+
+        :return: billing period for this statement
+        :rtype: _BillingPeriod
+        """
+        return self._billing_period
 
     @property
     def interest(self):
