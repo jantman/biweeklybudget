@@ -546,6 +546,12 @@ class _PayoffMethod(object):
         self._increases = increases
         self._onetimes = onetimes
 
+    def __repr__(self):
+        return '<%s(%s, increases=%s, onetimes=%s)>' % (
+            self.__class__.__name__, self._max_total, self._increases,
+            self._onetimes
+        )
+
     def find_payments(self, statements):
         """
         Given a list of statements, return a list of payment amounts to make
@@ -788,6 +794,9 @@ def calculate_payoffs(payment_method, statements):
     """
     def unpaid(s): return [x for x in s.keys() if s[x]['done'] is False]
     payoffs = {}
+    logger.debug(
+        'calculating payoff via %s for: %s', payment_method, statements
+    )
     for idx, stmt in enumerate(statements):
         payoffs[stmt] = {
             'months': 0, 'amt': Decimal('0.0'), 'idx': idx, 'done': False
@@ -878,10 +887,10 @@ class CCStatement(object):
     def __repr__(self):
         return '<CCStatement(interest_cls=%s principal=%s min_payment_cls=%s ' \
                'billing_period=%s transactions=%s end_balance=%s ' \
-               'interest_amt=%s' % (
+               'interest_amt=%s start_date=%s end_date=%s)>' % (
                    self._interest_cls, self._principal, self._min_pay_cls,
                    self._billing_period, self._transactions, self._principal,
-                   self._interest_amt
+                   self._interest_amt, self.start_date, self.end_date
                )
 
     @property
