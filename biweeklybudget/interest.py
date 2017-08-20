@@ -113,6 +113,7 @@ class InterestHelper(object):
                 end_balance=abs(istmt.ledger_bal),
                 interest_amt=abs(icharge.account_amount)
             )
+        logger.debug('Statements: %s', res)
         return res
 
     @property
@@ -127,6 +128,7 @@ class InterestHelper(object):
         res = {}
         for a_id, stmt in self._statements.items():
             res[a_id] = stmt.minimum_payment
+        logger.debug('Minimum payments by account_id: %s', res)
         return res
 
     def calculate_payoffs(self):
@@ -886,10 +888,10 @@ class CCStatement(object):
 
     def __repr__(self):
         return '<CCStatement(interest_cls=%s principal=%s min_payment_cls=%s ' \
-               'billing_period=%s transactions=%s end_balance=%s ' \
+               'transactions=%s end_balance=%s ' \
                'interest_amt=%s start_date=%s end_date=%s)>' % (
                    self._interest_cls, self._principal, self._min_pay_cls,
-                   self._billing_period, self._transactions, self._principal,
+                   self._transactions, self._principal,
                    self._interest_amt, self.start_date, self.end_date
                )
 
