@@ -18,6 +18,9 @@
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
+                            {% if res.error %}
+                            <div class="error">{{ res['error'] }}</div>
+                            {% else %}
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover" id="table_{{ res['name'] }}">
                                     <thead>
@@ -46,6 +49,7 @@
                                     </tbody>
                                 </table>
                             </div> <!-- /.table-responsive -->
+                            {% endif %}
                         </div> <!-- /.panel-body -->
                     </div> <!-- /.panel -->
                 </div> <!-- /.col-lg-12 -->

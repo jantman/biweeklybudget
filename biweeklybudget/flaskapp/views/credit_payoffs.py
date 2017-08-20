@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import json
 from decimal import Decimal, ROUND_UP
+from datetime import datetime
 
 from flask.views import MethodView
 from flask import render_template, request, jsonify
@@ -89,6 +90,9 @@ class CreditPayoffsView(MethodView):
                 'doc': res[methname]['doc'],
                 'results': []
             }
+            if 'error' in res[methname]:
+                tmp['error'] = res[methname]['error']
+                continue
             total_pymt = Decimal('0')
             total_int = Decimal('0')
             max_mos = 0
@@ -112,13 +116,38 @@ class CreditPayoffsView(MethodView):
             payoffs.append(tmp)
         return payoffs
 
+    def _payment_settings_dict(self, settings_json):
+        """
+        Given the JSON string payment settings, return a dict of payment
+        settings as expected by :py:class:`~.InterestHelper` kwargs.
+
+        :param settings_json: payment settings JSON
+        :type settings_json: str
+        :return: payment settings dict
+        :rtype: dict
+        """
+        res = {'increases': {}, 'onetimes': {}}
+        j = json.loads(settings_json)
+        for i in j['increases']:
+            if not i['enabled']:
+                continue
+            d = datetime.strptime(i['date'], '%Y-%m-%d').date()
+            res['increases'][d] = Decimal(i['amount'])
+        for i in j['onetimes']:
+            if not i['enabled']:
+                continue
+            d = datetime.strptime(i['date'], '%Y-%m-%d').date()
+            res['onetimes'][d] = Decimal(i['amount'])
+        return res
+
     def get(self):
         setting = db_session.query(DBSetting).get('credit-payoff')
         if setting is None:
             pymt_settings_json = json.dumps({'increases': [], 'onetimes': []})
         else:
             pymt_settings_json = setting.value
-        ih = InterestHelper(db_session)
+        pymt_settings_kwargs = self._payment_settings_dict(pymt_settings_json)
+        ih = InterestHelper(db_session, **pymt_settings_kwargs)
         mps = sum(ih.min_payments.values())
         payoffs = self._payoffs_list(ih)
         return render_template(

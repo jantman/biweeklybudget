@@ -247,7 +247,7 @@ class TestSettings(AcceptanceHelper):
         self.get(selenium, base_url + '/accounts/credit-payoff')
         assert 'disabled' in selenium.find_element_by_id(
             'btn_recalc_payoffs').get_attribute('class')
-        set_payoff_form(selenium, 'increase', 1, True, '2017-05-14', '12.34')
+        set_payoff_form(selenium, 'increase', 1, True, '2017-05-14', '160.23')
         assert 'disabled' not in selenium.find_element_by_id(
             'btn_recalc_payoffs').get_attribute('class')
         selenium.find_element_by_link_text('(add another increase)').click()
@@ -267,7 +267,7 @@ class TestSettings(AcceptanceHelper):
                 {
                     'enabled': True,
                     'date': '2017-05-14',
-                    'amount': '12.34'
+                    'amount': '160.23'
                 },
                 {
                     'enabled': False,
@@ -307,7 +307,7 @@ class TestSettings(AcceptanceHelper):
                 1: {
                     'enabled': True,
                     'date': '2017-05-14',
-                    'amount': '12.34'
+                    'amount': '160.23'
                 },
                 2: {
                     'enabled': False,
@@ -328,3 +328,57 @@ class TestSettings(AcceptanceHelper):
                 }
             }
         }
+
+    def test_05_highest_balance_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id('table_HighestBalanceFirstMethod')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '4.0 years', '$6,734.42', '$1,235.77'],
+            ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
+        ]
+
+    def test_06_highest_interest_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id(
+            'table_HighestInterestRateFirstMethod'
+        )
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '4.0 years', '$6,734.42', '$1,235.77'],
+            ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
+        ]
+
+    def test_07_lowest_balance_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id('table_LowestBalanceFirstMethod')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '1.3 years', '$958.10', '$6.04'],
+            ['CreditTwo (4)', '4.1 years', '$6,809.61', '$1,310.96'],
+            ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
+        ]
+
+    def test_08_lowest_interest_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id(
+            'table_LowestInterestRateFirstMethod'
+        )
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '1.3 years', '$958.10', '$6.04'],
+            ['CreditTwo (4)', '4.1 years', '$6,809.61', '$1,310.96'],
+            ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
+        ]
+
+    def test_09_min_payment(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        table = selenium.find_element_by_id('table_MinPaymentMethod')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '13.5 years', '$8,664.86', '$3,166.21'],
+            ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
+        ]

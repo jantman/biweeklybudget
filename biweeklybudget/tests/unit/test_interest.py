@@ -219,6 +219,8 @@ class TestInterestHelper(object):
         reason='No interest amts for Discover; change how we find bal'
     )
     def test_init(self):
+        assert self.cls._increases == {}
+        assert self.cls._onetimes == {}
         assert self.mock_sess.mock_calls[0] == call.query(Account)
         kall = self.mock_sess.mock_calls[1]
         assert kall[0] == 'query().filter'
@@ -257,6 +259,15 @@ class TestInterestHelper(object):
         assert s4._transactions == {}
         assert s4._principal == Decimal('5498.65')
         assert s4._interest_amt == Decimal('28.53')
+
+    def test_init_increases_onetimes(self):
+        cls = InterestHelper(
+            self.mock_sess,
+            increases={'foo': 'bar'},
+            onetimes={'baz': 'blam'}
+        )
+        assert cls._increases == {'foo': 'bar'}
+        assert cls._onetimes == {'baz': 'blam'}
 
     def test_min_payments(self):
         res = self.cls.min_payments

@@ -48,16 +48,26 @@ logger = logging.getLogger(__name__)
 
 class InterestHelper(object):
 
-    def __init__(self, db_sess):
+    def __init__(self, db_sess, increases={}, onetimes={}):
         """
         Initialize interest calculation helper.
 
         :param db_sess: Database Session
         :type db_sess: sqlalchemy.orm.session.Session
+        :param increases: dict of :py:class:`datetime.date` to
+          :py:class:`decimal.Decimal` for new max payment amount to take effect
+          on the specified date.
+        :type increases: dict
+        :param onetimes: dict of :py:class:`datetime.date` to
+          :py:class:`decimal.Decimal` for additional amounts to add to the first
+          maximum payment on or after the given date
+        :type onetimes: dict
         """
         self._sess = db_sess
         self._accounts = self._get_credit_accounts()
         self._statements = self._make_statements(self._accounts)
+        self._increases = increases
+        self._onetimes = onetimes
 
     @property
     def accounts(self):
@@ -147,13 +157,21 @@ class InterestHelper(object):
         max_total = sum(list(self.min_payments.values()))
         for name in sorted(PAYOFF_METHOD_NAMES.keys()):
             cls = PAYOFF_METHOD_NAMES[name]['cls']
+            klass = cls(
+                max_total, increases=self._increases, onetimes=self._onetimes
+            )
             if not cls.show_in_ui:
                 continue
             res[name] = {
                 'description': PAYOFF_METHOD_NAMES[name]['description'],
-                'doc': PAYOFF_METHOD_NAMES[name]['doc'],
-                'results': self._calc_payoff_method(cls(max_total))
+                'doc': PAYOFF_METHOD_NAMES[name]['doc']
             }
+            try:
+                res[name]['results'] = self._calc_payoff_method(klass)
+            except Exception as ex:
+                res[name]['error'] = str(ex)
+                logger.error('Minimum payment method %s failed: %s',
+                             name, ex)
         return res
 
     def _calc_payoff_method(self, cls):
@@ -544,10 +562,11 @@ class _PayoffMethod(object):
         :param increases: dict of :py:class:`datetime.date` to
           :py:class:`decimal.Decimal` for new max payment amount to take effect
           on the specified date.
-        :type increases: dict of :py:class:`datetime.date` to
+        :type increases: dict
+        :param onetimes: dict of :py:class:`datetime.date` to
           :py:class:`decimal.Decimal` for additional amounts to add to the first
           maximum payment on or after the given date
-        :param onetimes: dict
+        :type onetimes: dict
         """
         self._max_total = max_total_payment
         self._increases = increases
