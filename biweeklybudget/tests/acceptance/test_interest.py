@@ -97,3 +97,132 @@ class TestInterestHelper(AcceptanceHelper):
             3: Decimal('35'),
             4: Decimal('109.9730')
         }
+
+    def test_payoffs(self, testdb):
+        cls = InterestHelper(testdb)
+        assert cls.calculate_payoffs() == {
+            'HighestBalanceFirstMethod': {
+                'description': 'Highest to Lowest Balance',
+                'doc': 'Pay statements off from highest to lowest balance.',
+                'results': {
+                    3: {
+                        'payoff_months': 28,
+                        'total_interest': Decimal(
+                            '10.9388625702411101133192793'
+                        ),
+                        'total_payments': Decimal(
+                            '962.9988625702411101133192793'
+                        )
+                    },
+                    4: {
+                        'payoff_months': 55,
+                        'total_interest': Decimal(
+                            '1457.695228060182432444990377'
+                        ),
+                        'total_payments': Decimal(
+                            '6956.345228060182432444990377'
+                        )
+                    }
+                }
+            },
+            'HighestInterestRateFirstMethod': {
+                'description': 'Highest to Lowest Interest Rate',
+                'doc': 'Pay statements off from highest to lowest interest '
+                       'rate.',
+                'results': {
+                    3: {
+                        'payoff_months': 28,
+                        'total_interest': Decimal(
+                            '10.9388625702411101133192793'
+                        ),
+                        'total_payments': Decimal(
+                            '962.9988625702411101133192793'
+                        )
+                    },
+                    4: {
+                        'payoff_months': 55,
+                        'total_interest': Decimal(
+                            '1457.695228060182432444990377'
+                        ),
+                        'total_payments': Decimal(
+                            '6956.345228060182432444990377'
+                        )
+                    }
+                }
+            },
+            'LowestBalanceFirstMethod': {
+                'description': 'Lowest to Highest Balance (a.k.a. '
+                               'Snowball Method)',
+                'doc': 'Pay statements off from lowest to highest balance, '
+                       'a.k.a. the "snowball"\n    method.',
+                'results': {
+                    3: {
+                        'payoff_months': 21,
+                        'total_interest': Decimal(
+                            '8.8578327498502165965138131'
+                        ),
+                        'total_payments': Decimal(
+                            '960.9178327498502165965138131'
+                        )
+                    },
+                    4: {
+                        'payoff_months': 56,
+                        'total_interest': Decimal(
+                            '1489.587124948955044765363412'
+                        ),
+                        'total_payments': Decimal(
+                            '6988.237124948955044765363412'
+                        )
+                    }
+                }
+            },
+            'LowestInterestRateFirstMethod': {
+                'description': 'Lowest to Highest Interest Rate',
+                'doc': 'Pay statements off from lowest to highest '
+                       'interest rate.',
+                'results': {
+                    3: {
+                        'payoff_months': 21,
+                        'total_interest': Decimal(
+                            '8.8578327498502165965138131'
+                        ),
+                        'total_payments': Decimal(
+                            '960.9178327498502165965138131'
+                        )
+                    },
+                    4: {
+                        'payoff_months': 56,
+                        'total_interest': Decimal(
+                            '1489.587124948955044765363412'
+                        ),
+                        'total_payments': Decimal(
+                            '6988.237124948955044765363412'
+                        )
+                    }
+                }
+            },
+            'MinPaymentMethod': {
+                'description': 'Minimum Payment Only',
+                'doc': 'Pay only the minimum on each statement.',
+                'results': {
+                    3: {
+                        'payoff_months': 28,
+                        'total_interest': Decimal(
+                            '10.9388625702411101133192793'
+                        ),
+                        'total_payments': Decimal(
+                            '962.9988625702411101133192793'
+                        )
+                    },
+                    4: {
+                        'payoff_months': 162,
+                        'total_interest': Decimal(
+                            '3166.211877369277471400473622'
+                        ),
+                        'total_payments': Decimal(
+                            '8664.861877369277471400473622'
+                        )
+                    }
+                }
+            }
+        }
