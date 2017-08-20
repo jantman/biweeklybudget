@@ -157,9 +157,9 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_HighestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.08', '$10.94'],
-            ['CreditTwo (4)', '4.6 years', '$6,957.60', '$1,494.30'],
-            ['Totals', '4.6 years', '$7,920.61', '$1,458.95']
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '4.6 years', '$6,956.35', '$1,457.70'],
+            ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
     def test_02_highest_interest_payment(self, base_url, selenium):
@@ -169,9 +169,9 @@ class TestNoSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.01', '$10.95'],
-            ['CreditTwo (4)', '4.6 years', '$6,957.60', '$1,494.30'],
-            ['Totals', '4.6 years', '$7,920.61', '$1,458.95']
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '4.6 years', '$6,956.35', '$1,457.70'],
+            ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
     def test_03_lowest_balance_payment(self, base_url, selenium):
@@ -179,9 +179,9 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_LowestBalanceFirstMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.8 years', '$960.94', '$8.88'],
-            ['CreditTwo (4)', '4.7 years', '$6,989.41', '$1,490.76'],
-            ['Totals', '4.7 years', '$7,985.82', '$1,499.64']
+            ['CreditOne (3)', '1.8 years', '$960.92', '$8.86'],
+            ['CreditTwo (4)', '4.7 years', '$6,988.24', '$1,489.59'],
+            ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
     def test_04_lowest_interest_payment(self, base_url, selenium):
@@ -191,9 +191,9 @@ class TestNoSettings(AcceptanceHelper):
         )
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '1.8 years', '$960.94', '$8.88'],
-            ['CreditTwo (4)', '4.7 years', '$6,989.41', '$1,490.76'],
-            ['Totals', '4.7 years', '$7,985.82', '$1,499.64']
+            ['CreditOne (3)', '1.8 years', '$960.92', '$8.86'],
+            ['CreditTwo (4)', '4.7 years', '$6,988.24', '$1,489.59'],
+            ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
     def test_05_min_payment(self, base_url, selenium):
@@ -201,9 +201,9 @@ class TestNoSettings(AcceptanceHelper):
         table = selenium.find_element_by_id('table_MinPaymentMethod')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['CreditOne (3)', '2.3 years', '$963.01', '$10.95'],
-            ['CreditTwo (4)', '13.5 years', '$8,666.30', '$3,167.65'],
-            ['Totals', '13.5 years', '$9,629.31', '$3,178.60']
+            ['CreditOne (3)', '2.3 years', '$963.00', '$10.94'],
+            ['CreditTwo (4)', '13.5 years', '$8,664.86', '$3,166.21'],
+            ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
         ]
 
 
