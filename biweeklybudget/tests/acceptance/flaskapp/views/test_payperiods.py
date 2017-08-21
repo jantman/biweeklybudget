@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from calendar import timegm
@@ -55,7 +55,7 @@ dt = dtnow()
 
 
 @pytest.mark.acceptance
-class TestPayPeriods(AcceptanceHelper):
+class DONOTTestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -79,7 +79,7 @@ class TestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriodFor(AcceptanceHelper):
+class DONOTTestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -114,7 +114,7 @@ class TestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestFindPayPeriod(AcceptanceHelper):
+class DONOTTestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         self.get(selenium, base_url + '/payperiods')
@@ -209,7 +209,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodsIndex(AcceptanceHelper):
+class DONOTTestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -496,7 +496,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriod(AcceptanceHelper):
+class DONOTTestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -529,7 +529,7 @@ class TestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class DONOTTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -796,7 +796,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestCurrentPayPeriod(AcceptanceHelper):
+class DONOTTestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1269,7 +1269,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestMakeTransModal(AcceptanceHelper):
+class DONOTTestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -2084,10 +2084,59 @@ class TestBudgetTransfer(AcceptanceHelper):
             ]
         ])
 
+    def test_17_budget_transfer_modal_date_curr_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == \
+            dtnow().date().strftime('%Y-%m-%d')
+
+    def test_18_budget_transfer_modal_date_prev_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            date(2017, 6, 23).strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == '2017-06-23'
+
+    def test_19_budget_transfer_modal_date_next_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            date(2017, 8, 18).strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == '2017-08-18'
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestSkipScheduled(AcceptanceHelper):
+class DONOTTestSkipScheduled(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(

@@ -136,6 +136,11 @@ class PayPeriodView(MethodView):
             ).all()
         }
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        txfr_date_str = dtnow().strftime('%Y-%m-%d')
+        if dtnow().date() < pp.start_date or dtnow().date() > pp.end_date:
+            # If we're looking at a non-current pay period, default the
+            # transfer modal date to the start of the period.
+            txfr_date_str = pp.start_date.strftime('%Y-%m-%d')
         return render_template(
             'payperiod.html',
             pp=pp,
@@ -159,7 +164,8 @@ class PayPeriodView(MethodView):
             standing=standing,
             periodic=periodic,
             transactions=pp.transactions_list,
-            accts=accts
+            accts=accts,
+            txfr_date_str=txfr_date_str
         )
 
 
