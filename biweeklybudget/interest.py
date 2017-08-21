@@ -107,21 +107,19 @@ class InterestHelper(object):
         """
         res = {}
         for a_id, acct in accounts.items():
-            icharge = acct.latest_ofx_interest_charge
-            istmt = icharge.first_statement_by_date
             icls = INTEREST_CALCULATION_NAMES[acct.interest_class_name]['cls'](
                 acct.effective_apr
             )
-            bill_period = _BillingPeriod(icharge.date_posted.date())
+            bill_period = _BillingPeriod(acct.balance.ledger_date.date())
             min_pay_cls = MIN_PAYMENT_FORMULA_NAMES[
                 acct.min_payment_class_name]['cls']()
             res[a_id] = CCStatement(
                 icls,
-                abs(istmt.ledger_bal),
+                abs(acct.balance.ledger),
                 min_pay_cls,
                 bill_period,
-                end_balance=abs(istmt.ledger_bal),
-                interest_amt=abs(icharge.account_amount)
+                end_balance=abs(acct.balance.ledger),
+                interest_amt=Decimal('0')
             )
         logger.debug('Statements: %s', res)
         return res

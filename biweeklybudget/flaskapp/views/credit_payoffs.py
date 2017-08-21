@@ -100,12 +100,10 @@ class CreditPayoffsView(MethodView):
             for k in sorted(res[methname]['results'].keys()):
                 r = res[methname]['results'][k]
                 acct = ih.accounts[k]
-                icharge = acct.latest_ofx_interest_charge
-                istmt = icharge.first_statement_by_date
                 tmp['results'].append({
                     'name': '%s (%d) (%s)' % (
                         acct.name, k,
-                        currency(abs(istmt.ledger_bal), grouping=True)
+                        currency(abs(acct.balance.ledger), grouping=True)
                     ),
                     'total_payments': r['total_payments'],
                     'total_interest': r['total_interest'],

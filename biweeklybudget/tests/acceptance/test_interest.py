@@ -76,7 +76,6 @@ class TestInterestHelper(AcceptanceHelper):
         assert s3._min_pay is None
         assert s3._transactions == {}
         assert s3._principal == Decimal('952.06')
-        assert s3._interest_amt == Decimal('16.25')
         s4 = res[4]
         assert isinstance(s4, CCStatement)
         assert isinstance(s4._billing_period, _BillingPeriod)
@@ -89,7 +88,6 @@ class TestInterestHelper(AcceptanceHelper):
         assert s4._min_pay is None
         assert s4._transactions == {}
         assert s4._principal == Decimal('5498.65')
-        assert s4._interest_amt == Decimal('28.53')
 
     def test_min_payments(self, testdb):
         cls = InterestHelper(testdb)

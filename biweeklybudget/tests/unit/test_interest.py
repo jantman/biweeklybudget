@@ -58,8 +58,7 @@ from biweeklybudget.interest import (
 from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
-from biweeklybudget.models.ofx_statement import OFXStatement
-from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.account_balance import AccountBalance
 
 
 # https://code.google.com/p/mock/issues/detail?id=249
@@ -126,56 +125,15 @@ class FixedInterest(_InterestCalculation):
 class TestInterestHelper(object):
 
     def setup(self):
-        stmt3 = Mock(
-            spec_set=OFXStatement,
-            filename='/stmt/CreditOne/0',
-            file_mtime=(dtnow() - timedelta(hours=13)),
-            currency='USD',
-            bankid='CreditOne',
-            acct_type='Credit',
-            acctid='CreditOneAcctId',
-            type='Credit',
-            as_of=(dtnow() - timedelta(hours=13)),
-            ledger_bal=Decimal('-952.06'),
-            ledger_bal_as_of=(dtnow() - timedelta(hours=13))
+        bal3 = Mock(
+            spec_set=AccountBalance,
+            ledger=Decimal('-952.06'),
+            ledger_date=(dtnow() - timedelta(hours=13))
         )
-        stmt4 = Mock(
-            spec_set=OFXStatement,
-            filename='/stmt/CreditTwo/0',
-            file_mtime=(dtnow() - timedelta(hours=36)),
-            currency='USD',
-            bankid='CreditTwo',
-            acct_type='Credit',
-            acctid='',
-            type='CreditCard',
-            as_of=(dtnow() - timedelta(hours=36)),
-            ledger_bal=Decimal('-5498.65'),
-            ledger_bal_as_of=(dtnow() - timedelta(hours=36))
-        )
-        trans3 = Mock(
-            spec_set=OFXTransaction,
-            statement=stmt3,
-            fitid='T3',
-            trans_type='debit',
-            date_posted=(dtnow() - timedelta(hours=13)),
-            amount=Decimal('-16.25'),
-            name='INTEREST CHARGED TO STANDARD PUR',
-            memo='38328',
-            description='CreditOneT3Desc',
-            first_statement_by_date=stmt3,
-            account_amount=Decimal('16.25')
-        )
-        trans4 = Mock(
-            spec_set=OFXTransaction,
-            statement=stmt4,
-            fitid='001',
-            trans_type='Purchase',
-            date_posted=(dtnow() - timedelta(hours=36)),
-            amount=Decimal('28.53'),
-            name='Interest Charged',
-            memo='',
-            first_statement_by_date=stmt4,
-            account_amount=Decimal('28.53')
+        bal4 = Mock(
+            spec_set=AccountBalance,
+            ledger=Decimal('-5498.65'),
+            ledger_date=(dtnow() - timedelta(hours=36))
         )
         self.accts = {
             3: Mock(
@@ -191,7 +149,8 @@ class TestInterestHelper(object):
                 negate_ofx_amounts=True,
                 interest_class_name='AdbCompoundedDaily',
                 min_payment_class_name='MinPaymentAmEx',
-                latest_ofx_interest_charge=trans3
+                balance=bal3,
+                effective_apr=Decimal('0.0100')
             ),
             4: Mock(
                 spec_set=Account,
@@ -207,7 +166,8 @@ class TestInterestHelper(object):
                 apr=Decimal('0.1000'),
                 interest_class_name='AdbCompoundedDaily',
                 min_payment_class_name='MinPaymentDiscover',
-                latest_ofx_interest_charge=trans4
+                balance=bal4,
+                effective_apr=Decimal('0.1000')
             )
         }
         self.mock_sess = Mock(spec_set=Session)
@@ -215,9 +175,6 @@ class TestInterestHelper(object):
             return_value = self.accts.values()
         self.cls = InterestHelper(self.mock_sess)
 
-    @pytest.mark.xfail(
-        reason='No interest amts for Discover; change how we find bal'
-    )
     def test_init(self):
         assert self.cls._increases == {}
         assert self.cls._onetimes == {}
@@ -246,7 +203,6 @@ class TestInterestHelper(object):
         assert s3._min_pay is None
         assert s3._transactions == {}
         assert s3._principal == Decimal('952.06')
-        assert s3._interest_amt == Decimal('16.25')
         s4 = self.cls._statements[4]
         assert isinstance(s4, CCStatement)
         assert isinstance(s4._billing_period, _BillingPeriod)
@@ -258,7 +214,6 @@ class TestInterestHelper(object):
         assert s4._min_pay is None
         assert s4._transactions == {}
         assert s4._principal == Decimal('5498.65')
-        assert s4._interest_amt == Decimal('28.53')
 
     def test_init_increases_onetimes(self):
         cls = InterestHelper(
