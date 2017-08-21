@@ -35,6 +35,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import logging
 from sqlalchemy import (
     Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_
 )
@@ -46,9 +47,12 @@ from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import dtnow
+from biweeklybudget.prime_rate import PrimeRateCalculator
 import json
 import enum
 from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
+
+logger = logging.getLogger(__name__)
 
 
 class AcctType(enum.Enum):
@@ -107,6 +111,20 @@ class Account(Base, ModelAsDict):
 
     #: credit limit, for credit accounts
     credit_limit = Column(Numeric(precision=10, scale=4))
+
+    #: Finance rate (APR) for credit accounts
+    apr = Column(Numeric(precision=5, scale=4))
+
+    #: Margin added to the US Prime Rate to determine APR, for credit accounts.
+    prime_rate_margin = Column(Numeric(precision=5, scale=4))
+
+    #: Name of the :py:class:`biweeklybudget.interest._InterestCalculation`
+    #: subclass used to calculate interest for this account.
+    interest_class_name = Column(String(70))
+
+    #: Name of the :py:class:`biweeklybudget.interest._MinPaymentFormula`
+    #: subclass used to calculate minimum payments for this account.
+    min_payment_class_name = Column(String(70))
 
     #: whether or not the account is active and can be used, or historical
     is_active = Column(Boolean, default=True)
@@ -273,3 +291,20 @@ class Account(Base, ModelAsDict):
         for t in self.unreconciled:
             total += float(t.actual_amount)
         return total
+
+    @property
+    def effective_apr(self):
+        """
+        Return the effective APR for a credit account. If
+        :py:attr:`~.prime_rate_margin` is not Null, return that added to the
+        current US Prime Rate. Otherwise, return :py:attr:`~.apr`.
+
+        :return: Effective account APR
+        :rtype: decimal.Decimal
+        """
+        if self.prime_rate_margin is not None:
+            sess = inspect(self).session
+            return PrimeRateCalculator(sess).calculate_apr(
+                self.prime_rate_margin
+            )
+        return self.apr

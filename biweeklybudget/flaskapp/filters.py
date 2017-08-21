@@ -37,7 +37,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from locale import currency
 from jinja2.runtime import Undefined
-
 from humanize import naturaltime
 
 from biweeklybudget.utils import dtnow
@@ -176,3 +175,29 @@ def acct_icon_filter(acct):
         return 'glyphicon glyphicon-piggy-bank'
     if acct.acct_type == AcctType.Cash:
         return 'fa fa-dollar fa-fw'
+
+
+@app.template_filter('decimal_to_percent')
+def decimal_to_percent(d):
+    if d is None:
+        return ''
+    d = d * 100
+    return '%.2f%%' % d
+
+
+@app.template_filter('dict_to_class_args')
+def dict_to_class_args(j):
+    if 'args' not in j and 'kwargs' not in j:
+        return ''
+    args = j.get('args', [])
+    s = ', '.join(['%s' % a for a in args])
+    kwargs = j.get('kwargs', {})
+    s += ', '.join(['%s=%s' % (k, kwargs[k]) for k in kwargs.keys()])
+    return s
+
+
+@app.template_filter('monthsyears')
+def monthsyears(num):
+    if num < 12:
+        return '%f months' % num
+    return '%.1f years' % (num / 12.0)

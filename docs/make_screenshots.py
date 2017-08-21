@@ -225,6 +225,15 @@ class Screenshotter(object):
             'filename': 'bom',
             'title': 'Projects - Bill of Materials',
             'description': 'Track individual items/materials for projects.'
+        },
+        {
+            'path': '/accounts/credit-payoff',
+            'filename': 'credit-payoff',
+            'title': 'Credit Card Payoff Calculations',
+            'description': 'Credit card payoff calculations based on a '
+                           'variety of payment methods, with configurable '
+                           'payment increases over time or one-time additional '
+                           'payment amounts.'
         }
     ]
 

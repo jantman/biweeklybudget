@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from sqlalchemy import (
     Column, String, PrimaryKeyConstraint, Text, Numeric, Boolean, ForeignKey,
-    Integer
+    Integer, inspect
 )
 from sqlalchemy.sql.expression import null
 from sqlalchemy_utc import UtcDateTime
@@ -48,6 +48,7 @@ import logging
 from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
+from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.settings import RECONCILE_BEGIN_DATE
 
 logger = logging.getLogger(__name__)
@@ -213,3 +214,20 @@ class OFXTransaction(Base, ModelAsDict):
             OFXTransaction.date_posted.__ge__(cutoff_date),
             OFXTransaction.account.has(reconcile_trans=True)
         )
+
+    @property
+    def first_statement_by_date(self):
+        """
+        Return the first OFXStatement on or after `self.date_posted`.
+
+        :return: first OFXStatement on or after `self.date_posted`
+        :rtype: biweeklybudget.models.ofx_statement.OFXStatement
+        """
+        sess = inspect(self).session
+        res = sess.query(OFXStatement).filter(
+            OFXStatement.account.__eq__(self.account),
+            OFXStatement.as_of.__ge__(self.date_posted)
+        ).order_by(OFXStatement.as_of.asc()).first()
+        logger.debug('First statement for %s: %s',
+                     self, res)
+        return res

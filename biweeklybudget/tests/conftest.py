@@ -57,8 +57,8 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
-from biweeklybudget.flaskapp.app import app  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
+from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -174,6 +174,7 @@ def testflask():
     port = s.getsockname()[1]
     s.close()
 
+    from biweeklybudget.flaskapp.app import app  # noqa
     server = LiveServer(app, port)
     server.start()
     yield(server)
@@ -201,3 +202,32 @@ def selenium(selenium):
     # from http://stackoverflow.com/a/17536547/211734
     selenium.set_page_load_timeout(30)
     return selenium
+
+
+"""
+Begin generated/parametrized tests for interest calculation.
+
+I REALLY wish pytest still supported yield tests, this is sooooo messy!
+"""
+
+
+def pytest_generate_tests(metafunc):
+    if (
+        metafunc.function.__name__.startswith('test_calculate') and
+        metafunc.module.__name__ == 'biweeklybudget.tests.unit.test_interest'
+    ):
+        if metafunc.cls.__name__ == 'TestDataAmEx':
+            param_for_adbdaily_calc(metafunc, InterestData.amex)
+        if metafunc.cls.__name__ == 'TestDataCiti':
+            param_for_adbdaily_calc(metafunc, InterestData.citi)
+        if metafunc.cls.__name__ == 'TestDataDiscover':
+            param_for_adbdaily_calc(metafunc, InterestData.discover)
+
+
+def param_for_adbdaily_calc(metafunc, s):
+    dates = [d['start'].strftime('%Y-%m-%d') for d in s]
+    metafunc.parametrize(
+        'data',
+        s,
+        ids=dates
+    )

@@ -13,6 +13,7 @@ Submodules
 
    biweeklybudget.flaskapp.views.accounts
    biweeklybudget.flaskapp.views.budgets
+   biweeklybudget.flaskapp.views.credit_payoffs
    biweeklybudget.flaskapp.views.example
    biweeklybudget.flaskapp.views.formhandlerview
    biweeklybudget.flaskapp.views.fuel
@@ -25,4 +26,5 @@ Submodules
    biweeklybudget.flaskapp.views.scheduled
    biweeklybudget.flaskapp.views.searchableajaxview
    biweeklybudget.flaskapp.views.transactions
+   biweeklybudget.flaskapp.views.utils
 

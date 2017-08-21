@@ -69,6 +69,7 @@ Main Features
 * Scheduled transactions - specific date or recurring (date-of-month, or number of times per pay period).
 * Tracking of vehicle fuel fills (fuel log) and graphing of fuel economy.
 * Cost tracking for multiple projects, including bills-of-materials for them. Optional synchronization from Amazon Wishlists to projects.
+* Calculation of estimated credit card payoff amount and time, with configurable payment methods, payment increases on specific dates, and additional payments on specific dates.
 
 Requirements
 ------------

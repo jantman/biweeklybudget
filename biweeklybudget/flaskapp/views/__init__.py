@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from .accounts import *
 from .budgets import *
+from .credit_payoffs import *
 from .index import *
 from .ofx import *
 from .payperiods import *

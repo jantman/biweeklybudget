@@ -49,7 +49,7 @@ database often.
 Testing
 -------
 
-Testing is done via `pytest <https://docs.pytest.org/en/latest/>`_, driven by `tox <http://tox.testrun.org/>`_.
+Testing is done via `pytest <https://docs.pytest.org/en/latest/>`_, driven by `tox <https://tox.readthedocs.io/>`_.
 
 * testing is as simple as:
 

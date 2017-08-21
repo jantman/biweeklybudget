@@ -151,3 +151,11 @@ Track individual items/materials for projects.
 .. image:: bom_sm.png
    :target: bom.png
 
+Credit Card Payoff Calculations
+-------------------------------
+
+Credit card payoff calculations based on a variety of payment methods, with configurable payment increases over time or one-time additional payment amounts.
+
+.. image:: credit-payoff_sm.png
+   :target: credit-payoff.png
+

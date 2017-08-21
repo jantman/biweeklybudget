@@ -83,15 +83,28 @@ class TestOFXDefault(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
         assert texts[0] == [
+            (self.dt - timedelta(hours=13)).strftime('%Y-%m-%d'),
+            '-$16.25',
+            'CreditOne (3)',
+            'debit',
+            'INTEREST CHARGED TO STANDARD PUR',
+            '38328',
+            'CreditOneT3Desc',
+            'T3',
+            '6',
+            (self.dt - timedelta(hours=13)).strftime('%Y-%m-%d'),
+            ''
+        ]
+        assert texts[1] == [
             (self.dt - timedelta(hours=22)).strftime('%Y-%m-%d'),
-            '$123.81',
+            '-$123.81',
             'CreditOne (3)',
             'Purchase',
             '123.81 Credit Purchase T1',
             '38328',
             'CreditOneT1Desc',
             'T1',
-            '4',
+            '6',
             (self.dt - timedelta(hours=13)).strftime('%Y-%m-%d'),
             ''
         ]
@@ -99,34 +112,34 @@ class TestOFXDefault(AcceptanceHelper):
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
         assert elems[0][7].get_attribute(
             'innerHTML') == '<a href="javascript:ofxTransModal(' \
-                            '3, \'T1\')">T1</a>'
+                            '3, \'T3\')">T3</a>'
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
+            ['CreditOne (3)', 'T3'],
             ['CreditOne (3)', 'T1'],
+            ['CreditTwo (4)', '001'],
+            ['CreditOne (3)', 'T2'],
             ['CreditTwo (4)', '002'],
             ['BankOne (1)', 'BankOne.0.1'],
-            ['CreditTwo (4)', '001'],
             ['BankOne (1)', 'BankOne.1.1'],
             ['BankOne (1)', 'BankOne.1.2'],
             ['BankOne (1)', 'BankOne.1.3'],
-            ['BankOne (1)', 'BankOne.1.4'],
-            ['BankOne (1)', 'BankOne.1.5'],
-            ['BankOne (1)', 'BankOne.1.6']
+            ['BankOne (1)', 'BankOne.1.4']
         ]
         reconciles = [t[10] for t in texts]
         assert reconciles == [
+            '',
+            '',
+            '',
             '',
             '',
             'Yes (1)',
             '',
             '',
             '',
-            '',
-            '',
-            '',
             ''
         ]
-        assert elems[2][10].get_attribute('innerHTML') == '<a ' \
+        assert elems[5][10].get_attribute('innerHTML') == '<a ' \
             'href="javascript:txnReconcileModal(1)">Yes (1)</a>'
 
     def test_paginate(self, selenium):
@@ -135,16 +148,16 @@ class TestOFXDefault(AcceptanceHelper):
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
+            ['CreditOne (3)', 'T3'],
             ['CreditOne (3)', 'T1'],
+            ['CreditTwo (4)', '001'],
+            ['CreditOne (3)', 'T2'],
             ['CreditTwo (4)', '002'],
             ['BankOne (1)', 'BankOne.0.1'],
-            ['CreditTwo (4)', '001'],
             ['BankOne (1)', 'BankOne.1.1'],
             ['BankOne (1)', 'BankOne.1.2'],
             ['BankOne (1)', 'BankOne.1.3'],
-            ['BankOne (1)', 'BankOne.1.4'],
-            ['BankOne (1)', 'BankOne.1.5'],
-            ['BankOne (1)', 'BankOne.1.6']
+            ['BankOne (1)', 'BankOne.1.4']
         ]
         page2_link = selenium.find_element_by_xpath(
             '//li[@class="paginate_button "]/a[text()="2"]'
@@ -154,6 +167,8 @@ class TestOFXDefault(AcceptanceHelper):
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
+            ['BankOne (1)', 'BankOne.1.5'],
+            ['BankOne (1)', 'BankOne.1.6'],
             ['BankOne (1)', 'BankOne.1.7'],
             ['BankOne (1)', 'BankOne.1.8'],
             ['BankOne (1)', 'BankOne.1.9'],
@@ -161,9 +176,7 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankOne (1)', 'BankOne.1.11'],
             ['BankOne (1)', 'BankOne.1.12'],
             ['BankOne (1)', 'BankOne.1.13'],
-            ['BankOne (1)', 'BankOne.1.14'],
-            ['BankOne (1)', 'BankOne.1.15'],
-            ['BankOne (1)', 'BankOne.1.16']
+            ['BankOne (1)', 'BankOne.1.14']
         ]
 
     def test_filter_opts(self, selenium):
@@ -185,16 +198,16 @@ class TestOFXDefault(AcceptanceHelper):
 
     def test_filter(self, selenium):
         p1trans = [
+            ['CreditOne (3)', 'T3'],
             ['CreditOne (3)', 'T1'],
+            ['CreditTwo (4)', '001'],
+            ['CreditOne (3)', 'T2'],
             ['CreditTwo (4)', '002'],
             ['BankOne (1)', 'BankOne.0.1'],
-            ['CreditTwo (4)', '001'],
             ['BankOne (1)', 'BankOne.1.1'],
             ['BankOne (1)', 'BankOne.1.2'],
             ['BankOne (1)', 'BankOne.1.3'],
-            ['BankOne (1)', 'BankOne.1.4'],
-            ['BankOne (1)', 'BankOne.1.5'],
-            ['BankOne (1)', 'BankOne.1.6']
+            ['BankOne (1)', 'BankOne.1.4']
         ]
         self.get(selenium, self.baseurl + '/ofx')
         table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
@@ -209,8 +222,8 @@ class TestOFXDefault(AcceptanceHelper):
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
-            ['CreditTwo (4)', '002'],
-            ['CreditTwo (4)', '001']
+            ['CreditTwo (4)', '001'],
+            ['CreditTwo (4)', '002']
         ]
         # select back to all
         acct_filter.select_by_value('None')
@@ -221,8 +234,10 @@ class TestOFXDefault(AcceptanceHelper):
 
     def test_search(self, selenium):
         p1trans = [
+            ['CreditOne (3)', 'T3'],
             ['CreditTwo (4)', '001'],
             ['BankTwoStale (2)', '1'],
+            ['CreditOne (3)', 'T2-2'],
             ['DisabledBank (6)', '001']
         ]
         self.get(selenium, self.baseurl + '/ofx')
@@ -269,7 +284,7 @@ class TestOFXTransModal(AcceptanceHelper):
             ['Account', 'CreditOne (3)'],
             ['FITID', 'T1'],
             ['Date Posted', pdate.strftime('%Y-%m-%d')],
-            ['Amount', '$123.81'],
+            ['Amount', '-$123.81'],
             ['Name', '123.81 Credit Purchase T1'],
             ['Memo', '38328'],
             ['Type', 'Purchase'],
@@ -279,7 +294,7 @@ class TestOFXTransModal(AcceptanceHelper):
             ['MCC', 'T1mcc'],
             ['SIC', 'T1sic'],
             ['OFX Statement'],
-            ['ID', '4'],
+            ['ID', '6'],
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
@@ -311,7 +326,7 @@ class TestOFXTransURL(AcceptanceHelper):
             ['Account', 'CreditOne (3)'],
             ['FITID', 'T1'],
             ['Date Posted', pdate.strftime('%Y-%m-%d')],
-            ['Amount', '$123.81'],
+            ['Amount', '-$123.81'],
             ['Name', '123.81 Credit Purchase T1'],
             ['Memo', '38328'],
             ['Type', 'Purchase'],
@@ -321,7 +336,7 @@ class TestOFXTransURL(AcceptanceHelper):
             ['MCC', 'T1mcc'],
             ['SIC', 'T1sic'],
             ['OFX Statement'],
-            ['ID', '4'],
+            ['ID', '6'],
             ['Date', fdate.strftime('%Y-%m-%d')],
             ['Filename', '/stmt/CreditOne/0'],
             ['File mtime', fdate.strftime('%Y-%m-%d')],
