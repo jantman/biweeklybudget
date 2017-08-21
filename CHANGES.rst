@@ -10,6 +10,7 @@ Unreleased Changes
 * `Issue #101 <https://github.com/jantman/biweeklybudget/issues/101>`_ - Fix static example amounts on ``/projects`` view.
 * `Issue #103 <https://github.com/jantman/biweeklybudget/issues/103>`_ - Show most recent MPG in notification box after adding fuel fill.
 * `Issue #97 <https://github.com/jantman/biweeklybudget/issues/97>`_ - Fix integration tests that are date-specific and break on certain dates (run all integration tests as if it were a fixed date).
+* `Issue #104 <https://github.com/jantman/biweeklybudget/issues/104>`_ - Relatively major changes to add calculation of Credit account payoff times and amounts.
 
 0.3.0 (2017-07-09)
 ------------------
