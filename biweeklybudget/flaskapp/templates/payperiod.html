@@ -232,7 +232,7 @@ var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
 <script src="/static/js/budget_transfer_modal.js"></script>
 <script>
     $('#btn-add-txn').click(function() { transModal(null, null); });
-    $('#btn-budg-txfr-periodic').click(function() { budgetTransferModal(); });
-    $('#btn-budg-txfr-standing').click(function() { budgetTransferModal(); });
+    $('#btn-budg-txfr-periodic').click(function() { budgetTransferModal('{{ txfr_date_str }}'); });
+    $('#btn-budg-txfr-standing').click(function() { budgetTransferModal('{{ txfr_date_str }}'); });
 </script>
 {% endblock %}

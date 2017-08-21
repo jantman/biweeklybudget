@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from calendar import timegm
@@ -2083,6 +2083,55 @@ class TestBudgetTransfer(AcceptanceHelper):
                 '<a href="javascript:txnReconcileModal(4)">Yes (4)</a>'
             ]
         ])
+
+    def test_17_budget_transfer_modal_date_curr_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == \
+            dtnow().date().strftime('%Y-%m-%d')
+
+    def test_18_budget_transfer_modal_date_prev_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            date(2017, 6, 23).strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == '2017-06-23'
+
+    def test_19_budget_transfer_modal_date_next_period(
+        self, base_url, selenium
+    ):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            date(2017, 8, 18).strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_id('btn-budg-txfr-periodic')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Budget Transfer'
+        assert body.find_element_by_id(
+            'budg_txfr_frm_date').get_attribute('value') == '2017-08-18'
 
 
 @pytest.mark.acceptance

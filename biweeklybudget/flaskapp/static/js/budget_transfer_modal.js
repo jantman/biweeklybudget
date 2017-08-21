@@ -52,11 +52,18 @@ function budgetTransferDivForm() {
 /**
  * Show the modal popup for transferring between budgets.
  * Uses :js:func:`budgetTransferDivForm` to generate the form.
+ *
+ * @param {string} txfr_date - The date, as a "yyyy-mm-dd" string, to default
+ *  the form to. If null or undefined, will default to
+ *  ``BIWEEKLYBUDGET_DEFAULT_DATE``.
  */
-function budgetTransferModal() {
+function budgetTransferModal(txfr_date) {
+    if (txfr_date === undefined || txfr_date === null) {
+      txfr_date = isoformat(BIWEEKLYBUDGET_DEFAULT_DATE);
+    }
     $('#modalBody').empty();
     $('#modalBody').append(budgetTransferDivForm());
-    $('#budg_txfr_frm_date').val(isoformat(BIWEEKLYBUDGET_DEFAULT_DATE));
+    $('#budg_txfr_frm_date').val(txfr_date);
     $('#budg_txfr_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
