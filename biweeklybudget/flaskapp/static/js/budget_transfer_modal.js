@@ -59,7 +59,7 @@ function budgetTransferDivForm() {
  */
 function budgetTransferModal(txfr_date) {
     if (txfr_date === undefined || txfr_date === null) {
-      isoformat(BIWEEKLYBUDGET_DEFAULT_DATE);
+      txfr_date = isoformat(BIWEEKLYBUDGET_DEFAULT_DATE);
     }
     $('#modalBody').empty();
     $('#modalBody').append(budgetTransferDivForm());
