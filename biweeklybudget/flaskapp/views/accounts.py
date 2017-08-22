@@ -36,11 +36,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from flask.views import MethodView
-from flask import render_template
+from flask import render_template, jsonify
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.db import db_session
+from biweeklybudget.interest import (
+    INTEREST_CALCULATION_NAMES, MIN_PAYMENT_FORMULA_NAMES
+)
 
 
 class AccountsView(MethodView):
@@ -59,7 +62,9 @@ class AccountsView(MethodView):
                 Account.is_active == True).all(),  # noqa
             investment_accounts=db_session.query(Account).filter(
                 Account.acct_type == AcctType.Investment,
-                Account.is_active == True).all()  # noqa
+                Account.is_active == True).all(),  # noqa
+            interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
+            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys()
         )
 
 
@@ -71,11 +76,37 @@ class OneAccountView(MethodView):
 
     def get(self, acct_id):
         return render_template(
-            'account.html',
-            acct=db_session.query(Account).get(acct_id)
+            'accounts.html',
+            bank_accounts=db_session.query(Account).filter(
+                Account.acct_type == AcctType.Bank,
+                Account.is_active == True).all(),  # noqa
+            credit_accounts=db_session.query(Account).filter(
+                Account.acct_type == AcctType.Credit,
+                Account.is_active == True).all(),  # noqa
+            investment_accounts=db_session.query(Account).filter(
+                Account.acct_type == AcctType.Investment,
+                Account.is_active == True).all(),  # noqa
+            account_id=acct_id,
+            interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
+            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys()
         )
 
+
+class AccountAjax(MethodView):
+    """
+    Handle GET /ajax/account/<int:account_id> endpoint.
+    """
+
+    def get(self, account_id):
+        acct = db_session.query(Account).get(account_id)
+        return jsonify(acct.as_dict)
+
+
 app.add_url_rule('/accounts', view_func=AccountsView.as_view('accounts_view'))
+app.add_url_rule(
+    '/ajax/account/<int:account_id>',
+    view_func=AccountAjax.as_view('account_ajax')
+)
 app.add_url_rule(
     '/accounts/<int:acct_id>',
     view_func=OneAccountView.as_view('account_view')

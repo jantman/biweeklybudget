@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.models.account import Account, AcctType
 
 
 @pytest.mark.acceptance
@@ -88,8 +89,8 @@ class TestAccountsMainPage(AcceptanceHelper):
             td = tr.find_elements_by_tag_name('td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
-            '<a href="/accounts/1">BankOne</a>',
-            '<a href="/accounts/2">BankTwoStale</a>',
+            '<a href="javascript:accountModal(1, null)">BankOne</a>',
+            '<a href="javascript:accountModal(2, null)">BankTwoStale</a>',
         ]
 
     def test_bank_stale_span(self, selenium):
@@ -126,8 +127,8 @@ class TestAccountsMainPage(AcceptanceHelper):
             td = tr.find_elements_by_tag_name('td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
-            '<a href="/accounts/3">CreditOne</a>',
-            '<a href="/accounts/4">CreditTwo</a>',
+            '<a href="javascript:accountModal(3, null)">CreditOne</a>',
+            '<a href="javascript:accountModal(4, null)">CreditTwo</a>',
         ]
 
     def test_investment_table(self, selenium):
@@ -144,5 +145,75 @@ class TestAccountsMainPage(AcceptanceHelper):
             td = tr.find_elements_by_tag_name('td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
-            '<a href="/accounts/5">InvestmentOne</a>'
+            '<a href="javascript:accountModal(5, null)">InvestmentOne</a>'
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestAccountModal(AcceptanceHelper):
+
+    def test_00_verify_db(self, testdb):
+        a1 = testdb.query(Account).get(1)
+        assert a1 is not None
+        assert a1.name == 'BankOne'
+        assert a1.description == 'First Bank Account'
+        assert a1.ofx_cat_memo_to_name is True
+        assert a1.vault_creds_path == 'secret/foo/bar/BankOne'
+        assert a1.ofxgetter_config_json == '{"foo": "bar"}'
+        assert a1.negate_ofx_amounts is False
+        assert a1.reconcile_trans is True
+        assert a1.acct_type == AcctType.Bank
+        assert a1.credit_limit is None
+        assert a1.apr is None
+        assert a1.prime_rate_margin is None
+        assert a1.interest_class_name is None
+        assert a1.min_payment_class_name is None
+        assert a1.is_active is True
+
+    def test_01_get_acct1_by_url(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 1'
+        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+            'value') == 'BankOne'
+        assert selenium.find_element_by_id(
+            'account_frm_description'
+        ).get_attribute('value') == 'First Bank Account'
+        assert selenium.find_element_by_id(
+            'account_frm_type_bank').is_selected()
+        assert selenium.find_element_by_id(
+            'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element_by_id(
+            'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element_by_id(
+            'account_frm_ofx_cat_memo').is_selected()
+        assert selenium.find_element_by_id(
+            'account_frm_vault_creds_path'
+        ).get_attribute('value') == 'secret/foo/bar/BankOne'
+        assert selenium.find_element_by_id(
+            'account_frm_ofxgetter_config_json'
+        ).get_attribute('value') == '{"foo": "bar"}'
+        assert selenium.find_element_by_id(
+            'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element_by_id(
+            'account_frm_reconcile_trans').is_selected() is True
+        # BEGIN CREDIT
+        assert selenium.find_element_by_id(
+            'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'account_frm_apr').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'account_frm_margin').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'account_frm_min_pay_class_name').is_displayed() is False
+        # END CREDIT
+        assert selenium.find_element_by_id('account_frm_active').is_selected()
+
+    def test_02_get_acct2_click(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element_by_xpath('//a[text()="BankTwoStale"]')
+        link.click()
