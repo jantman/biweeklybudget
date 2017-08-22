@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.4.0 (2017-08-22)
 ------------------
 
 * Have ``ofxgetter`` enable ofxclient logging when running at DEBUG level (``-vv``).
