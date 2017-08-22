@@ -12,6 +12,7 @@ Unreleased Changes
 * `Issue #97 <https://github.com/jantman/biweeklybudget/issues/97>`_ - Fix integration tests that are date-specific and break on certain dates (run all integration tests as if it were a fixed date).
 * `Issue #104 <https://github.com/jantman/biweeklybudget/issues/104>`_ - Relatively major changes to add calculation of Credit account payoff times and amounts.
 * `Issue #107 <https://github.com/jantman/biweeklybudget/issues/107>`_ - Fix bug where Budget Transfer modal dialog would always default to current date, even when viewing past or future pay periods.
+* `Issue #48 <https://github.com/jantman/biweeklybudget/issues/48>`_ - UI support for adding and editing accounts.
 
 0.3.0 (2017-07-09)
 ------------------
