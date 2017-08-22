@@ -84,7 +84,7 @@ function accountModalDivForm() {
         )
         .addCheckbox('account_frm_negate_ofx', 'negate_ofx_amounts', 'Negate OFX Amounts', false)
         .addCheckbox('account_frm_reconcile_trans', 'reconcile_trans', 'Reconcile Transactions?', true)
-        .addCurrency('account_frm_credit_limit', 'credit limit', 'Credit Limit')
+        .addCurrency('account_frm_credit_limit', 'credit_limit', 'Credit Limit')
         .addText('account_frm_apr', 'apr', 'APR', { helpBlock: 'If you know the margin added to the Prime Rate for this card, use the Margin field instead.'})
         .addText('account_frm_margin', 'prime_rate_margin', 'Margin', { helpBlock: 'If known, the margin added to the US Prime Rate to determine the APR.'})
         .addLabelToValueSelect(

@@ -282,5 +282,8 @@ function serializeForm(form_id) {
     form.find('select').each(function(index) {
         data[$(this).attr('name')] = $(this).find(':selected').val();
     });
+    form.find('textarea').each(function(index) {
+        data[$(this).attr('name')] = $(this).val();
+    });
     return data;
 }

@@ -39,6 +39,7 @@ import logging
 from flask.views import MethodView
 from flask import jsonify, request
 from datetime import datetime
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,25 @@ class FormHandlerView(MethodView):
             errors[key].append('Invalid float value: "%s"' % data[key])
         return errors
 
+    def _validate_decimal(self, key, data, errors):
+        """
+        Validate a Decimal field.
+
+        :param key: the key in data to look at
+        :type key: str
+        :param data: the form data
+        :type data: dict
+        :param err_list: list of error messages for the field
+        :type err_list: dict
+        :return: updated err_list
+        :rtype: dict
+        """
+        try:
+            Decimal(data[key])
+        except Exception:
+            errors[key].append('Invalid Decimal value: "%s"' % data[key])
+        return errors
+
     def _validate_date_ymd(self, key, data, errors):
         """
         Validate a YYYY-mm-dd date field.
@@ -173,6 +193,20 @@ class FormHandlerView(MethodView):
         if data[key].strip() == '':
             errors[key].append('Cannot be empty')
         return errors
+
+    def fix_string(self, s):
+        """
+        Strip a string. If the result is empty, return None. Otherwise return
+        the result.
+
+        :param s: form data value
+        :type s: str
+        :return: stripped string or None
+        """
+        s = s.strip()
+        if s == '':
+            return None
+        return s
 
     def submit(self, data):
         """
