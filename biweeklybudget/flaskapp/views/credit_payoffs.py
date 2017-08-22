@@ -101,9 +101,12 @@ class CreditPayoffsView(MethodView):
                 r = res[methname]['results'][k]
                 acct = ih.accounts[k]
                 tmp['results'].append({
-                    'name': '%s (%d) (%s)' % (
+                    'name': '%s (%d) (%s @ %s%%)' % (
                         acct.name, k,
-                        currency(abs(acct.balance.ledger), grouping=True)
+                        currency(abs(acct.balance.ledger), grouping=True),
+                        (acct.effective_apr * Decimal('100')).quantize(
+                            Decimal('.01')
+                        )
                     ),
                     'total_payments': r['total_payments'],
                     'total_interest': r['total_interest'],
