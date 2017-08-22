@@ -40,16 +40,16 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  */
 function schedModalDivHandleType() {
     if($('#sched_frm_type_monthly').is(':checked')) {
-        $('#sched_frm_group_monthly').show();
-        $('#sched_frm_group_num_per_period').hide();
+        $('#sched_frm_day_of_month_group').show();
+        $('#sched_frm_num_per_period_group').hide();
         $('#sched_frm_date_group').hide();
     } else if($('#sched_frm_type_per_period').is(':checked')) {
-        $('#sched_frm_group_monthly').hide();
-        $('#sched_frm_group_num_per_period').show();
+        $('#sched_frm_day_of_month_group').hide();
+        $('#sched_frm_num_per_period_group').show();
         $('#sched_frm_date_group').hide();
     } else {
-        $('#sched_frm_group_monthly').hide();
-        $('#sched_frm_group_num_per_period').hide();
+        $('#sched_frm_day_of_month_group').hide();
+        $('#sched_frm_num_per_period_group').hide();
         $('#sched_frm_date_group').show();
     }
 }
@@ -164,6 +164,7 @@ function schedModal(id, dataTableObj) {
     } else {
         $('#modalLabel').text('Add New Scheduled Transaction');
         $('#sched_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
+        schedModalDivHandleType();
         $("#modalDiv").modal('show');
     }
 }

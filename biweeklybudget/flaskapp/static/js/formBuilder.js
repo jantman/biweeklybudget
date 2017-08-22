@@ -94,12 +94,41 @@ FormBuilder.prototype.addHidden = function(id, name, value) {
 FormBuilder.prototype.addText = function(id, name, label, options) {
     if(options === undefined) { options = {}; }
     options = $.extend({ groupHtml: null, inputHtml: null, helpBlock: null }, options);
-    this.html += '<div class="form-group"'
+    this.html += '<div class="form-group" id="' + id + '_group"';
     if(options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<input class="form-control" id="' + id + '" name="' + name + '" type="text"';
     if(options.inputHtml !== null) { this.html += ' ' + options.inputHtml; }
     this.html += '>';
+    if (options.helpBlock !== null) {
+        this.html += '<p class="help-block">' + options.helpBlock + "</p>";
+    }
+    this.html += '</div>\n';
+    return this;
+};
+
+/**
+ * Add a Text Area to the form.
+ *
+ * @param {String} id - The id of the form element
+ * @param {String} name - The name of the form element
+ * @param {String} label - The label text for the form element
+ * @param {Object} options
+ * @param {String} options.groupHtml - Additional HTML to add to the outermost
+ * @param {String} options.inputHtml - extra HTML string to include in the
+ *  actual ``input`` element *(optional; defaults to null)*
+ * @param {String} options.helpBlock - Content for block of help text after input; defaults to null.
+ * @return {FormBuilder} this
+ */
+FormBuilder.prototype.addTextArea = function(id, name, label, options) {
+    if(options === undefined) { options = {}; }
+    options = $.extend({ groupHtml: null, inputHtml: null, helpBlock: null }, options);
+    this.html += '<div class="form-group" id="' + id + '_group"';
+    if(options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
+    this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
+        '<textarea class="form-control" id="' + id + '" name="' + name + '"';
+    if(options.inputHtml !== null) { this.html += ' ' + options.inputHtml; }
+    this.html += '></textarea>';
     if (options.helpBlock !== null) {
         this.html += '<p class="help-block">' + options.helpBlock + "</p>";
     }
@@ -175,7 +204,7 @@ FormBuilder.prototype.addDatePicker = function(id, name, label, options) {
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addSelect = function(id, name, label, options) {
-    this.html += '<div class="form-group"><label for="' + id + '" class="control-label">' + label + '</label>' +
+    this.html += '<div class="form-group" id="' + id + '_group"><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<select id="' + id + '" name="' + name + '" class="form-control">';
     for (var idx in options) {
         this.html += '<option value="' + options[idx].value + '"';
@@ -235,7 +264,7 @@ FormBuilder.prototype.addLabelToValueSelect = function(id, name, label, options,
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addRadioInline = function(name, label, options) {
-    this.html += '<div class="form-group"><label class="control-label">' + label + ' </label> ';
+    this.html += '<div class="form-group" id="' + name + '_group"><label class="control-label">' + label + ' </label> ';
     for (var idx in options) {
         var o = options[idx];
         this.html += '<label class="radio-inline" for="' + o.id + '">' +
@@ -258,7 +287,7 @@ FormBuilder.prototype.addRadioInline = function(name, label, options) {
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addCheckbox = function(id, name, label, checked) {
-    this.html += '<div class="form-group">' +
+    this.html += '<div class="form-group" id="' + id + '_group">' +
         '<label class="checkbox-inline control-label" for="' + id + '">' +
         '<input type="checkbox" id="' + id + '" name="' + name + '"';
     if (checked === true) { this.html += ' checked'; }

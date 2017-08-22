@@ -1,5 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Accounts - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <script>
+        var interest_class_names = {};
+        {% for name in interest_class_names|sort %}
+        interest_class_names["{{ name }}"] = "{{ name }}";
+        {% endfor %}
+        var min_pay_class_names = {};
+        {% for name in min_pay_class_names|sort %}
+        min_pay_class_names["{{ name }}"] = "{{ name }}";
+        {% endfor %}
+    </script>
+{% endblock %}
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
@@ -7,6 +19,7 @@
                     <div class="panel panel-default" id="panel-bank-accounts">
                         <div class="panel-heading">
                             <i class="fa fa-bank fa-fw"></i> Bank Accounts
+                            <button type="button" class="btn btn-primary btn-xs btn_add_account" id="btn_add_acct_bank">Add Account</button>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
@@ -23,7 +36,7 @@
                                     <tbody>
                                     {% for acct in bank_accounts|sort(attribute='name') %}
                                         <tr>
-                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>
                                                 {% if acct.is_stale %}
@@ -47,6 +60,7 @@
                     <div class="panel panel-default" id="panel-credit-cards">
                         <div class="panel-heading">
                             <i class="fa fa-credit-card fa-fw"></i> Credit Cards
+                            <button type="button" class="btn btn-primary btn-xs btn_add_account" id="btn_add_acct_credit">Add Account</button>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
@@ -65,7 +79,7 @@
                                     <tbody>
                                     {% for acct in credit_accounts|sort(attribute='name') %}
                                         <tr>
-                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>
                                                 {% if acct.is_stale %}
@@ -91,6 +105,7 @@
                     <div class="panel panel-default" id="panel-investment">
                         <div class="panel-heading">
                             <i class="glyphicon glyphicon-piggy-bank"></i> Investment Accounts
+                            <button type="button" class="btn btn-primary btn-xs btn_add_account" id="btn_add_acct_invest">Add Account</button>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
@@ -105,7 +120,7 @@
                                     <tbody>
                                     {% for acct in investment_accounts|sort(attribute='name') %}
                                         <tr>
-                                            <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>
                                                 {% if acct.is_stale %}
@@ -128,4 +143,22 @@
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/formBuilder.js"></script>
+<script src="/static/js/accounts_modal.js"></script>
+<script>
+$(document).ready(function() {
+    $('.btn_add_account').click(function() {
+        accountModal(null, null);
+    });
+});
+/* BEGIN conditional default modal for /budgets/<id> */
+{% if account_id is defined and account_id is not none %}
+accountModal({{ account_id }}, null);
+{% endif %}
+/* END conditional default modal for /accounts/<id> */
+</script>
 {% endblock %}

@@ -147,6 +147,22 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
+.. js:function:: FormBuilder.addTextArea(id, name, label, options)
+
+   Add a Text Area to the form.
+
+   :param String id: The id of the form element
+   :param String name: The name of the form element
+   :param String label: The label text for the form element
+   :param Object options: 
+   :param String options.groupHtml: Additional HTML to add to the outermost
+   :param String options.inputHtml: extra HTML string to include in the actual ``input`` element *(optional; defaults to null)*
+   :param String options.helpBlock: Content for block of help text after input; defaults to null.
+   :returns: **FormBuilder** -- this
+   
+
+   
+
 .. js:function:: FormBuilder.render()
 
    Return complete rendered HTML for the form.
