@@ -84,7 +84,7 @@ class CreditPayoffsView(MethodView):
         """
         res = ih.calculate_payoffs()
         payoffs = []
-        for methname in sorted(res.keys()):
+        for methname in sorted(res.keys(), reverse=True):
             tmp = {
                 'name': methname,
                 'description': res[methname]['description'],
