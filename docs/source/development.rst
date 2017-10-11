@@ -120,6 +120,26 @@ this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-
 Sphinx also generates documentation for the custom javascript files. This must be done manually
 on a machine with `jsdoc <http://usejsdoc.org/>`_ installed, via: ``tox -e jsdoc``.
 
+.. _development.vendored_requirements:
+
+Vendored Requirements
+---------------------
+
+A number of this project's dependencies are or were seemingly abandoned, and weren't
+responding to bugfix pull requests or weren't pushing new releases to PyPI. This made
+the installation process painful, as it required ``pip install -r requirements.txt``
+to pull in git requirements.
+
+In an attempt to make installation easier, we've vendored any git requirements in to
+this repository under ``biweeklybudget/vendored/``. The intent is to move these back
+to ``setup.py`` requirements when each project includes the fixes we need in its
+official release on PyPI.
+
+To updated the vendored projects:
+
+1. Update ``biweeklybudget/vendored/vendored_requirements.txt``.
+2. Run ``cd biweeklybudget/vendored && install_vendored.sh``
+
 Release Checklist
 -----------------
 

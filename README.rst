@@ -118,3 +118,8 @@ over a network, the same rights as those who download and install it locally.
 biweeklybudget makes use of various third party software, especially in the UI and
 frontend, that is distributed under other licenses. Please see
 ``biweeklybudget/flaskapp/static`` in the source tree for further information.
+
+biweeklybudget includes a number of dependencies distributed alongside it, which
+are licensed and distributed under their respective licenses. See the
+``biweeklybudget/vendored`` directory in the source distribution for further
+information.
