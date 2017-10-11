@@ -1,3 +1,0 @@
-# to incorporate: https://github.com/Jaymon/wishlist/pull/8
-# licensed under GPL v2
-git+https://github.com/jantman/wishlist.git@c362e59b9388f65bfa39a8c807af04f6041265b3#egg=wishlist

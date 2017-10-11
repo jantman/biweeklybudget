@@ -137,8 +137,9 @@ official release on PyPI.
 
 To updated the vendored projects:
 
-1. Update ``biweeklybudget/vendored/vendored_requirements.txt``.
+1. Update ``biweeklybudget/vendored/vendored_requirements.txt``
 2. Run ``cd biweeklybudget/vendored && install_vendored.sh``
+3. Ensure that our main ``setup.py`` includes all dependencies of the vendored projects.
 
 Release Checklist
 -----------------

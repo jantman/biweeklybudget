@@ -11,4 +11,4 @@ For information on updating these packages, see the
 section of the documentation.
 
 For the licenses that each of these dependencies are distributed under, see
-``vendored_requirements.txt`` or the individual package directories.
+``install_vendored.sh`` or the individual package directories.
