@@ -474,10 +474,6 @@ class DockerImageBuilder(object):
             logger.debug('Running: %s', cmd_info['cmd'])
             res = container.exec_run(cmd_info['cmd']).decode().strip()
             logger.debug('Command output:\n%s', res)
-            exitcode = res.split("\n")[-1]
-            if exitcode != 'exitcode=0':
-                raise RuntimeError('Expected %s to exit with code 0, but'
-                                   ' got %s' % (cmd_info['cmd'], exitcode))
             if 'output' in cmd_info:
                 if cmd_info['output'] not in res:
                     raise RuntimeError(
