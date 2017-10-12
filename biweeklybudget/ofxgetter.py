@@ -45,7 +45,8 @@ from io import StringIO
 import importlib
 
 from ofxparse import OfxParser
-from ofxclient.account import Account as OfxClientAccount
+from biweeklybudget.vendored.ofxclient.account \
+    import Account as OfxClientAccount
 
 from biweeklybudget.utils import Vault
 from biweeklybudget import settings

@@ -100,6 +100,7 @@ setup(
     ofxbackfiller = biweeklybudget.backfill_ofx:main
     initdb = biweeklybudget.initdb:main
     wishlist2project = biweeklybudget.wishlist2project:main
+    ofxclient = biweeklybudget.vendored.ofxclient.cli:run
     [flask.commands]
     rundev=biweeklybudget.flaskapp.cli_commands:rundev_command
     """,

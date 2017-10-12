@@ -9,9 +9,8 @@ command scheduler such as ``cron``).
 
 There are two overall methods of downloading transaction data; for banks that
 support the `OFX protocol <http://ofx.net/>`_, statement data can be downloaded
-using HTTP only, via the `ofxclient <https://github.com/captin411/ofxclient>`_ project (note our requirements file
-specifies the upstream of `PR #37 <https://github.com/captin411/ofxclient/pull/37>`_,
-which includes a fix for Discover credit cards). For banks that do not support the
+using HTTP only, via the `ofxclient <https://github.com/captin411/ofxclient>`_ project
+(note we vendor-in a fork with some bug fixes). For banks that do not support the
 OFX protocol and require you to use their website to download OFX format statements,
 biweeklybudget provides a base :py:class:`~biweeklybudget.screenscraper.ScreenScraper`
 class that can be used to develop a `selenium <http://selenium-python.readthedocs.io/>`_-based

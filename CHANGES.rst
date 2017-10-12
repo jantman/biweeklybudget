@@ -8,7 +8,7 @@ Unreleased Changes
   `wishlist <https://github.com/Jaymon/wishlist>`_ dependency package, and vendor that patched
   version in under ``biweeklybudget.vendored.wishlist``.
 * `Issue #113 <https://github.com/jantman/biweeklybudget/issues/113>`_ - vendor in other
-  git requirements that seem unmaintained or inactive, so we can install via ``pip``.
+  git requirements (ofxclient and ofxparse) that seem unmaintained or inactive, so we can install via ``pip``.
 
 0.4.0 (2017-08-22)
 ------------------
