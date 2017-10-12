@@ -14,7 +14,6 @@ Vault (the latter only if you choose to take advantage of the OFX downloading), 
 
 * Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6 and developed with 3.6)
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
-* Git, to install certain upstream dependencies.
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the automated OFX transaction downloading functionality:
 
@@ -31,18 +30,12 @@ for information on how to create a venv.
 This app is developed against Python 3.6, but should work back to 2.7. It does
 not support Python3 < 3.3.
 
-Please note that, at the moment, one dependency is installed via git in order
-to make use of an un-merged pull request that fixes a bug; since installation doesn't
-support specifying git dependencies in ``setup.py``, you must install with
-``requirements.txt`` directly:
-
 .. code-block:: bash
 
-    git clone https://github.com/jantman/biweeklybudget.git && cd biweeklybudget
+    mkdir biweeklybudget
     virtualenv --python=python3.6 .
     source bin/activate
-    pip install -r requirements.txt
-    python setup.py develop
+    pip install biweeklybudget
 
 .. _getting_started.configuration:
 

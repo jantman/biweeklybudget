@@ -95,7 +95,6 @@ COPY entrypoint.sh /tmp/entrypoint.sh
 RUN /usr/bin/dpkg -i /tmp/tini_0.14.0.deb
 RUN /usr/local/bin/pip install virtualenv
 RUN /usr/local/bin/virtualenv /app && \
-    /app/bin/pip install -r /tmp/requirements.txt && \
     /app/bin/pip install {install} && \
     /app/bin/pip install gunicorn==19.7.1 wishlist
 
