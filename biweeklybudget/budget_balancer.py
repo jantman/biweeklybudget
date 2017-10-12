@@ -36,11 +36,72 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 import logging
 
-from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.utils import dtnow
 
 logger = logging.getLogger(__name__)
+
+
+def do_budget_transfer(db_sess, txn_date, amount, account,
+                       from_budget, to_budget, notes=None):
+    """
+    Transfer a given amount from ``from_budget`` to ``to_budget`` on
+    ``txn_date``. This method does NOT commit database changes.
+
+    :param db_sess: active database session to use for queries
+    :type db_sess: sqlalchemy.orm.session.Session
+    :param txn_date: date to make the transfer Transactions on
+    :type txn_date: datetime.date
+    :param amount: amount of money to transfer
+    :type amount: float
+    :param account:
+    :type account: biweeklybudget.models.account.Account
+    :param from_budget:
+    :type from_budget: biweeklybudget.models.budget_model.Budget
+    :param to_budget:
+    :type to_budget: biweeklybudget.models.budget_model.Budget
+    :param notes: Notes to add to the Transaction
+    :type notes: str
+    :return: list of Transactions created for the transfer
+    :rtype: :py:obj:`list` of :py:class:`~.Transaction` objects
+    """
+    desc = 'Budget Transfer - %s from %s (%d) to %s (%d)' % (
+        amount, from_budget.name, from_budget.id, to_budget.name,
+        to_budget.id
+    )
+    logger.info(desc)
+    t1 = Transaction(
+        date=txn_date,
+        actual_amount=amount,
+        budgeted_amount=amount,
+        description=desc,
+        account=account,
+        budget=from_budget,
+        notes=notes
+    )
+    db_sess.add(t1)
+    t2 = Transaction(
+        date=txn_date,
+        actual_amount=(-1 * amount),
+        budgeted_amount=(-1 * amount),
+        description=desc,
+        account=account,
+        budget=to_budget,
+        notes=notes
+    )
+    db_sess.add(t2)
+    db_sess.add(TxnReconcile(
+        transaction=t1,
+        note=desc
+    ))
+    db_sess.add(TxnReconcile(
+        transaction=t2,
+        note=desc
+    ))
+    return [t1, t2]
 
 
 class BudgetBalancer(object):

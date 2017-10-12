@@ -47,6 +47,7 @@ from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.budget_balancer import do_budget_transfer
 
 logger = logging.getLogger(__name__)
 
@@ -289,37 +290,11 @@ class BudgetTxfrFormHandler(FormHandlerView):
             to_budget.id
         )
         logger.info(desc)
-        t1 = Transaction(
-            date=trans_date,
-            actual_amount=amt,
-            budgeted_amount=amt,
-            description=desc,
-            account=acct,
-            budget=from_budget,
-            notes=notes
-        )
-        db_session.add(t1)
-        t2 = Transaction(
-            date=trans_date,
-            actual_amount=(-1 * amt),
-            budgeted_amount=(-1 * amt),
-            description=desc,
-            account=acct,
-            budget=to_budget,
-            notes=notes
-        )
-        db_session.add(t2)
-        db_session.add(TxnReconcile(
-            transaction=t1,
-            note=desc
-        ))
-        db_session.add(TxnReconcile(
-            transaction=t2,
-            note=desc
-        ))
+        res = do_budget_transfer(db_session, trans_date, amt, acct,
+                                 from_budget, to_budget, notes=notes)
         db_session.commit()
         return 'Successfully saved Transactions %d and %d in database.' % (
-            t1.id, t2.id
+            res[0].id, res[1].id
         )
 
 
