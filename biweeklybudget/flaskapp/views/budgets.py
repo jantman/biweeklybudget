@@ -194,6 +194,10 @@ class BudgetFormHandler(FormHandlerView):
             budget.is_income = True
         else:
             budget.is_income = False
+        if data['skip_balance'] == 'true':
+            budget.skip_balance = True
+        else:
+            budget.skip_balance = False
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()
