@@ -121,13 +121,14 @@ class PayPeriodView(MethodView):
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
-        standing = {
-            b.id: b.current_balance
-            for b in db_session.query(Budget).filter(
+        standing = {}
+        standing_id_to_name = {}
+        for b in db_session.query(Budget).filter(
                 Budget.is_periodic.__eq__(False),
                 Budget.is_active.__eq__(True)
-            ).all()
-        }
+        ).all():
+            standing[b.id] = b.current_balance
+            standing_id_to_name[b.id] = b.name
         periodic = {
             b.id: b.current_balance
             for b in db_session.query(Budget).filter(
@@ -163,6 +164,7 @@ class PayPeriodView(MethodView):
             budget_sums=pp.budget_sums,
             budgets=budgets,
             standing=standing,
+            standing_id_to_name=standing_id_to_name,
             periodic=periodic,
             transactions=pp.transactions_list,
             accts=accts,
@@ -325,6 +327,49 @@ class SkipSchedTransFormHandler(FormHandlerView):
                'ScheduledTransaction %d.' % (t.id, st.id)
 
 
+class BalanceBudgetsCalculateFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/balance_budgets/calculate
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        try:
+            budg_id = int(data['standing_budget'])
+            assert db_session.query(Budget).get(budg_id) is not None
+        except Exception:
+            return {
+                'standing_budget': [
+                    'You must select a valid Standing Budget.'
+                ]
+            }
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        assert d == pp.start_date
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        logger.info(data)
+        raise RuntimeError(data)
+
+
 app.add_url_rule(
     '/payperiods',
     view_func=PayPeriodsView.as_view('payperiods_view')
@@ -348,4 +393,11 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/skip_sched_trans',
     view_func=SkipSchedTransFormHandler.as_view('skip_sched_trans_form')
+)
+
+app.add_url_rule(
+    '/forms/balance_budgets/calculate',
+    view_func=BalanceBudgetsCalculateFormHandler.as_view(
+        'balance_budgets_calculate'
+    )
 )

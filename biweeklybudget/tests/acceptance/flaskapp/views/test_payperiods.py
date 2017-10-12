@@ -42,6 +42,8 @@ from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from calendar import timegm
 from selenium.webdriver.support.ui import Select
+from sqlalchemy import func
+from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -55,7 +57,7 @@ dt = dtnow()
 
 
 @pytest.mark.acceptance
-class TestPayPeriods(AcceptanceHelper):
+class DoNotTestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -79,7 +81,7 @@ class TestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriodFor(AcceptanceHelper):
+class DoNotTestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -114,7 +116,7 @@ class TestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestFindPayPeriod(AcceptanceHelper):
+class DoNotTestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         self.get(selenium, base_url + '/payperiods')
@@ -209,7 +211,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodsIndex(AcceptanceHelper):
+class DoNotTestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -496,7 +498,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class TestPayPeriod(AcceptanceHelper):
+class DoNotTestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -529,7 +531,7 @@ class TestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class DoNotTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -796,7 +798,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestCurrentPayPeriod(AcceptanceHelper):
+class DoNotTestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1400,10 +1402,95 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 1
 
+    def test_05_verify_db(self, testdb):
+        assert testdb.query(Transaction).with_entities(
+            func.max(Transaction.id)
+        ).scalar() == 7
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        assert p.overall_sums == {
+            'allocated': 334.0,
+            'income': 2345.67,
+            'remaining': 2011.67,
+            'spent': 0.0
+        }
+        assert p.budget_sums == {
+            1: {
+                'allocated': 22.22,
+                'budget_amount': 100.0,
+                'is_income': False,
+                'remaining': 77.78,
+                'spent': 0.0,
+                'trans_total': 22.22
+            },
+            2: {
+                'allocated': 0.0,
+                'budget_amount': 234.0,
+                'is_income': False,
+                'remaining': 234.0,
+                'spent': 0.0,
+                'trans_total': 0.0
+            },
+            7: {
+                'allocated': 0.0,
+                'budget_amount': 2345.67,
+                'is_income': True,
+                'remaining': 2345.67,
+                'spent': 0.0,
+                'trans_total': 0.0
+            }
+        }
+        assert {
+            b.id: b.current_balance
+            for b in testdb.query(Budget).filter(
+                Budget.is_periodic.__eq__(False),
+                Budget.is_active.__eq__(True)
+            ).all()
+        } == {
+            4: Decimal('1617.56'),
+            5: Decimal('9482.29')
+        }
+
+    def test_06_do_balance(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        p_date_str = p.start_date.strftime('%Y-%m-%d')
+        self.get(
+            selenium,
+            base_url + '/payperiod/' + p_date_str
+        )
+        selenium.find_element_by_id('btn-pp-balance-budgets').click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Balance Budgets (%s)' % p_date_str
+        assert body.find_element_by_id(
+            'bal_budg_frm_pp_start_date').get_attribute('value') == p_date_str
+        assert body.find_element_by_id(
+            'bal_budg_frm_standing_budget').get_attribute(
+            'value') == 'None'
+        budg_sel = Select(
+            body.find_element_by_id('bal_budg_frm_standing_budget')
+        )
+        opts = []
+        for o in budg_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
+        assert budg_sel.first_selected_option.get_attribute('value') == 'None'
+        # confirmed form; fill it in
+        budg_sel.select_by_value('4')
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestMakeTransModal(AcceptanceHelper):
+class DoNotTestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1627,7 +1714,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestBudgetTransfer(AcceptanceHelper):
+class DoNotTestBudgetTransfer(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -2270,7 +2357,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class TestSkipScheduled(AcceptanceHelper):
+class DoNotTestSkipScheduled(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
