@@ -147,7 +147,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             '&nbsp;'
         ]
 
-    def test_filter_opts(self, selenium):
+    def test_acct_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/transactions')
         acct_filter = Select(selenium.find_element_by_id('account_filter'))
         # find the options
@@ -164,7 +164,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             ['5', 'InvestmentOne']
         ]
 
-    def test_filter(self, selenium):
+    def test_acct_filter(self, selenium):
         p1trans = [
             'T1foo',
             'T2',
@@ -180,7 +180,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         # check sanity
         assert trans == p1trans
         acct_filter = Select(selenium.find_element_by_id('account_filter'))
-        # select Monthly
+        # select BankOne (1)
         acct_filter.select_by_value('1')
         table = self.retry_stale(
             selenium.find_element_by_id,
@@ -191,6 +191,68 @@ class TestTransactionsDefault(AcceptanceHelper):
         assert trans == ['T1foo']
         # select back to all
         acct_filter.select_by_value('None')
+        table = self.retry_stale(
+            selenium.find_element_by_id,
+            'table-transactions'
+        )
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [t[2] for t in texts]
+        assert trans == p1trans
+
+    def test_budg_filter_opts(self, selenium):
+        self.get(selenium, self.baseurl + '/transactions')
+        budg_filter = Select(selenium.find_element_by_id('budget_filter'))
+        # find the options
+        opts = []
+        for o in budg_filter.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive']
+        ]
+
+    def test_budg_filter(self, selenium):
+        p1trans = [
+            'T1foo',
+            'T2',
+            'T3'
+        ]
+        self.get(selenium, self.baseurl + '/transactions')
+        table = self.retry_stale(
+            selenium.find_element_by_id,
+            'table-transactions'
+        )
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [t[2] for t in texts]
+        # check sanity
+        assert trans == p1trans
+        budg_filter = Select(selenium.find_element_by_id('budget_filter'))
+        # select Periodic2 (2)
+        budg_filter.select_by_value('2')
+        table = self.retry_stale(
+            selenium.find_element_by_id,
+            'table-transactions'
+        )
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [t[2] for t in texts]
+        assert trans == ['T3']
+        # select Standing1 (4)
+        budg_filter.select_by_value('4')
+        table = self.retry_stale(
+            selenium.find_element_by_id,
+            'table-transactions'
+        )
+        texts = self.retry_stale(self.tbody2textlist, table)
+        trans = [t[2] for t in texts]
+        assert trans == ['T2']
+        # select back to all
+        budg_filter.select_by_value('None')
         table = self.retry_stale(
             selenium.find_element_by_id,
             'table-transactions'

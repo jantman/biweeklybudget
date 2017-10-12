@@ -136,6 +136,9 @@ class TransactionsAjax(SearchableAjaxView):
         acct_filter = args['columns'][3]['search']['value']
         if acct_filter != '' and acct_filter != 'None':
             qs = qs.filter(Transaction.account_id == acct_filter)
+        budg_filter = args['columns'][4]['search']['value']
+        if budg_filter != '' and budg_filter != 'None':
+            qs = qs.filter(Transaction.budget_id == budg_filter)
         # search
         if s != '' and s != 'FILTERHACK':
             if len(s) < 3:
