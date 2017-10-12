@@ -38,12 +38,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import argparse
 import logging
 import atexit
-import sys
-from types import MethodType
 
 from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.db import init_db, db_session, cleanup_db
 from biweeklybudget.cliutils import set_log_debug, set_log_info
+
+from biweeklybudget.vendored.wishlist.core import Wishlist
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +58,6 @@ class WishlistToProject(object):
     def __init__(self):
         atexit.register(cleanup_db)
         init_db()
-        try:
-            from wishlist.core import Wishlist
-        except ImportError:
-            sys.stderr.write('ERROR: wishlist could not be imported. Please '
-                             '"pip install wishlist".\n')
-            raise SystemExit(1)
         self._wlist = Wishlist()
 
     def run(self):
@@ -159,7 +153,7 @@ class WishlistToProject(object):
         res = {}
         list_name = list_url.split('/')[-1]
         logger.debug('Getting wishlist items for wishlist: %s', list_name)
-        items = self._get_wishlist(list_name)
+        items = [i for i in self._wlist.get(list_name)]
         logger.debug("Found %d items in list" % len(items))
         for item in items:
             d = {'name': item.title, 'url': item.url}
@@ -173,33 +167,6 @@ class WishlistToProject(object):
                 d['cost'] = item.marketplace_price
             res[item.url] = d
         return res
-
-    def _get_wishlist(self, list_name):
-        """
-        Workaround for a bug in wishlist==0.1.2
-
-        :param list_name: wishlist name to get
-        :type list_name: str
-        :return: list of items in wishlist
-        :rtype: list
-        """
-        logger.debug('Wishlist bug workaround - list name: %s', list_name)
-        try:
-            items = [i for i in self._wlist.get(list_name)]
-            assert len(items) > 0
-        except Exception:
-            logger.info('Hit pagination bug in wishlist package')
-
-            def hack(cls, _):
-                return 1
-
-            self._wlist.get_total_pages_from_body = MethodType(
-                hack, self._wlist
-            )
-            items = [
-                i for i in self._wlist.get(list_name, start_page=1, stop_page=1)
-            ]
-        return items
 
     def _get_wishlist_projects(self):
         """
