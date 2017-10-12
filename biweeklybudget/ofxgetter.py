@@ -44,7 +44,7 @@ from copy import deepcopy
 from io import StringIO
 import importlib
 
-from ofxparse import OfxParser
+from biweeklybudget.vendored.ofxparse import OfxParser
 from biweeklybudget.vendored.ofxclient.account \
     import Account as OfxClientAccount
 

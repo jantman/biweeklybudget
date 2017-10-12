@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from datetime import datetime
 
-from ofxparse import AccountType, OfxParser
+from biweeklybudget.vendored.ofxparse import AccountType, OfxParser
 from pytz import UTC
 
 from biweeklybudget.db import db_session, upsert_record

@@ -43,7 +43,7 @@ import atexit
 from io import BytesIO
 from pytz import UTC
 
-from ofxparse import OfxParser
+from biweeklybudget.vendored.ofxparse import OfxParser
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 
 from biweeklybudget import settings

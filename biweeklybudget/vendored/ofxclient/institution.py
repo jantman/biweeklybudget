@@ -11,7 +11,7 @@ except ImportError:
     IS_PYTHON_2 = True
 
 from bs4 import BeautifulSoup
-from ofxparse import OfxParser
+from biweeklybudget.vendored.ofxparse import OfxParser
 
 from ofxclient.client import Client
 
