@@ -95,7 +95,6 @@ COPY entrypoint.sh /tmp/entrypoint.sh
 RUN /usr/bin/dpkg -i /tmp/tini_0.14.0.deb
 RUN /usr/local/bin/pip install virtualenv
 RUN /usr/local/bin/virtualenv /app && \
-    /app/bin/pip install -r /tmp/requirements.txt && \
     /app/bin/pip install {install} && \
     /app/bin/pip install gunicorn==19.7.1 wishlist
 
@@ -376,6 +375,12 @@ class DockerImageBuilder(object):
         except Exception as exc:
             logger.error('PhantomJS test failed: %s', exc, exc_info=True)
             failures = True
+        try:
+            self._test_scripts(container)
+            logger.info('script tests PASSED')
+        except Exception as exc:
+            logger.error('script tests failed: %s', exc, exc_info=True)
+            failures = True
         if failures:
             raise RuntimeError('Tests FAILED.')
 
@@ -431,6 +436,52 @@ class DockerImageBuilder(object):
         if '<a class="navbar-brand" href="index.html">BiweeklyBud' not in res:
             raise RuntimeError('PhantomJS page source does not look correct')
         logger.info('PhantomJS test SUCCEEDED')
+
+    def _test_scripts(self, container):
+        """
+        Test scripts/entrypoints in the container.
+
+        :param container: biweeklybudget Docker container
+        :type container: ``docker.models.containers.Container``
+        """
+        test_cmds = [
+            {
+                'cmd': '/app/bin/ofxclient --help',
+                'output': '--ofx-version OFX_VERSION'
+            },
+            {
+                'cmd': '/app/bin/wishlist2project -h',
+                'output': 'Synchronize Amazon wishlists to projects'
+            },
+            {
+                'cmd': '/app/bin/initdb --help',
+                'output': 'Load initial data to DB'
+            },
+            {
+                'cmd': '/app/bin/ofxbackfiller --help',
+                'output': 'Backfill OFX from disk'
+            },
+            {
+                'cmd': '/app/bin/ofxgetter --help',
+                'output': 'Download OFX transactions'
+            },
+            {
+                'cmd': '/app/bin/loaddata --help',
+                'output': 'Load initial data to DB'
+            }
+        ]
+        for cmd_info in test_cmds:
+            logger.debug('Running: %s', cmd_info['cmd'])
+            res = container.exec_run(cmd_info['cmd']).decode().strip()
+            logger.debug('Command output:\n%s', res)
+            if 'output' in cmd_info:
+                if cmd_info['output'] not in res:
+                    raise RuntimeError(
+                        'Expected %s output to include "%s" but it did not' % (
+                            cmd_info['cmd'], cmd_info['output']
+                        )
+                    )
+        logger.info('script tests SUCCEEDED')
 
     def _run_mysql(self):
         """

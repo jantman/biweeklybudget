@@ -22,11 +22,7 @@ idna==2.5
 itsdangerous==0.24
 keyring==10.3.1
 lxml==3.7.3
-# ofxclient with https://github.com/captin411/ofxclient/pull/47
-git+https://github.com/jantman/ofxclient.git@vanguard-fix#egg=ofxclient
 ofxhome==0.3.3
-# to incorporate https://github.com/jseutter/ofxparse/pull/127
-git+https://github.com/jseutter/ofxparse.git@19c04b40e2c7c3cb2943344f6108bcaf3d968725#egg=ofxparse
 packaging==16.8
 pluggy==0.4.0
 pycparser==2.17

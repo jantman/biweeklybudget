@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Unreleased Changes
+------------------
+
+* `Issue #118 <https://github.com/jantman/biweeklybudget/issues/118>`_ - PR to fix bugs in the
+  `wishlist <https://github.com/Jaymon/wishlist>`_ dependency package, and vendor that patched
+  version in under ``biweeklybudget.vendored.wishlist``.
+* `Issue #113 <https://github.com/jantman/biweeklybudget/issues/113>`_ - vendor in other
+  git requirements (ofxclient and ofxparse) that seem unmaintained or inactive, so we can install via ``pip``.
+
 0.4.0 (2017-08-22)
 ------------------
 
