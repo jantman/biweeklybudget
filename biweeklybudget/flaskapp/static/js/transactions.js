@@ -111,10 +111,10 @@ $(document).ready(function() {
     });
 
     $('#table-transactions_length').parent().removeClass('col-sm-6');
-    $('#table-transactions_length').parent().addClass('col-sm-4');
+    $('#table-transactions_length').parent().addClass('col-sm-3');
     $('#table-transactions_filter').parent().removeClass('col-sm-6');
-    $('#table-transactions_filter').parent().addClass('col-sm-4');
-    var acctsel = '<div class="col-sm-4"><div id="table-transactions_acct_filter" class="dataTables_length"><label>Account: <select name="account_filter" id="account_filter" class="form-control input-sm" aria-controls="table-transactions">';
+    $('#table-transactions_filter').parent().addClass('col-sm-3');
+    var acctsel = '<div class="col-sm-3"><div id="table-transactions_acct_filter" class="dataTables_length"><label>Account: <select name="account_filter" id="account_filter" class="form-control input-sm" aria-controls="table-transactions">';
     acctsel += '<option value="None" selected="selected"></option>';
     Object.keys(acct_names_to_id).forEach(function (key) {
         acctsel += '<option value="' + acct_names_to_id[key] + '">' + key + '</option>';
@@ -124,6 +124,18 @@ $(document).ready(function() {
     $('#account_filter').on('change', function() {
         var selectedVal = $(this).val();
         mytable.fnFilter(selectedVal, 3, false);
+    });
+
+    var budgsel = '<div class="col-sm-3"><div id="table-transactions_budg_filter" class="dataTables_length"><label>Budget: <select name="budget_filter" id="budget_filter" class="form-control input-sm" aria-controls="table-transactions">';
+    budgsel += '<option value="None" selected="selected"></option>';
+    Object.keys(budget_names_to_id).forEach(function (key) {
+        budgsel += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>';
+    });
+    budgsel += '</select></label></div></div>';
+    $(budgsel).insertAfter($('#table-transactions_length').parent());
+    $('#budget_filter').on('change', function() {
+        var selectedVal = $(this).val();
+        mytable.fnFilter(selectedVal, 4, false);
     });
 
     $('#btn_add_trans').click(function() {
