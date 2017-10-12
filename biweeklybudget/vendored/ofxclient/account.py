@@ -34,12 +34,12 @@ class Account(object):
 
     Example from a saved config entry::
 
-      from ofxclient.config import OfxConfig
+      from biweeklybudget.vendored.ofxclient.config import OfxConfig
       account = OfxConfig().account('local_id() string')
 
     Example of deserialization::
 
-      from ofxclient import BankAccount
+      from biweeklybudget.vendored.ofxclient import BankAccount
       # assume 'inst' is an Institution()
       a1    = BankAccount(number='asdf',institution=inst)
       data1 = a1.serialize()
@@ -47,7 +47,7 @@ class Account(object):
 
     Example by querying the bank directly::
 
-      from ofxclient import Institution
+      from biweeklybudget.vendored.ofxclient import Institution
       # assume an Institution() is configured with
       # a username/password etc
       accounts = institution.accounts()
@@ -180,7 +180,7 @@ class Account(object):
         :param type: dict as  given by :py:meth:`~ofxclient.Account.serialize`
         :rtype: subclass of :py:class:`ofxclient.Account`
         """
-        from ofxclient.institution import Institution
+        from biweeklybudget.vendored.ofxclient.institution import Institution
         institution = Institution.deserialize(raw['institution'])
 
         del raw['institution']

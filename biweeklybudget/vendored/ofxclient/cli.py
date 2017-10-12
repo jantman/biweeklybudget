@@ -10,11 +10,11 @@ import sys
 
 from ofxhome import OFXHome
 
-from ofxclient.account import BankAccount, BrokerageAccount, CreditCardAccount
-from ofxclient.config import OfxConfig
-from ofxclient.institution import Institution
-from ofxclient.util import combined_download
-from ofxclient.client import DEFAULT_OFX_VERSION
+from biweeklybudget.vendored.ofxclient.account import BankAccount, BrokerageAccount, CreditCardAccount
+from biweeklybudget.vendored.ofxclient.config import OfxConfig
+from biweeklybudget.vendored.ofxclient.institution import Institution
+from biweeklybudget.vendored.ofxclient.util import combined_download
+from biweeklybudget.vendored.ofxclient.client import DEFAULT_OFX_VERSION
 
 AUTO_OPEN_DOWNLOADS = 1
 DOWNLOAD_DAYS = 30

@@ -20,7 +20,7 @@ import os
 import os.path
 import sys
 
-from ofxclient.account import Account
+from biweeklybudget.vendored.ofxclient.account import Account
 
 try:
     DEFAULT_CONFIG = os.path.expanduser(os.path.join('~', 'ofxclient.ini'))
@@ -40,7 +40,7 @@ class SecurableConfigParser(ConfigParser):
 
     Example::
 
-      from ofxclient.config import SecurableConfigParser
+      from biweeklybudget.vendored.ofxclient.config import SecurableConfigParser
 
       # password will not be saved in the config file
 
@@ -189,8 +189,8 @@ class OfxConfig(object):
 
     Example usage::
 
-      from ofxclient.config import OfxConfig
-      from ofxclient import Account
+      from biweeklybudget.vendored.ofxclient.config import OfxConfig
+      from biweeklybudget.vendored.ofxclient import Account
 
       a = Account()
 

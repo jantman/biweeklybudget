@@ -18,4 +18,4 @@ pip install --upgrade --target . --no-deps git+https://github.com/jseutter/ofxpa
 curl -o ofxparse/LICENSE https://raw.githubusercontent.com/jseutter/ofxparse/19c04b40e2c7c3cb2943344f6108bcaf3d968725/LICENSE
 curl -o ofxparse/setup.py.src https://raw.githubusercontent.com/jseutter/ofxparse/19c04b40e2c7c3cb2943344f6108bcaf3d968725/setup.py
 
-sed -i 's/from ofxparse import/from biweeklybudget.vendored.ofxparse import/g' ofxclient/*.py
+sed -i -r 's/^([[:space:]]*)from ofxclient/\1from biweeklybudget.vendored.ofxclient/g' ofxclient/*.py

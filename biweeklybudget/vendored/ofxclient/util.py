@@ -7,7 +7,7 @@ except ImportError:
     # python 2
     from StringIO import StringIO
 
-from ofxclient.client import Client
+from biweeklybudget.vendored.ofxclient.client import Client
 
 
 def combined_download(accounts, days=60):

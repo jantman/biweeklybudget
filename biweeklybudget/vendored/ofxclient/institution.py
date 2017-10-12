@@ -13,7 +13,7 @@ except ImportError:
 from bs4 import BeautifulSoup
 from biweeklybudget.vendored.ofxparse import OfxParser
 
-from ofxclient.client import Client
+from biweeklybudget.vendored.ofxclient.client import Client
 
 
 class Institution(object):
@@ -45,7 +45,7 @@ class Institution(object):
 
     Example::
 
-      from ofxclient import Institution
+      from biweeklybudget.vendored.ofxclient import Institution
 
       inst = Institution(
                 id       = '3101',
@@ -136,7 +136,7 @@ class Institution(object):
 
         :rtype: list of :py:class:`ofxclient.Account` objects
         """
-        from ofxclient.account import Account
+        from biweeklybudget.vendored.ofxclient.account import Account
         client = self.client()
         query = client.account_list_query()
         resp = client.post(query)
