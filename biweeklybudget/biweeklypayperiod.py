@@ -44,6 +44,7 @@ from decimal import Decimal
 
 from biweeklybudget import settings
 from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
+from biweeklybudget.utils import dtnow
 
 
 @total_ordering
@@ -117,6 +118,10 @@ class BiweeklyPayPeriod(object):
         :rtype: datetime.date
         """
         return self._end_date
+
+    @property
+    def is_in_past(self):
+        return self.end_date < dtnow().date()
 
     @property
     def next(self):

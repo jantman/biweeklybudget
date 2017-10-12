@@ -144,6 +144,7 @@ class PayPeriodView(MethodView):
         return render_template(
             'payperiod.html',
             pp=pp,
+            is_in_past=pp.is_in_past,
             pp_prev_date=pp.previous.start_date,
             pp_prev_sums=pp.previous.overall_sums,
             pp_prev_suffix=self.suffix_for_period(curr_pp, pp.previous),

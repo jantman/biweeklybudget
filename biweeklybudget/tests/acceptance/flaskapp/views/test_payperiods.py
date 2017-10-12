@@ -1269,6 +1269,140 @@ class TestCurrentPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestBalanceBudgets(AcceptanceHelper):
+
+    def test_00_inactivate_scheduled(self, testdb):
+        for s in testdb.query(
+                ScheduledTransaction).filter(
+            ScheduledTransaction.is_active.__eq__(True)
+        ).all():
+            s.is_active = False
+            testdb.add(s)
+        testdb.flush()
+        testdb.commit()
+        # delete existing transactions
+        for tr in testdb.query(TxnReconcile).all():
+            testdb.delete(tr)
+        for idx in [1, 2, 3]:
+            t = testdb.query(Transaction).get(idx)
+            testdb.delete(t)
+        testdb.flush()
+        testdb.commit()
+
+    def test_01_add_transactions(self, testdb):
+        acct = testdb.query(Account).get(1)
+        e1budget = testdb.query(Budget).get(1)
+        e2budget = testdb.query(Budget).get(2)
+        pp = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        )
+        ppdate = pp.start_date
+        st8_date = (ppdate + timedelta(days=5))
+        st8_day = st8_date.day
+        if st8_day > 28:
+            st8_day = 28
+        st = ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=11.11,
+            num_per_period=2,
+            description='ST7 per_period'
+        )
+        testdb.add(st)
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e1budget,
+            amount=22.22,
+            day_of_month=st8_day,
+            description='ST8 day_of_month'
+        ))
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=e2budget,
+            amount=33.33,
+            date=(ppdate + timedelta(days=6)),
+            description='ST9 date'
+        ))
+        t = Transaction(
+            date=(ppdate + timedelta(days=8)),
+            actual_amount=12.00,
+            budgeted_amount=11.11,
+            description='Txn From ST7',
+            account=acct,
+            budget=e1budget,
+            scheduled_trans=st
+        )
+        testdb.add(t)
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=6)),
+            actual_amount=111.13,
+            budgeted_amount=111.11,
+            description='T1foo',
+            notes='notesT1',
+            account=acct,
+            scheduled_trans=testdb.query(ScheduledTransaction).get(1),
+            budget=e1budget
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=2)),
+            actual_amount=-333.33,
+            budgeted_amount=-333.33,
+            description='T2',
+            notes='notesT2',
+            account=testdb.query(Account).get(2),
+            scheduled_trans=testdb.query(ScheduledTransaction).get(3),
+            budget=testdb.query(Budget).get(4)
+        ))
+        testdb.add(Transaction(
+            date=ppdate,
+            actual_amount=222.22,
+            description='T3',
+            notes='notesT3',
+            account=testdb.query(Account).get(3),
+            budget=e2budget
+        ))
+        testdb.flush()
+        testdb.commit()
+        testdb.add(TxnReconcile(note='foo', txn_id=t.id))
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_curr_period_no_button(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            p.start_date.strftime('%Y-%m-%d')
+        )
+        assert len(
+            selenium.find_elements_by_id('btn-pp-balance-budgets')
+        ) == 0
+
+    def test_03_future_period_no_button(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            p.next.next.start_date.strftime('%Y-%m-%d')
+        )
+        assert len(
+            selenium.find_elements_by_id('btn-pp-balance-budgets')
+        ) == 0
+
+    def test_04_past_period_has_button(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            p.previous.start_date.strftime('%Y-%m-%d')
+        )
+        assert len(
+            selenium.find_elements_by_id('btn-pp-balance-budgets')
+        ) == 1
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
