@@ -3,6 +3,7 @@ branch = True
 omit = lib/*
        biweeklybudget/tests/*
        setup.py
+       biweeklybudget/vendored/*
 
 [report]
 exclude_lines =
