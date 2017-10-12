@@ -142,7 +142,8 @@ class SampleDataLoader(object):
                 is_periodic=True,
                 description='IncomeDesc',
                 starting_balance=2345.67,
-                is_income=True
+                is_income=True,
+                skip_balance=True
             )
         }
         for x in [
