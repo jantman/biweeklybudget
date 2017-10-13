@@ -38,7 +38,7 @@ from datetime import datetime
 import logging
 
 from flask.views import MethodView
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, jsonify
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import dtnow
@@ -50,6 +50,7 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.budget_balancer import BudgetBalancer
 
 logger = logging.getLogger(__name__)
 
@@ -366,8 +367,11 @@ class BalanceBudgetsCalculateFormHandler(FormHandlerView):
         :return: message describing changes to DB (i.e. link to created record)
         :rtype: str
         """
-        logger.info(data)
-        raise RuntimeError(data)
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        sb_id = db_session.query(Budget).get(int(data['standing_budget']))
+        balancer = BudgetBalancer(db_session, pp, sb_id)
+        return balancer.plan()
 
 
 app.add_url_rule(

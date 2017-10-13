@@ -35,6 +35,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 import logging
+from copy import deepcopy
 
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account
@@ -109,31 +110,133 @@ class BudgetBalancer(object):
     Class to encapsulate logic for balancing budgets in a pay period.
     """
 
-    def __init__(self, db_sess, payperiod):
+    def __init__(self, db_sess, payperiod, standing_budget):
         """
 
         :param db_sess: active database session to use for queries
         :type db_sess: sqlalchemy.orm.session.Session
         :param payperiod: pay period to balance
         :type payperiod: biweeklybudget.biweeklypayperiod.BiweeklyPayPeriod
+        :param standing_budget: Standing Budget to use as source for additional
+          funds to make up shortfalls, or destination of surplus funds.
+        :type standing_budget: biweeklybudget.models.budget_model.Budget
         """
         self._db = db_sess
         self._payperiod = payperiod
-        assert payperiod.end_date < dtnow.date()
+        self._standing = standing_budget
+        assert self._standing.is_periodic is False
+        assert payperiod.end_date < dtnow().date()
+        # get candidate budgets for balancing (Periodic, Active, not skip)
+        self._budgets = self._budgets_to_balance()
+
+    def _budgets_to_balance(self):
+        """
+        Return a dict of ID to Budget objects, for Budgets that are candidates
+        to balance.
+
+        :return: dict of budget ID to budget objects
+        :rtype: dict
+        """
+        res = {}
+        for b in self._db.query(Budget).filter(
+            Budget.is_periodic.__eq__(True),
+            Budget.is_active.__eq__(True),
+            Budget.skip_balance.__eq__(False)
+        ).all():
+            res[b.id] = b
+        return res
 
     def plan(self):
         """
         Plan out balancing the budgets for the pay period. Return a dict with
-        three top-level keys: "before", "after", and "transfers". Before and
-        after are each dicts of Budget ID to Remaining amount, before and after
-        balancing, respectively. "Transfers" is a list of dicts describing the
-        transfers that will be made to achieve the end result. Each has keys
-        "from_id", "from_amount", "to_id" and "to_amount".
+        top-level keys:
+
+          - "pp_start_date" (str, Y-m-d)
+          - "before"
+          - "after"
+          - "transfers"
+
+        Before and after are each dicts of Budget ID to Remaining amount, before
+        and after balancing, respectively. "Transfers" is a list of dicts
+        describing the transfers that will be made to achieve the end result.
+        Each has keys "from_id", "to_id" and "amount".
 
         :return: Plan for how to balance budgets in the pay period
         :rtype: dict
         """
-        return {'foo': 'bar'}
+        # get dict of budget ID to remaining amount
+        to_balance = {}
+        for budg_id, data in self._payperiod.budget_sums.items():
+            if budg_id not in to_balance.keys():
+                continue
+            if data['remaining'] == 0:
+                continue
+            to_balance[budg_id] = data['remaining']
+        before = deepcopy(to_balance)
+        # ok, figure out the transfers we need to make...
+        after, transfers, st_bal = self._do_plan_transfers(
+            to_balance, [], self._standing.current_balance
+        )
+        before[self._standing.id] = self._standing.current_balance
+        after[self._standing.id] = st_bal
+        return {
+            'pp_start_date': self._payperiod.start_date.strftime('%Y-%m-%d'),
+            'transfers': transfers,
+            'after': after,
+            'before': before
+        }
+
+    def _do_plan_transfers(self, id_to_remain, transfers, standing_bal):
+        """
+        Given a dictionary of budget IDs to remaining amounts, figure out
+        what Budget Transfers to make to bring all remaining balances to zero.
+        Works recursively.
+
+        :param id_to_remain: Budget ID to remaining balance
+        :type id_to_remain: dict
+        :param transfers: list of transfer dicts for transfers made so far
+        :type transfers: list
+        :param standing_bal: balance of the standing budget
+        :type standing_bal: decimal.Decimal
+        :return: tuple of new id_to_remain, transfers, standing_bal
+        :rtype: tuple
+        """
+        if standing_bal < 0:
+            # standing_bal is empty, done.
+            return id_to_remain, transfers, standing_bal
+        if (
+            all(x >= 0 for x in id_to_remain.values()) or
+            all(x <= 0 for x in id_to_remain.values())
+        ):
+            # either all positive/0 or all negative/0; done
+            return id_to_remain, transfers, standing_bal
+        min_k = min(id_to_remain, key=id_to_remain.get)
+        max_k = max(id_to_remain, key=id_to_remain.get)
+        min_v = id_to_remain[min_k]
+        max_v = id_to_remain[max_k]
+        if max_v < 0 or min_v > 0:
+            return id_to_remain, transfers, standing_bal
+        if max_v > abs(min_v):
+            transfers.append([max_k, min_k, abs(min_v)])
+            id_to_remain[max_k] = max_v - abs(min_v)
+            id_to_remain[min_k] = 0
+            return self._do_plan_transfers(
+                id_to_remain, transfers, standing_bal
+            )
+        if max_v == abs(min_v):
+            transfers.append([max_k, min_k, abs(min_v)])
+            id_to_remain[max_k] = 0
+            id_to_remain[min_k] = 0
+            return self._do_plan_transfers(
+                id_to_remain, transfers, standing_bal
+            )
+        # else max_v < abs(min_v)
+        transfers.append([max_k, min_k, abs(max_v)])
+        id_to_remain[max_k] = 0
+        id_to_remain[min_k] = min_v + max_v
+        return self._do_plan_transfers(
+            id_to_remain, transfers, standing_bal
+        )
 
     def apply(self, plan_result):
         """
