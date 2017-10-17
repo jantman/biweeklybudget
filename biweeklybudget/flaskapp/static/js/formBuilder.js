@@ -66,6 +66,17 @@ FormBuilder.prototype.addP = function(content) {
 };
 
 /**
+ * Add a string of HTML to the form.
+ *
+ * @param {String} content - HTML
+ * @return {FormBuilder} this
+ */
+FormBuilder.prototype.addHTML = function(content) {
+    this.html += content + "\n";
+    return this;
+};
+
+/**
  * Add a hidden ``input`` to the form.
  *
  * @param {String} id - The id of the form element

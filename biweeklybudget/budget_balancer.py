@@ -126,8 +126,16 @@ class BudgetBalancer(object):
         self._standing = standing_budget
         assert self._standing.is_periodic is False
         assert payperiod.end_date < dtnow().date()
+        logger.debug(
+            'Initialize BudgetBalancer for PayPeriod starting on %s, using '
+            'Standing Budget "%s" (%d)', self._payperiod.start_date,
+            self._standing.name, self._standing.id
+        )
         # get candidate budgets for balancing (Periodic, Active, not skip)
         self._budgets = self._budgets_to_balance()
+        logger.debug(
+            'Candidate budgets for balancing: %s', list(self._budgets.keys())
+        )
 
     def _budgets_to_balance(self):
         """
@@ -152,39 +160,76 @@ class BudgetBalancer(object):
         top-level keys:
 
           - "pp_start_date" (str, Y-m-d)
-          - "before"
-          - "after"
-          - "transfers"
-
-        Before and after are each dicts of Budget ID to Remaining amount, before
-        and after balancing, respectively. "Transfers" is a list of dicts
-        describing the transfers that will be made to achieve the end result.
-        Each has keys "from_id", "to_id" and "amount".
+          - "transfers" - list of dicts describing the transfers that will be
+            made to achieve the end result. Each has keys "from_id", "to_id" and
+            "amount".
+          - "budgets" - is a dict describing the budgets before and after
+            balancing; keys are budget IDs and values are dicts with keys
+            "before" and "after", to values of the remaining amount.
+          - "standing_before" - float, beginning balance of standing budget
+          - "standing_after" - float, ending balance of standing budget
 
         :return: Plan for how to balance budgets in the pay period
         :rtype: dict
         """
+        logger.debug('Begin planning budget balance.')
+        result = {
+            'pp_start_date': self._payperiod.start_date.strftime('%Y-%m-%d'),
+            'transfers': [],
+            'budgets': {},
+            'standing_before': self._standing.current_balance,
+            'standing_id': self._standing.id,
+            'standing_name': self._standing.name
+        }
         # get dict of budget ID to remaining amount
         to_balance = {}
         for budg_id, data in self._payperiod.budget_sums.items():
+            # @TODO - DEBUG
+            logger.debug(
+                'LOOP self._payperiod.budget_sums - id=%s data=%s',
+                budg_id, data
+            )
+            # @TODO - END DEBUG
             if budg_id not in to_balance.keys():
                 continue
             if data['remaining'] == 0:
                 continue
             to_balance[budg_id] = data['remaining']
-        before = deepcopy(to_balance)
+            result['budgets'][budg_id] = {'before': data['remaining']}
+        # @TODO - REMOVE - DEBUGGING
+        logger.debug('self._budgets=%s result=%s', self._budgets, result)
+        # @TODO - END DEBUGGING
+        logger.debug(
+            'Beginning budget balances from PayPeriod: %s',
+            [
+                '%s(%d)=%s' % (
+                    self._budgets[x].name, x, result['budgets'][x]['before']
+                ) for x in result['budgets'].keys()
+            ]
+        )
+        logger.debug(
+            'Beginning standing budget balance: %s',
+            self._standing.current_balance
+        )
         # ok, figure out the transfers we need to make...
         after, transfers, st_bal = self._do_plan_transfers(
             to_balance, [], self._standing.current_balance
         )
-        before[self._standing.id] = self._standing.current_balance
-        after[self._standing.id] = st_bal
-        return {
-            'pp_start_date': self._payperiod.start_date.strftime('%Y-%m-%d'),
-            'transfers': transfers,
-            'after': after,
-            'before': before
-        }
+        result['transfers'] = transfers
+        logger.debug('Budget transfers: \n%s', "\n".join(transfers))
+        result['standing_after'] = st_bal
+        logger.debug('Ending standing budget balance: %s', st_bal)
+        for budg_id, budg_remain in after.items():
+            result['budgets'][budg_id]['after'] = budg_remain
+        logger.debug(
+            'Ending budget balances after balancing: %s',
+            [
+                '%s(%d)=%s' % (
+                    self._budgets[x].name, x, result['budgets'][x]['after']
+                ) for x in result['budgets'].keys()
+            ]
+        )
+        return result
 
     def _do_plan_transfers(self, id_to_remain, transfers, standing_bal):
         """
@@ -201,6 +246,10 @@ class BudgetBalancer(object):
         :return: tuple of new id_to_remain, transfers, standing_bal
         :rtype: tuple
         """
+        logger.debug(
+            'Call _do_plan_transfers; id_to_remain=%s standing_bal=%s '
+            'transfers=%s', id_to_remain, standing_bal, transfers
+        )
         if standing_bal < 0:
             # standing_bal is empty, done.
             return id_to_remain, transfers, standing_bal

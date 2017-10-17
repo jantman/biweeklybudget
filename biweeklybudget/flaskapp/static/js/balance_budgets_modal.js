@@ -111,7 +111,6 @@ function handleBalanceBudgetsFormSubmitted(data, container_id, form_id, dataTabl
     } else {
         $('#' + container_id).empty();
         $('#modalSaveButton').hide();
-        console.log(data);
         balanceBudgetsConfirmationModal(data);
     }
 }
@@ -119,10 +118,47 @@ function handleBalanceBudgetsFormSubmitted(data, container_id, form_id, dataTabl
 /**
  * Generate the HTML for the form on the Confirmation Modal.
  */
-function balanceBudgetsConfirmationDivForm() {
+function balanceBudgetsConfirmationDivForm(data) {
+    var content = '';
+    // budgets
+    content += '<div class="panel panel-info">' + "\n";
+    content += '<div class="panel-heading">Budget Balances</div>' + "\n";
+    content += '<div class="table-responsive">' + "\n";
+    content += '<table class="table table-bordered">' + "\n";
+    content += "<thead><tr><th>Budget</th><th>Before</th><th>After</th></tr></thead>\n";
+    content += "<tbody>\n";
+    Object.keys(data.budgets).forEach(function (budg_id) {
+        content += '<tr>';
+        content += '<td>' + budg_id + '</td>';
+        content += '<td>' + fmt_currency(data.budgets[budg_id]['before']) + '</td>';
+        content += '<td>' + fmt_currency(data.budgets[budg_id]['after']) + '</td>';
+        content += "</tr>\n";
+    });
+    content += '<tr style="font-weight: bold;">';
+    content += '<td>' + data.standing_name + ' (' + data.standing_id + ')</td>';
+    content += '<td>' + fmt_currency(data.standing_before) + '</td>';
+    content += '<td>' + fmt_currency(data.standing_after) + '</td>';
+    content += '</tr>' + "\n";
+    content += "</tbody></table>\n";
+    content += "</div><!-- /table-responsive -->\n";
+    content += "</div><!-- /panel -->\n";
+    // transfers
+    content += '<div class="panel panel-info" style="padding-top: 1em;">' + "\n";
+    content += '<div class="panel-heading">Transfers</div>' + "\n";
+    content += '<div class="table-responsive">' + "\n";
+    content += '<table class="table table-bordered">' + "\n";
+    content += "<thead><tr><th>Amount</th><th>From</th><th>To</th></tr></thead>\n";
+    content += "<tbody>\n";
+    for (var txfr in data.transfers) {
+        content += "<tr><td>" + txfr + "</tr></td>\n";
+    }
+    content += "</tbody></table>\n";
+    content += "</div><!-- /table-responsive -->\n";
+    content += "</div><!-- /panel -->\n";
     return new FormBuilder('balanceBudgetsConfirmationForm')
-        .addHidden('bal_budg_frm_pp_start_date', 'pp_start_date', '')
-        .addLabelToValueSelect('bal_budg_frm_standing_budget', 'standing_budget', 'Standing Source/Destination Budget', standing_name_to_id, 'None', true)
+        .addHidden('bal_budg_frm_pp_start_date', 'pp_start_date', data.pp_start_date)
+        .addHidden('bal_budg_frm_plan_json', 'plan_json', JSON.stringify(data))
+        .addHTML(content)
         .render();
 }
 
@@ -135,23 +171,25 @@ function balanceBudgetsConfirmationDivForm() {
  * pay period to balance starts on.
  */
 function balanceBudgetsConfirmationModal(data) {
+    console.log("balanceBudgetsConfirmationModal()");
+    console.log(data);
     $('#modalBody').empty();
-    $('#modalBody').append(balanceBudgetsConfirmationDivForm());
+    $('#modalBody').append(balanceBudgetsConfirmationDivForm(data));
     $('#modalSaveButton').off();
     $('#modalSaveButton').html('Confirm');
     $('#modalSaveButton').click(function() {
-        var data = serializeForm('balanceBudgetsForm');
+        var data = serializeForm('balanceBudgetsConfirmationForm');
         $('.formfeedback').remove();
         $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
         $.ajax({
             type: "POST",
-            url: '/forms/balance_budgets/calculate',
+            url: '/forms/balance_budgets/confirm',
             data: data,
             success: function(data) {
                 handleFormSubmitted(data, 'modalBody', 'balanceBudgetsConfirmationForm', null);
             },
             error: function(jqXHR, textStatus, errorThrown) {
-                handleFormError(jqXHR, textStatus, errorThrown, 'modalBody', 'balanceBudgetsForm');
+                handleFormError(jqXHR, textStatus, errorThrown, 'modalBody', 'balanceBudgetsConfirmationForm');
             }
         });
     }).show();

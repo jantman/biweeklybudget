@@ -1291,85 +1291,7 @@ class TestBalanceBudgets(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_01_add_transactions(self, testdb):
-        acct = testdb.query(Account).get(1)
-        e1budget = testdb.query(Budget).get(1)
-        e2budget = testdb.query(Budget).get(2)
-        pp = BiweeklyPayPeriod.period_for_date(
-            PAY_PERIOD_START_DATE, testdb
-        )
-        ppdate = pp.start_date
-        st8_date = (ppdate + timedelta(days=5))
-        st8_day = st8_date.day
-        if st8_day > 28:
-            st8_day = 28
-        st = ScheduledTransaction(
-            account=acct,
-            budget=e1budget,
-            amount=11.11,
-            num_per_period=2,
-            description='ST7 per_period'
-        )
-        testdb.add(st)
-        testdb.add(ScheduledTransaction(
-            account=acct,
-            budget=e1budget,
-            amount=22.22,
-            day_of_month=st8_day,
-            description='ST8 day_of_month'
-        ))
-        testdb.add(ScheduledTransaction(
-            account=acct,
-            budget=e2budget,
-            amount=33.33,
-            date=(ppdate + timedelta(days=6)),
-            description='ST9 date'
-        ))
-        t = Transaction(
-            date=(ppdate + timedelta(days=8)),
-            actual_amount=12.00,
-            budgeted_amount=11.11,
-            description='Txn From ST7',
-            account=acct,
-            budget=e1budget,
-            scheduled_trans=st
-        )
-        testdb.add(t)
-        testdb.add(Transaction(
-            date=(ppdate + timedelta(days=6)),
-            actual_amount=111.13,
-            budgeted_amount=111.11,
-            description='T1foo',
-            notes='notesT1',
-            account=acct,
-            scheduled_trans=testdb.query(ScheduledTransaction).get(1),
-            budget=e1budget
-        ))
-        testdb.add(Transaction(
-            date=(ppdate + timedelta(days=2)),
-            actual_amount=-333.33,
-            budgeted_amount=-333.33,
-            description='T2',
-            notes='notesT2',
-            account=testdb.query(Account).get(2),
-            scheduled_trans=testdb.query(ScheduledTransaction).get(3),
-            budget=testdb.query(Budget).get(4)
-        ))
-        testdb.add(Transaction(
-            date=ppdate,
-            actual_amount=222.22,
-            description='T3',
-            notes='notesT3',
-            account=testdb.query(Account).get(3),
-            budget=e2budget
-        ))
-        testdb.flush()
-        testdb.commit()
-        testdb.add(TxnReconcile(note='foo', txn_id=t.id))
-        testdb.flush()
-        testdb.commit()
-
-    def test_02_curr_period_no_button(self, base_url, selenium, testdb):
+    def test_01_curr_period_no_button(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
         self.get(
             selenium,
@@ -1380,7 +1302,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 0
 
-    def test_03_future_period_no_button(self, base_url, selenium, testdb):
+    def test_02_future_period_no_button(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
         self.get(
             selenium,
@@ -1391,7 +1313,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 0
 
-    def test_04_past_period_has_button(self, base_url, selenium, testdb):
+    def test_03_past_period_has_button(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
         self.get(
             selenium,
@@ -1402,41 +1324,271 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 1
 
-    def test_05_verify_db(self, testdb):
+    def test_04_add_data(self, testdb):
+        # Adjust income budget
+        inc_b = testdb.query(Budget).get(7)
+        inc_b.starting_balance = 2345
+        testdb.add(inc_b)
+        acct = testdb.query(Account).get(1)
+        budg1 = testdb.query(Budget).get(1)
+        budg2 = testdb.query(Budget).get(2)
+        budg8 = Budget(
+            name='Periodic8',
+            is_periodic=True,
+            description='P8desc',
+            starting_balance=100
+        )
+        testdb.add(budg8)
+        budg9 = Budget(
+            name='Periodic9',
+            is_periodic=True,
+            description='P8desc',
+            starting_balance=300
+        )
+        testdb.add(budg9)
+        budg10 = Budget(
+            name='Periodic10',
+            is_periodic=True,
+            description='P8desc',
+            starting_balance=0
+        )
+        testdb.add(budg10)
+        testdb.flush()
+        testdb.commit()
+        # Use previous payperiod
+        pp = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        ppdate = pp.start_date
+        # ScheduledTransactions - NONE of these are against a budget that
+        # gets balanced.
+        st = ScheduledTransaction(
+            account=acct,
+            budget=budg2,
+            amount=20,
+            num_per_period=2,
+            description='ST7 per_period'
+        )
+        testdb.add(st)
+        t = Transaction(
+            date=(ppdate + timedelta(days=8)),
+            actual_amount=12.00,
+            budgeted_amount=20,
+            description='Txn From ST7',
+            account=acct,
+            budget=budg2,
+            scheduled_trans=st
+        )
+        testdb.add(t)
+        testdb.add(ScheduledTransaction(
+            account=acct,
+            budget=budg1,
+            amount=25,
+            date=(ppdate + timedelta(days=6)),
+            description='ST9 date'
+        ))
+        # Non-Scheduled Transactions; these are against budgets that get
+        # balanced.
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=150,
+            description='BalT1',
+            notes='notesBalT1',
+            account=acct,
+            budget=budg1
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=-250,
+            description='BalT2',
+            notes='notesBalT2',
+            account=acct,
+            budget=budg8
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=3)),
+            actual_amount=325,
+            description='BalT3',
+            notes='notesBalT3',
+            account=acct,
+            budget=budg9
+        ))
+        testdb.add(Transaction(
+            date=(ppdate + timedelta(days=4)),
+            actual_amount=1511,
+            description='BalT4',
+            notes='notesBalT4',
+            account=acct,
+            budget=budg2
+        ))
+        testdb.flush()
+        testdb.commit()
+        testdb.add(TxnReconcile(note='foo', txn_id=t.id))
+        testdb.flush()
+        testdb.commit()
+
+    def test_05_verify_info_panels(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        p_date_str = p.start_date.strftime('%Y-%m-%d')
+        self.get(
+            selenium,
+            base_url + '/payperiod/' + p_date_str
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.00'
+        assert selenium.find_element_by_id('amt-allocated').text == '$2,151.00'
+        assert selenium.find_element_by_id('amt-spent').text == '$1,748.00'
+        assert selenium.find_element_by_id('amt-remaining').text == '$194.00'
+
+    def test_06_verify_periodic_budgets(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        p_date_str = p.start_date.strftime('%Y-%m-%d')
+        self.get(
+            selenium,
+            base_url + '/payperiod/' + p_date_str
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$175.00',
+                '$150.00',
+                '<span class="text-danger">-$75.00</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$1,551.00',
+                '$1,523.00',
+                '<span class="text-danger">-$1,317.00</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.00',
+                '$0.00',
+                '$0.00',
+                '$2,345.00'
+            ],
+            [
+                '<a href="/budgets/8">Periodic8</a>',
+                '$100.00',
+                '-$250.00',
+                '-$250.00',
+                '$350.00'
+            ],
+            [
+                '<a href="/budgets/9">Periodic9</a>',
+                '$300.00',
+                '$325.00',
+                '$325.00',
+                '<span class="text-danger">-$25.00</span>'
+            ],
+            [
+                '<a href="/budgets/10">Periodic10</a>',
+                '$0.00',
+                '$0.00',
+                '$0.00',
+                '$0.00'
+            ]
+        ]
+
+    def test_07_verify_standing_budgets(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        p_date_str = p.start_date.strftime('%Y-%m-%d')
+        self.get(
+            selenium,
+            base_url + '/payperiod/' + p_date_str
+        )
+        table = selenium.find_element_by_id('sb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/4">Standing1</a>',
+                '$1,284.23'
+            ],
+            [
+                '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29'
+            ]
+        ]
+
+    def test_08_verify_db(self, testdb):
         assert testdb.query(Transaction).with_entities(
             func.max(Transaction.id)
-        ).scalar() == 7
+        ).scalar() == 8
         p = BiweeklyPayPeriod.period_for_date(
             PAY_PERIOD_START_DATE, testdb
         ).previous
         assert p.overall_sums == {
-            'allocated': 334.0,
-            'income': 2345.67,
-            'remaining': 2011.67,
-            'spent': 0.0
+            'allocated': 2151.0,
+            'income': 2345.0,
+            'remaining': 194.0,
+            'spent': 1748.0
         }
         assert p.budget_sums == {
             1: {
-                'allocated': 22.22,
+                'allocated': 175.0,
                 'budget_amount': 100.0,
                 'is_income': False,
-                'remaining': 77.78,
-                'spent': 0.0,
-                'trans_total': 22.22
+                'remaining': -75.0,
+                'spent': 150.0,
+                'trans_total': 175.0
             },
             2: {
-                'allocated': 0.0,
+                'allocated': 1551.0,
                 'budget_amount': 234.0,
                 'is_income': False,
-                'remaining': 234.0,
-                'spent': 0.0,
-                'trans_total': 0.0
+                'remaining': -1317.0,
+                'spent': 1523.0,
+                'trans_total': 1543.0
             },
             7: {
                 'allocated': 0.0,
-                'budget_amount': 2345.67,
+                'budget_amount': 2345.0,
                 'is_income': True,
-                'remaining': 2345.67,
+                'remaining': 2345.0,
+                'spent': 0.0,
+                'trans_total': 0.0
+            },
+            8: {
+                'allocated': -250.0,
+                'budget_amount': 100.0,
+                'is_income': False,
+                'remaining': 350.0,
+                'spent': -250.0,
+                'trans_total': -250.0
+            },
+            9: {
+                'allocated': 325.0,
+                'budget_amount': 300.0,
+                'is_income': False,
+                'remaining': -25.0,
+                'spent': 325.0,
+                'trans_total': 325.0
+            },
+            10: {
+                'allocated': 0.0,
+                'budget_amount': 0.0,
+                'is_income': False,
+                'remaining': 0.0,
                 'spent': 0.0,
                 'trans_total': 0.0
             }
@@ -1448,11 +1600,11 @@ class TestBalanceBudgets(AcceptanceHelper):
                 Budget.is_active.__eq__(True)
             ).all()
         } == {
-            4: Decimal('1617.56'),
+            4: Decimal('1284.23'),
             5: Decimal('9482.29')
         }
 
-    def test_06_do_balance(self, base_url, selenium, testdb):
+    def test_10_do_balance(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(
             PAY_PERIOD_START_DATE, testdb
         ).previous
