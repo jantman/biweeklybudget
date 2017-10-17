@@ -191,7 +191,7 @@ class BudgetBalancer(object):
                 budg_id, data
             )
             # @TODO - END DEBUG
-            if budg_id not in to_balance.keys():
+            if budg_id not in self._budgets.keys():
                 continue
             if data['remaining'] == 0:
                 continue
@@ -217,7 +217,12 @@ class BudgetBalancer(object):
             to_balance, [], self._standing.current_balance
         )
         result['transfers'] = transfers
-        logger.debug('Budget transfers: \n%s', "\n".join(transfers))
+        logger.debug(
+            'Budget transfers: \n%s',
+            "\n".join(
+                ['%d from %d to %d' % (x[2], x[0], x[1]) for x in transfers]
+            )
+        )
         result['standing_after'] = st_bal
         logger.debug('Ending standing budget balance: %s', st_bal)
         for budg_id, budg_remain in after.items():
@@ -237,6 +242,9 @@ class BudgetBalancer(object):
         Given a dictionary of budget IDs to remaining amounts, figure out
         what Budget Transfers to make to bring all remaining balances to zero.
         Works recursively.
+
+        Transfers is a list of lists, each inner list describing a budget
+        transfer and having 3 items: "from_id", "to_id" and "amount".
 
         :param id_to_remain: Budget ID to remaining balance
         :type id_to_remain: dict
