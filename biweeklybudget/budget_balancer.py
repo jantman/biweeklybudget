@@ -112,6 +112,7 @@ class BudgetBalancer(object):
 
     def __init__(self, db_sess, payperiod, standing_budget):
         """
+        Initialize BudgetBalancer.
 
         :param db_sess: active database session to use for queries
         :type db_sess: sqlalchemy.orm.session.Session
