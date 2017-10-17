@@ -272,8 +272,6 @@ class BudgetBalancer(object):
         max_k = max(id_to_remain, key=id_to_remain.get)
         min_v = id_to_remain[min_k]
         max_v = id_to_remain[max_k]
-        if max_v < 0 or min_v > 0:
-            return id_to_remain, transfers, standing_bal
         if max_v > abs(min_v):
             transfers.append([max_k, min_k, abs(min_v)])
             id_to_remain[max_k] = max_v - abs(min_v)
