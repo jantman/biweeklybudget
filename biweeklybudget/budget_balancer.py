@@ -270,7 +270,7 @@ class BudgetBalancer(object):
         :rtype: tuple
         """
         # id_to_remain must be either all >= 0 or all <= 0
-        if min(id_to_remain, key=id_to_remain.get) >= 0:
+        if min(id_to_remain.values()) >= 0:
             # all positive
             logger.debug(
                 'Balancing periodic budgets with standing; overall periodic sum'
@@ -292,6 +292,8 @@ class BudgetBalancer(object):
             )
             k = keyfunc()
             v = id_to_remain[k]
+            if v == 0:
+                break
             if v > 0:
                 transfers.append([k, self._standing.id, v])
                 standing_bal += v
