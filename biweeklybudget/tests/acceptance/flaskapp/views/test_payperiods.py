@@ -1638,6 +1638,34 @@ class TestBalanceBudgets(AcceptanceHelper):
         budg_sel.select_by_value('4')
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Confirm Balance Budgets (%s)' % p_date_str
+        table = selenium.find_element_by_id('budg_bal_modal_budgets')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            ['Periodic1 (1)', '-$75.00', '$0.00'],
+            ['Periodic8 (8)', '$350.00', '$0.00'],
+            ['Periodic9 (9)', '-$25.00', '$0.00'],
+            ['<strong>Standing1 (4)</strong>', '$1,284.23', '$1,384.23']
+        ]
+        table = selenium.find_element_by_id('budg_bal_modal_transfers')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            ['$75.00', 'Periodic8 (8)', 'Periodic1 (1)'],
+            ['$25.00', 'Periodic8 (8)', 'Periodic9 (9)'],
+            ['$250.00', 'Periodic8 (8)', 'Standing1 (4)']
+        ]
 
 
 @pytest.mark.acceptance

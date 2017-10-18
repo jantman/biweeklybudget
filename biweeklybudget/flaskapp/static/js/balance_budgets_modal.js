@@ -124,12 +124,12 @@ function balanceBudgetsConfirmationDivForm(data) {
     content += '<div class="panel panel-info">' + "\n";
     content += '<div class="panel-heading">Budget Balances</div>' + "\n";
     content += '<div class="table-responsive">' + "\n";
-    content += '<table class="table table-bordered">' + "\n";
+    content += '<table class="table table-bordered" id="budg_bal_modal_budgets">' + "\n";
     content += "<thead><tr><th>Budget</th><th>Before</th><th>After</th></tr></thead>\n";
     content += "<tbody>\n";
     Object.keys(data.budgets).forEach(function (budg_id) {
         content += '<tr>';
-        content += '<td>' + budg_id + '</td>';
+        content += '<td>' + data.budgets[budg_id]['name'] + ' (' + budg_id + ')</td>';
         content += '<td>' + fmt_currency(data.budgets[budg_id]['before']) + '</td>';
         content += '<td>' + fmt_currency(data.budgets[budg_id]['after']) + '</td>';
         content += "</tr>\n";
@@ -146,7 +146,7 @@ function balanceBudgetsConfirmationDivForm(data) {
     content += '<div class="panel panel-info" style="padding-top: 1em;">' + "\n";
     content += '<div class="panel-heading">Transfers</div>' + "\n";
     content += '<div class="table-responsive">' + "\n";
-    content += '<table class="table table-bordered">' + "\n";
+    content += '<table class="table table-bordered" id="budg_bal_modal_transfers">' + "\n";
     content += "<thead><tr><th>Amount</th><th>From</th><th>To</th></tr></thead>\n";
     content += "<tbody>\n";
     for (var txfr in data.transfers) {

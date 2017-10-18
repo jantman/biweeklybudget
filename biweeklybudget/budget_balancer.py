@@ -166,7 +166,7 @@ class BudgetBalancer(object):
             "amount".
           - "budgets" - is a dict describing the budgets before and after
             balancing; keys are budget IDs and values are dicts with keys
-            "before" and "after", to values of the remaining amount.
+            "before" and "after", to values of the remaining amount, and "name"
           - "standing_before" - float, beginning balance of standing budget
           - "standing_after" - float, ending balance of standing budget
 
@@ -196,7 +196,10 @@ class BudgetBalancer(object):
             if data['remaining'] == 0:
                 continue
             to_balance[budg_id] = data['remaining']
-            result['budgets'][budg_id] = {'before': data['remaining']}
+            result['budgets'][budg_id] = {
+                'before': data['remaining'],
+                'name': self._budgets[budg_id].name
+            }
         # @TODO - REMOVE - DEBUGGING
         logger.debug('self._budgets=%s result=%s', self._budgets, result)
         # @TODO - END DEBUGGING
@@ -215,6 +218,14 @@ class BudgetBalancer(object):
         # ok, figure out the transfers we need to make...
         after, transfers, st_bal = self._do_plan_transfers(
             to_balance, [], self._standing.current_balance
+        )
+        logger.debug(
+            'Before balancing with standing budget, standing balance=%s '
+            'transfers=%s, budget ending balances=%s', st_bal, transfers, after
+        )
+        # ok, now handle the standing budget stuff...
+        after, transfers, st_bal = self._do_plan_standing_txfr(
+            after, transfers, st_bal
         )
         result['transfers'] = transfers
         logger.debug(
@@ -236,6 +247,68 @@ class BudgetBalancer(object):
             ]
         )
         return result
+
+    def _do_plan_standing_txfr(self, id_to_remain, transfers, standing_bal):
+        """
+        Given a dictionary of budget IDs to remaining amounts, that have already
+        been balanced as much as possible using the remaining amounts of each
+        budget, use the Standing Budget to balance them all to zero.
+
+        The arguments of this function are the final return value from
+        :py:meth:`~._do_plan_transfers`.
+
+        Transfers is a list of lists, each inner list describing a budget
+        transfer and having 3 items: "from_id", "to_id" and "amount".
+
+        :param id_to_remain: Budget ID to remaining balance
+        :type id_to_remain: dict
+        :param transfers: list of transfer dicts for transfers made so far
+        :type transfers: list
+        :param standing_bal: balance of the standing budget
+        :type standing_bal: decimal.Decimal
+        :return: tuple of new id_to_remain, transfers, standing_bal
+        :rtype: tuple
+        """
+        # id_to_remain must be either all >= 0 or all <= 0
+        if min(id_to_remain, key=id_to_remain.get) >= 0:
+            # all positive
+            logger.debug(
+                'Balancing periodic budgets with standing; overall periodic sum'
+                ' is positive'
+            )
+            keyfunc = lambda: max(id_to_remain, key=id_to_remain.get)
+        else:
+            # all negative
+            logger.debug(
+                'Balancing periodic budgets with standing; overall periodic sum'
+                ' is negative'
+            )
+            keyfunc = lambda: min(id_to_remain, key=id_to_remain.get)
+        while sum(id_to_remain.values()) != 0 and standing_bal > 0:
+            logger.debug(
+                'Looping to reconcile periodic with standing; standing bal=%s,'
+                ' id_to_remain=%s, transfers=%s', standing_bal, id_to_remain,
+                transfers
+            )
+            k = keyfunc()
+            v = id_to_remain[k]
+            if v > 0:
+                transfers.append([k, self._standing.id, v])
+                standing_bal += v
+                id_to_remain[k] = 0
+                continue
+            # v < 0; transfer FROM standing TO periodic
+            if abs(v) < standing_bal:
+                # ok, we have enough to cover it
+                transfers.append([self._standing.id, k, abs(v)])
+                standing_bal += v
+                id_to_remain[k] = 0
+                continue
+            # we do NOT have enough in standing to cover it
+            transfers.append([self._standing.id, k, standing_bal])
+            id_to_remain[k] += standing_bal
+            standing_bal = 0
+        return id_to_remain, transfers, standing_bal
 
     def _do_plan_transfers(self, id_to_remain, transfers, standing_bal):
         """
