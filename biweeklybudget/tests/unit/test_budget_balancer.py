@@ -151,7 +151,7 @@ class TestPlan(object):
             self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
 
     def test_simple(self):
-        type(self.standing).current_balance = 123.45
+        type(self.standing).current_balance = Decimal('123.45')
         type(self.pp).budget_sums = PropertyMock(return_value={
             1: {'remaining': 100},
             2: {'remaining': 0},
@@ -168,7 +168,7 @@ class TestPlan(object):
                     [
                         [1, 3, 99]
                     ],
-                    123.67
+                    Decimal('123.67')
                 )
                 m_dpst.return_value = (
                     {1: 0, 3: -0},
@@ -177,7 +177,7 @@ class TestPlan(object):
                         [1, 9, 1],
                         [9, 3, 10]
                     ],
-                    26.87
+                    Decimal('26.87')
                 )
                 result = self.cls.plan()
         assert result == {
@@ -199,20 +199,20 @@ class TestPlan(object):
                     'name': 'three'
                 }
             },
-            'standing_before': 123.45,
+            'standing_before': Decimal('123.45'),
             'standing_id': 9,
             'standing_name': 'standingBudget',
-            'standing_after': 26.87
+            'standing_after': Decimal('26.87')
         }
         assert mock_dpt.mock_calls == [
-            call(self.cls, to_balance, [], 123.45)
+            call(self.cls, to_balance, [], Decimal('123.45'))
         ]
         assert m_dpst.mock_calls == [
             call(
                 self.cls,
                 {1: 1, 3: -1},
                 [[1, 3, 99]],
-                123.67
+                Decimal('123.67')
             )
         ]
 
@@ -239,19 +239,19 @@ class TestDoPlanStandingTxfr(object):
         result = self.cls._do_plan_standing_txfr(
             {1: 0, 2: 0, 6: 0},
             [[1, 2, 3], [2, 6, 345.67]],
-            456
+            Decimal('456')
         )
         assert result == (
             {1: 0, 2: 0, 6: 0},
             [[1, 2, 3], [2, 6, 345.67]],
-            456
+            Decimal('456')
         )
 
     def test_all_positive(self):
         result = self.cls._do_plan_standing_txfr(
             {1: 50, 2: 0, 6: 150},
             [[1, 2, 3], [2, 6, 345.67]],
-            234.56
+            Decimal('234.56')
         )
         assert result == (
             {1: 0, 2: 0, 6: 0},
@@ -261,14 +261,14 @@ class TestDoPlanStandingTxfr(object):
                 [6, 9, 150],
                 [1, 9, 50]
             ],
-            434.56
+            Decimal('434.56')
         )
 
     def test_negative_with_coverage(self):
         result = self.cls._do_plan_standing_txfr(
             {1: -100, 2: -10, 6: 0},
             [[1, 2, 3], [2, 6, 345.67]],
-            456.93
+            Decimal('456.93')
         )
         assert result == (
             {1: 0, 2: 0, 6: 0},
@@ -278,14 +278,14 @@ class TestDoPlanStandingTxfr(object):
                 [9, 1, 100],
                 [9, 2, 10]
             ],
-            346.93
+            Decimal('346.93')
         )
 
     def test_negative_without_coverage(self):
         result = self.cls._do_plan_standing_txfr(
             {1: -60, 2: -356.78, 6: -90},
             [[1, 2, 3], [2, 6, 345.67]],
-            456.78
+            Decimal('456.78')
         )
         assert result == (
             {1: -50, 2: 0, 6: 0},
@@ -296,7 +296,7 @@ class TestDoPlanStandingTxfr(object):
                 [9, 6, 90],
                 [9, 1, 10]
             ],
-            0
+            Decimal('0')
         )
 
 
@@ -322,70 +322,70 @@ class TestDoPlanTransfers(object):
         result = self.cls._do_plan_transfers(
             {1: 0, 2: 234, 6: -948.38},
             [[1, 2, 3], [2, 6, 345.67]],
-            -123
+            Decimal('-123')
         )
         assert result == (
             {1: 0, 2: 234, 6: -948.38},
             [[1, 2, 3], [2, 6, 345.67]],
-            -123
+            Decimal('-123')
         )
 
     def test_return_early_if_all_positive(self):
         result = self.cls._do_plan_transfers(
             {1: 0, 2: 234, 6: 948.38},
             [],
-            1234.56
+            Decimal('1234.56')
         )
         assert result == (
             {1: 0, 2: 234, 6: 948.38},
             [],
-            1234.56
+            Decimal('1234.56')
         )
 
     def test_return_early_if_all_negative(self):
         result = self.cls._do_plan_transfers(
             {1: 0, 2: -234, 6: -948.38},
             [[1, 2, 3], [2, 6, 345.67]],
-            1234.56
+            Decimal('1234.56')
         )
         assert result == (
             {1: 0, 2: -234, 6: -948.38},
             [[1, 2, 3], [2, 6, 345.67]],
-            1234.56
+            Decimal('1234.56')
         )
 
     def test_simple_no_recurse_max_equal_min(self):
         result = self.cls._do_plan_transfers(
             {1: 100.55, 2: 0, 6: -100.55},
             [],
-            1234.56
+            Decimal('1234.56')
         )
         assert result == (
             {1: 0, 2: 0, 6: 0},
             [[1, 6, 100.55]],
-            1234.56
+            Decimal('1234.56')
         )
 
     def test_simple_no_recurse_max_gt_min(self):
         result = self.cls._do_plan_transfers(
             {1: 200, 2: 0, 6: -100},
             [],
-            1234.56
+            Decimal('1234.56')
         )
         assert result == (
             {1: 100, 2: 0, 6: 0},
             [[1, 6, 100]],
-            1234.56
+            Decimal('1234.56')
         )
 
     def test_simple_no_recurse_max_lt_min(self):
         result = self.cls._do_plan_transfers(
             {1: -200, 2: 0, 6: 100},
             [],
-            1234.56
+            Decimal('1234.56')
         )
         assert result == (
             {1: -100, 2: 0, 6: 0},
             [[6, 1, 100]],
-            1234.56
+            Decimal('1234.56')
         )
