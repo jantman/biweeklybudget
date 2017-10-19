@@ -35,10 +35,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 import logging
-from copy import deepcopy
 
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.utils import dtnow
@@ -276,14 +274,18 @@ class BudgetBalancer(object):
                 'Balancing periodic budgets with standing; overall periodic sum'
                 ' is positive'
             )
-            keyfunc = lambda: max(id_to_remain, key=id_to_remain.get)
+
+            def keyfunc():
+                return max(id_to_remain, key=id_to_remain.get)
         else:
             # all negative
             logger.debug(
                 'Balancing periodic budgets with standing; overall periodic sum'
                 ' is negative'
             )
-            keyfunc = lambda: min(id_to_remain, key=id_to_remain.get)
+
+            def keyfunc():
+                return min(id_to_remain, key=id_to_remain.get)
         while sum(id_to_remain.values()) != 0 and standing_bal > 0:
             logger.debug(
                 'Looping to reconcile periodic with standing; standing bal=%s,'

@@ -38,7 +38,7 @@ from datetime import datetime
 import logging
 
 from flask.views import MethodView
-from flask import render_template, request, redirect, jsonify
+from flask import render_template, request, redirect
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import dtnow

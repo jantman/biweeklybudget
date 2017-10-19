@@ -45,8 +45,6 @@ from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.budget_balancer import do_budget_transfer
 
 logger = logging.getLogger(__name__)

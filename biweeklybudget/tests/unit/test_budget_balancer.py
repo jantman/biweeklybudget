@@ -36,16 +36,13 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import sys
-import pytest
-from datetime import datetime, date, timedelta
+from datetime import date
 from sqlalchemy.orm.session import Session
-from sqlalchemy import asc
 from decimal import Decimal
 
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.budget_balancer import BudgetBalancer
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.tests.unit_helpers import binexp_to_dict
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -53,9 +50,9 @@ if (
         sys.version_info[0] < 3 or
         sys.version_info[0] == 3 and sys.version_info[1] < 4
 ):
-    from mock import Mock, patch, call, DEFAULT, PropertyMock
+    from mock import Mock, patch, call, PropertyMock
 else:
-    from unittest.mock import Mock, patch, call, DEFAULT, PropertyMock
+    from unittest.mock import Mock, patch, call, PropertyMock
 
 pbm = 'biweeklybudget.budget_balancer'
 pb = '%s.BudgetBalancer' % pbm
