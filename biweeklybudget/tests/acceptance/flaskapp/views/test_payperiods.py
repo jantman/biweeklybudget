@@ -57,7 +57,7 @@ dt = dtnow()
 
 
 @pytest.mark.acceptance
-class DoNotTestPayPeriods(AcceptanceHelper):
+class TestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -81,7 +81,7 @@ class DoNotTestPayPeriods(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DoNotTestPayPeriodFor(AcceptanceHelper):
+class TestPayPeriodFor(AcceptanceHelper):
 
     def test_current_period(self, base_url, selenium):
         start_date = PAY_PERIOD_START_DATE
@@ -116,7 +116,7 @@ class DoNotTestPayPeriodFor(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DoNotTestFindPayPeriod(AcceptanceHelper):
+class TestFindPayPeriod(AcceptanceHelper):
 
     def test_input_date(self, base_url, selenium):
         self.get(selenium, base_url + '/payperiods')
@@ -211,7 +211,7 @@ class DoNotTestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestPayPeriodsIndex(AcceptanceHelper):
+class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -498,7 +498,7 @@ class DoNotTestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-class DoNotTestPayPeriod(AcceptanceHelper):
+class TestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
     def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
@@ -531,7 +531,7 @@ class DoNotTestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
+class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, testdb):
         # clean the database
@@ -798,7 +798,7 @@ class DoNotTestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestCurrentPayPeriod(AcceptanceHelper):
+class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1670,7 +1670,7 @@ class TestBalanceBudgets(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestMakeTransModal(AcceptanceHelper):
+class TestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -1894,7 +1894,7 @@ class DoNotTestMakeTransModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestBudgetTransfer(AcceptanceHelper):
+class TestBudgetTransfer(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
@@ -2537,7 +2537,7 @@ class DoNotTestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-class DoNotTestSkipScheduled(AcceptanceHelper):
+class TestSkipScheduled(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
