@@ -1652,7 +1652,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             ['Periodic1 (1)', '-$75.00', '$0.00'],
             ['Periodic8 (8)', '$350.00', '$0.00'],
             ['Periodic9 (9)', '-$25.00', '$0.00'],
-            ['<strong>Standing1 (4)</strong>', '$1,284.23', '$1,384.23']
+            ['Standing1 (4)', '$1,284.23', '$1,534.23']
         ]
         table = selenium.find_element_by_id('budg_bal_modal_transfers')
         elems = self.tbody2elemlist(table)

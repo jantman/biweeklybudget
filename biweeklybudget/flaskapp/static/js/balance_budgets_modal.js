@@ -150,7 +150,11 @@ function balanceBudgetsConfirmationDivForm(data) {
     content += "<thead><tr><th>Amount</th><th>From</th><th>To</th></tr></thead>\n";
     content += "<tbody>\n";
     for (var txfr in data.transfers) {
-        content += "<tr><td>" + txfr + "</tr></td>\n";
+        content += "<tr>";
+        content += "<td>" + fmt_currency(data.transfers[txfr][2]) + "</td>";
+        content += "<td>" + budget_ids_to_name[data.transfers[txfr][0]] + " (" + data.transfers[txfr][0] + ")</td>";
+        content += "<td>" + budget_ids_to_name[data.transfers[txfr][1]] + " (" + data.transfers[txfr][1] + ")</td>";
+        content += "</tr>\n";
     }
     content += "</tbody></table>\n";
     content += "</div><!-- /table-responsive -->\n";
