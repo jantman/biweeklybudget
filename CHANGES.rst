@@ -10,6 +10,7 @@ Unreleased Changes
 * `Issue #113 <https://github.com/jantman/biweeklybudget/issues/113>`_ - vendor in other
   git requirements (ofxclient and ofxparse) that seem unmaintained or inactive, so we can install via ``pip``.
 * `Issue #115 <https://github.com/jantman/biweeklybudget/issues/115>`_ - In Transactions view, add ability to filter by budget.
+* Change ``BiweeklyPayPeriod`` class to never convert to floats (always use decimal.Decimal types).
 
 0.4.0 (2017-08-22)
 ------------------
