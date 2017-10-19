@@ -397,9 +397,8 @@ class BiweeklyPayPeriod(object):
           Transactions that have them, or allocated amounts for
           ScheduledTransactions.
         - ``remaining`` *(Decimal.decimal)* - the remaining amount in the
-           budget. This is
-          ``budget_amount`` minus the greater of ``allocated`` or
-          ``trans_total``. For income budgets, this is always positive.
+          budget. This is ``budget_amount`` minus the greater of ``allocated``
+          or ``trans_total``. For income budgets, this is always positive.
 
         :return: dict of dicts, transaction sums and amounts per budget
         :rtype: dict

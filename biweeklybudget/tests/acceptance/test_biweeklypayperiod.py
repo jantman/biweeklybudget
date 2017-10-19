@@ -39,6 +39,7 @@ import sys
 import pytest
 from datetime import date, datetime
 from pytz import UTC
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
@@ -339,7 +340,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 222.22,
+                'amount': Decimal('222.22'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,
@@ -354,7 +355,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 333.33,
+                'amount': Decimal('333.33'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,
@@ -369,7 +370,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 555.55,
+                'amount': Decimal('555.55'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,
@@ -385,10 +386,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 111.33,
+                'amount': Decimal('111.33'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
-                'budgeted_amount': 111.11,
+                'budgeted_amount': Decimal('111.11'),
                 'date': date(2017, 4, 9),
                 'description': 'Trans_ST_day_9',
                 'id': 4,
@@ -401,10 +402,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 444.44,
+                'amount': Decimal('444.44'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
-                'budgeted_amount': 444.44,
+                'budgeted_amount': Decimal('444.44'),
                 'date': date(2017, 4, 12),
                 'description': 'Trans_ST_date',
                 'id': 7,
@@ -416,10 +417,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 333.33,
+                'amount': Decimal('333.33'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
-                'budgeted_amount': 333.33,
+                'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 14),
                 'description': 'Trans_ST_pp_3_A',
                 'id': 5,
@@ -431,10 +432,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 333.33,
+                'amount': Decimal('333.33'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
-                'budgeted_amount': 333.33,
+                'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 15),
                 'description': 'Trans_ST_pp_3_B',
                 'id': 6,
@@ -446,7 +447,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': 666.66,
+                'amount': Decimal('666.66'),
                 'budget_id': 1,
                 'budget_name': 'Periodic1',
                 'budgeted_amount': None,
@@ -595,36 +596,36 @@ class TestSums(AcceptanceHelper):
         )
         assert pp._data['budget_sums'] == {
             2: {
-                'budget_amount': 123.45,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': True,
-                'remaining': 123.45
+                'remaining': Decimal('123.45')
             },
             3: {
-                'budget_amount': 0.0,
-                'allocated': 199.0,
-                'spent': 100.0,
-                'trans_total': 199.0,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('199.0'),
+                'spent': Decimal('100.0'),
+                'trans_total': Decimal('199.0'),
                 'is_income': True,
-                'remaining': 199.0
+                'remaining': Decimal('199.0')
             },
             4: {
-                'budget_amount': 500.00,
-                'allocated': 1000.0,
-                'spent': 850.0,
-                'trans_total': 1100.0,
+                'budget_amount': Decimal('500.00'),
+                'allocated': Decimal('1000.0'),
+                'spent': Decimal('850.0'),
+                'trans_total': Decimal('1100.0'),
                 'is_income': False,
-                'remaining': -600.0
+                'remaining': Decimal('-600.0')
             },
             5: {
-                'budget_amount': 100.0,
-                'allocated': 3.0,
-                'spent': 3.0,
-                'trans_total': 5.0,
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('3.0'),
+                'spent': Decimal('3.0'),
+                'trans_total': Decimal('5.0'),
                 'is_income': False,
-                'remaining': 95.0
+                'remaining': Decimal('95.0')
             }
         }
 
@@ -634,10 +635,10 @@ class TestSums(AcceptanceHelper):
             date(2017, 4, 10), testdb
         )
         assert pp._data['overall_sums'] == {
-            'allocated': 1100.0,
-            'spent': 853.0,
-            'income': 322.45,
-            'remaining': -777.55
+            'allocated': Decimal('1100.0'),
+            'spent': Decimal('853.0'),
+            'income': Decimal('322.45'),
+            'remaining': Decimal('-777.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
@@ -675,43 +676,43 @@ class TestSums(AcceptanceHelper):
         )
         assert pp._data['budget_sums'] == {
             2: {
-                'budget_amount': 123.45,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': True,
-                'remaining': 123.45
+                'remaining': Decimal('123.45')
             },
             3: {
-                'budget_amount': 0.0,
-                'allocated': 199.0,
-                'spent': 100.0,
-                'trans_total': 199.0,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('199.0'),
+                'spent': Decimal('100.0'),
+                'trans_total': Decimal('199.0'),
                 'is_income': True,
-                'remaining': 199.0
+                'remaining': Decimal('199.0')
             },
             4: {
-                'budget_amount': 500.00,
-                'allocated': 1000.0,
-                'spent': 850.0,
-                'trans_total': 1100.0,
+                'budget_amount': Decimal('500.00'),
+                'allocated': Decimal('1000.0'),
+                'spent': Decimal('850.0'),
+                'trans_total': Decimal('1100.0'),
                 'is_income': False,
-                'remaining': -600.0
+                'remaining': Decimal('-600.0')
             },
             5: {
-                'budget_amount': 100.0,
-                'allocated': 35.0,
-                'spent': 2035.0,
-                'trans_total': 2037.0,
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('35.0'),
+                'spent': Decimal('2035.0'),
+                'trans_total': Decimal('2037.0'),
                 'is_income': False,
-                'remaining': -1937.0
+                'remaining': Decimal('-1937.0')
             }
         }
         assert pp._data['overall_sums'] == {
-            'allocated': 1100.0,
-            'spent': 2885.0,
-            'income': 322.45,
-            'remaining': -2562.55
+            'allocated': Decimal('1100.0'),
+            'spent': Decimal('2885.0'),
+            'income': Decimal('322.45'),
+            'remaining': Decimal('-2562.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
@@ -721,41 +722,41 @@ class TestSums(AcceptanceHelper):
         )
         assert pp._data['budget_sums'] == {
             2: {
-                'budget_amount': 123.45,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': True,
-                'remaining': 123.45
+                'remaining': Decimal('123.45')
             },
             3: {
-                'budget_amount': 0.0,
-                'allocated': 99.0,
-                'spent': 0.0,
-                'trans_total': 99.0,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('99.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('99.0'),
                 'is_income': True,
-                'remaining': 99.0
+                'remaining': Decimal('99.0')
             },
             4: {
-                'budget_amount': 500.00,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('500.00'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': False,
-                'remaining': 500.0
+                'remaining': Decimal('500.0')
             },
             5: {
-                'budget_amount': 100.0,
-                'allocated': 2.0,
-                'spent': 0.0,
-                'trans_total': 2.0,
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('2.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('2.0'),
                 'is_income': False,
-                'remaining': 98.0
+                'remaining': Decimal('98.0')
             }
         }
         assert pp._data['overall_sums'] == {
-            'allocated': 600.0,
-            'income': 222.45,
-            'remaining': -377.55,
-            'spent': 0.0
+            'allocated': Decimal('600.0'),
+            'income': Decimal('222.45'),
+            'remaining': Decimal('-377.55'),
+            'spent': Decimal('0.0')
         }
