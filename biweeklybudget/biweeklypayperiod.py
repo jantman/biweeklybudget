@@ -40,6 +40,7 @@ from functools import total_ordering
 from sqlalchemy import or_, asc
 from dateutil import relativedelta
 from collections import defaultdict
+from decimal import Decimal
 
 from biweeklybudget import settings
 from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
@@ -383,20 +384,21 @@ class BiweeklyPayPeriod(object):
         Find the sums of all transactions per periodic budget ID ; return a dict
         where keys are budget IDs and values are per-budget dicts containing:
 
-        - ``budget_amount`` *(float)* - the periodic budget
+        - ``budget_amount`` *(Decimal.decimal)* - the periodic budget
           :py:attr:`~.Budget.starting_balance`.
-        - ``allocated`` *(float)* - sum of all
+        - ``allocated`` *(Decimal.decimal)* - sum of all
           :py:class:`~.ScheduledTransaction` and :py:class:`~.Transaction`
           amounts against the budget this period. For actual transactions, we
           use the :py:attr:`~.Transaction.budgeted_amount` if present (not
           None).
-        - ``spent`` *(float)* - the sum of all actual :py:class:`~.Transaction`
-          amounts against the budget this period.
-        - ``trans_total`` *(float)* - the sum of spent amounts for Transactions
-          that have them, or allocated amounts for ScheduledTransactions.
-        - ``remaining`` *(float)* - the remaining amount in the budget. This is
-          ``budget_amount`` minus the greater of ``allocated`` or
-          ``trans_total``. For income budgets, this is always positive.
+        - ``spent`` *(Decimal.decimal)* - the sum of all actual
+          :py:class:`~.Transaction` amounts against the budget this period.
+        - ``trans_total`` *(Decimal.decimal)* - the sum of spent amounts for
+          Transactions that have them, or allocated amounts for
+          ScheduledTransactions.
+        - ``remaining`` *(Decimal.decimal)* - the remaining amount in the
+          budget. This is ``budget_amount`` minus the greater of ``allocated``
+          or ``trans_total``. For income budgets, this is always positive.
 
         :return: dict of dicts, transaction sums and amounts per budget
         :rtype: dict
@@ -407,10 +409,10 @@ class BiweeklyPayPeriod(object):
             Budget.is_periodic.__eq__(True)
         ).all():
             res[b.id] = {
-                'budget_amount': float(b.starting_balance),
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': b.starting_balance,
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': b.is_income
             }
         for t in self.transactions_list:
@@ -455,24 +457,29 @@ class BiweeklyPayPeriod(object):
         """
         Return a dict describing the overall sums for this pay period, namely:
 
-        - ``allocated`` *(float)* total amount allocated via
+        - ``allocated`` *(Decimal.decimal)* total amount allocated via
           :py:class:`~.ScheduledTransaction`,
           :py:class:`~.Transaction` (counting the
           :py:attr:`~.Transaction.budgeted_amount` for Transactions that have
           one), or :py:class:`~.Budget` (not counting income budgets).
-        - ``spent`` *(float)* total amount actually spent via
+        - ``spent`` *(Decimal.decimal)* total amount actually spent via
           :py:class:`~.Transaction`.
-        - ``income`` *(float)* total amount of income allocated this pay period.
-          Calculated value (from :py:meth:`~._make_budget_sums` /
+        - ``income`` *(Decimal.decimal)* total amount of income allocated this
+          pay period. Calculated value (from :py:meth:`~._make_budget_sums` /
           ``self._data_cache['budget_sums']``) should be negative, but is
           returned as its positive inverse (absolute value).
-        - ``remaining`` *(float)* income minus the greater of ``allocated`` or
-          ``spent``
+        - ``remaining`` *(Decimal.decimal)* income minus the greater of
+          ``allocated`` or ``spent``
 
         :return: dict describing sums for the pay period
         :rtype: dict
         """
-        res = {'allocated': 0.0, 'spent': 0.0, 'income': 0.0, 'remaining': 0.0}
+        res = {
+            'allocated': Decimal('0.0'),
+            'spent': Decimal('0.0'),
+            'income': Decimal('0.0'),
+            'remaining': Decimal('0.0')
+        }
         for _, b in self._data_cache['budget_sums'].items():
             if b['is_income']:
                 if abs(b['trans_total']) > abs(b['budget_amount']):
@@ -507,8 +514,9 @@ class BiweeklyPayPeriod(object):
         * ``sched_trans_id`` (**int**) for Transactions, the
           ScheduledTransaction ``id`` that it was created from, or None.
         * ``description`` (**str**) the transaction description
-        * ``amount`` (**float**) the transaction amount
-        * ``budgeted_amount`` (**float**) the budgeted amount. This may be None.
+        * ``amount`` (**Decimal.decimal**) the transaction amount
+        * ``budgeted_amount`` (**Decimal.decimal**) the budgeted amount.
+          This may be None.
         * ``account_id`` (**int**) the id of the Account the transaction is
           against.
         * ``account_name`` (**str**) the name of the Account the transaction is
@@ -544,8 +552,9 @@ class BiweeklyPayPeriod(object):
         * ``sched_trans_id`` (**int**) for Transactions, the
           ScheduledTransaction ``id`` that it was created from, or None.
         * ``description`` (**str**) the transaction description
-        * ``amount`` (**float**) the transaction amount
-        * ``budgeted_amount`` (**float**) the budgeted amount. This may be None.
+        * ``amount`` (**Decimal.decimal**) the transaction amount
+        * ``budgeted_amount`` (**Decimal.decimal**) the budgeted amount.
+          This may be None.
         * ``account_id`` (**int**) the id of the Account the transaction is
           against.
         * ``account_name`` (**str**) the name of the Account the transaction is
@@ -568,7 +577,7 @@ class BiweeklyPayPeriod(object):
             'sched_type': None,
             'sched_trans_id': t.scheduled_trans_id,
             'description': t.description,
-            'amount': float(t.actual_amount),
+            'amount': t.actual_amount,
             'account_id': t.account_id,
             'account_name': t.account.name,
             'budget_id': t.budget_id,
@@ -581,7 +590,7 @@ class BiweeklyPayPeriod(object):
         if t.budgeted_amount is None:
             res['budgeted_amount'] = None
         else:
-            res['budgeted_amount'] = float(t.budgeted_amount)
+            res['budgeted_amount'] = t.budgeted_amount
         return res
 
     def _dict_for_sched_trans(self, t):
@@ -599,7 +608,7 @@ class BiweeklyPayPeriod(object):
           type ("monthly", "date", or "per period")
         * ``sched_trans_id`` **None**
         * ``description`` (**str**) the transaction description
-        * ``amount`` (**float**) the transaction amount
+        * ``amount`` (**Decimal.decimal**) the transaction amount
         * ``budgeted_amount`` **None**
         * ``account_id`` (**int**) the id of the Account the transaction is
           against.
@@ -622,7 +631,7 @@ class BiweeklyPayPeriod(object):
             'sched_type': t.schedule_type,
             'sched_trans_id': None,
             'description': t.description,
-            'amount': float(t.amount),
+            'amount': t.amount,
             'budgeted_amount': None,
             'account_id': t.account_id,
             'account_name': t.account.name,

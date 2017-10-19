@@ -577,51 +577,51 @@ class TestMakeBudgetSums(object):
             'all_trans_list': [
                 {
                     'type': 'ScheduledTransaction',
-                    'amount': 11.11,
+                    'amount': Decimal('11.11'),
                     'budgeted_amount': None,
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 22.22,
+                    'amount': Decimal('22.22'),
                     'budgeted_amount': None,
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 22.22,
-                    'budgeted_amount': 20.20,
+                    'amount': Decimal('22.22'),
+                    'budgeted_amount': Decimal('20.20'),
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 33.33,
-                    'budgeted_amount': 33.33,
+                    'amount': Decimal('33.33'),
+                    'budgeted_amount': Decimal('33.33'),
                     'budget_id': 2
                 },
                 {
                     'type': 'ScheduledTransaction',
-                    'amount': -1234.56,
-                    'budgeted_amount': -1234.56,
+                    'amount': Decimal('-1234.56'),
+                    'budgeted_amount': Decimal('-1234.56'),
                     'budget_id': 4
                 }
             ]
         }
         budgets = [
             Mock(
-                spec_set=Budget, starting_balance=123.45, id=1,
+                spec_set=Budget, starting_balance=Decimal('123.45'), id=1,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=456.78, id=2,
+                spec_set=Budget, starting_balance=Decimal('456.78'), id=2,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=789.10, id=3,
+                spec_set=Budget, starting_balance=Decimal('789.10'), id=3,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=0, id=4,
+                spec_set=Budget, starting_balance=Decimal('0'), id=4,
                 is_income=True
             )
         ]
@@ -630,36 +630,36 @@ class TestMakeBudgetSums(object):
         res = self.cls._make_budget_sums()
         assert res == {
             1: {
-                'budget_amount': 123.45,
-                'allocated': 53.53,
-                'spent': 44.44,
-                'trans_total': 55.55,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('53.53'),
+                'spent': Decimal('44.44'),
+                'trans_total': Decimal('55.55'),
                 'is_income': False,
-                'remaining': 67.90
+                'remaining': Decimal('67.90')
             },
             2: {
-                'budget_amount': 456.78,
-                'allocated': 33.33,
-                'spent': 33.33,
-                'trans_total': 33.33,
+                'budget_amount': Decimal('456.78'),
+                'allocated': Decimal('33.33'),
+                'spent': Decimal('33.33'),
+                'trans_total': Decimal('33.33'),
                 'is_income': False,
-                'remaining': 423.45
+                'remaining': Decimal('423.45')
             },
             3: {
-                'budget_amount': 789.10,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('789.10'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': False,
-                'remaining': 789.10
+                'remaining': Decimal('789.10')
             },
             4: {
-                'budget_amount': 0.0,
-                'allocated': -1234.56,
-                'spent': 0.0,
-                'trans_total': -1234.56,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-1234.56'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('-1234.56'),
                 'is_income': True,
-                'remaining': 1234.56
+                'remaining': Decimal('1234.56')
             }
         }
         assert len(self.mock_sess.mock_calls) == 3
@@ -679,51 +679,51 @@ class TestMakeBudgetSums(object):
             'all_trans_list': [
                 {
                     'type': 'ScheduledTransaction',
-                    'amount': 11.11,
+                    'amount': Decimal('11.11'),
                     'budgeted_amount': None,
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 22.22,
+                    'amount': Decimal('22.22'),
                     'budgeted_amount': None,
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 22.22,
-                    'budgeted_amount': 20.20,
+                    'amount': Decimal('22.22'),
+                    'budgeted_amount': Decimal('20.20'),
                     'budget_id': 1
                 },
                 {
                     'type': 'Transaction',
-                    'amount': 33.33,
-                    'budgeted_amount': 33.33,
+                    'amount': Decimal('33.33'),
+                    'budgeted_amount': Decimal('33.33'),
                     'budget_id': 2
                 },
                 {
                     'type': 'Transaction',
-                    'amount': -1234.56,
-                    'budgeted_amount': -1234.56,
+                    'amount': Decimal('-1234.56'),
+                    'budgeted_amount': Decimal('-1234.56'),
                     'budget_id': 4
                 }
             ]
         }
         budgets = [
             Mock(
-                spec_set=Budget, starting_balance=123.45, id=1,
+                spec_set=Budget, starting_balance=Decimal('123.45'), id=1,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=456.78, id=2,
+                spec_set=Budget, starting_balance=Decimal('456.78'), id=2,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=789.10, id=3,
+                spec_set=Budget, starting_balance=Decimal('789.10'), id=3,
                 is_income=False
             ),
             Mock(
-                spec_set=Budget, starting_balance=0, id=4,
+                spec_set=Budget, starting_balance=Decimal('0'), id=4,
                 is_income=True
             )
         ]
@@ -732,36 +732,36 @@ class TestMakeBudgetSums(object):
         res = self.cls._make_budget_sums()
         assert res == {
             1: {
-                'budget_amount': 123.45,
-                'allocated': 53.53,
-                'spent': 44.44,
-                'trans_total': 55.55,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('53.53'),
+                'spent': Decimal('44.44'),
+                'trans_total': Decimal('55.55'),
                 'is_income': False,
-                'remaining': 67.90
+                'remaining': Decimal('67.90')
             },
             2: {
-                'budget_amount': 456.78,
-                'allocated': 33.33,
-                'spent': 33.33,
-                'trans_total': 33.33,
+                'budget_amount': Decimal('456.78'),
+                'allocated': Decimal('33.33'),
+                'spent': Decimal('33.33'),
+                'trans_total': Decimal('33.33'),
                 'is_income': False,
-                'remaining': 423.45
+                'remaining': Decimal('423.45')
             },
             3: {
-                'budget_amount': 789.10,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('789.10'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': False,
-                'remaining': 789.10
+                'remaining': Decimal('789.10')
             },
             4: {
-                'budget_amount': 0.0,
-                'allocated': -1234.56,
-                'spent': -1234.56,
-                'trans_total': -1234.56,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-1234.56'),
+                'spent': Decimal('-1234.56'),
+                'trans_total': Decimal('-1234.56'),
                 'is_income': True,
-                'remaining': 1234.56
+                'remaining': Decimal('1234.56')
             }
         }
         assert len(self.mock_sess.mock_calls) == 3
@@ -786,39 +786,39 @@ class TestMakeOverallSums(object):
     def test_simple(self):
         self.cls._data_cache['budget_sums'] = {
             1: {
-                'budget_amount': 123.45,
-                'allocated': 53.53,
-                'spent': 44.44,
-                'trans_total': 55.55,
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('53.53'),
+                'spent': Decimal('44.44'),
+                'trans_total': Decimal('55.55'),
                 'is_income': False
             },
             2: {
-                'budget_amount': 10.00,
-                'allocated': 33.33,
-                'spent': 33.33,
-                'trans_total': 33.33,
+                'budget_amount': Decimal('10.00'),
+                'allocated': Decimal('33.33'),
+                'spent': Decimal('33.33'),
+                'trans_total': Decimal('33.33'),
                 'is_income': False
             },
             3: {
-                'budget_amount': 789.10,
-                'allocated': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0,
+                'budget_amount': Decimal('789.10'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
                 'is_income': False
             },
             4: {
-                'budget_amount': 0.0,
-                'allocated': -1192.56,
-                'spent': -254.38,
-                'trans_total': -1234.56,
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-1192.56'),
+                'spent': Decimal('-254.38'),
+                'trans_total': Decimal('-1234.56'),
                 'is_income': True
             }
         }
         assert self.cls._make_overall_sums() == {
-            'allocated': 945.88,
-            'spent': 77.77,
-            'income': 1234.56,
-            'remaining': 1234.56 - 945.88
+            'allocated': Decimal('945.88'),
+            'spent': Decimal('77.77'),
+            'income': Decimal('1234.56'),
+            'remaining': Decimal('288.68')
         }
 
 
@@ -872,8 +872,8 @@ class TestDictForTrans(object):
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
             description='desc',
-            actual_amount=Decimal(123.45),
-            budgeted_amount=Decimal(120.00),
+            actual_amount=Decimal('123.45'),
+            budgeted_amount=Decimal('120.00'),
             account_id=2,
             account=m_account,
             budget_id=3,
@@ -887,8 +887,8 @@ class TestDictForTrans(object):
             'sched_type': None,
             'sched_trans_id': 567,
             'description': 'desc',
-            'amount': 123.45,
-            'budgeted_amount': 120.00,
+            'amount': Decimal('123.45'),
+            'budgeted_amount': Decimal('120.00'),
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
@@ -907,8 +907,8 @@ class TestDictForTrans(object):
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
             description='desc',
-            actual_amount=Decimal(123.45),
-            budgeted_amount=Decimal(120.00),
+            actual_amount=Decimal('123.45'),
+            budgeted_amount=Decimal('120.00'),
             account_id=2,
             account=m_account,
             budget_id=3,
@@ -922,8 +922,8 @@ class TestDictForTrans(object):
             'sched_type': None,
             'sched_trans_id': 567,
             'description': 'desc',
-            'amount': 123.45,
-            'budgeted_amount': 120.00,
+            'amount': Decimal('123.45'),
+            'budgeted_amount': Decimal('120.00'),
             'account_id': 2,
             'account_name': 'foo',
             'budget_id': 3,
@@ -942,7 +942,7 @@ class TestDictForTrans(object):
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
             description='desc',
-            actual_amount=Decimal(123.45),
+            actual_amount=Decimal('123.45'),
             budgeted_amount=None,
             account_id=2,
             account=m_account,
@@ -957,7 +957,7 @@ class TestDictForTrans(object):
             'sched_type': None,
             'sched_trans_id': 567,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
@@ -980,7 +980,7 @@ class TestDictForSchedTrans(object):
             spec_set=ScheduledTransaction,
             id=123,
             description='desc',
-            amount=Decimal(123.45),
+            amount=Decimal('123.45'),
             account_id=2,
             account=m_account,
             budget_id=3,
@@ -997,7 +997,7 @@ class TestDictForSchedTrans(object):
             'sched_type': 'date',
             'sched_trans_id': None,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
@@ -1015,7 +1015,7 @@ class TestDictForSchedTrans(object):
             'sched_type': 'per period',
             'sched_trans_id': None,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
@@ -1034,7 +1034,7 @@ class TestDictForSchedTrans(object):
             'sched_type': 'monthly',
             'sched_trans_id': None,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
@@ -1054,7 +1054,7 @@ class TestDictForSchedTrans(object):
             'sched_type': 'monthly',
             'sched_trans_id': None,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
@@ -1074,7 +1074,7 @@ class TestDictForSchedTrans(object):
             'sched_type': 'monthly',
             'sched_trans_id': None,
             'description': 'desc',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
