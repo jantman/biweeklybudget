@@ -1585,93 +1585,91 @@ class TestBalanceBudgets(AcceptanceHelper):
         t = testdb.query(Transaction).get(9)
         assert t.date == p.end_date
         assert t.budget_id == 8
-        assert t.amount == Decimal('-75')
+        assert t.actual_amount == Decimal('75')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
         t = testdb.query(Transaction).get(10)
         assert t.date == p.end_date
         assert t.budget_id == 1
-        assert t.amount == Decimal('75')
+        assert t.actual_amount == Decimal('-75')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
         t = testdb.query(Transaction).get(11)
         assert t.date == p.end_date
         assert t.budget_id == 8
-        assert t.amount == Decimal('-25')
+        assert t.actual_amount == Decimal('25')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
         t = testdb.query(Transaction).get(12)
         assert t.date == p.end_date
         assert t.budget_id == 9
-        assert t.amount == Decimal('25')
+        assert t.actual_amount == Decimal('-25')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
         t = testdb.query(Transaction).get(13)
         assert t.date == p.end_date
         assert t.budget_id == 8
-        assert t.amount == Decimal('-250')
+        assert t.actual_amount == Decimal('250')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
         t = testdb.query(Transaction).get(14)
         assert t.date == p.end_date
         assert t.budget_id == 4
-        assert t.amount == Decimal('250')
+        assert t.actual_amount == Decimal('-250')
         assert t.account_id == 1
-        assert t.reconciled_at is not None
+        for i in range(9, 15):
+            assert testdb.query(TxnReconcile).filter(
+                TxnReconcile.txn_id.__eq__(i)
+            ) is not None
         assert p.overall_sums == {
-            'allocated': 2401.0,
-            'income': 2345.0,
-            'remaining': 0.0,
-            'spent': 2098.0
+            'allocated': Decimal('2051.0'),
+            'income': Decimal('2345.0'),
+            'remaining': Decimal('294.0'),
+            'spent': Decimal('1998.0')
         }
         assert p.budget_sums == {
             1: {
-                'allocated': 175.0,
-                'budget_amount': 100.0,
+                'allocated': Decimal('100.0000'),
+                'budget_amount': Decimal('100.0000'),
                 'is_income': False,
-                'remaining': 0.0,
-                'spent': 150.0,
-                'trans_total': 175.0
+                'remaining': Decimal('0.0000'),
+                'spent': Decimal('75.0000'),
+                'trans_total': Decimal('100.0000')
             },
             2: {
-                'allocated': 1551.0,
-                'budget_amount': 234.0,
+                'allocated': Decimal('1551.0000'),
+                'budget_amount': Decimal('234.0000'),
                 'is_income': False,
-                'remaining': -1317.0,
-                'spent': 1523.0,
-                'trans_total': 1543.0
+                'remaining': Decimal('-1317.0000'),
+                'spent': Decimal('1523.0000'),
+                'trans_total': Decimal('1543.0000')
             },
             7: {
-                'allocated': 0.0,
-                'budget_amount': 2345.0,
+                'allocated': Decimal('0.0'),
+                'budget_amount': Decimal('2345.0000'),
                 'is_income': True,
-                'remaining': 2345.0,
-                'spent': 0.0,
-                'trans_total': 0.0
+                'remaining': Decimal('2345.0000'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0')
             },
             8: {
-                'allocated': -250.0,
-                'budget_amount': 100.0,
+                'allocated': Decimal('100.0000'),
+                'budget_amount': Decimal('100.0000'),
                 'is_income': False,
-                'remaining': 0.0,
-                'spent': -250.0,
-                'trans_total': -250.0
+                'remaining': Decimal('0.0000'),
+                'spent': Decimal('100.0000'),
+                'trans_total': Decimal('100.0000')
             },
             9: {
-                'allocated': 325.0,
-                'budget_amount': 300.0,
+                'allocated': Decimal('300.0000'),
+                'budget_amount': Decimal('300.0000'),
                 'is_income': False,
-                'remaining': 0.0,
-                'spent': 325.0,
-                'trans_total': 325.0
+                'remaining': Decimal('0.0000'),
+                'spent': Decimal('300.0000'),
+                'trans_total': Decimal('300.0000')
             },
             10: {
-                'allocated': 0.0,
-                'budget_amount': 0.0,
+                'allocated': Decimal('0.0'),
+                'budget_amount': Decimal('0.0000'),
                 'is_income': False,
-                'remaining': 0.0,
-                'spent': 0.0,
-                'trans_total': 0.0
+                'remaining': Decimal('0.0000'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0')
             }
         }
         assert {

@@ -417,7 +417,7 @@ class BalanceBudgetsConfirmFormHandler(FormHandlerView):
         balancer = BudgetBalancer(db_session, pp, sb_id)
         try:
             return 'Successfully created Transactions: %s' % \
-                   ', '.join([t.id for t in balancer.apply(plan)])
+                   ', '.join([str(t.id) for t in balancer.apply(plan)])
         except BudgetBalancePlanError as ex:
             raise RuntimeError(
                 '<p>%s.</p><p>User-Approved (expected):</p><pre>%s</pre>'
