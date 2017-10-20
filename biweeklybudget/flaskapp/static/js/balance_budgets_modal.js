@@ -41,7 +41,16 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 function balanceBudgetsDivForm() {
     return new FormBuilder('balanceBudgetsForm')
         .addHidden('bal_budg_frm_pp_start_date', 'pp_start_date', '')
-        .addLabelToValueSelect('bal_budg_frm_standing_budget', 'standing_budget', 'Standing Source/Destination Budget', standing_name_to_id, 'None', true)
+        .addLabelToValueSelect(
+            'bal_budg_frm_standing_budget', 'standing_budget', 'Standing Source/Destination Budget',
+            standing_name_to_id, 'None', true,
+            { helpBlock: 'Standing budget to transfer execess funds to, or transfer from to cover negative balances.' }
+        )
+        .addLabelToValueSelect(
+            'bal_budg_frm_periodic_overage_budget', 'periodic_overage_budget', 'Periodic Source/Destination Budget',
+            periodic_skip_name_to_id, 'None', true,
+            { helpBlock: 'Periodic budget to use for transferring overall payperiod excess funds to Standing Budget, after balancing all periodic budgets.' }
+        )
         .render();
 }
 

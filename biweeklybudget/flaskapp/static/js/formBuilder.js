@@ -206,23 +206,36 @@ FormBuilder.prototype.addDatePicker = function(id, name, label, options) {
  * @param {String} id - The id of the form element
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
- * @param {Array} options - the options for the select, array of objects
+ * @param {Array} selectOptions - the options for the select, array of objects
  *  (order is preserved) each having the following attributes:
- * @param {String} options.label - the label for the option
- * @param {String} options.value - the value for the option
- * @param {Boolean} options.selected - whether the option should be the
+ * @param {String} selectOptions.label - the label for the option
+ * @param {String} selectOptions.value - the value for the option
+ * @param {Boolean} selectOptions.selected - whether the option should be the
  *  default selected value *(optional; defaults to False)*
+ * @param {Object} options
+ * @param {String} options.htmlClass - The HTML class to apply to the element; defaults to ``form-control``.
+ * @param {String} options.helpBlock - Content for block of help text after input; defaults to null.
+ * @param {String} options.groupHtml - Additional HTML to add to the outermost
+ *  form-group div. This is where we'd usually add a default style/display. Defaults to null.
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addSelect = function(id, name, label, options) {
-    this.html += '<div class="form-group" id="' + id + '_group"><label for="' + id + '" class="control-label">' + label + '</label>' +
-        '<select id="' + id + '" name="' + name + '" class="form-control">';
-    for (var idx in options) {
-        this.html += '<option value="' + options[idx].value + '"';
-        if ('selected' in options[idx] && options[idx].selected === true) { this.html += ' selected="selected"'; }
-        this.html += '>' + options[idx].label + '</option>';
+FormBuilder.prototype.addSelect = function(id, name, label, selectOptions, options) {
+    if(options === undefined) { options = {}; }
+    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, options);
+    this.html += '<div class="form-group" id="' + id + '_group"';
+    if (options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
+    this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
+        '<select id="' + id + '" name="' + name + '" class="' + options.htmlClass + '">';
+    for (var idx in selectOptions) {
+        this.html += '<option value="' + selectOptions[idx].value + '"';
+        if ('selected' in selectOptions[idx] && selectOptions[idx].selected === true) { this.html += ' selected="selected"'; }
+        this.html += '>' + selectOptions[idx].label + '</option>';
     }
-    this.html += '</select></div>\n';
+    this.html += '</select>';
+    if (options.helpBlock !== null) {
+        this.html += '<p class="help-block">' + options.helpBlock + "</p>";
+    }
+    this.html += '</div>\n';
     return this;
 };
 
@@ -234,24 +247,26 @@ FormBuilder.prototype.addSelect = function(id, name, label, options) {
  * @param {String} id - The id of the form element
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
- * @param {Object} options - the options for the select, label to value
+ * @param {Object} selectOptions - the options for the select, label to value
  * @param {String} defaultValue - A value to select as the default
  * @param {Boolean} addNone - If true, prepend an option with a value of
  *  "None" and an empty label.
+ * @param {Object} options - Options for rendering the control. Passed through
+ *  unmodified to :js:func:`FormBuilder.addSelect`; see that for details.
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addLabelToValueSelect = function(id, name, label, options, defaultValue, addNone) {
+FormBuilder.prototype.addLabelToValueSelect = function(id, name, label, selectOptions, defaultValue, addNone, options) {
     var built = [];
     if (addNone === true) {
         built.push({ value: 'None', label: '' });
         if(defaultValue === undefined) { defaultValue = 'None'; }
     }
-    Object.keys(options).forEach(function (key) {
-        var tmp = { value: options[key], label: key };
-        if (defaultValue == options[key]) { tmp.selected = true; }
+    Object.keys(selectOptions).forEach(function (key) {
+        var tmp = { value: selectOptions[key], label: key };
+        if (defaultValue == selectOptions[key]) { tmp.selected = true; }
         built.push(tmp);
     });
-    return this.addSelect(id, name, label, built);
+    return this.addSelect(id, name, label, built, options);
 };
 
 /**

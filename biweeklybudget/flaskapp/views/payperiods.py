@@ -121,27 +121,24 @@ class PayPeriodView(MethodView):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        # Begin building some dicts of budgets
         budgets = {}
+        standing = {}
+        standing_id_to_name = {}
+        periodic = {}
+        periodic_skip_id_to_name = {}
         for b in db_session.query(Budget).all():
             k = b.name
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
-        standing = {}
-        standing_id_to_name = {}
-        for b in db_session.query(Budget).filter(
-                Budget.is_periodic.__eq__(False),
-                Budget.is_active.__eq__(True)
-        ).all():
-            standing[b.id] = b.current_balance
-            standing_id_to_name[b.id] = b.name
-        periodic = {
-            b.id: b.current_balance
-            for b in db_session.query(Budget).filter(
-                Budget.is_periodic.__eq__(True),
-                Budget.is_active.__eq__(True)
-            ).all()
-        }
+            if not b.is_periodic and b.is_active:
+                standing[b.id] = b.current_balance
+                standing_id_to_name[b.id] = b.name
+            elif b.is_periodic and b.is_active:
+                periodic[b.id] = b.current_balance
+                if b.skip_balance and not b.is_income:
+                    periodic_skip_id_to_name[b.id] = b.name
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         txfr_date_str = dtnow().strftime('%Y-%m-%d')
         if dtnow().date() < pp.start_date or dtnow().date() > pp.end_date:
@@ -174,7 +171,8 @@ class PayPeriodView(MethodView):
             periodic=periodic,
             transactions=pp.transactions_list,
             accts=accts,
-            txfr_date_str=txfr_date_str
+            txfr_date_str=txfr_date_str,
+            periodic_skip_id_to_name=periodic_skip_id_to_name
         )
 
 
@@ -348,15 +346,28 @@ class BalanceBudgetsCalculateFormHandler(FormHandlerView):
         :return: None if no errors, or hash of field name to errors for that
           field
         """
+        errors = {}
         try:
             budg_id = int(data['standing_budget'])
-            assert db_session.query(Budget).get(budg_id) is not None
+            res = db_session.query(Budget).get(budg_id)
+            assert res is not None
+            assert res.is_periodic is False
         except Exception:
-            return {
-                'standing_budget': [
-                    'You must select a valid Standing Budget.'
-                ]
-            }
+            errors['standing_budget'] = [
+                'You must select a valid Standing Budget.'
+            ]
+        try:
+            budg_id = int(data['periodic_overage_budget'])
+            res = db_session.query(Budget).get(budg_id)
+            assert res is not None
+            assert res.skip_balance is True
+            assert res.is_periodic is True
+        except Exception:
+            errors['periodic_overage_budget'] = [
+                'You must select a valid Periodic Budget with skip_balance True'
+            ]
+        if len(errors) > 0:
+            return errors
         d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         assert d == pp.start_date
@@ -375,7 +386,10 @@ class BalanceBudgetsCalculateFormHandler(FormHandlerView):
         d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         sb_id = db_session.query(Budget).get(int(data['standing_budget']))
-        balancer = BudgetBalancer(db_session, pp, sb_id)
+        pb_id = db_session.query(Budget).get(
+            int(data['periodic_overage_budget'])
+        )
+        balancer = BudgetBalancer(db_session, pp, sb_id, pb_id)
         return balancer.plan()
 
 
@@ -414,7 +428,8 @@ class BalanceBudgetsConfirmFormHandler(FormHandlerView):
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         plan = json.loads(b64decode(data['plan_json']))
         sb_id = db_session.query(Budget).get(int(plan['standing_id']))
-        balancer = BudgetBalancer(db_session, pp, sb_id)
+        pb_id = db_session.query(Budget).get(int(plan['periodic_overage_id']))
+        balancer = BudgetBalancer(db_session, pp, sb_id, pb_id)
         try:
             return 'Successfully created Transactions: %s' % \
                    ', '.join([str(t.id) for t in balancer.apply(plan)])

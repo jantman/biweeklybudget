@@ -1531,8 +1531,23 @@ class TestBalanceBudgets(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budg_sel.first_selected_option.get_attribute('value') == 'None'
+        assert body.find_element_by_id(
+            'bal_budg_frm_periodic_overage_budget').get_attribute(
+            'value') == 'None'
+        pbudg_sel = Select(
+            body.find_element_by_id('bal_budg_frm_periodic_overage_budget')
+        )
+        opts = []
+        for o in pbudg_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['2', 'Periodic2']
+        ]
+        assert budg_sel.first_selected_option.get_attribute('value') == 'None'
         # confirmed form; fill it in
         budg_sel.select_by_value('4')
+        pbudg_sel.select_by_value('2')
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         modal, title, body = self.get_modal_parts(selenium)

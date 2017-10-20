@@ -25,6 +25,10 @@
         {% for id in standing_id_to_name.keys()|sort %}
         standing_name_to_id["{{ standing_id_to_name[id] }}"] = "{{ id }}";
         {% endfor %}
+        var periodic_skip_name_to_id = {};
+        {% for id in periodic_skip_id_to_name.keys()|sort %}
+        periodic_skip_name_to_id["{{ periodic_skip_id_to_name[id] }}"] = "{{ id }}";
+        {% endfor %}
     </script>
 {% endblock %}
 {% block body %}

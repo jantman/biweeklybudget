@@ -126,7 +126,7 @@ class BudgetBalancer(object):
     Class to encapsulate logic for balancing budgets in a pay period.
     """
 
-    def __init__(self, db_sess, payperiod, standing_budget):
+    def __init__(self, db_sess, payperiod, standing_budget, periodic_budget):
         """
         Initialize BudgetBalancer.
 
@@ -137,10 +137,14 @@ class BudgetBalancer(object):
         :param standing_budget: Standing Budget to use as source for additional
           funds to make up shortfalls, or destination of surplus funds.
         :type standing_budget: biweeklybudget.models.budget_model.Budget
+        :param periodic_budget: Periodic Budget to transfer any remaining
+          funds for the overall payperiod to, after other budgets are balanced.
+        :type periodic_budget: biweeklybudget.models.budget_model.Budget
         """
         self._db = db_sess
         self._payperiod = payperiod
         self._standing = standing_budget
+        self._periodic = periodic_budget
         self._account = self._db.query(Account).get(DEFAULT_ACCOUNT_ID)
         assert self._standing.is_periodic is False
         assert payperiod.end_date < dtnow().date()
@@ -197,7 +201,9 @@ class BudgetBalancer(object):
             'budgets': {},
             'standing_before': self._standing.current_balance,
             'standing_id': self._standing.id,
-            'standing_name': self._standing.name
+            'standing_name': self._standing.name,
+            'periodic_overage_id': self._periodic.id,
+            'periodic_overage_name': self._periodic.name
         }
         # get dict of budget ID to remaining amount
         to_balance = {}

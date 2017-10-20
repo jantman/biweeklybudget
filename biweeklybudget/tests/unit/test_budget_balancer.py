@@ -63,7 +63,7 @@ pbm = 'biweeklybudget.budget_balancer'
 pb = '%s.BudgetBalancer' % pbm
 
 
-class TestDoBudgetTransfer(object):
+class BudgetBalanceSetup(object):
 
     def setup(self):
         self.mock_sess = Mock(spec_set=Session)
@@ -73,9 +73,37 @@ class TestDoBudgetTransfer(object):
         self.standing = Mock(spec_set=Budget, is_periodic=False)
         type(self.standing).id = 9
         type(self.standing).name = 'standingBudget'
+        self.periodic = Mock(spec_set=Budget, is_periodic=True)
+        type(self.periodic).id = 22
+        type(self.periodic).name = 'periodic22'
         self.budg1 = Mock(spec_set=Budget)
         type(self.budg1).id = 1
         type(self.budg1).name = 'one'
+        self.budg2 = Mock(spec_set=Budget)
+        type(self.budg2).id = 2
+        type(self.budg2).name = 'two'
+        self.budg3 = Mock(spec_set=Budget)
+        type(self.budg3).id = 3
+        type(self.budg3).name = 'three'
+        self.budgets = {1: self.budg1, 2: self.budg2, 3: self.budg3}
+
+        def se_get_budget(budg_id):
+            if budg_id == 1:
+                return self.budg1
+            if budg_id == 2:
+                return self.budg2
+            if budg_id == 3:
+                return self.budg3
+
+        self.mock_sess.query.return_value.get.side_effect = se_get_budget
+        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
+            mock_budgets.return_value = self.budgets
+            self.cls = BudgetBalancer(
+                self.mock_sess, self.pp, self.standing, self.periodic
+            )
+
+
+class TestDoBudgetTransfer(BudgetBalanceSetup):
 
     def test_simple(self):
         t1 = Mock()
@@ -123,6 +151,8 @@ class TestDoBudgetTransfer(object):
             call(transaction=t2, note=desc)
         ]
         assert self.mock_sess.mock_calls == [
+            call.query(Account),
+            call.query().get(1),
             call.add(t1),
             call.add(t2),
             call.add(tr1),
@@ -130,26 +160,15 @@ class TestDoBudgetTransfer(object):
         ]
 
 
-class TestInit(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budgets = {1: 'one'}
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestInit(BudgetBalanceSetup):
 
     def test_init(self):
         self.mock_sess.reset_mock()
         with patch('%s._budgets_to_balance' % pb) as mock_budgets:
             mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+            self.cls = BudgetBalancer(
+                self.mock_sess, self.pp, self.standing, self.periodic
+            )
         assert self.cls._db == self.mock_sess
         assert self.cls._payperiod == self.pp
         assert self.cls._standing == self.standing
@@ -158,24 +177,11 @@ class TestInit(object):
             call.query(Account),
             call.query().get(1)
         ]
-        assert self.cls._account == self.mock_sess.query.return_value\
-            .get.return_value
+        assert self.cls._account == self.budg1
+        assert self.cls._periodic == self.periodic
 
 
-class TestBudgetsToBalance(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budgets = {1: 'one'}
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestBudgetsToBalance(BudgetBalanceSetup):
 
     def test_budgets_to_balance(self):
         b1 = Mock(spec_set=Budget, id=1, name='One')
@@ -204,29 +210,7 @@ class TestBudgetsToBalance(object):
         assert self.mock_sess.mock_calls[4] == call.query().filter().all()
 
 
-class TestPlan(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budg1 = Mock(spec_set=Budget)
-        type(self.budg1).id = 1
-        type(self.budg1).name = 'one'
-        self.budg2 = Mock(spec_set=Budget)
-        type(self.budg2).id = 2
-        type(self.budg2).name = 'two'
-        self.budg3 = Mock(spec_set=Budget)
-        type(self.budg3).id = 3
-        type(self.budg3).name = 'three'
-        self.budgets = {1: self.budg1, 2: self.budg2, 3: self.budg3}
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestPlan(BudgetBalanceSetup):
 
     def test_simple(self):
         type(self.standing).current_balance = Decimal('123.45')
@@ -280,7 +264,9 @@ class TestPlan(object):
             'standing_before': Decimal('123.45'),
             'standing_id': 9,
             'standing_name': 'standingBudget',
-            'standing_after': Decimal('26.87')
+            'standing_after': Decimal('26.87'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
         }
         assert mock_dpt.mock_calls == [
             call(self.cls, to_balance, [], Decimal('123.45'))
@@ -295,23 +281,7 @@ class TestPlan(object):
         ]
 
 
-class TestDoPlanStandingTxfr(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budg1 = Mock(spec_set=Budget)
-        type(self.budg1).id = 1
-        type(self.budg1).name = 'one'
-        self.budgets = {1: self.budg1}
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestDoPlanStandingTxfr(BudgetBalanceSetup):
 
     def test_all_zeroed(self):
         result = self.cls._do_plan_standing_txfr(
@@ -378,23 +348,7 @@ class TestDoPlanStandingTxfr(object):
         )
 
 
-class TestDoPlanTransfers(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budg1 = Mock(spec_set=Budget)
-        type(self.budg1).id = 1
-        type(self.budg1).name = 'one'
-        self.budgets = {1: self.budg1}
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestDoPlanTransfers(BudgetBalanceSetup):
 
     def test_return_early_if_standing_zero(self):
         result = self.cls._do_plan_transfers(
@@ -469,39 +423,7 @@ class TestDoPlanTransfers(object):
         )
 
 
-class TestApply(object):
-
-    def setup(self):
-        self.mock_sess = Mock(spec_set=Session)
-        self.pp = Mock(spec_set=BiweeklyPayPeriod)
-        type(self.pp).start_date = date(2017, 1, 1)
-        type(self.pp).end_date = date(2017, 1, 13)
-        self.standing = Mock(spec_set=Budget, is_periodic=False)
-        type(self.standing).id = 9
-        type(self.standing).name = 'standingBudget'
-        self.budg1 = Mock(spec_set=Budget)
-        type(self.budg1).id = 1
-        type(self.budg1).name = 'one'
-        self.budg2 = Mock(spec_set=Budget)
-        type(self.budg2).id = 2
-        type(self.budg2).name = 'two'
-        self.budg3 = Mock(spec_set=Budget)
-        type(self.budg3).id = 3
-        type(self.budg3).name = 'three'
-        self.budgets = {1: self.budg1, 2: self.budg2, 3: self.budg3}
-
-        def se_get_budget(budg_id):
-            if budg_id == 1:
-                return self.budg1
-            if budg_id == 2:
-                return self.budg2
-            if budg_id == 3:
-                return self.budg3
-
-        self.mock_sess.query.return_value.get.side_effect = se_get_budget
-        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
-            mock_budgets.return_value = self.budgets
-            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+class TestApply(BudgetBalanceSetup):
 
     def test_from_json(self):
         plan_result = {
