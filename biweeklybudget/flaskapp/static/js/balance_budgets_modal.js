@@ -161,7 +161,7 @@ function balanceBudgetsConfirmationDivForm(data) {
     content += "</div><!-- /panel -->\n";
     return new FormBuilder('balanceBudgetsConfirmationForm')
         .addHidden('bal_budg_frm_pp_start_date', 'pp_start_date', data.pp_start_date)
-        .addHidden('bal_budg_frm_plan_json', 'plan_json', JSON.stringify(data))
+        .addHidden('bal_budg_frm_plan_json', 'plan_json', btoa(JSON.stringify(data)))
         .addHTML(content)
         .render();
 }

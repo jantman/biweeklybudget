@@ -39,10 +39,15 @@ import sys
 from datetime import date
 from sqlalchemy.orm.session import Session
 from decimal import Decimal
+from copy import deepcopy
+import pytest
 
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
-from biweeklybudget.budget_balancer import BudgetBalancer
+from biweeklybudget.budget_balancer import (
+    BudgetBalancer, BudgetBalancePlanError, do_budget_transfer
+)
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -56,6 +61,73 @@ else:
 
 pbm = 'biweeklybudget.budget_balancer'
 pb = '%s.BudgetBalancer' % pbm
+
+
+class TestDoBudgetTransfer(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.pp = Mock(spec_set=BiweeklyPayPeriod)
+        type(self.pp).start_date = date(2017, 1, 1)
+        type(self.pp).end_date = date(2017, 1, 13)
+        self.standing = Mock(spec_set=Budget, is_periodic=False)
+        type(self.standing).id = 9
+        type(self.standing).name = 'standingBudget'
+        self.budg1 = Mock(spec_set=Budget)
+        type(self.budg1).id = 1
+        type(self.budg1).name = 'one'
+
+    def test_simple(self):
+        t1 = Mock()
+        t2 = Mock()
+        tr1 = Mock()
+        tr2 = Mock()
+        acct = Mock()
+        desc = 'Budget Transfer - 123.45 from one (1) to standingBudget (9)'
+        with patch('%s.Transaction' % pbm, autospec=True) as mock_t:
+            with patch('%s.TxnReconcile' % pbm, autospec=True) as mock_tr:
+                mock_t.side_effect = [t1, t2]
+                mock_tr.side_effect = [tr1, tr2]
+                res = do_budget_transfer(
+                    self.mock_sess,
+                    self.pp.start_date,
+                    Decimal('123.45'),
+                    acct,
+                    self.budg1,
+                    self.standing,
+                    notes='foo'
+                )
+        assert res == [t1, t2]
+        assert mock_t.mock_calls == [
+            call(
+                date=self.pp.start_date,
+                actual_amount=Decimal('123.45'),
+                budgeted_amount=Decimal('123.45'),
+                description=desc,
+                account=acct,
+                budget=self.budg1,
+                notes='foo'
+            ),
+            call(
+                date=self.pp.start_date,
+                actual_amount=Decimal('-123.45'),
+                budgeted_amount=Decimal('-123.45'),
+                description=desc,
+                account=acct,
+                budget=self.standing,
+                notes='foo'
+            )
+        ]
+        assert mock_tr.mock_calls == [
+            call(transaction=t1, note=desc),
+            call(transaction=t2, note=desc)
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.add(t1),
+            call.add(t2),
+            call.add(tr1),
+            call.add(tr2)
+        ]
 
 
 class TestInit(object):
@@ -74,6 +146,7 @@ class TestInit(object):
             self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
 
     def test_init(self):
+        self.mock_sess.reset_mock()
         with patch('%s._budgets_to_balance' % pb) as mock_budgets:
             mock_budgets.return_value = self.budgets
             self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
@@ -81,6 +154,12 @@ class TestInit(object):
         assert self.cls._payperiod == self.pp
         assert self.cls._standing == self.standing
         assert self.cls._budgets == self.budgets
+        assert self.mock_sess.mock_calls == [
+            call.query(Account),
+            call.query().get(1)
+        ]
+        assert self.cls._account == self.mock_sess.query.return_value\
+            .get.return_value
 
 
 class TestBudgetsToBalance(object):
@@ -107,20 +186,22 @@ class TestBudgetsToBalance(object):
         assert self.cls._budgets_to_balance() == {
             1: b1, 2: b2, 3: b3
         }
-        assert len(self.mock_sess.mock_calls) == 3
-        assert self.mock_sess.mock_calls[0] == call.query(Budget)
-        assert self.mock_sess.mock_calls[1][0] == 'query().filter'
-        assert len(self.mock_sess.mock_calls[1][1]) == 3
-        assert str(self.mock_sess.mock_calls[1][1][0]) == str(
+        assert len(self.mock_sess.mock_calls) == 5
+        assert self.mock_sess.mock_calls[0] == call.query(Account)
+        assert self.mock_sess.mock_calls[1] == call.query().get(1)
+        assert self.mock_sess.mock_calls[2] == call.query(Budget)
+        assert self.mock_sess.mock_calls[3][0] == 'query().filter'
+        assert len(self.mock_sess.mock_calls[3][1]) == 3
+        assert str(self.mock_sess.mock_calls[3][1][0]) == str(
             Budget.is_periodic.__eq__(True)
         )
-        assert str(self.mock_sess.mock_calls[1][1][1]) == str(
+        assert str(self.mock_sess.mock_calls[3][1][1]) == str(
             Budget.is_active.__eq__(True)
         )
-        assert str(self.mock_sess.mock_calls[1][1][2]) == str(
+        assert str(self.mock_sess.mock_calls[3][1][2]) == str(
             Budget.skip_balance.__eq__(False)
         )
-        assert self.mock_sess.mock_calls[2] == call.query().filter().all()
+        assert self.mock_sess.mock_calls[4] == call.query().filter().all()
 
 
 class TestPlan(object):
@@ -386,3 +467,166 @@ class TestDoPlanTransfers(object):
             [[6, 1, Decimal('100')]],
             Decimal('1234.56')
         )
+
+
+class TestApply(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.pp = Mock(spec_set=BiweeklyPayPeriod)
+        type(self.pp).start_date = date(2017, 1, 1)
+        type(self.pp).end_date = date(2017, 1, 13)
+        self.standing = Mock(spec_set=Budget, is_periodic=False)
+        type(self.standing).id = 9
+        type(self.standing).name = 'standingBudget'
+        self.budg1 = Mock(spec_set=Budget)
+        type(self.budg1).id = 1
+        type(self.budg1).name = 'one'
+        self.budg2 = Mock(spec_set=Budget)
+        type(self.budg2).id = 2
+        type(self.budg2).name = 'two'
+        self.budg3 = Mock(spec_set=Budget)
+        type(self.budg3).id = 3
+        type(self.budg3).name = 'three'
+        self.budgets = {1: self.budg1, 2: self.budg2, 3: self.budg3}
+
+        def se_get_budget(budg_id):
+            if budg_id == 1:
+                return self.budg1
+            if budg_id == 2:
+                return self.budg2
+            if budg_id == 3:
+                return self.budg3
+
+        self.mock_sess.query.return_value.get.side_effect = se_get_budget
+        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
+            mock_budgets.return_value = self.budgets
+            self.cls = BudgetBalancer(self.mock_sess, self.pp, self.standing)
+
+    def test_from_json(self):
+        plan_result = {
+            'transfers': [
+                [1, 2, 92.34],
+                [1, 3, -84.32]
+            ]
+        }
+        actual = deepcopy(plan_result)
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        # need to patch db.query.get to return Budget object
+        with patch('%s.plan' % pb, autospec=True) as mock_plan:
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                mock_plan.return_value = actual
+                m_dbt.side_effect = [[t1, t2], [t3, t4]]
+                res = self.cls.apply(plan_result)
+        assert res == [t1, t2, t3, t4]
+        assert mock_plan.mock_calls == [call(self.cls)]
+        assert m_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), 92.34,
+                self.cls._account, self.budg1, self.budg2,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), -84.32,
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Account),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(2),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.commit()
+        ]
+
+    def test_not_from_json(self):
+        plan_result = {
+            'transfers': [
+                [1, 2, Decimal('92.34')],
+                [1, 3, Decimal('-84.32')]
+            ]
+        }
+        actual = deepcopy(plan_result)
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        # need to patch db.query.get to return Budget object
+        with patch('%s.plan' % pb, autospec=True) as mock_plan:
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                mock_plan.return_value = actual
+                m_dbt.side_effect = [[t1, t2], [t3, t4]]
+                res = self.cls.apply(plan_result, from_json=False)
+        assert res == [t1, t2, t3, t4]
+        assert mock_plan.mock_calls == [call(self.cls)]
+        assert m_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('92.34'),
+                self.cls._account, self.budg1, self.budg2,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('-84.32'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Account),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(2),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.commit()
+        ]
+
+    def test_no_match(self):
+        plan_result = {
+            'transfers': [
+                [1, 2, Decimal('92.34')],
+                [1, 3, Decimal('-84.32')],
+                [1, 2, Decimal('102.34')]
+            ]
+        }
+        actual = {
+            'transfers': [
+                [1, 2, Decimal('92.34')],
+                [1, 3, Decimal('-84.32')]
+            ]
+        }
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        # need to patch db.query.get to return Budget object
+        with patch('%s.plan' % pb, autospec=True) as mock_plan:
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                mock_plan.return_value = actual
+                m_dbt.side_effect = [[t1, t2], [t3, t4]]
+                with pytest.raises(BudgetBalancePlanError) as ex:
+                    self.cls.apply(plan_result, from_json=False)
+        assert ex.value.actual == actual
+        assert ex.value.expected == plan_result
+        assert mock_plan.mock_calls == [call(self.cls)]
+        assert m_dbt.mock_calls == []
+        assert self.mock_sess.mock_calls == [
+            call.query(Account),
+            call.query().get(1),
+        ]

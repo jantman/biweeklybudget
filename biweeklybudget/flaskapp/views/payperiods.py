@@ -36,6 +36,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 from datetime import datetime
 import logging
+from base64 import b64decode
+import json
+from pprint import pformat
 
 from flask.views import MethodView
 from flask import render_template, request, redirect
@@ -50,7 +53,9 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
-from biweeklybudget.budget_balancer import BudgetBalancer
+from biweeklybudget.budget_balancer import (
+    BudgetBalancer, BudgetBalancePlanError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -374,6 +379,54 @@ class BalanceBudgetsCalculateFormHandler(FormHandlerView):
         return balancer.plan()
 
 
+class BalanceBudgetsConfirmFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/balance_budgets/confirm
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        assert d == pp.start_date
+        json.loads(b64decode(data['plan_json']))
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        plan = json.loads(b64decode(data['plan_json']))
+        sb_id = db_session.query(Budget).get(int(plan['standing_id']))
+        balancer = BudgetBalancer(db_session, pp, sb_id)
+        try:
+            return 'Successfully created Transactions: %s' % \
+                   ', '.join([t.id for t in balancer.apply(plan)])
+        except BudgetBalancePlanError as ex:
+            raise RuntimeError(
+                '<p>%s.</p><p>User-Approved (expected):</p><pre>%s</pre>'
+                '<p>Current (actual):</p><pre>%s</pre>' % (
+                    ex.description, pformat(ex.expected), pformat(ex.actual)
+                )
+            )
+
+
 app.add_url_rule(
     '/payperiods',
     view_func=PayPeriodsView.as_view('payperiods_view')
@@ -403,5 +456,12 @@ app.add_url_rule(
     '/forms/balance_budgets/calculate',
     view_func=BalanceBudgetsCalculateFormHandler.as_view(
         'balance_budgets_calculate'
+    )
+)
+
+app.add_url_rule(
+    '/forms/balance_budgets/confirm',
+    view_func=BalanceBudgetsConfirmFormHandler.as_view(
+        'balance_budgets_confirm'
     )
 )

@@ -35,11 +35,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 import logging
+import json
 
+from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.utils import dtnow
+from biweeklybudget.settings import DEFAULT_ACCOUNT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +107,20 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
     return [t1, t2]
 
 
+class BudgetBalancePlanError(Exception):
+
+    def __init__(self, expected, actual):
+        msg = 'Attempted to apply payperiod budget balancing, but planned ' \
+              'transfers did not match the user-approved plan.'
+        message = '%s User-Approved: %s\nCurrent plan: %s' % (
+            msg, expected, actual
+        )
+        super(BudgetBalancePlanError, self).__init__(message)
+        self.expected = expected
+        self.actual = actual
+        self.description = msg
+
+
 class BudgetBalancer(object):
     """
     Class to encapsulate logic for balancing budgets in a pay period.
@@ -123,6 +141,7 @@ class BudgetBalancer(object):
         self._db = db_sess
         self._payperiod = payperiod
         self._standing = standing_budget
+        self._account = self._db.query(Account).get(DEFAULT_ACCOUNT_ID)
         assert self._standing.is_periodic is False
         assert payperiod.end_date < dtnow().date()
         logger.debug(
@@ -294,8 +313,6 @@ class BudgetBalancer(object):
             )
             k = keyfunc()
             v = id_to_remain[k]
-            if v == 0:
-                break
             if v > 0:
                 transfers.append([k, self._standing.id, v])
                 standing_bal += v
@@ -371,7 +388,7 @@ class BudgetBalancer(object):
             id_to_remain, transfers, standing_bal
         )
 
-    def apply(self, plan_result):
+    def apply(self, plan_result, from_json=True):
         """
         Run a new plan for balancing budgets. Assuming it matches
         ``plan_result``, perform the specified actions to balance budgets.
@@ -379,7 +396,28 @@ class BudgetBalancer(object):
         :param plan_result: the output of :py:meth:`~.plan`; only apply the
           transfers if it is still valid.
         :type plan_result: dict
-        :return: list of Transaction IDs created for budget transfers
+        :param from_json: Whether or not the plan_result was JSON serialized.
+        :type from_json: bool
+        :return: list of Transaction objects created for budget transfers
         :rtype: list
         """
-        return [0, 1]
+        actual = self.plan()
+        if from_json:
+            # need to convert to the same types we'd see from JSON (POST)
+            actual = json.loads(json.dumps(actual, cls=MagicJSONEncoder))
+        if plan_result != actual:
+            raise BudgetBalancePlanError(plan_result, actual)
+        txns = []
+        for txfr in actual['transfers']:
+            from_id, to_id, amt = txfr
+            txns.extend(
+                do_budget_transfer(
+                    self._db, self._payperiod.end_date, amt, self._account,
+                    self._db.query(Budget).get(from_id),
+                    self._db.query(Budget).get(to_id),
+                    notes='added by BudgetBalancer'
+                )
+            )
+        self._db.flush()
+        self._db.commit()
+        return txns

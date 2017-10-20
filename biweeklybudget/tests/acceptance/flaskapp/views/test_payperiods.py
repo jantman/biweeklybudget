@@ -1427,110 +1427,7 @@ class TestBalanceBudgets(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_05_verify_info_panels(self, base_url, selenium, testdb):
-        p = BiweeklyPayPeriod.period_for_date(
-            PAY_PERIOD_START_DATE, testdb
-        ).previous
-        p_date_str = p.start_date.strftime('%Y-%m-%d')
-        self.get(
-            selenium,
-            base_url + '/payperiod/' + p_date_str
-        )
-        assert selenium.find_element_by_id(
-            'amt-income').text == '$2,345.00'
-        assert selenium.find_element_by_id('amt-allocated').text == '$2,151.00'
-        assert selenium.find_element_by_id('amt-spent').text == '$1,748.00'
-        assert selenium.find_element_by_id('amt-remaining').text == '$194.00'
-
-    def test_06_verify_periodic_budgets(self, base_url, selenium, testdb):
-        p = BiweeklyPayPeriod.period_for_date(
-            PAY_PERIOD_START_DATE, testdb
-        ).previous
-        p_date_str = p.start_date.strftime('%Y-%m-%d')
-        self.get(
-            selenium,
-            base_url + '/payperiod/' + p_date_str
-        )
-        table = selenium.find_element_by_id('pb-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
-            [
-                '<a href="/budgets/1">Periodic1</a>',
-                '$100.00',
-                '$175.00',
-                '$150.00',
-                '<span class="text-danger">-$75.00</span>'
-            ],
-            [
-                '<a href="/budgets/2">Periodic2</a>',
-                '$234.00',
-                '$1,551.00',
-                '$1,523.00',
-                '<span class="text-danger">-$1,317.00</span>'
-            ],
-            [
-                '<a href="/budgets/7">Income (i)</a>',
-                '$2,345.00',
-                '$0.00',
-                '$0.00',
-                '$2,345.00'
-            ],
-            [
-                '<a href="/budgets/8">Periodic8</a>',
-                '$100.00',
-                '-$250.00',
-                '-$250.00',
-                '$350.00'
-            ],
-            [
-                '<a href="/budgets/9">Periodic9</a>',
-                '$300.00',
-                '$325.00',
-                '$325.00',
-                '<span class="text-danger">-$25.00</span>'
-            ],
-            [
-                '<a href="/budgets/10">Periodic10</a>',
-                '$0.00',
-                '$0.00',
-                '$0.00',
-                '$0.00'
-            ]
-        ]
-
-    def test_07_verify_standing_budgets(self, base_url, selenium, testdb):
-        p = BiweeklyPayPeriod.period_for_date(
-            PAY_PERIOD_START_DATE, testdb
-        ).previous
-        p_date_str = p.start_date.strftime('%Y-%m-%d')
-        self.get(
-            selenium,
-            base_url + '/payperiod/' + p_date_str
-        )
-        table = selenium.find_element_by_id('sb-table')
-        elems = self.tbody2elemlist(table)
-        htmls = []
-        for row in elems:
-            htmls.append(
-                [x.get_attribute('innerHTML') for x in row]
-            )
-        assert htmls == [
-            [
-                '<a href="/budgets/4">Standing1</a>',
-                '$1,284.23'
-            ],
-            [
-                '<a href="/budgets/5">Standing2</a>',
-                '$9,482.29'
-            ]
-        ]
-
-    def test_08_verify_db(self, testdb):
+    def test_05_verify_db(self, testdb):
         assert testdb.query(Transaction).with_entities(
             func.max(Transaction.id)
         ).scalar() == 8
@@ -1604,7 +1501,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             5: Decimal('9482.29')
         }
 
-    def test_10_do_balance(self, base_url, selenium, testdb):
+    def test_06_do_balance(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(
             PAY_PERIOD_START_DATE, testdb
         ).previous
@@ -1666,6 +1563,127 @@ class TestBalanceBudgets(AcceptanceHelper):
             ['$25.00', 'Periodic8 (8)', 'Periodic9 (9)'],
             ['$250.00', 'Periodic8 (8)', 'Standing1 (4)']
         ]
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully created Transactions: ' \
+                                 '9, 10, 11, 12, 13, 14'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+
+    def test_07_verify_db(self, testdb):
+        assert testdb.query(Transaction).with_entities(
+            func.max(Transaction.id)
+        ).scalar() == 14
+        p = BiweeklyPayPeriod.period_for_date(
+            PAY_PERIOD_START_DATE, testdb
+        ).previous
+        t = testdb.query(Transaction).get(9)
+        assert t.date == p.end_date
+        assert t.budget_id == 8
+        assert t.amount == Decimal('-75')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        t = testdb.query(Transaction).get(10)
+        assert t.date == p.end_date
+        assert t.budget_id == 1
+        assert t.amount == Decimal('75')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        t = testdb.query(Transaction).get(11)
+        assert t.date == p.end_date
+        assert t.budget_id == 8
+        assert t.amount == Decimal('-25')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        t = testdb.query(Transaction).get(12)
+        assert t.date == p.end_date
+        assert t.budget_id == 9
+        assert t.amount == Decimal('25')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        t = testdb.query(Transaction).get(13)
+        assert t.date == p.end_date
+        assert t.budget_id == 8
+        assert t.amount == Decimal('-250')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        t = testdb.query(Transaction).get(14)
+        assert t.date == p.end_date
+        assert t.budget_id == 4
+        assert t.amount == Decimal('250')
+        assert t.account_id == 1
+        assert t.reconciled_at is not None
+        assert p.overall_sums == {
+            'allocated': 2401.0,
+            'income': 2345.0,
+            'remaining': 0.0,
+            'spent': 2098.0
+        }
+        assert p.budget_sums == {
+            1: {
+                'allocated': 175.0,
+                'budget_amount': 100.0,
+                'is_income': False,
+                'remaining': 0.0,
+                'spent': 150.0,
+                'trans_total': 175.0
+            },
+            2: {
+                'allocated': 1551.0,
+                'budget_amount': 234.0,
+                'is_income': False,
+                'remaining': -1317.0,
+                'spent': 1523.0,
+                'trans_total': 1543.0
+            },
+            7: {
+                'allocated': 0.0,
+                'budget_amount': 2345.0,
+                'is_income': True,
+                'remaining': 2345.0,
+                'spent': 0.0,
+                'trans_total': 0.0
+            },
+            8: {
+                'allocated': -250.0,
+                'budget_amount': 100.0,
+                'is_income': False,
+                'remaining': 0.0,
+                'spent': -250.0,
+                'trans_total': -250.0
+            },
+            9: {
+                'allocated': 325.0,
+                'budget_amount': 300.0,
+                'is_income': False,
+                'remaining': 0.0,
+                'spent': 325.0,
+                'trans_total': 325.0
+            },
+            10: {
+                'allocated': 0.0,
+                'budget_amount': 0.0,
+                'is_income': False,
+                'remaining': 0.0,
+                'spent': 0.0,
+                'trans_total': 0.0
+            }
+        }
+        assert {
+            b.id: b.current_balance
+            for b in testdb.query(Budget).filter(
+                Budget.is_periodic.__eq__(False),
+                Budget.is_active.__eq__(True)
+            ).all()
+        } == {
+            4: Decimal('1534.23'),
+            5: Decimal('9482.29')
+        }
 
 
 @pytest.mark.acceptance
