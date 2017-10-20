@@ -1562,9 +1562,10 @@ class TestBalanceBudgets(AcceptanceHelper):
             )
         assert htmls == [
             ['Periodic1 (1)', '-$75.00', '$0.00'],
+            ['Periodic2 (2)', '-$1,317.00', '-$1,023.00'],
             ['Periodic8 (8)', '$350.00', '$0.00'],
             ['Periodic9 (9)', '-$25.00', '$0.00'],
-            ['Standing1 (4)', '$1,284.23', '$1,534.23']
+            ['Standing1 (4)', '$1,284.23', '$1,828.23']
         ]
         table = selenium.find_element_by_id('budg_bal_modal_transfers')
         elems = self.tbody2elemlist(table)
@@ -1576,7 +1577,8 @@ class TestBalanceBudgets(AcceptanceHelper):
         assert htmls == [
             ['$75.00', 'Periodic8 (8)', 'Periodic1 (1)'],
             ['$25.00', 'Periodic8 (8)', 'Periodic9 (9)'],
-            ['$250.00', 'Periodic8 (8)', 'Standing1 (4)']
+            ['$250.00', 'Periodic8 (8)', 'Standing1 (4)'],
+            ['$294.00', 'Periodic2 (2)', 'Standing1 (4)']
         ]
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
@@ -1585,57 +1587,69 @@ class TestBalanceBudgets(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
+        # 8 IDs were taken up with the rolled-back Transactions from plan()
         assert x.text.strip() == 'Successfully created Transactions: ' \
-                                 '9, 10, 11, 12, 13, 14'
+                                 '21, 22, 23, 24, 25, 26, 27, 28'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
 
     def test_07_verify_db(self, testdb):
+        assert len(testdb.query(Transaction).all()) == 13
         assert testdb.query(Transaction).with_entities(
             func.max(Transaction.id)
-        ).scalar() == 14
+        ).scalar() == 28
         p = BiweeklyPayPeriod.period_for_date(
             PAY_PERIOD_START_DATE, testdb
         ).previous
-        t = testdb.query(Transaction).get(9)
+        t = testdb.query(Transaction).get(21)
         assert t.date == p.end_date
         assert t.budget_id == 8
         assert t.actual_amount == Decimal('75')
         assert t.account_id == 1
-        t = testdb.query(Transaction).get(10)
+        t = testdb.query(Transaction).get(22)
         assert t.date == p.end_date
         assert t.budget_id == 1
         assert t.actual_amount == Decimal('-75')
         assert t.account_id == 1
-        t = testdb.query(Transaction).get(11)
+        t = testdb.query(Transaction).get(23)
         assert t.date == p.end_date
         assert t.budget_id == 8
         assert t.actual_amount == Decimal('25')
         assert t.account_id == 1
-        t = testdb.query(Transaction).get(12)
+        t = testdb.query(Transaction).get(24)
         assert t.date == p.end_date
         assert t.budget_id == 9
         assert t.actual_amount == Decimal('-25')
         assert t.account_id == 1
-        t = testdb.query(Transaction).get(13)
+        t = testdb.query(Transaction).get(25)
         assert t.date == p.end_date
         assert t.budget_id == 8
         assert t.actual_amount == Decimal('250')
         assert t.account_id == 1
-        t = testdb.query(Transaction).get(14)
+        t = testdb.query(Transaction).get(26)
         assert t.date == p.end_date
         assert t.budget_id == 4
         assert t.actual_amount == Decimal('-250')
         assert t.account_id == 1
-        for i in range(9, 15):
+        t = testdb.query(Transaction).get(27)
+        assert t.date == p.end_date
+        assert t.budget_id == 2
+        assert t.actual_amount == Decimal('294')
+        assert t.account_id == 1
+        t = testdb.query(Transaction).get(28)
+        assert t.date == p.end_date
+        assert t.budget_id == 4
+        assert t.actual_amount == Decimal('-294')
+        assert t.account_id == 1
+        for i in range(21, 29):
             assert testdb.query(TxnReconcile).filter(
                 TxnReconcile.txn_id.__eq__(i)
             ) is not None
         assert p.overall_sums == {
-            'allocated': Decimal('2051.0'),
-            'income': Decimal('2345.0'),
-            'remaining': Decimal('294.0'),
-            'spent': Decimal('1998.0')
+            'allocated': Decimal('2345.0000'),
+            'income': Decimal('2345.0000'),
+            'remaining': Decimal('0.0000'),
+            'spent': Decimal('2292.000')
         }
         assert p.budget_sums == {
             1: {
@@ -1647,12 +1661,12 @@ class TestBalanceBudgets(AcceptanceHelper):
                 'trans_total': Decimal('100.0000')
             },
             2: {
-                'allocated': Decimal('1551.0000'),
+                'allocated': Decimal('1845.0000'),
                 'budget_amount': Decimal('234.0000'),
                 'is_income': False,
-                'remaining': Decimal('-1317.0000'),
-                'spent': Decimal('1523.0000'),
-                'trans_total': Decimal('1543.0000')
+                'remaining': Decimal('-1611.0000'),
+                'spent': Decimal('1817.0000'),
+                'trans_total': Decimal('1837.0000')
             },
             7: {
                 'allocated': Decimal('0.0'),
@@ -1694,7 +1708,7 @@ class TestBalanceBudgets(AcceptanceHelper):
                 Budget.is_active.__eq__(True)
             ).all()
         } == {
-            4: Decimal('1534.23'),
+            4: Decimal('1828.23'),
             5: Decimal('9482.29')
         }
 

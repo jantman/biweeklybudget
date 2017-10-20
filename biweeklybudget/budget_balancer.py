@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 import logging
 import json
+from decimal import Decimal
 
 from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
 from biweeklybudget.models.budget_model import Budget
@@ -52,7 +53,8 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
                        from_budget, to_budget, notes=None):
     """
     Transfer a given amount from ``from_budget`` to ``to_budget`` on
-    ``txn_date``. This method does NOT commit database changes.
+    ``txn_date``. This method does NOT commit database changes. There are places
+    where we rely on this function not committing changes.
 
     :param db_sess: active database session to use for queries
     :type db_sess: sqlalchemy.orm.session.Session
@@ -194,7 +196,7 @@ class BudgetBalancer(object):
         :return: Plan for how to balance budgets in the pay period
         :rtype: dict
         """
-        logger.debug('Begin planning budget balance.')
+        logger.info('Begin planning budget balance.')
         result = {
             'pp_start_date': self._payperiod.start_date.strftime('%Y-%m-%d'),
             'transfers': [],
@@ -208,12 +210,6 @@ class BudgetBalancer(object):
         # get dict of budget ID to remaining amount
         to_balance = {}
         for budg_id, data in self._payperiod.budget_sums.items():
-            # @TODO - DEBUG
-            logger.debug(
-                'LOOP self._payperiod.budget_sums - id=%s data=%s',
-                budg_id, data
-            )
-            # @TODO - END DEBUG
             if budg_id not in self._budgets.keys():
                 continue
             if data['remaining'] == 0:
@@ -223,10 +219,7 @@ class BudgetBalancer(object):
                 'before': data['remaining'],
                 'name': self._budgets[budg_id].name
             }
-        # @TODO - REMOVE - DEBUGGING
-        logger.debug('self._budgets=%s result=%s', self._budgets, result)
-        # @TODO - END DEBUGGING
-        logger.debug(
+        logger.info(
             'Beginning budget balances from PayPeriod: %s',
             [
                 '%s(%d)=%s' % (
@@ -234,7 +227,7 @@ class BudgetBalancer(object):
                 ) for x in result['budgets'].keys()
             ]
         )
-        logger.debug(
+        logger.info(
             'Beginning standing budget balance: %s',
             self._standing.current_balance
         )
@@ -242,7 +235,7 @@ class BudgetBalancer(object):
         after, transfers, st_bal = self._do_plan_transfers(
             to_balance, [], self._standing.current_balance
         )
-        logger.debug(
+        logger.info(
             'Before balancing with standing budget, standing balance=%s '
             'transfers=%s, budget ending balances=%s', st_bal, transfers, after
         )
@@ -251,17 +244,17 @@ class BudgetBalancer(object):
             after, transfers, st_bal
         )
         result['transfers'] = transfers
-        logger.debug(
+        logger.info(
             'Budget transfers: \n%s',
             "\n".join(
                 ['%d from %d to %d' % (x[2], x[0], x[1]) for x in transfers]
             )
         )
         result['standing_after'] = st_bal
-        logger.debug('Ending standing budget balance: %s', st_bal)
+        logger.info('Ending standing budget balance: %s', st_bal)
         for budg_id, budg_remain in after.items():
             result['budgets'][budg_id]['after'] = budg_remain
-        logger.debug(
+        logger.info(
             'Ending budget balances after balancing: %s',
             [
                 '%s(%d)=%s' % (
@@ -269,6 +262,110 @@ class BudgetBalancer(object):
                 ) for x in result['budgets'].keys()
             ]
         )
+        res = self._do_overall_balance(result)
+        self._db.rollback()
+        return res
+
+    def _do_overall_balance(self, result):
+        """
+        Given the :py:meth:`~.plan` result after balancing all periodic budgets,
+        ensure that the overall PayPeriod remaining amount is zero. If not,
+        transfer between `self._standing` and `self._periodic` to make that so.
+
+        :param result: result from :py:meth:`~.plan`
+        :type result: dict
+        :return: same return value as :py:meth:`~.plan`, possibly with
+          an additional transfer.
+        :rtype: dict
+        """
+        # Make the transfers, to be rolled back later.
+        before_sums = self._payperiod.budget_sums
+        txns = []
+        for txfr in result['transfers']:
+            from_id, to_id, amt = txfr
+            txns.extend(
+                do_budget_transfer(
+                    self._db, self._payperiod.end_date, amt, self._account,
+                    self._db.query(Budget).get(from_id),
+                    self._db.query(Budget).get(to_id),
+                    notes='added by BudgetBalancer'
+                )
+            )
+        self._db.flush()
+        self._payperiod.clear_cache()
+        bsums = self._payperiod.budget_sums
+        osums = self._payperiod.overall_sums
+        logger.debug('After balancing, PayPeriod budget sums: %s', bsums)
+        logger.debug('After balancing, PayPeriod overall sums: %s', osums)
+        for budg_id in self._budgets.keys():
+            if bsums[budg_id]['remaining'] != Decimal('0'):
+                self._db.rollback()
+                raise RuntimeError(
+                    'ERROR: expected budget %d remaining sum to be 0 after '
+                    'balancing, but was %s' % (
+                        budg_id, bsums[budg_id]['remaining']
+                    )
+                )
+        overall_remain = osums['remaining']
+        logger.info(
+            'After balancing all budgets, overall PayPeriod remaining sum is '
+            '%s', overall_remain
+        )
+        if overall_remain < Decimal('0'):
+            logger.info(
+                'PayPeriod overall remaining sum is negative; transferring '
+                '%s from standing budget.', overall_remain
+            )
+            if abs(overall_remain) > result['standing_after']:
+                overall_remain = Decimal('-1') * result['standing_after']
+                logger.warning(
+                    'WARNING: Standing budget balance insufficient to cover '
+                    'all %s overage; using all of it', osums['remaining']
+                )
+            txns.extend(
+                do_budget_transfer(
+                    self._db, self._payperiod.end_date, abs(overall_remain),
+                    self._account,
+                    self._standing, self._periodic,
+                    notes='added by BudgetBalancer'
+                )
+            )
+            result['transfers'].append(
+                [self._standing.id, self._periodic.id, abs(overall_remain)]
+            )
+            result['standing_after'] += overall_remain
+            if self._periodic.id not in result['budgets']:
+                result['budgets'][self._periodic.id] = {
+                    'before': before_sums[self._periodic.id]['remaining'],
+                    'after': before_sums[self._periodic.id]['remaining'],
+                    'name': self._periodic.name
+                }
+            result['budgets'][self._periodic.id]['after'] += overall_remain
+        elif overall_remain > Decimal('0'):
+            logger.info(
+                'PayPeriod overall remaining sum is positive; transferring '
+                '%s to standing budget.', osums['remaining']
+            )
+            txns.extend(
+                do_budget_transfer(
+                    self._db, self._payperiod.end_date, abs(osums['remaining']),
+                    self._account,
+                    self._periodic, self._standing,
+                    notes='added by BudgetBalancer'
+                )
+            )
+            result['transfers'].append(
+                [self._periodic.id, self._standing.id, abs(osums['remaining'])]
+            )
+            result['standing_after'] += overall_remain
+            if self._periodic.id not in result['budgets']:
+                result['budgets'][self._periodic.id] = {
+                    'before': before_sums[self._periodic.id]['remaining'],
+                    'after': before_sums[self._periodic.id]['remaining'],
+                    'name': self._periodic.name
+                }
+            result['budgets'][self._periodic.id]['after'] += overall_remain
+        self._db.rollback()
         return result
 
     def _do_plan_standing_txfr(self, id_to_remain, transfers, standing_bal):

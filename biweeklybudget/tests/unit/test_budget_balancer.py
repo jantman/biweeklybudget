@@ -94,6 +94,10 @@ class BudgetBalanceSetup(object):
                 return self.budg2
             if budg_id == 3:
                 return self.budg3
+            if budg_id == 22:
+                return self.periodic
+            if budg_id == 9:
+                return self.standing
 
         self.mock_sess.query.return_value.get.side_effect = se_get_budget
         with patch('%s._budgets_to_balance' % pb) as mock_budgets:
@@ -221,27 +225,35 @@ class TestPlan(BudgetBalanceSetup):
             4: {'remaining': Decimal('986.34')}
         })
         to_balance = {1: Decimal('100'), 3: Decimal('-100')}
+
+        def se_dob(klass, r):
+            return r
+
         with patch('%s._do_plan_transfers' % pb, autospec=True) as mock_dpt:
             with patch(
                 '%s._do_plan_standing_txfr' % pb, autospec=True
             ) as m_dpst:
-                mock_dpt.return_value = (
-                    {1: Decimal('1'), 3: Decimal('-1')},
-                    [
-                        [1, 3, Decimal('99')]
-                    ],
-                    Decimal('123.67')
-                )
-                m_dpst.return_value = (
-                    {1: Decimal('0'), 3: Decimal('-0')},
-                    [
-                        [1, 3, Decimal('99')],
-                        [1, 9, Decimal('1')],
-                        [9, 3, Decimal('10')]
-                    ],
-                    Decimal('26.87')
-                )
-                result = self.cls.plan()
+                with patch(
+                    '%s._do_overall_balance' % pb, autospec=True
+                ) as mock_dob:
+                    mock_dob.side_effect = se_dob
+                    mock_dpt.return_value = (
+                        {1: Decimal('1'), 3: Decimal('-1')},
+                        [
+                            [1, 3, Decimal('99')]
+                        ],
+                        Decimal('123.67')
+                    )
+                    m_dpst.return_value = (
+                        {1: Decimal('0'), 3: Decimal('-0')},
+                        [
+                            [1, 3, Decimal('99')],
+                            [1, 9, Decimal('1')],
+                            [9, 3, Decimal('10')]
+                        ],
+                        Decimal('26.87')
+                    )
+                    result = self.cls.plan()
         assert result == {
             'pp_start_date': '2017-01-01',
             'transfers': [
@@ -278,6 +290,703 @@ class TestPlan(BudgetBalanceSetup):
                 [[1, 3, Decimal('99')]],
                 Decimal('123.67')
             )
+        ]
+        assert mock_dob.mock_calls == [call(self.cls, result)]
+
+
+class TestDoOverallBalance(BudgetBalanceSetup):
+
+    def test_budget_remaining_not_zero(self):
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('100')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('-100')},
+            4: {'remaining': Decimal('986.34')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('0')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                }
+            },
+            'standing_before': Decimal('123.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('26.87'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6]]
+            with pytest.raises(RuntimeError) as ex:
+                self.cls._do_overall_balance(plan_result)
+        assert str(ex.value) == 'ERROR: expected budget 1 remaining sum to ' \
+                                'be 0 after balancing, but was 100'
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_zero(self):
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('0')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                }
+            },
+            'standing_before': Decimal('123.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('26.87'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == plan_result
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_negative(self):
+        type(self.standing).current_balance = Decimal('1023.45')
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')},
+            22: {'remaining': Decimal('10.10')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('-456.78')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        t7 = Mock(id=7, name='t7')
+        t8 = Mock(id=8, name='t8')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                }
+            },
+            'standing_before': Decimal('1023.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('987.65'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        expected = deepcopy(plan_result)
+        expected['transfers'].append(
+            [self.standing.id, self.periodic.id, Decimal('456.78')]
+        )
+        expected['standing_after'] = Decimal('530.87')
+        expected['budgets'][22] = {
+            'before': Decimal('10.10'),
+            'after': Decimal('-446.68'),
+            'name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6], [t7, t8]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == expected
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('456.78'),
+                self.cls._account, self.standing, self.periodic,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_negative_less_than_standing(self):
+        type(self.standing).current_balance = Decimal('123.45')
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')},
+            22: {'remaining': Decimal('10.10')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('-456.78')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        t7 = Mock(id=7, name='t7')
+        t8 = Mock(id=8, name='t8')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                }
+            },
+            'standing_before': Decimal('123.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('123.45'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        expected = deepcopy(plan_result)
+        expected['transfers'].append(
+            [self.standing.id, self.periodic.id, Decimal('123.45')]
+        )
+        expected['standing_after'] = Decimal('0')
+        expected['budgets'][22] = {
+            'before': Decimal('10.10'),
+            'after': Decimal('-113.35'),
+            'name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6], [t7, t8]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == expected
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('123.45'),
+                self.cls._account, self.standing, self.periodic,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_negative_periodic_in_budgets(self):
+        type(self.standing).current_balance = Decimal('1023.45')
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')},
+            22: {'remaining': Decimal('10.10')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('-456.78')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        t7 = Mock(id=7, name='t7')
+        t8 = Mock(id=8, name='t8')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                },
+                22: {
+                    'before': Decimal('10.10'),
+                    'after': Decimal('10.10'),
+                    'name': 'periodic22'
+                }
+            },
+            'standing_before': Decimal('1023.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('987.65'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        expected = deepcopy(plan_result)
+        expected['transfers'].append(
+            [self.standing.id, self.periodic.id, Decimal('456.78')]
+        )
+        expected['standing_after'] = Decimal('530.87')
+        expected['budgets'][22] = {
+            'before': Decimal('10.10'),
+            'after': Decimal('-446.68'),
+            'name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6], [t7, t8]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == expected
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('456.78'),
+                self.cls._account, self.standing, self.periodic,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_positive(self):
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')},
+            22: {'remaining': Decimal('0')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('789.12')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        t7 = Mock(id=7, name='t7')
+        t8 = Mock(id=8, name='t8')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                }
+            },
+            'standing_before': Decimal('123.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('26.87'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        expected = deepcopy(plan_result)
+        expected['transfers'].append(
+            [self.periodic.id, self.standing.id, Decimal('789.12')]
+        )
+        expected['standing_after'] = Decimal('912.57')
+        expected['budgets'][22] = {
+            'before': Decimal('0'),
+            'after': Decimal('-789.12'),
+            'name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6], [t7, t8]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == plan_result
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('789.12'),
+                self.cls._account, self.periodic, self.standing,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
+        ]
+
+    def test_overall_remaining_positive_periodic_in_budgets(self):
+        self.mock_sess.reset_mock()
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {'remaining': Decimal('0')},
+            2: {'remaining': Decimal('0')},
+            3: {'remaining': Decimal('0')},
+            4: {'remaining': Decimal('0')},
+            22: {'remaining': Decimal('0')}
+        })
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'remaining': Decimal('789.12')
+        })
+        t1 = Mock(id=1, name='t1')
+        t2 = Mock(id=2, name='t2')
+        t3 = Mock(id=3, name='t3')
+        t4 = Mock(id=4, name='t4')
+        t5 = Mock(id=5, name='t5')
+        t6 = Mock(id=6, name='t6')
+        t7 = Mock(id=7, name='t7')
+        t8 = Mock(id=8, name='t8')
+        plan_result = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 3, Decimal('99')],
+                [1, 9, Decimal('1')],
+                [9, 3, Decimal('10')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('100'),
+                    'after': Decimal('0'),
+                    'name': 'one'
+                },
+                3: {
+                    'before': Decimal('-100'),
+                    'after': Decimal('-0'),
+                    'name': 'three'
+                },
+                22: {
+                    'before': Decimal('0'),
+                    'after': Decimal('0'),
+                    'name': 'periodic22'
+                }
+            },
+            'standing_before': Decimal('123.45'),
+            'standing_id': 9,
+            'standing_name': 'standingBudget',
+            'standing_after': Decimal('26.87'),
+            'periodic_overage_id': 22,
+            'periodic_overage_name': 'periodic22'
+        }
+        expected = deepcopy(plan_result)
+        expected['transfers'].append(
+            [self.periodic.id, self.standing.id, Decimal('789.12')]
+        )
+        expected['standing_after'] = Decimal('912.57')
+        expected['budgets'][22] = {
+            'before': Decimal('0'),
+            'after': Decimal('-789.12'),
+            'name': 'periodic22'
+        }
+        with patch('%s.do_budget_transfer' % pbm, autospec=True) as mock_dbt:
+            mock_dbt.side_effect = [[t1, t2], [t3, t4], [t5, t6], [t7, t8]]
+            result = self.cls._do_overall_balance(plan_result)
+        assert result == plan_result
+        assert mock_dbt.mock_calls == [
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('99'),
+                self.cls._account, self.budg1, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('1'),
+                self.cls._account, self.budg1, self.standing,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('10'),
+                self.cls._account, self.standing, self.budg3,
+                notes='added by BudgetBalancer'
+            ),
+            call(
+                self.mock_sess, date(2017, 1, 13), Decimal('789.12'),
+                self.cls._account, self.periodic, self.standing,
+                notes='added by BudgetBalancer'
+            )
+        ]
+        assert self.pp.mock_calls == [
+            call.clear_cache()
+        ]
+        assert self.mock_sess.mock_calls == [
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(3),
+            call.query(Budget),
+            call.query().get(1),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(9),
+            call.query(Budget),
+            call.query().get(3),
+            call.flush(),
+            call.rollback()
         ]
 
 
