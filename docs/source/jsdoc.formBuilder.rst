@@ -55,6 +55,16 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
+.. js:function:: FormBuilder.addHTML(content)
+
+   Add a string of HTML to the form.
+
+   :param String content: HTML
+   :returns: **FormBuilder** -- this
+   
+
+   
+
 .. js:function:: FormBuilder.addHidden(id, name, value)
 
    Add a hidden ``input`` to the form.
@@ -67,7 +77,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addLabelToValueSelect(id, name, label, options, defaultValue, addNone)
+.. js:function:: FormBuilder.addLabelToValueSelect(id, name, label, selectOptions, defaultValue, addNone, options)
 
    Add a select element to the form, taking an Object of options where keys
    are the labels and values are the values. This is a convenience wrapper
@@ -76,9 +86,10 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
    :param String id: The id of the form element
    :param String name: The name of the form element
    :param String label: The label text for the form element
-   :param Object options: the options for the select, label to value
+   :param Object selectOptions: the options for the select, label to value
    :param String defaultValue: A value to select as the default
    :param Boolean addNone: If true, prepend an option with a value of "None" and an empty label.
+   :param Object options: Options for rendering the control. Passed through unmodified to :js:func:`FormBuilder.addSelect`; see that for details.
    :returns: **FormBuilder** -- this
    
 
@@ -115,17 +126,21 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addSelect(id, name, label, options)
+.. js:function:: FormBuilder.addSelect(id, name, label, selectOptions, options)
 
    Add a select element to the form.
 
    :param String id: The id of the form element
    :param String name: The name of the form element
    :param String label: The label text for the form element
-   :param Array options: the options for the select, array of objects (order is preserved) each having the following attributes:
-   :param String options.label: the label for the option
-   :param String options.value: the value for the option
-   :param Boolean options.selected: whether the option should be the default selected value *(optional; defaults to False)*
+   :param Array selectOptions: the options for the select, array of objects (order is preserved) each having the following attributes:
+   :param String selectOptions.label: the label for the option
+   :param String selectOptions.value: the value for the option
+   :param Boolean selectOptions.selected: whether the option should be the default selected value *(optional; defaults to False)*
+   :param Object options: 
+   :param String options.htmlClass: The HTML class to apply to the element; defaults to ``form-control``.
+   :param String options.helpBlock: Content for block of help text after input; defaults to null.
+   :param String options.groupHtml: Additional HTML to add to the outermost form-group div. This is where we'd usually add a default style/display. Defaults to null.
    :returns: **FormBuilder** -- this
    
 

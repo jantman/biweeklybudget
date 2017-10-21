@@ -16,8 +16,18 @@
         acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
         {% endfor %}
         var budget_names_to_id = {};
+        var budget_ids_to_name = {};
         {% for id in budgets.keys()|sort %}
         budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
+        budget_ids_to_name["{{ id }}"] = "{{ budgets[id] }}";
+        {% endfor %}
+        var standing_name_to_id = {};
+        {% for id in standing_id_to_name.keys()|sort %}
+        standing_name_to_id["{{ standing_id_to_name[id] }}"] = "{{ id }}";
+        {% endfor %}
+        var periodic_skip_name_to_id = {};
+        {% for id in periodic_skip_id_to_name.keys()|sort %}
+        periodic_skip_name_to_id["{{ periodic_skip_id_to_name[id] }}"] = "{{ id }}";
         {% endfor %}
     </script>
 {% endblock %}
@@ -108,7 +118,11 @@
             <div class="row">
                 <div class="col-lg-4 col-md-6">
                     <div class="panel panel-warning">
-                        <div class="panel-heading">Periodic Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-periodic">Transfer</button></div>
+                        <div class="panel-heading">Periodic Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-periodic">Transfer</button>
+                        {% if is_previous_payperiod %}
+                            <button type="button" class="btn btn-xs btn-success" id="btn-pp-balance-budgets">Balance Budgets</button>
+                        {% endif %}
+                        </div>
                         <div class="table-responsive">
                                 <table class="table table-bordered" id="pb-table">
                                     <thead>
@@ -230,9 +244,11 @@ var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
 <script src="/static/js/payperiod_modal.js"></script>
 <script src="/static/js/reconcile_modal.js"></script>
 <script src="/static/js/budget_transfer_modal.js"></script>
+<script src="/static/js/balance_budgets_modal.js"></script>
 <script>
     $('#btn-add-txn').click(function() { transModal(null, null); });
     $('#btn-budg-txfr-periodic').click(function() { budgetTransferModal('{{ txfr_date_str }}'); });
     $('#btn-budg-txfr-standing').click(function() { budgetTransferModal('{{ txfr_date_str }}'); });
+    $('#btn-pp-balance-budgets').click(function() { balanceBudgetsModal('{{ pp.start_date|dateymd }}'); });
 </script>
 {% endblock %}

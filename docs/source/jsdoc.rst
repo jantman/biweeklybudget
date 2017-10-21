@@ -7,6 +7,7 @@ Files
 .. toctree::
 
    jsdoc.accounts_modal
+   jsdoc.balance_budgets_modal
    jsdoc.bom_items
    jsdoc.bom_items_modal
    jsdoc.budget_transfer_modal

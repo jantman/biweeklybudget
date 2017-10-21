@@ -36,6 +36,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 from datetime import datetime
 import logging
+from base64 import b64decode
+import json
+from pprint import pformat
 
 from flask.views import MethodView
 from flask import render_template, request, redirect
@@ -50,6 +53,9 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.budget_balancer import (
+    BudgetBalancer, BudgetBalancePlanError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,26 +121,27 @@ class PayPeriodView(MethodView):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        is_previous_payperiod = False
+        if pp == curr_pp.previous:
+            is_previous_payperiod = True
+        # Begin building some dicts of budgets
         budgets = {}
+        standing = {}
+        standing_id_to_name = {}
+        periodic = {}
+        periodic_skip_id_to_name = {}
         for b in db_session.query(Budget).all():
             k = b.name
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
-        standing = {
-            b.id: b.current_balance
-            for b in db_session.query(Budget).filter(
-                Budget.is_periodic.__eq__(False),
-                Budget.is_active.__eq__(True)
-            ).all()
-        }
-        periodic = {
-            b.id: b.current_balance
-            for b in db_session.query(Budget).filter(
-                Budget.is_periodic.__eq__(True),
-                Budget.is_active.__eq__(True)
-            ).all()
-        }
+            if not b.is_periodic and b.is_active:
+                standing[b.id] = b.current_balance
+                standing_id_to_name[b.id] = b.name
+            elif b.is_periodic and b.is_active:
+                periodic[b.id] = b.current_balance
+                if b.skip_balance and not b.is_income:
+                    periodic_skip_id_to_name[b.id] = b.name
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         txfr_date_str = dtnow().strftime('%Y-%m-%d')
         if dtnow().date() < pp.start_date or dtnow().date() > pp.end_date:
@@ -144,6 +151,7 @@ class PayPeriodView(MethodView):
         return render_template(
             'payperiod.html',
             pp=pp,
+            is_previous_payperiod=is_previous_payperiod,
             pp_prev_date=pp.previous.start_date,
             pp_prev_sums=pp.previous.overall_sums,
             pp_prev_suffix=self.suffix_for_period(curr_pp, pp.previous),
@@ -162,10 +170,12 @@ class PayPeriodView(MethodView):
             budget_sums=pp.budget_sums,
             budgets=budgets,
             standing=standing,
+            standing_id_to_name=standing_id_to_name,
             periodic=periodic,
             transactions=pp.transactions_list,
             accts=accts,
-            txfr_date_str=txfr_date_str
+            txfr_date_str=txfr_date_str,
+            periodic_skip_id_to_name=periodic_skip_id_to_name
         )
 
 
@@ -324,6 +334,117 @@ class SkipSchedTransFormHandler(FormHandlerView):
                'ScheduledTransaction %d.' % (t.id, st.id)
 
 
+class BalanceBudgetsCalculateFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/balance_budgets/calculate
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        errors = {}
+        try:
+            budg_id = int(data['standing_budget'])
+            res = db_session.query(Budget).get(budg_id)
+            assert res is not None
+            assert res.is_periodic is False
+        except Exception:
+            errors['standing_budget'] = [
+                'You must select a valid Standing Budget.'
+            ]
+        try:
+            budg_id = int(data['periodic_overage_budget'])
+            res = db_session.query(Budget).get(budg_id)
+            assert res is not None
+            assert res.skip_balance is True
+            assert res.is_periodic is True
+        except Exception:
+            errors['periodic_overage_budget'] = [
+                'You must select a valid Periodic Budget with skip_balance True'
+            ]
+        if len(errors) > 0:
+            return errors
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        assert d == pp.start_date
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        sb_id = db_session.query(Budget).get(int(data['standing_budget']))
+        pb_id = db_session.query(Budget).get(
+            int(data['periodic_overage_budget'])
+        )
+        balancer = BudgetBalancer(db_session, pp, sb_id, pb_id)
+        return balancer.plan()
+
+
+class BalanceBudgetsConfirmFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/balance_budgets/confirm
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        assert d == pp.start_date
+        json.loads(b64decode(data['plan_json']))
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        d = datetime.strptime(data['pp_start_date'], '%Y-%m-%d').date()
+        pp = BiweeklyPayPeriod.period_for_date(d, db_session)
+        plan = json.loads(b64decode(data['plan_json']))
+        sb_id = db_session.query(Budget).get(int(plan['standing_id']))
+        pb_id = db_session.query(Budget).get(int(plan['periodic_overage_id']))
+        balancer = BudgetBalancer(db_session, pp, sb_id, pb_id)
+        try:
+            return 'Successfully created Transactions: %s' % \
+                   ', '.join([str(t.id) for t in balancer.apply(plan)])
+        except BudgetBalancePlanError as ex:
+            raise RuntimeError(
+                '<p>%s.</p><p>User-Approved (expected):</p><pre>%s</pre>'
+                '<p>Current (actual):</p><pre>%s</pre>' % (
+                    ex.description, pformat(ex.expected), pformat(ex.actual)
+                )
+            )
+
+
 app.add_url_rule(
     '/payperiods',
     view_func=PayPeriodsView.as_view('payperiods_view')
@@ -347,4 +468,18 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/skip_sched_trans',
     view_func=SkipSchedTransFormHandler.as_view('skip_sched_trans_form')
+)
+
+app.add_url_rule(
+    '/forms/balance_budgets/calculate',
+    view_func=BalanceBudgetsCalculateFormHandler.as_view(
+        'balance_budgets_calculate'
+    )
+)
+
+app.add_url_rule(
+    '/forms/balance_budgets/confirm',
+    view_func=BalanceBudgetsConfirmFormHandler.as_view(
+        'balance_budgets_confirm'
+    )
 )

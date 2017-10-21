@@ -109,7 +109,7 @@ class ToxIt(object):
             if 'py.test' not in cmd:
                 logger.info('Skipping non-pytest command: %s', cmd)
                 continue
-            logger.info('Running command: %s', cmd)
+            logger.info('Running command: %s', ' '.join(cmd))
             rcode = subprocess.call(cmd, env=self._make_env(env_config))
             logger.info('Command exited %s', rcode)
             if rcode != 0:
@@ -178,7 +178,7 @@ class ToxIt(object):
         logger.debug('Test module: %s', testpath)
         return testpath
 
-    def run_one_module(self, script_name, module_name):
+    def run_one_module(self, script_name, module_name, expr=None):
         """run one module"""
         if 'tests/unit' in module_name:
             env = 'py36'
@@ -208,8 +208,13 @@ class ToxIt(object):
             if not cmd[0].endswith('py.test'):
                 logger.info('Skipping non-pytest command: %s', cmd)
                 continue
-            cmd[-1] = mod
-            logger.info('Running command: %s', cmd)
+            if expr is not None:
+                cmd[-1] = '-k'
+                cmd.append(expr)
+                cmd.append(mod)
+            else:
+                cmd[-1] = mod
+            logger.info('Running command: %s', ' '.join(cmd))
             rcode = subprocess.call(cmd, env=self._make_env(env_config))
             logger.info('Command exited %s', rcode)
             if rcode != 0:
@@ -234,6 +239,8 @@ def parse_args(argv):
     p.add_argument('MODULE', type=str,
                    help='Module to run; can be either a code module or a '
                         'test module.')
+    p.add_argument('EXPR', type=str, default=None, nargs='?',
+                   help='Test selection expression (py.test -k EXPR)')
     return p.parse_args(argv)
 
 
@@ -243,4 +250,4 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     script_name = sys.argv[0].split('/')[-1]
     script = ToxIt()
-    script.run_one_module(script_name, args.MODULE)
+    script.run_one_module(script_name, args.MODULE, args.EXPR)

@@ -44,6 +44,7 @@ from decimal import Decimal
 
 from biweeklybudget import settings
 from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
+from biweeklybudget.utils import dtnow
 
 
 @total_ordering
@@ -117,6 +118,10 @@ class BiweeklyPayPeriod(object):
         :rtype: datetime.date
         """
         return self._end_date
+
+    @property
+    def is_in_past(self):
+        return self.end_date < dtnow().date()
 
     @property
     def next(self):
@@ -330,6 +335,13 @@ class BiweeklyPayPeriod(object):
         self._data_cache['budget_sums'] = self._make_budget_sums()
         self._data_cache['overall_sums'] = self._make_overall_sums()
         return self._data_cache
+
+    def clear_cache(self):
+        """
+        Clear the cached transaction, budget and sum data stored in
+        `self._data_cache` and returned by :py:attr:`~._data`.
+        """
+        self._data_cache = {}
 
     def _make_combined_transactions(self):
         """

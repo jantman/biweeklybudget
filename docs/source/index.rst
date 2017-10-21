@@ -7,11 +7,11 @@ Contents
 =========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    Screenshots <screenshots>
    Getting Started <getting_started>
-   Running With Docker <docker>
+   Application Usage <app_usage>
    Flask App <flask_app>
    OFX Transaction Downloading <ofx>
    Getting Help <getting_help>
