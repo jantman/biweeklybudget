@@ -1261,3 +1261,555 @@ class TestApply(BudgetBalanceSetup):
             call.query(Account),
             call.query().get(1),
         ]
+
+
+def mockbudget(id, name, is_periodic=True, skip_balance=False, income=False):
+    m = Mock(spec_set=Budget)
+    type(m).id = id
+    type(m).name = name
+    type(m).is_periodic = is_periodic
+    type(m).skip_balance = skip_balance
+    type(m).is_income = income
+    type(m).is_active = True
+    return m
+
+
+class TestIntegrationRepresentativeData(object):
+
+    def setup(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.pp = Mock(spec_set=BiweeklyPayPeriod)
+        type(self.pp).start_date = date(2017, 1, 1)
+        type(self.pp).end_date = date(2017, 1, 13)
+        type(self.pp).overall_sums = PropertyMock(return_value={
+            'income': Decimal('2097.24'),
+            'allocated': Decimal('2248.59'),
+            'spent': Decimal('1999.92'),
+            'remaining': Decimal('-151.35')
+        })
+        budget_sums_before = {
+            1: {
+                'budget_amount': Decimal('400.0'),
+                'allocated': Decimal('318.10'),
+                'spent': Decimal('318.10'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('81.90')
+            },
+            2: {
+                'budget_amount': Decimal('50.0'),
+                'allocated': Decimal('33.44'),
+                'spent': Decimal('33.44'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('16.56')
+            },
+            3: {
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('89.85'),
+                'spent': Decimal('89.85'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('10.15')
+            },
+            4: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('1497.96'),
+                'spent': Decimal('1452.52'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('-1497.96')
+            },
+            5: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-51.31'),
+                'spent': Decimal('-51.31'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('51.31')
+            },
+            6: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            7: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-2097.25'),
+                'spent': Decimal('-2097.24'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('2097.24')
+            },
+            8: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('44.59'),
+                'spent': Decimal('44.59'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('-44.59')
+            },
+            11: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            13: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            14: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('69.42'),
+                'spent': Decimal('69.42'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('-69.42')
+            },
+            17: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            18: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            19: {
+                'budget_amount': Decimal('86.62'),
+                'allocated': Decimal('43.31'),
+                'spent': Decimal('43.31'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('43.31')
+            },
+            20: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            21: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+        }
+        type(self.pp).budget_sums = PropertyMock(
+            return_value=budget_sums_before
+        )
+        self.budgets = {
+            1: mockbudget(1, 'Food'),
+            2: mockbudget(2, 'Fuel/Auto'),
+            3: mockbudget(3, 'Dinner Out'),
+            4: mockbudget(4, 'Bills', skip_balance=True),
+            5: mockbudget(5, 'Medical'),
+            6: mockbudget(6, 'Credit Payments'),
+            7: mockbudget(7, 'Income', income=True, skip_balance=True),
+            8: mockbudget(8, 'Pet'),
+            11: mockbudget(11, 'Hobbies'),
+            13: mockbudget(13, 'Bean'),
+            14: mockbudget(14, 'Gifts'),
+            15: mockbudget(15, 'CCPayoff', is_periodic=False),
+            16: mockbudget(16, 'Discretionary', is_periodic=False),
+            17: mockbudget(17, 'Clothing'),
+            18: mockbudget(18, 'zIncomeToSavings', skip_balance=True),
+            19: mockbudget(19, 'Nicorette'),
+            20: mockbudget(20, 'Household'),
+            21: mockbudget(21, 'Subscriptions')
+        }
+        type(self.budgets[16]).current_balance = Decimal('113.53')
+        self.budgets_to_balance = {
+            k: self.budgets[k] for k in self.budgets.keys()
+            if self.budgets[k].is_periodic and not self.budgets[k].skip_balance
+        }
+        self._next_txfr_id = 1
+
+        self.expected_standing = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 14, Decimal('69.42')],
+                [5, 8, Decimal('44.59')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('81.90'),
+                    'after': Decimal('12.48'),
+                    'name': 'Food'
+                },
+                2: {
+                    'before': Decimal('16.56'),
+                    'after': Decimal('16.56'),
+                    'name': 'Fuel/Auto'
+                },
+                3: {
+                    'before': Decimal('10.15'),
+                    'after': Decimal('10.15'),
+                    'name': 'Dinner Out'
+                },
+                5: {
+                    'before': Decimal('51.31'),
+                    'after': Decimal('6.72'),
+                    'name': 'Medical'
+                },
+                8: {
+                    'before': Decimal('-44.59'),
+                    'after': Decimal('0.0'),
+                    'name': 'Pet'
+                },
+                14: {
+                    'before': Decimal('-69.42'),
+                    'after': Decimal('0.0'),
+                    'name': 'Gifts'
+                },
+                19: {
+                    'before': Decimal('43.31'),
+                    'after': Decimal('43.31'),
+                    'name': 'Nicorette'
+                }
+            },
+            'standing_before': Decimal('113.53'),
+            'standing_id': 16,
+            'standing_name': 'Discretionary',
+            'standing_after': Decimal('113.53'),
+            'periodic_overage_id': 18,
+            'periodic_overage_name': 'zIncomeToSavings'
+        }
+        self.expected_overall = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 14, Decimal('69.42')],
+                [5, 8, Decimal('44.59')],
+                [19, 16, Decimal('43.31')],
+                [2, 16, Decimal('16.56')],
+                [1, 16, Decimal('12.48')],
+                [3, 16, Decimal('10.15')],
+                [5, 16, Decimal('6.72')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('81.90'),
+                    'after': Decimal('0.0'),
+                    'name': 'Food'
+                },
+                2: {
+                    'before': Decimal('16.56'),
+                    'after': Decimal('0.0'),
+                    'name': 'Fuel/Auto'
+                },
+                3: {
+                    'before': Decimal('10.15'),
+                    'after': Decimal('0.0'),
+                    'name': 'Dinner Out'
+                },
+                5: {
+                    'before': Decimal('51.31'),
+                    'after': Decimal('0.0'),
+                    'name': 'Medical'
+                },
+                8: {
+                    'before': Decimal('-44.59'),
+                    'after': Decimal('0.0'),
+                    'name': 'Pet'
+                },
+                14: {
+                    'before': Decimal('-69.42'),
+                    'after': Decimal('0.0'),
+                    'name': 'Gifts'
+                },
+                19: {
+                    'before': Decimal('43.31'),
+                    'after': Decimal('0.0'),
+                    'name': 'Nicorette'
+                }
+            },
+            'standing_before': Decimal('113.53'),
+            'standing_id': 16,
+            'standing_name': 'Discretionary',
+            'standing_after': Decimal('202.75'),
+            'periodic_overage_id': 18,
+            'periodic_overage_name': 'zIncomeToSavings'
+        }
+        self.expected_final = {
+            'pp_start_date': '2017-01-01',
+            'transfers': [
+                [1, 14, Decimal('69.42')],
+                [5, 8, Decimal('44.59')],
+                [19, 16, Decimal('43.31')],
+                [2, 16, Decimal('16.56')],
+                [1, 16, Decimal('12.48')],
+                [3, 16, Decimal('10.15')],
+                [5, 16, Decimal('6.72')],
+                [16, 18, Decimal('151.35')]
+            ],
+            'budgets': {
+                1: {
+                    'before': Decimal('81.90'),
+                    'after': Decimal('0.0'),
+                    'name': 'Food'
+                },
+                2: {
+                    'before': Decimal('16.56'),
+                    'after': Decimal('0.0'),
+                    'name': 'Fuel/Auto'
+                },
+                3: {
+                    'before': Decimal('10.15'),
+                    'after': Decimal('0.0'),
+                    'name': 'Dinner Out'
+                },
+                5: {
+                    'before': Decimal('51.31'),
+                    'after': Decimal('0.0'),
+                    'name': 'Medical'
+                },
+                8: {
+                    'before': Decimal('-44.59'),
+                    'after': Decimal('0.0'),
+                    'name': 'Pet'
+                },
+                14: {
+                    'before': Decimal('-69.42'),
+                    'after': Decimal('0.0'),
+                    'name': 'Gifts'
+                },
+                18: {
+                    'before': Decimal('0.0'),
+                    'after': Decimal('-151.35'),
+                    'name': 'zIncomeToSavings'
+                },
+                19: {
+                    'before': Decimal('43.31'),
+                    'after': Decimal('0.0'),
+                    'name': 'Nicorette'
+                }
+            },
+            'standing_before': Decimal('113.53'),
+            'standing_id': 16,
+            'standing_name': 'Discretionary',
+            'standing_after': Decimal('51.40'),
+            'periodic_overage_id': 18,
+            'periodic_overage_name': 'zIncomeToSavings'
+        }
+
+    def test_many_budgets_up_to_standing_transfer(self):
+
+        def se_get_budget(budg_id):
+            return self.budgets[budg_id]
+
+        def se_dbt(*args, **kwargs):
+            orig = self._next_txfr_id
+            self._next_txfr_id += 2
+            return [orig, orig + 1]
+
+        def se_plan_standing(a, b, c):
+            return a, b, c
+
+        def se_do_overall(r):
+            return r
+
+        self.mock_sess.query.return_value.get.side_effect = se_get_budget
+        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
+            mock_budgets.return_value = self.budgets_to_balance
+            self.cls = BudgetBalancer(
+                self.mock_sess, self.pp, self.budgets[16], self.budgets[18]
+            )
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                with patch('%s._do_plan_standing_txfr' % pb) as m_dpst:
+                    with patch('%s._do_overall_balance' % pb) as m_dob:
+                        m_dpst.side_effect = se_plan_standing
+                        m_dob.side_effect = se_do_overall
+                        m_dbt.side_effect = se_dbt
+                        res = self.cls.plan()
+        assert res == self.expected_standing
+        after = {
+            k: self.expected_standing['budgets'][k]['after']
+            for k in self.expected_standing['budgets'].keys()
+        }
+        assert m_dpst.mock_calls == [
+            call(
+                after,
+                self.expected_standing['transfers'],
+                self.expected_standing['standing_after']
+            )
+        ]
+        assert m_dob.mock_calls == [call(self.expected_standing)]
+
+    def test_many_budgets_up_to_overall_balance(self):
+
+        def se_get_budget(budg_id):
+            return self.budgets[budg_id]
+
+        def se_dbt(*args, **kwargs):
+            orig = self._next_txfr_id
+            self._next_txfr_id += 2
+            return [orig, orig + 1]
+
+        def se_do_overall(r):
+            return r
+
+        self.mock_sess.query.return_value.get.side_effect = se_get_budget
+        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
+            mock_budgets.return_value = self.budgets_to_balance
+            self.cls = BudgetBalancer(
+                self.mock_sess, self.pp, self.budgets[16], self.budgets[18]
+            )
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                with patch('%s._do_overall_balance' % pb) as m_dob:
+                    m_dob.side_effect = se_do_overall
+                    m_dbt.side_effect = se_dbt
+                    res = self.cls.plan()
+
+        assert res == self.expected_overall
+        assert m_dob.mock_calls == [call(self.expected_overall)]
+
+    def test_overall_balance(self):
+        type(self.pp).overall_sums = PropertyMock(side_effect=[
+            {
+                'income': Decimal('2097.24'),
+                'allocated': Decimal('2248.59'),
+                'spent': Decimal('1999.92'),
+                'remaining': Decimal('-151.35')
+            },
+            {
+                'income': Decimal('2097.24'),
+                'allocated': Decimal('2248.59'),
+                'spent': Decimal('1999.92'),
+                'remaining': Decimal('-151.35')
+            }
+        ])
+        type(self.pp).budget_sums = PropertyMock(return_value={
+            1: {
+                'budget_amount': Decimal('400.0'),
+                'allocated': Decimal('318.10'),
+                'spent': Decimal('318.10'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            2: {
+                'budget_amount': Decimal('50.0'),
+                'allocated': Decimal('33.44'),
+                'spent': Decimal('33.44'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            3: {
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('89.85'),
+                'spent': Decimal('89.85'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            4: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('1497.96'),
+                'spent': Decimal('1452.52'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('-1497.96')
+            },
+            5: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-51.31'),
+                'spent': Decimal('-51.31'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            6: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            7: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-2097.25'),
+                'spent': Decimal('-2097.24'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('2097.24')
+            },
+            8: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('44.59'),
+                'spent': Decimal('44.59'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            11: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            13: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            14: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('69.42'),
+                'spent': Decimal('69.42'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            17: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            18: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            19: {
+                'budget_amount': Decimal('86.62'),
+                'allocated': Decimal('43.31'),
+                'spent': Decimal('43.31'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            20: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            },
+            21: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'remaining': Decimal('0.0')
+            }
+        })
+
+        def se_dbt(*args, **kwargs):
+            orig = self._next_txfr_id
+            self._next_txfr_id += 2
+            return [orig, orig + 1]
+
+        with patch('%s._budgets_to_balance' % pb) as mock_budgets:
+            with patch('%s.do_budget_transfer' % pbm, autospec=True) as m_dbt:
+                m_dbt.side_effect = se_dbt
+                mock_budgets.return_value = self.budgets_to_balance
+                self.cls = BudgetBalancer(
+                    self.mock_sess, self.pp, self.budgets[16], self.budgets[18]
+                )
+                res = self.cls._do_overall_balance(self.expected_overall)
+        assert res == self.expected_final
