@@ -1405,24 +1405,24 @@ class TestIntegrationRepresentativeData(object):
             return_value=budget_sums_before
         )
         self.budgets = {
-            1: mockbudget(1, 'Food'),
-            2: mockbudget(2, 'Fuel/Auto'),
-            3: mockbudget(3, 'Dinner Out'),
-            4: mockbudget(4, 'Bills', skip_balance=True),
-            5: mockbudget(5, 'Medical'),
-            6: mockbudget(6, 'Credit Payments'),
-            7: mockbudget(7, 'Income', income=True, skip_balance=True),
-            8: mockbudget(8, 'Pet'),
-            11: mockbudget(11, 'Hobbies'),
-            13: mockbudget(13, 'Bean'),
-            14: mockbudget(14, 'Gifts'),
-            15: mockbudget(15, 'CCPayoff', is_periodic=False),
-            16: mockbudget(16, 'Discretionary', is_periodic=False),
-            17: mockbudget(17, 'Clothing'),
-            18: mockbudget(18, 'zIncomeToSavings', skip_balance=True),
-            19: mockbudget(19, 'Nicorette'),
-            20: mockbudget(20, 'Household'),
-            21: mockbudget(21, 'Subscriptions')
+            1: mockbudget(1, 'budg1'),
+            2: mockbudget(2, 'budg2'),
+            3: mockbudget(3, 'budg3'),
+            4: mockbudget(4, 'budg4', skip_balance=True),
+            5: mockbudget(5, 'budg5'),
+            6: mockbudget(6, 'budg6'),
+            7: mockbudget(7, 'budg7', income=True, skip_balance=True),
+            8: mockbudget(8, 'budg8'),
+            11: mockbudget(11, 'budg9'),
+            13: mockbudget(13, 'budg10'),
+            14: mockbudget(14, 'budg11'),
+            15: mockbudget(15, 'budg12', is_periodic=False),
+            16: mockbudget(16, 'budg13', is_periodic=False),
+            17: mockbudget(17, 'budg14'),
+            18: mockbudget(18, 'budg15', skip_balance=True),
+            19: mockbudget(19, 'budg16'),
+            20: mockbudget(20, 'budg17'),
+            21: mockbudget(21, 'budg18')
         }
         type(self.budgets[16]).current_balance = Decimal('113.53')
         self.budgets_to_balance = {
@@ -1441,45 +1441,45 @@ class TestIntegrationRepresentativeData(object):
                 1: {
                     'before': Decimal('81.90'),
                     'after': Decimal('12.48'),
-                    'name': 'Food'
+                    'name': 'budg1'
                 },
                 2: {
                     'before': Decimal('16.56'),
                     'after': Decimal('16.56'),
-                    'name': 'Fuel/Auto'
+                    'name': 'budg2'
                 },
                 3: {
                     'before': Decimal('10.15'),
                     'after': Decimal('10.15'),
-                    'name': 'Dinner Out'
+                    'name': 'budg3'
                 },
                 5: {
                     'before': Decimal('51.31'),
                     'after': Decimal('6.72'),
-                    'name': 'Medical'
+                    'name': 'budg5'
                 },
                 8: {
                     'before': Decimal('-44.59'),
                     'after': Decimal('0.0'),
-                    'name': 'Pet'
+                    'name': 'budg8'
                 },
                 14: {
                     'before': Decimal('-69.42'),
                     'after': Decimal('0.0'),
-                    'name': 'Gifts'
+                    'name': 'budg11'
                 },
                 19: {
                     'before': Decimal('43.31'),
                     'after': Decimal('43.31'),
-                    'name': 'Nicorette'
+                    'name': 'budg16'
                 }
             },
             'standing_before': Decimal('113.53'),
             'standing_id': 16,
-            'standing_name': 'Discretionary',
+            'standing_name': 'budg13',
             'standing_after': Decimal('113.53'),
             'periodic_overage_id': 18,
-            'periodic_overage_name': 'zIncomeToSavings'
+            'periodic_overage_name': 'budg15'
         }
         self.expected_overall = {
             'pp_start_date': '2017-01-01',
@@ -1496,45 +1496,45 @@ class TestIntegrationRepresentativeData(object):
                 1: {
                     'before': Decimal('81.90'),
                     'after': Decimal('0.0'),
-                    'name': 'Food'
+                    'name': 'budg1'
                 },
                 2: {
                     'before': Decimal('16.56'),
                     'after': Decimal('0.0'),
-                    'name': 'Fuel/Auto'
+                    'name': 'budg2'
                 },
                 3: {
                     'before': Decimal('10.15'),
                     'after': Decimal('0.0'),
-                    'name': 'Dinner Out'
+                    'name': 'budg3'
                 },
                 5: {
                     'before': Decimal('51.31'),
                     'after': Decimal('0.0'),
-                    'name': 'Medical'
+                    'name': 'budg5'
                 },
                 8: {
                     'before': Decimal('-44.59'),
                     'after': Decimal('0.0'),
-                    'name': 'Pet'
+                    'name': 'budg8'
                 },
                 14: {
                     'before': Decimal('-69.42'),
                     'after': Decimal('0.0'),
-                    'name': 'Gifts'
+                    'name': 'budg11'
                 },
                 19: {
                     'before': Decimal('43.31'),
                     'after': Decimal('0.0'),
-                    'name': 'Nicorette'
+                    'name': 'budg16'
                 }
             },
             'standing_before': Decimal('113.53'),
             'standing_id': 16,
-            'standing_name': 'Discretionary',
+            'standing_name': 'budg13',
             'standing_after': Decimal('202.75'),
             'periodic_overage_id': 18,
-            'periodic_overage_name': 'zIncomeToSavings'
+            'periodic_overage_name': 'budg15'
         }
         self.expected_final = {
             'pp_start_date': '2017-01-01',
@@ -1552,50 +1552,50 @@ class TestIntegrationRepresentativeData(object):
                 1: {
                     'before': Decimal('81.90'),
                     'after': Decimal('0.0'),
-                    'name': 'Food'
+                    'name': 'budg1'
                 },
                 2: {
                     'before': Decimal('16.56'),
                     'after': Decimal('0.0'),
-                    'name': 'Fuel/Auto'
+                    'name': 'budg2'
                 },
                 3: {
                     'before': Decimal('10.15'),
                     'after': Decimal('0.0'),
-                    'name': 'Dinner Out'
+                    'name': 'budg3'
                 },
                 5: {
                     'before': Decimal('51.31'),
                     'after': Decimal('0.0'),
-                    'name': 'Medical'
+                    'name': 'budg5'
                 },
                 8: {
                     'before': Decimal('-44.59'),
                     'after': Decimal('0.0'),
-                    'name': 'Pet'
+                    'name': 'budg8'
                 },
                 14: {
                     'before': Decimal('-69.42'),
                     'after': Decimal('0.0'),
-                    'name': 'Gifts'
+                    'name': 'budg11'
                 },
                 18: {
                     'before': Decimal('0.0'),
                     'after': Decimal('-151.35'),
-                    'name': 'zIncomeToSavings'
+                    'name': 'budg15'
                 },
                 19: {
                     'before': Decimal('43.31'),
                     'after': Decimal('0.0'),
-                    'name': 'Nicorette'
+                    'name': 'budg16'
                 }
             },
             'standing_before': Decimal('113.53'),
             'standing_id': 16,
-            'standing_name': 'Discretionary',
+            'standing_name': 'budg13',
             'standing_after': Decimal('51.40'),
             'periodic_overage_id': 18,
-            'periodic_overage_name': 'zIncomeToSavings'
+            'periodic_overage_name': 'budg15'
         }
 
     def test_many_budgets_up_to_standing_transfer(self):
