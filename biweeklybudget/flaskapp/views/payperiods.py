@@ -121,6 +121,9 @@ class PayPeriodView(MethodView):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        is_previous_payperiod = False
+        if pp == curr_pp.previous:
+            is_previous_payperiod = True
         # Begin building some dicts of budgets
         budgets = {}
         standing = {}
@@ -148,7 +151,7 @@ class PayPeriodView(MethodView):
         return render_template(
             'payperiod.html',
             pp=pp,
-            is_in_past=pp.is_in_past,
+            is_previous_payperiod=is_previous_payperiod,
             pp_prev_date=pp.previous.start_date,
             pp_prev_sums=pp.previous.overall_sums,
             pp_prev_suffix=self.suffix_for_period(curr_pp, pp.previous),

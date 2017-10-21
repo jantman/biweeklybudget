@@ -1313,7 +1313,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 0
 
-    def test_03_past_period_has_button(self, base_url, selenium, testdb):
+    def test_03_previous_period_has_button(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
         self.get(
             selenium,
@@ -1324,7 +1324,18 @@ class TestBalanceBudgets(AcceptanceHelper):
             selenium.find_elements_by_id('btn-pp-balance-budgets')
         ) == 1
 
-    def test_04_add_data(self, testdb):
+    def test_04_earlier_period_no_button(self, base_url, selenium, testdb):
+        p = BiweeklyPayPeriod.period_for_date(PAY_PERIOD_START_DATE, testdb)
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            p.previous.previous.start_date.strftime('%Y-%m-%d')
+        )
+        assert len(
+            selenium.find_elements_by_id('btn-pp-balance-budgets')
+        ) == 0
+
+    def test_05_add_data(self, testdb):
         # Adjust income budget
         inc_b = testdb.query(Budget).get(7)
         inc_b.starting_balance = 2345
@@ -1427,7 +1438,7 @@ class TestBalanceBudgets(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_05_verify_db(self, testdb):
+    def test_06_verify_db(self, testdb):
         assert testdb.query(Transaction).with_entities(
             func.max(Transaction.id)
         ).scalar() == 8
@@ -1501,7 +1512,7 @@ class TestBalanceBudgets(AcceptanceHelper):
             5: Decimal('9482.29')
         }
 
-    def test_06_do_balance(self, base_url, selenium, testdb):
+    def test_07_do_balance(self, base_url, selenium, testdb):
         p = BiweeklyPayPeriod.period_for_date(
             PAY_PERIOD_START_DATE, testdb
         ).previous
@@ -1593,7 +1604,7 @@ class TestBalanceBudgets(AcceptanceHelper):
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
 
-    def test_07_verify_db(self, testdb):
+    def test_08_verify_db(self, testdb):
         assert len(testdb.query(Transaction).all()) == 13
         assert testdb.query(Transaction).with_entities(
             func.max(Transaction.id)

@@ -119,7 +119,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="panel panel-warning">
                         <div class="panel-heading">Periodic Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-periodic">Transfer</button>
-                        {% if is_in_past %}
+                        {% if is_previous_payperiod %}
                             <button type="button" class="btn btn-xs btn-success" id="btn-pp-balance-budgets">Balance Budgets</button>
                         {% endif %}
                         </div>
