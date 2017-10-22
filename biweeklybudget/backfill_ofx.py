@@ -46,9 +46,9 @@ from biweeklybudget.vendored.ofxparse import OfxParser
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 
 from biweeklybudget import settings
-from biweeklybudget.ofxupdater import OFXUpdater, DuplicateFileException
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 from biweeklybudget.ofxapi import apiclient
+from biweeklybudget.ofxapi.exceptions import DuplicateFileException
 
 logger = logging.getLogger(__name__)
 
@@ -86,25 +86,18 @@ class OfxBackfiller(object):
                             data['id'], p)
                 continue
             logger.debug('Found directory %s for Account %d', p, data['id'])
-            self._do_account_dir(
-                data['id'], acctname, data['cat_memo'], p
-            )
+            self._do_account_dir(data['id'], p)
 
-    def _do_account_dir(self, acct_id, acct_name, cat_memo, path):
+    def _do_account_dir(self, acct_id, path):
         """
         Handle all OFX statements in a per-account directory.
 
         :param acct_id: account database ID
         :type acct_id: int
-        :param acct_name: account name
-        :type acct_name: str
-        :param cat_memo: whether or not to concatenate OFX Memo to Name
-        :type cat_memo: bool
         :param path: absolute path to per-account directory
         :type path: str
         """
-        logger.debug('Doing account %s (id=%d) directory (%s)',
-                     acct_name, acct_id, path)
+        logger.debug('Doing account %d directory (%s)', acct_id, path)
         files = {}
         for f in os.listdir(path):
             p = os.path.join(path, f)
@@ -114,16 +107,13 @@ class OfxBackfiller(object):
             if extension not in ['ofx', 'qfx']:
                 continue
             files[p] = os.path.getmtime(p)
-        logger.debug('Found %d files for account %s', len(files), acct_name)
-        updater = OFXUpdater(
-            self._client, acct_id, acct_name, cat_memo=cat_memo
-        )
+        logger.debug('Found %d files for account %d', len(files), acct_id)
         # run through the files, oldest to newest
         success = 0
         already = 0
         for p in sorted(files, key=files.get):
             try:
-                self._do_one_file(updater, p)
+                self._do_one_file(acct_id, p)
                 success += 1
             except DuplicateFileException:
                 already += 1
@@ -134,27 +124,28 @@ class OfxBackfiller(object):
                 logger.error('Exception parsing and inserting file %s',
                              p, exc_info=True)
         logger.info('Successfully parsed and inserted %d of %d files for '
-                    'account %s; %d files already in DB', success, len(files),
-                    acct_name, already)
+                    'account %d; %d files already in DB', success, len(files),
+                    acct_id, already)
 
-    def _do_one_file(self, updater, path):
+    def _do_one_file(self, acct_id, path):
         """
         Parse one OFX file and use OFXUpdater to upsert it into the DB.
 
-        :param updater: OFXUpdater instance for this class
-        :type updater: biweeklybudget.ofxupdater.OFXUpdater
+        :param acct_id: Account ID number
+        :type acct_id: int
         :param path: absolute path to OFX/QFX file
         :type path: str
         """
-        logger.debug('Handle file %s for %s (%d)', path, updater.acct_name,
-                     updater.acct_id)
+        logger.debug('Handle file %s for Account %d', path, acct_id)
         with open(path, 'rb') as fh:
             ofx_str = fh.read()
         ofx = OfxParser.parse(BytesIO(ofx_str))
         logger.debug('Parsed OFX')
         fname = os.path.basename(path)
         mtime = datetime.fromtimestamp(os.path.getmtime(path), tz=UTC)
-        updater.update(ofx, mtime=mtime, filename=fname)
+        self._client.update_statement_ofx(
+            acct_id, ofx, mtime=mtime, filename=fname
+        )
         logger.debug('Done updating')
 
 

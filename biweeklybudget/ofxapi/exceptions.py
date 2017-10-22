@@ -34,18 +34,20 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
-import logging
-
-from biweeklybudget.ofxapi.local import OfxApiLocal
-
-logger = logging.getLogger(__name__)
 
 
-def apiclient():
-    # @TODO - local or remote
-    logger.info('Using OfxApiLocal direct database access')
-    import atexit
-    from biweeklybudget.db import init_db, cleanup_db, db_session
-    atexit.register(cleanup_db)
-    init_db()
-    return OfxApiLocal(db_session)
+class DuplicateFileException(Exception):
+    """
+    Exception raised when trying to parse a file that has already been parsed
+    for the Account (going by the OFX signon date).
+    """
+
+    def __init__(self, acct_id, filename, stmt_id):
+        super(Exception, self).__init__(
+            'An OFX statement (id=%s) with the same filename (%s) has already '
+            'been recorded for Account %s; duplicate statements are not '
+            'allowed.' % (stmt_id, filename, acct_id)
+        )
+        self.filename = filename
+        self.acct_id = acct_id
+        self.stmt_id = stmt_id

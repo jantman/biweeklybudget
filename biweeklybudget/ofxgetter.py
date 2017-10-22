@@ -50,7 +50,6 @@ from biweeklybudget.vendored.ofxclient.account \
 
 from biweeklybudget.utils import Vault
 from biweeklybudget import settings
-from biweeklybudget.ofxupdater import OFXUpdater
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 from biweeklybudget.ofxapi import apiclient
 
@@ -91,7 +90,7 @@ class OfxGetter(object):
         """
         self._client = client
         self.savedir = savedir
-        self._account_data = self.accounts()
+        self._account_data = self.accounts(self._client)
         logger.debug('Initialized with data for %d accounts',
                      len(self._account_data))
         self._accounts = {}
@@ -171,15 +170,10 @@ class OfxGetter(object):
         """
         logger.debug('Parsing OFX')
         ofx = OfxParser.parse(StringIO(ofxdata))
-        logger.debug('Instantiating OFXUpdater')
-        updater = OFXUpdater(
-            self._client,
-            self._account_data[account_name]['id'],
-            account_name,
-            cat_memo=self._account_data[account_name]['cat_memo']
-        )
         logger.debug('Updating OFX in DB')
-        _, count_new, count_upd = updater.update(ofx, filename=fname)
+        _, count_new, count_upd = self._client.update_statement_ofx(
+            self._account_data[account_name]['id'], ofx, filename=fname
+        )
         logger.info('Account "%s" - inserted %d new OFXTransaction(s), updated '
                     '%d existing OFXTransaction(s)',
                     account_name, count_new, count_upd)
