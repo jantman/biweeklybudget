@@ -43,6 +43,7 @@ import atexit
 from copy import deepcopy
 from io import StringIO
 import importlib
+import json
 
 from biweeklybudget.vendored.ofxparse import OfxParser
 from biweeklybudget.vendored.ofxclient.account \
@@ -97,8 +98,23 @@ class OfxGetter(object):
             vault_path = self._account_data[acct_name]['vault_path']
             logger.debug('Getting secrets for account %s', acct_name)
             secrets = self.vault.read(vault_path)
+            if list(data.keys()) == ['key']:
+                logger.debug(
+                    'Account %s has ofxgetter_config_json stored in Vault key: '
+                    '%s' % (acct_name, data['key'])
+                )
+                if data['key'] not in secrets:
+                    raise RuntimeError(
+                        'Account %s should have ofxgetter_config_json stored '
+                        'in Vault key %s, but Vault entry at %s has no such '
+                        'key' % (
+                            acct_name, data['key'], vault_path
+                        )
+                    )
+                data = json.loads(secrets[data['key']])
             data['institution']['password'] = secrets['password']
             data['institution']['username'] = secrets['username']
+            self._account_data[acct_name]['config'] = data
             if 'class_name' not in data:
                 self._accounts[acct_name] = OfxClientAccount.deserialize(data)
         logger.debug('Initialized %d accounts', len(self._accounts))
