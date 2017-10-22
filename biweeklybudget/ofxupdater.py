@@ -63,10 +63,13 @@ class OFXUpdater(object):
     Class to wrap updating the database with a parsed OFX file.
     """
 
-    def __init__(self, acct_id, acct_name, cat_memo=False):
+    def __init__(self, client, acct_id, acct_name, cat_memo=False):
         """
         Initialize OFXUpdater for a specified account.
 
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
         :param acct_id: account database ID
         :type acct_id: int
         :param acct_name: account name
@@ -77,6 +80,7 @@ class OFXUpdater(object):
         logger.debug(
             'Initializing OFXUpdater for account "%s" (%d)', acct_name, acct_id
         )
+        self._client = client
         self.acct_id = acct_id
         self.acct_name = acct_name
         self.acct = db_session.query(Account).get(self.acct_id)

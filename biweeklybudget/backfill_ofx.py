@@ -39,7 +39,6 @@ from datetime import datetime
 import os
 import argparse
 import logging
-import atexit
 from io import BytesIO
 from pytz import UTC
 
@@ -47,11 +46,9 @@ from biweeklybudget.vendored.ofxparse import OfxParser
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 
 from biweeklybudget import settings
-from biweeklybudget.db import init_db, db_session, cleanup_db
-from biweeklybudget.models.account import Account
 from biweeklybudget.ofxupdater import OFXUpdater, DuplicateFileException
 from biweeklybudget.cliutils import set_log_debug, set_log_info
-
+from biweeklybudget.ofxapi import apiclient
 
 logger = logging.getLogger(__name__)
 
@@ -61,29 +58,36 @@ class OfxBackfiller(object):
     Class to backfill OFX in database from files on disk.
     """
 
-    def __init__(self, savedir):
+    def __init__(self, client, savedir):
+        """
+        Initialize the OFX Backfiller.
+
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
+        :param savedir: directory/path to save statements in
+        :type savedir: str
+        """
         logger.info('Initializing OfxBackfiller with savedir=%s', savedir)
         self.savedir = savedir
-        logger.debug('Registering exit handler cleanup_db')
-        atexit.register(cleanup_db)
-        logger.debug('Initalizing database')
-        init_db()
-        logger.debug('Database initialized')
+        self._client = client
 
     def run(self):
         """
         Main entry point - run the backfill.
         """
         logger.debug('Checking for Accounts with statement directories')
-        for acct in db_session.query(Account).all():
-            p = os.path.join(settings.STATEMENTS_SAVE_PATH, acct.name)
+        accounts = self._client.get_accounts()
+        for acctname in sorted(accounts.keys()):
+            p = os.path.join(settings.STATEMENTS_SAVE_PATH, acctname)
+            data = accounts[acctname]
             if not os.path.isdir(p):
                 logger.info('No statement directory for Account %d (%s)',
-                            acct.id, p)
+                            data['id'], p)
                 continue
-            logger.debug('Found directory %s for Account %d', p, acct.id)
+            logger.debug('Found directory %s for Account %d', p, data['id'])
             self._do_account_dir(
-                acct.id, acct.name, acct.ofx_cat_memo_to_name, p
+                data['id'], acctname, data['cat_memo'], p
             )
 
     def _do_account_dir(self, acct_id, acct_name, cat_memo, path):
@@ -111,7 +115,9 @@ class OfxBackfiller(object):
                 continue
             files[p] = os.path.getmtime(p)
         logger.debug('Found %d files for account %s', len(files), acct_name)
-        updater = OFXUpdater(acct_id, acct_name, cat_memo=cat_memo)
+        updater = OFXUpdater(
+            self._client, acct_id, acct_name, cat_memo=cat_memo
+        )
         # run through the files, oldest to newest
         success = 0
         already = 0
@@ -123,9 +129,6 @@ class OfxBackfiller(object):
                 already += 1
                 logger.warning('OFX is already parsed for account; skipping')
             except (InvalidRequestError, IntegrityError, TypeError):
-                # if we have DB errors, bomb out immediately
-                logger.error('Session dirty: %s', db_session.dirty)
-                logger.error('Session new: %s', db_session.new)
                 raise
             except Exception:
                 logger.error('Exception parsing and inserting file %s',
@@ -153,7 +156,6 @@ class OfxBackfiller(object):
         mtime = datetime.fromtimestamp(os.path.getmtime(path), tz=UTC)
         updater.update(ofx, mtime=mtime, filename=fname)
         logger.debug('Done updating')
-        db_session.commit()
 
 
 def parse_args():
@@ -184,7 +186,8 @@ def main():
     elif args.verbose == 1:
         set_log_info(logger)
 
-    cls = OfxBackfiller(settings.STATEMENTS_SAVE_PATH)
+    client = apiclient()
+    cls = OfxBackfiller(client, settings.STATEMENTS_SAVE_PATH)
     cls.run()
 
 if __name__ == "__main__":

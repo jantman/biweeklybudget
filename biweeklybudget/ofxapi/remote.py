@@ -35,6 +35,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from biweeklybudget.ofxupdater import DuplicateFileException
+
 
 class OfxApiRemote(object):
     """

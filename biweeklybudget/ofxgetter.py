@@ -39,7 +39,6 @@ from datetime import datetime
 import os
 import argparse
 import logging
-import atexit
 from copy import deepcopy
 from io import StringIO
 import importlib
@@ -53,7 +52,7 @@ from biweeklybudget.utils import Vault
 from biweeklybudget import settings
 from biweeklybudget.ofxupdater import OFXUpdater
 from biweeklybudget.cliutils import set_log_debug, set_log_info
-from biweeklybudget.ofxapi.local import OfxApiLocal
+from biweeklybudget.ofxapi import apiclient
 
 logger = logging.getLogger(__name__)
 
@@ -63,26 +62,34 @@ requests_log.setLevel(logging.WARNING)
 requests_log.propagate = True
 
 
-def apiclient():
-    # @TODO - local or remote
-    logger.info('Using OfxApiLocal direct database access')
-    from biweeklybudget.db import init_db, cleanup_db, db_session
-    atexit.register(cleanup_db)
-    init_db()
-    return OfxApiLocal(db_session)
-
-
 class OfxGetter(object):
 
     @staticmethod
-    def accounts():
+    def accounts(client):
         """
-        Return a sorted list of all Account objects that are for ofxgetter.
+        Return a dict of account information of ofxgetter-enabled accounts,
+        str account name to dict of information about the account.
+
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
+        :returns: dict of account information; see
+          :py:meth:`~.OfxApiLocal.get_accounts` for details.
+        :rtype: dict
         """
-        client = apiclient()
         return client.get_accounts()
 
-    def __init__(self, savedir='./'):
+    def __init__(self, client, savedir='./'):
+        """
+        Initialize OfxGetter class.
+
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
+        :param savedir: directory/path to save statements in
+        :type savedir: str
+        """
+        self._client = client
         self.savedir = savedir
         self._account_data = self.accounts()
         logger.debug('Initialized with data for %d accounts',
@@ -166,6 +173,7 @@ class OfxGetter(object):
         ofx = OfxParser.parse(StringIO(ofxdata))
         logger.debug('Instantiating OFXUpdater')
         updater = OFXUpdater(
+            self._client,
             self._account_data[account_name]['id'],
             account_name,
             cat_memo=self._account_data[account_name]['cat_memo']
@@ -267,19 +275,20 @@ def main():
         lgr = logging.getLogger('biweeklybudget.db')
         lgr.setLevel(logging.WARNING)
 
+    client = apiclient()
     if args.list:
-        for k in sorted(OfxGetter.accounts().keys()):
+        for k in sorted(OfxGetter.accounts(client).keys()):
             print(k)
         raise SystemExit(0)
 
-    getter = OfxGetter(settings.STATEMENTS_SAVE_PATH)
+    getter = OfxGetter(client, settings.STATEMENTS_SAVE_PATH)
     if args.ACCOUNT_NAME is not None:
         getter.get_ofx(args.ACCOUNT_NAME)
         raise SystemExit(0)
     # else all of them
     total = 0
     success = 0
-    for acctname in sorted(OfxGetter.accounts().keys()):
+    for acctname in sorted(OfxGetter.accounts(client).keys()):
         try:
             total += 1
             getter.get_ofx(acctname)

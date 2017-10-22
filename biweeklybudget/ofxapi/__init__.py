@@ -34,3 +34,18 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
+import logging
+
+from .local import OfxApiLocal
+
+logger = logging.getLogger(__name__)
+
+
+def apiclient():
+    # @TODO - local or remote
+    logger.info('Using OfxApiLocal direct database access')
+    import atexit
+    from biweeklybudget.db import init_db, cleanup_db, db_session
+    atexit.register(cleanup_db)
+    init_db()
+    return OfxApiLocal(db_session)
