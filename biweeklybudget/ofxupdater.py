@@ -92,8 +92,11 @@ class OFXUpdater(object):
         :type mtime: datetime.datetime
         :param filename: OFX file name
         :type filename: str
-        :returns: the OFXStatement created by this run
-        :rtype: biweeklybudget.models.ofx_statement.OFXStatement
+        :returns: 3-tuple of the
+          :py:class:`~biweeklybudget.models.ofx_statement.OFXStatement`
+          created by this run, int count of new :py:class:`~.OFXTransaction`
+          created, and int count of :py:class:`~.OFXTransaction` updated
+        :rtype: tuple
         """
         if mtime is None:
             mtime = dtnow()
@@ -102,14 +105,41 @@ class OFXUpdater(object):
         stmt = self._create_statement(ofx, mtime, filename)
         if ofx.account.type == AccountType.Bank:
             stmt.type = 'Bank'
-            return self._update_bank_or_credit(ofx, stmt)
+            s = self._update_bank_or_credit(ofx, stmt)
+            count_new, count_upd = self._new_updated_counts()
+            db_session.commit()
+            return s, count_new, count_upd
         elif ofx.account.type == AccountType.CreditCard:
             stmt.type = 'CreditCard'
-            return self._update_bank_or_credit(ofx, stmt)
+            s = self._update_bank_or_credit(ofx, stmt)
+            count_new, count_upd = self._new_updated_counts()
+            db_session.commit()
+            return s, count_new, count_upd
         elif ofx.account.type == AccountType.Investment:
-            return self._update_investment(ofx, stmt)
+            s = self._update_investment(ofx, stmt)
+            count_new, count_upd = self._new_updated_counts()
+            db_session.commit()
+            return s, count_new, count_upd
         raise RuntimeError("Don't know how to update AccountType %d",
                            ofx.account.type)
+
+    def _new_updated_counts(self):
+        """
+        Return integer counts of the number of :py:class:`~.OFXTransaction`
+        objects that have been created and updated.
+
+        :return: 2-tuple of new OFXTransactions created, OFXTransactions updated
+        :rtype: tuple
+        """
+        count_new = 0
+        count_upd = 0
+        for obj in db_session.dirty:
+            if isinstance(obj, OFXTransaction):
+                count_upd += 1
+        for obj in db_session.new:
+            if isinstance(obj, OFXTransaction):
+                count_new += 1
+        return count_new, count_upd
 
     def _create_statement(self, ofx, mtime, filename):
         """

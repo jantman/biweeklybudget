@@ -51,11 +51,9 @@ from biweeklybudget.vendored.ofxclient.account \
 
 from biweeklybudget.utils import Vault
 from biweeklybudget import settings
-from biweeklybudget.models.account import Account
-from biweeklybudget.db import init_db, db_session, cleanup_db
 from biweeklybudget.ofxupdater import OFXUpdater
 from biweeklybudget.cliutils import set_log_debug, set_log_info
-from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.ofxapi.local import OfxApiLocal
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +63,15 @@ requests_log.setLevel(logging.WARNING)
 requests_log.propagate = True
 
 
+def apiclient():
+    # @TODO - local or remote
+    logger.info('Using OfxApiLocal direct database access')
+    from biweeklybudget.db import init_db, cleanup_db, db_session
+    atexit.register(cleanup_db)
+    init_db()
+    return OfxApiLocal(db_session)
+
+
 class OfxGetter(object):
 
     @staticmethod
@@ -72,23 +79,12 @@ class OfxGetter(object):
         """
         Return a sorted list of all Account objects that are for ofxgetter.
         """
-        return [a for a in db_session.query(
-                Account).filter(
-            Account.for_ofxgetter).order_by(Account.name).all()
-        ]
+        client = apiclient()
+        return client.get_accounts()
 
     def __init__(self, savedir='./'):
         self.savedir = savedir
-        self._account_data = {}
-        for acct in self.accounts():
-            if acct.vault_creds_path is None and acct.ofxgetter_config == {}:
-                continue
-            self._account_data[acct.name] = {
-                'vault_path': acct.vault_creds_path,
-                'config': acct.ofxgetter_config,
-                'id': acct.id,
-                'cat_memo': acct.ofx_cat_memo_to_name
-            }
+        self._account_data = self.accounts()
         logger.debug('Initialized with data for %d accounts',
                      len(self._account_data))
         self._accounts = {}
@@ -175,16 +171,7 @@ class OfxGetter(object):
             cat_memo=self._account_data[account_name]['cat_memo']
         )
         logger.debug('Updating OFX in DB')
-        updater.update(ofx, filename=fname)
-        count_new = 0
-        count_upd = 0
-        for obj in db_session.dirty:
-            if isinstance(obj, OFXTransaction):
-                count_upd += 1
-        for obj in db_session.new:
-            if isinstance(obj, OFXTransaction):
-                count_new += 1
-        db_session.commit()
+        _, count_new, count_upd = updater.update(ofx, filename=fname)
         logger.info('Account "%s" - inserted %d new OFXTransaction(s), updated '
                     '%d existing OFXTransaction(s)',
                     account_name, count_new, count_upd)
@@ -280,12 +267,9 @@ def main():
         lgr = logging.getLogger('biweeklybudget.db')
         lgr.setLevel(logging.WARNING)
 
-    atexit.register(cleanup_db)
-    init_db()
-
     if args.list:
-        for k in OfxGetter.accounts():
-            print(k.name)
+        for k in sorted(OfxGetter.accounts().keys()):
+            print(k)
         raise SystemExit(0)
 
     getter = OfxGetter(settings.STATEMENTS_SAVE_PATH)
@@ -295,14 +279,14 @@ def main():
     # else all of them
     total = 0
     success = 0
-    for acct in OfxGetter.accounts():
+    for acctname in sorted(OfxGetter.accounts().keys()):
         try:
             total += 1
-            getter.get_ofx(acct.name)
+            getter.get_ofx(acctname)
             success += 1
         except Exception:
             logger.error(
-                'Failed to download account %s', acct.name, exc_info=True
+                'Failed to download account %s', acctname, exc_info=True
             )
     if success != total:
         logger.warning('Downloaded %d of %d accounts', success, total)
