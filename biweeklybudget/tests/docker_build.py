@@ -82,37 +82,50 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
-FROM python:3.6.1
+FROM python:3.6.3-alpine3.4
 
 ARG version
 USER root
 
-COPY tini_0.14.0.deb /tmp/tini_0.14.0.deb
 COPY requirements.txt /tmp/requirements.txt
 COPY entrypoint.sh /tmp/entrypoint.sh
 {copy}
 
-RUN /usr/bin/dpkg -i /tmp/tini_0.14.0.deb
 RUN /usr/local/bin/pip install virtualenv
-RUN /usr/local/bin/virtualenv /app && \
-    /app/bin/pip install {install} && \
-    /app/bin/pip install gunicorn==19.7.1 wishlist
+RUN /usr/local/bin/virtualenv /app
+RUN set -ex \
+    && apk add --no-cache \
+        fontconfig \
+        libxml2 \
+        libxml2-dev \
+        libxslt \
+        libxslt-dev \
+        tini \
+    && apk add --no-cache --virtual .build-deps \
+        gcc \
+        libffi-dev \
+        linux-headers \
+        make \
+        musl-dev \
+        openssl-dev \
+    && /app/bin/pip install {install} \
+    && /app/bin/pip install gunicorn==19.7.1 \
+    && apk del .build-deps
 
-ENV DEBIAN_FRONTEND=noninteractive
+# install fontconfig and tini, then install phantomjs per
+# https://github.com/Overbryd/docker-phantomjs-alpine/releases/tag/2.11
+RUN set -ex \
+    && apk add --no-cache --virtual .fetch-deps \
+        curl \
+    && mkdir -p /usr/share \
+    && cd /usr/share \
+    && curl -L https://github.com/Overbryd/docker-phantomjs-alpine/releases/\
+download/2.11/phantomjs-alpine-x86_64.tar.bz2 | tar xj \
+    && ln -s /usr/share/phantomjs/phantomjs /usr/bin/phantomjs \
+    && apk del .fetch-deps \
+    && phantomjs --version
 
-# install phantomjs and locales; setup locales
-# phantomjs installation from:
-# https://github.com/josefcs/debian-phantomjs/blob/master/Dockerfile
-# @ 1e5bd20c8c51ec9a2e54a765594eea79aa0b9aed
-RUN apt-get update && \
-    apt-get --assume-yes install locales wget ca-certificates \
-    fontconfig bzip2 && \
-    apt-get clean && cd / && \
-    wget -qO- {phantomjs_url} | tar xvj && \
-    cp /phantomjs-*/bin/phantomjs /usr/bin/phantomjs && \
-    rm -rf /phantomjs* /var/lib/apt/lists/* && \
-    echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && /usr/sbin/locale-gen && \
-    install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
+RUN install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
 # default to using settings_example.py, and user can override as needed
 ENV SETTINGS_MODULE=biweeklybudget.settings_example
@@ -123,12 +136,9 @@ LABEL maintainer "jason@jasonantman.com"
 LABEL homepage "http://github.com/jantman/biweeklybudget"
 
 EXPOSE 80
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/bin/entrypoint.sh"]
 """
-
-PHANTOMJS_URL = 'https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-' \
-    '2.1.1-linux-x86_64.tar.bz2'
 
 
 class DockerImageBuilder(object):
@@ -468,6 +478,12 @@ class DockerImageBuilder(object):
             {
                 'cmd': '/app/bin/loaddata --help',
                 'output': 'Load initial data to DB'
+            },
+            {
+                'cmd': 'python -c "import locale; locale.setlocale('
+                       'locale.LC_ALL, \'\'); print(locale.currency('
+                       '1234.56, grouping=True))"',
+                'output': '$1,234.56'
             }
         ]
         for cmd_info in test_cmds:
@@ -544,11 +560,16 @@ class DockerImageBuilder(object):
         logger.info('Running docker build with args: %s', kwargs)
         res = self._docker.api.build(**kwargs)
         logger.info('Build running; output:')
+        error = None
         for line in res:
+            if 'errorDetail' in line:
+                error = line['errorDetail']
             try:
                 print(line['stream'])
             except Exception:
                 print("\t%s" % line)
+        if error is not None:
+            raise RuntimeError(str(error))
         logger.info('Build complete for image: %s', tag)
         return tag
 
@@ -689,8 +710,7 @@ class DockerImageBuilder(object):
             s_install = 'biweeklybudget==%s' % self.build_ver
         s = DOCKERFILE_TEMPLATE.format(
             copy=s_copy,
-            install=s_install,
-            phantomjs_url=PHANTOMJS_URL
+            install=s_install
         )
         logger.debug("Dockerfile:\n%s", s)
         return s
@@ -702,7 +722,7 @@ class DockerImageBuilder(object):
         :return: entrypoint script contents
         :rtype: str
         """
-        s = "#!/bin/bash -ex\n"
+        s = "#!/bin/sh -ex\n"
         s += "export PYTHONUNBUFFERED=true\n"
         s += "/app/bin/python /app/bin/initdb -vv \n"
         s += "/app/bin/gunicorn -w 4 -b :80 --log-file=- --access-logfile=- " \

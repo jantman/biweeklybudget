@@ -10,6 +10,7 @@ Unreleased Changes
 * `PR #141 <https://github.com/jantman/biweeklybudget/pull/141>`_ - Switch acceptance tests from PhantomJS to headless Chrome.
 * Switch docs build screenshot script to use headless Chrome instead of PhantomJS.
 * `Issue #142 <https://github.com/jantman/biweeklybudget/issues/142>`_ - Speed up acceptance tests. The acceptance tests recently crossed the 20-minute barrier, which is unacceptable. This makes some improvements to the tests, mainly around combining classes that can be combined and also using mysql/mysqldump to refresh the DB, instead of refreshing and recreating via the ORM. That offers a approximately 50-90% speed improvement for each of the 43 refreshes. Unfortunately, it seems that the majority of time is taken up by pytest-selenium; see Issue 142 for further information.
+* `Issue #125 <https://github.com/jantman/biweeklybudget/issues/125>`_ - Switch Docker image base from ``python:3.6.1`` (Debian) to ``python:3.6.3-alpine3.4`` (Alpine Linux); drops final image size from 876MB to 274MB. (*Note:* Alpine linux does not have ``/bin/bash``.)
 
 0.5.0 (2017-10-28)
 ------------------
