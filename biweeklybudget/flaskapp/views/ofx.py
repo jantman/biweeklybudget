@@ -40,12 +40,16 @@ from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
 from sqlalchemy import or_
+import pickle
+from base64 import b64decode
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
+from biweeklybudget.ofxapi.local import OfxApiLocal
+from biweeklybudget.ofxapi.exceptions import DuplicateFileException
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +99,125 @@ class OfxTransAjax(MethodView):
             'account_amount': txn.account_amount
         }
         return jsonify(res)
+
+
+class OfxAccounts(MethodView):
+    """
+    Handle GET /api/ofx/accounts endpoint.
+
+    This returns the JSON-ified return value from
+    :py:meth:`~.ofxapi.local.get_accounts` and will usually be called from
+    :py:meth:`~.ofxapi.remote.get_accounts`.
+    """
+
+    def get(self):
+        api = OfxApiLocal(db_session)
+        return jsonify(api.get_accounts())
+
+
+class OfxStatementPost(MethodView):
+    """
+    Handle POST /api/ofx/statement endpoint.
+
+    This is a ReST API bridge between
+    :py:meth:`~.ofxapi.remote.update_statement_ofx` on the client side and
+    :py:meth:`~.ofxapi.local.update_statement_ofx` on the server side.
+    """
+
+    def post(self):
+        """
+        Handle POST to /api/ofx/statement (from
+        :py:meth:`~.ofxapi.remote.update_statement_ofx`) to upload a new OFX
+        Statement (via :py:meth:`~.ofxapi.local.update_statement_ofx`).
+
+        The POSTed JSON should have the following keys:
+
+        - ``acct_id`` (int) the Account ID the Statement is for
+        - ``mtime`` (str) base64-encoded, pickled representation of the file
+          modification time of the OFX file
+        - ``filename`` (str) the file name of the OFX file
+        - ``ofx`` (str) base64-encoded, pickled representation of the
+          ``ofxparse.ofxparse.Ofx`` instance representing the Statement
+
+        Returns a JSON object with the following fields:
+
+        - ``success`` (bool) whether the operation was successful
+        - ``message`` (str) message describing success or error message
+
+        For successful operations, the JSON object will contain the following
+        additional fields:
+
+        - ``count_new`` (int) count of new transactions added
+        - ``count_updated`` (int) count of transactions updated
+        - ``statement_id`` (int) ID of the newly-added statement
+
+        HTTP Status Codes:
+
+        - 201 - Statement successfully added
+        - 500 - DuplicateFileException
+        - 400 - Any other error/exception
+        """
+        data = request.get_json()
+        if sorted(data.keys()) != ['acct_id', 'filename', 'mtime', 'ofx']:
+            logger.error('POST contained invalid or missing keys: %s',
+                         data.keys())
+            resp = jsonify({
+                'success': False,
+                'message': 'Invalid or missing JSON keys.'
+            })
+            resp.status_code = 400
+            return resp
+        try:
+            ofx = pickle.loads(b64decode(data['ofx']))
+            mtime = pickle.loads(b64decode(data['mtime']))
+        except Exception:
+            logger.error(
+                'Error unpickling or base64-decoding OFX Statement post: %s',
+                data['ofx'], exc_info=True
+            )
+            resp = jsonify({
+                'success': False,
+                'message': 'Unable to unpickle or b64decode "ofx" field.'
+            })
+            resp.status_code = 400
+            return resp
+        api = OfxApiLocal(db_session)
+        try:
+            stmt_id, count_new, count_upd = api.update_statement_ofx(
+                data['acct_id'], ofx, mtime=mtime, filename=data['filename']
+            )
+        except DuplicateFileException as ex:
+            resp = jsonify({
+                'success': False,
+                'message': 'File %s is a duplicate of stmt %d for account '
+                           '%d' % (
+                               ex.filename, ex.stmt_id, ex.acct_id
+                           ),
+                'account_id': ex.acct_id,
+                'filename': ex.filename,
+                'statement_id': ex.stmt_id
+            })
+            resp.status_code = 500
+            return resp
+        except Exception as ex:
+            resp = jsonify({
+                'success': False,
+                'message': 'Exception: %s' % str(ex)
+            })
+            resp.status_code = 400
+            return resp
+        resp = jsonify({
+            'success': True,
+            'message': 'Successfully inserted Statement %d with %d new and %d '
+                       'updated Transactions' % (
+                           stmt_id, count_new, count_upd
+                       ),
+            'count_new': count_new,
+            'count_updated': count_upd,
+            'statement_id': stmt_id
+        })
+        resp.status_code = 201
+        return resp
 
 
 class OfxAjax(SearchableAjaxView):
@@ -203,6 +326,14 @@ app.add_url_rule('/ajax/ofx', view_func=OfxAjax.as_view('ofx_ajax'))
 app.add_url_rule(
     '/ajax/ofx/<int:acct_id>/<fitid>',
     view_func=OfxTransAjax.as_view('ofx_trans_ajax')
+)
+app.add_url_rule(
+    '/api/ofx/accounts',
+    view_func=OfxAccounts.as_view('ofx_api_accounts')
+)
+app.add_url_rule(
+    '/api/ofx/statement',
+    view_func=OfxStatementPost.as_view('ofx_api_statement')
 )
 app.add_url_rule(
     '/ofx/<int:acct_id>/<fitid>',

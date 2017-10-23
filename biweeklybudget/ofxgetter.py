@@ -242,6 +242,10 @@ def parse_args():
                    help='verbose output. specify twice for debug-level output.')
     p.add_argument('-l', '--list-accts', dest='list', action='store_true',
                    help='list accounts and exit')
+    p.add_argument('-r', '--remote', dest='remote', action='store', type=str,
+                   default=None,
+                   help='biweeklybudget API URL to use instead of direct DB '
+                        'access')
     p.add_argument('ACCOUNT_NAME', type=str, action='store', default=None,
                    nargs='?',
                    help='Account name; omit to download all accounts')
@@ -269,7 +273,7 @@ def main():
         lgr = logging.getLogger('biweeklybudget.db')
         lgr.setLevel(logging.WARNING)
 
-    client = apiclient()
+    client = apiclient(api_url=args.remote)
     if args.list:
         for k in sorted(OfxGetter.accounts(client).keys()):
             print(k)

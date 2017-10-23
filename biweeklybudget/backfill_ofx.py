@@ -156,6 +156,10 @@ def parse_args():
     p = argparse.ArgumentParser(description='Backfill OFX from disk')
     p.add_argument('-v', '--verbose', dest='verbose', action='count', default=0,
                    help='verbose output. specify twice for debug-level output.')
+    p.add_argument('-r', '--remote', dest='remote', action='store', type=str,
+                   default=None,
+                   help='biweeklybudget API URL to use instead of direct DB '
+                        'access')
     args = p.parse_args()
     return args
 
@@ -177,7 +181,7 @@ def main():
     elif args.verbose == 1:
         set_log_info(logger)
 
-    client = apiclient()
+    client = apiclient(api_url=args.remote)
     cls = OfxBackfiller(client, settings.STATEMENTS_SAVE_PATH)
     cls.run()
 

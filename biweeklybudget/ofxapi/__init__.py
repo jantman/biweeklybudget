@@ -37,15 +37,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 
 from biweeklybudget.ofxapi.local import OfxApiLocal
+from biweeklybudget.ofxapi.remote import OfxApiRemote
 
 logger = logging.getLogger(__name__)
 
 
-def apiclient():
-    # @TODO - local or remote
-    logger.info('Using OfxApiLocal direct database access')
-    import atexit
-    from biweeklybudget.db import init_db, cleanup_db, db_session
-    atexit.register(cleanup_db)
-    init_db()
-    return OfxApiLocal(db_session)
+def apiclient(api_url=None):
+    if api_url is None:
+        logger.info('Using OfxApiLocal direct database access')
+        import atexit
+        from biweeklybudget.db import init_db, cleanup_db, db_session
+        atexit.register(cleanup_db)
+        init_db()
+        return OfxApiLocal(db_session)
+    logger.info('Using OfxApiRemote with base_url %s', api_url)
+    return OfxApiRemote(api_url)

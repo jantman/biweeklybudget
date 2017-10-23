@@ -107,7 +107,7 @@ class OfxApiLocal(object):
         :type mtime: datetime.datetime
         :param filename: OFX file name
         :type filename: str
-        :returns: 3-tuple of the
+        :returns: 3-tuple of the int ID of the
           :py:class:`~biweeklybudget.models.ofx_statement.OFXStatement`
           created by this run, int count of new :py:class:`~.OFXTransaction`
           created, and int count of :py:class:`~.OFXTransaction` updated
@@ -139,7 +139,7 @@ class OfxApiLocal(object):
                                ofx.account.type)
         count_new, count_upd = self._new_updated_counts()
         db_session.commit()
-        return s, count_new, count_upd
+        return s.id, count_new, count_upd
 
     def _new_updated_counts(self):
         """
