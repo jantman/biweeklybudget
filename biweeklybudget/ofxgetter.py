@@ -246,6 +246,18 @@ def parse_args():
                    default=None,
                    help='biweeklybudget API URL to use instead of direct DB '
                         'access')
+    p.add_argument('--ca-bundle', dest='ca_bundle', action='store', type=str,
+                   default=None,
+                   help='Path to CA certificate bundle file or directory to '
+                        'use for SSL verification')
+    p.add_argument('--client-cert', dest='client_cert', action='store',
+                   type=str, default=None,
+                   help='path to client certificate to use for SSL client '
+                        'cert auth')
+    p.add_argument('--client-key', dest='client_key', action='store',
+                   type=str, default=None,
+                   help='path to unencrypted client key to use for SSL client '
+                        'cert auth, if key is not contained in the cert file')
     p.add_argument('ACCOUNT_NAME', type=str, action='store', default=None,
                    nargs='?',
                    help='Account name; omit to download all accounts')
@@ -273,7 +285,10 @@ def main():
         lgr = logging.getLogger('biweeklybudget.db')
         lgr.setLevel(logging.WARNING)
 
-    client = apiclient(api_url=args.remote)
+    client = apiclient(
+        api_url=args.remote, ca_bundle=args.ca_bundle,
+        client_cert=args.client_cert, client_key=args.client_key
+    )
     if args.list:
         for k in sorted(OfxGetter.accounts(client).keys()):
             print(k)

@@ -160,6 +160,18 @@ def parse_args():
                    default=None,
                    help='biweeklybudget API URL to use instead of direct DB '
                         'access')
+    p.add_argument('--ca-bundle', dest='ca_bundle', action='store', type=str,
+                   default=None,
+                   help='Path to CA certificate bundle file or directory to '
+                        'use for SSL verification')
+    p.add_argument('--client-cert', dest='client_cert', action='store',
+                   type=str, default=None,
+                   help='path to client certificate to use for SSL client '
+                        'cert auth')
+    p.add_argument('--client-key', dest='client_key', action='store',
+                   type=str, default=None,
+                   help='path to unencrypted client key to use for SSL client '
+                        'cert auth, if key is not contained in the cert file')
     args = p.parse_args()
     return args
 
@@ -181,7 +193,10 @@ def main():
     elif args.verbose == 1:
         set_log_info(logger)
 
-    client = apiclient(api_url=args.remote)
+    client = apiclient(
+        api_url=args.remote, ca_bundle=args.ca_bundle,
+        client_cert=args.client_cert, client_key=args.client_key
+    )
     cls = OfxBackfiller(client, settings.STATEMENTS_SAVE_PATH)
     cls.run()
 

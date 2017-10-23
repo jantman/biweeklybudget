@@ -57,15 +57,25 @@ class OfxApiRemote(object):
     remote system.
     """
 
-    def __init__(self, api_base_url, client_cert_path=None):
+    def __init__(
+        self, api_base_url, ca_bundle=None, client_cert_path=None,
+        client_key_path=None
+    ):
         """
         Initialize a new OFX remote API client.
 
         :param api_base_url: base URL to the biweeklybudget installation
         :type api_base_url: str
+        :param ca_bundle: Optional; local filesystem path to a SSL CA
+          certificate bundle file or directory, to use for server verification.
+        :type ca_bundle: str
         :param client_cert_path: Optional; local filesystem path to a SSL
           client certificate to use for authentication, if required.
         :type client_cert_path: str
+        :param client_key_path: Optional; local filesystem path to key file for
+          the certificate specified in ``client_cert_path``, if key is in a
+          separate file. The key must be unencrypted.
+        :type client_key_path: str
         """
         logger.debug(
             'New OFX API remote client; base_url=%s cert_path=%s',
@@ -73,6 +83,18 @@ class OfxApiRemote(object):
         )
         self._base_url = api_base_url
         self._cert_path = client_cert_path
+        self._key_path = client_key_path
+        self._ca_bundle = ca_bundle
+        self._requests_kwargs = {}
+        if ca_bundle is not None:
+            self._requests_kwargs['verify'] = ca_bundle
+        if client_cert_path is not None:
+            if client_key_path is not None:
+                self._requests_kwargs['cert'] = (
+                    client_cert_path, client_key_path
+                )
+            else:
+                self._requests_kwargs['cert'] = client_cert_path
 
     def get_accounts(self):
         """
@@ -93,7 +115,7 @@ class OfxApiRemote(object):
         """
         url = urljoin(self._base_url, '/api/ofx/accounts')
         logger.debug('GET ofx accounts from: %s', url)
-        r = requests.get(url)
+        r = requests.get(url, **self._requests_kwargs)
         logger.debug('API Response: HTTP %d; text: %s', r.status_code, r.text)
         return r.json()
 
@@ -131,7 +153,7 @@ class OfxApiRemote(object):
         }
         url = urljoin(self._base_url, '/api/ofx/statement')
         logger.debug('POST ofx statement to: %s; data: %s', url, postdata)
-        r = requests.post(url, json=postdata)
+        r = requests.post(url, json=postdata, **self._requests_kwargs)
         logger.debug('API Response: HTTP %d; text: %s', r.status_code, r.text)
         try:
             resp = r.json()

@@ -42,7 +42,7 @@ from biweeklybudget.ofxapi.remote import OfxApiRemote
 logger = logging.getLogger(__name__)
 
 
-def apiclient(api_url=None):
+def apiclient(api_url=None, ca_bundle=None, client_cert=None, client_key=None):
     if api_url is None:
         logger.info('Using OfxApiLocal direct database access')
         import atexit
@@ -51,4 +51,7 @@ def apiclient(api_url=None):
         init_db()
         return OfxApiLocal(db_session)
     logger.info('Using OfxApiRemote with base_url %s', api_url)
-    return OfxApiRemote(api_url)
+    return OfxApiRemote(
+        api_url, ca_bundle=ca_bundle, client_cert_path=client_cert,
+        client_key_path=client_key
+    )
