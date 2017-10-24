@@ -35,14 +35,28 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import os
 import pytest
+import requests
 from datetime import timedelta, datetime
 from selenium.webdriver.support.ui import Select
 from pytz import UTC
+from io import BytesIO
+from sqlalchemy import func
+from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.ofxapi import apiclient
+from biweeklybudget.ofxapi.exceptions import DuplicateFileException
+from biweeklybudget.vendored.ofxparse import OfxParser
+
+fixturedir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'fixtures')
+)
 
 
 @pytest.mark.acceptance
@@ -427,3 +441,127 @@ class TestTransReconciledModal(AcceptanceHelper):
         ofx_elems = self.tbody2elemlist(ofx_tbl)
         assert ofx_elems[1][1].get_attribute('innerHTML') == '<a href=' \
             '"/accounts/1">BankOne (1)</a>'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestOfxApi(AcceptanceHelper):
+
+    def test_0_verify_db(self, testdb):
+        assert testdb.query(OFXStatement).with_entities(
+            func.max(OFXStatement.id)
+        ).scalar() == 9
+        assert testdb.query(OFXTransaction).with_entities(
+            func.max(OFXTransaction.statement_id)
+        ).scalar() == 9
+        assert len(testdb.query(OFXTransaction).all()) == 33
+
+    def test_1_get_accounts(self, base_url):
+        r = requests.get(base_url + '/api/ofx/accounts')
+        assert r.status_code == 200
+        assert r.json() == {
+            'BankOne': {
+                'cat_memo': True,
+                'config': {'foo': 'bar'},
+                'id': 1,
+                'vault_path': 'secret/foo/bar/BankOne'
+            },
+            'BankTwoStale': {
+                'cat_memo': False,
+                'config': {'foo': 'baz'},
+                'id': 2,
+                'vault_path': 'secret/foo/bar/BankTwo'
+            },
+            'CreditTwo': {
+                'cat_memo': False,
+                'config': {},
+                'id': 4,
+                'vault_path': '/foo/bar'
+            },
+            'DisabledBank': {
+                'cat_memo': True,
+                'config': {'bar': 'baz'},
+                'id': 6,
+                'vault_path': ''
+            },
+            'InvestmentOne': {
+                'cat_memo': False,
+                'config': {},
+                'id': 5,
+                'vault_path': ''
+            }
+        }
+
+    def test_2_post_ofx(self, base_url):
+        ofxpath = os.path.join(fixturedir, 'CreditOne_2017-07-28_05-30-00.ofx')
+        with open(ofxpath, 'rb') as fh:
+            ofx_str = fh.read()
+        ofx = OfxParser.parse(BytesIO(ofx_str))
+        client = apiclient(base_url)
+        stmt_id, count_new, count_upd = client.update_statement_ofx(
+            3, ofx, filename='/statements/CreditOne/'
+                             'CreditOne_2017-07-28_05-30-00.ofx'
+        )
+        assert stmt_id == 10
+        assert count_new == 1
+        assert count_upd == 0
+
+    def test_3_verify_db(self, testdb):
+        assert testdb.query(OFXStatement).with_entities(
+            func.max(OFXStatement.id)
+        ).scalar() == 10
+        assert testdb.query(OFXTransaction).with_entities(
+            func.max(OFXTransaction.statement_id)
+        ).scalar() == 10
+        assert len(testdb.query(OFXTransaction).all()) == 34
+        stmt = testdb.query(OFXStatement).get(10)
+        assert stmt.id == 10
+        assert stmt.account_id == 3
+        assert stmt.filename == '/statements/CreditOne/' \
+                                'CreditOne_2017-07-28_05-30-00.ofx'
+        assert stmt.file_mtime == dtnow()
+        assert stmt.currency == 'USD'
+        assert stmt.bankid == '4321'
+        assert stmt.routing_number == ''
+        assert stmt.acct_type == ''
+        assert stmt.brokerid is None
+        assert stmt.acctid == 'CreditOneAcctId'
+        assert stmt.type == 'CreditCard'
+        assert stmt.as_of == datetime(2017, 7, 28, 5, 30, 0, tzinfo=UTC)
+        assert stmt.ledger_bal == Decimal('-1234.5600')
+        assert stmt.ledger_bal_as_of == datetime(
+            2017, 7, 28, 5, 29, 32, tzinfo=UTC
+        )
+        assert stmt.avail_bal is None
+        assert stmt.avail_bal_as_of is None
+        trans = testdb.query(OFXTransaction).get((3, 'FITID20170727144.0G53TY'))
+        assert trans.account_id == 3
+        assert trans.statement_id == 10
+        assert trans.fitid == 'FITID20170727144.0G53TY'
+        assert trans.trans_type == 'credit'
+        assert trans.date_posted == datetime(2017, 7, 27, 16, 0, 0, tzinfo=UTC)
+        assert trans.amount == Decimal('123.0000')
+        assert trans.name == 'INTERNET PAYMENT - THANK YOU'
+        assert trans.memo == ''
+        assert trans.sic is None
+        assert trans.mcc == ''
+        assert trans.checknum is None
+        assert trans.description is None
+        assert trans.notes is None
+        assert trans.reconcile_id is None
+
+    def test_4_post_same_ofx(self, base_url):
+        ofxpath = os.path.join(fixturedir, 'CreditOne_2017-07-28_05-30-00.ofx')
+        with open(ofxpath, 'rb') as fh:
+            ofx_str = fh.read()
+        ofx = OfxParser.parse(BytesIO(ofx_str))
+        client = apiclient(base_url)
+        with pytest.raises(DuplicateFileException) as ex:
+            client.update_statement_ofx(
+                3, ofx, filename='/statements/CreditOne/'
+                                 'CreditOne_2017-07-28_05-30-00.ofx'
+            )
+        assert ex.value.acct_id == 3
+        assert ex.value.stmt_id == 10
+        assert ex.value.filename == '/statements/CreditOne/' \
+                                    'CreditOne_2017-07-28_05-30-00.ofx'

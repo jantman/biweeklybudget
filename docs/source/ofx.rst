@@ -70,19 +70,19 @@ Configuring Accounts for Downloading with ofxclient
 ---------------------------------------------------
 
 1. Use the ``ofxclient`` CLI to configure and test your account, according to the
-  `upstream documentation <http://captin411.github.io/ofxclient/usage.html>`_.
+   `upstream documentation <http://captin411.github.io/ofxclient/usage.html>`_.
 2. Store the username and password for your account in Vault, as ``username`` and
-  ``password`` keys, respectively, of the same secret (path).
+   ``password`` keys, respectively, of the same secret (path).
 3. Convert ~/ofxclient.ini to JSON (this will look something like the example below),
-  removing the ``institution.username`` and ``institution.password`` keys (these will
-  be read from Vault at runtime).
+   removing the ``institution.username`` and ``institution.password`` keys (these will
+   be read from Vault at runtime).
 4. If there is no sensitive information in the resulting JSON, store the JSON string in the
-  :py:attr:`~biweeklybudget.models.account.Account.ofxgetter_config_json`
-  attribute of the appropriate :py:class:`~biweeklybudget.models.account.Account`
-  object. This can be done via the ``/accounts`` view in the Web UI. If there *is*
-  sensitive information in the ofxclient configuration JSON, you can store the entire
-  JSON configuration in an additional key on the Vault secret, and then set the
-  ``ofxgetter_config_json`` attribute to ``{"key": "NameOfVaultKeyWithJSON"}``.
+   :py:attr:`~biweeklybudget.models.account.Account.ofxgetter_config_json`
+   attribute of the appropriate :py:class:`~biweeklybudget.models.account.Account`
+   object. This can be done via the ``/accounts`` view in the Web UI. If there *is*
+   sensitive information in the ofxclient configuration JSON, you can store the entire
+   JSON configuration in an additional key on the Vault secret, and then set the
+   ``ofxgetter_config_json`` attribute to ``{"key": "NameOfVaultKeyWithJSON"}``.
 
 A working configuration for a Bank account might look something like this:
 

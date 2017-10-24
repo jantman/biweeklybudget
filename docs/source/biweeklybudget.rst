@@ -13,6 +13,7 @@ Subpackages
 
     biweeklybudget.flaskapp
     biweeklybudget.models
+    biweeklybudget.ofxapi
 
 Submodules
 ----------
@@ -29,7 +30,6 @@ Submodules
    biweeklybudget.interest
    biweeklybudget.load_data
    biweeklybudget.ofxgetter
-   biweeklybudget.ofxupdater
    biweeklybudget.prime_rate
    biweeklybudget.screenscraper
    biweeklybudget.settings

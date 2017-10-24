@@ -99,11 +99,16 @@ class OfxApiRemote(object):
     def get_accounts(self):
         """
         Query the database for all
-        :py:attr:`ofxgetter-enabled <~.account.Account.for_ofxgetter>`
-        :py:class:`Accounts <~.models.account.Account>` that have a non-empty
-        :py:attr:`~.Account.ofxgetter_config` and a non-None
-        :py:attr:`~.Account.vault_creds_path`. Return a dict of string
-        :py:attr:`Account name `~.Account.name` to dict with keys:
+        :py:attr:`ofxgetter-enabled
+        <biweeklybudget.models.account.Account.for_ofxgetter>`
+        :py:class:`Accounts <biweeklybudget.models.account.Account>` that have
+        a non-empty
+        :py:attr:`biweeklybudget.models.account.Account.ofxgetter_config` and a
+        non-None
+        :py:attr:`biweeklybudget.models.account.Account.vault_creds_path`.
+        Return a dict of string
+        :py:attr:`Account name <biweeklybudget.models.account.Account.name>` to
+        dict with keys:
 
         - ``vault_path`` - :py:attr:`~.Account.vault_creds_path`
         - ``config`` - :py:attr:`~.Account.ofxgetter_config`

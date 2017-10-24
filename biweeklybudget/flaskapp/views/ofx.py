@@ -106,8 +106,8 @@ class OfxAccounts(MethodView):
     Handle GET /api/ofx/accounts endpoint.
 
     This returns the JSON-ified return value from
-    :py:meth:`~.ofxapi.local.get_accounts` and will usually be called from
-    :py:meth:`~.ofxapi.remote.get_accounts`.
+    :py:meth:`~.OfxApiLocal.get_accounts` and will usually be called from
+    :py:meth:`~.OfxApiRemote.get_accounts`.
     """
 
     def get(self):
@@ -120,15 +120,15 @@ class OfxStatementPost(MethodView):
     Handle POST /api/ofx/statement endpoint.
 
     This is a ReST API bridge between
-    :py:meth:`~.ofxapi.remote.update_statement_ofx` on the client side and
-    :py:meth:`~.ofxapi.local.update_statement_ofx` on the server side.
+    :py:meth:`~.OfxApiRemote.update_statement_ofx` on the client side and
+    :py:meth:`~.OfxApiLocal.update_statement_ofx` on the server side.
     """
 
     def post(self):
         """
         Handle POST to /api/ofx/statement (from
-        :py:meth:`~.ofxapi.remote.update_statement_ofx`) to upload a new OFX
-        Statement (via :py:meth:`~.ofxapi.local.update_statement_ofx`).
+        :py:meth:`~.OfxApiRemote.update_statement_ofx`) to upload a new OFX
+        Statement (via :py:meth:`~.OfxApiLocal.update_statement_ofx`).
 
         The POSTed JSON should have the following keys:
 
