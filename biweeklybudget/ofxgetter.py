@@ -39,10 +39,10 @@ from datetime import datetime
 import os
 import argparse
 import logging
-import atexit
 from copy import deepcopy
 from io import StringIO
 import importlib
+import json
 
 from biweeklybudget.vendored.ofxparse import OfxParser
 from biweeklybudget.vendored.ofxclient.account \
@@ -50,11 +50,8 @@ from biweeklybudget.vendored.ofxclient.account \
 
 from biweeklybudget.utils import Vault
 from biweeklybudget import settings
-from biweeklybudget.models.account import Account
-from biweeklybudget.db import init_db, db_session, cleanup_db
-from biweeklybudget.ofxupdater import OFXUpdater
 from biweeklybudget.cliutils import set_log_debug, set_log_info
-from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.ofxapi import apiclient
 
 logger = logging.getLogger(__name__)
 
@@ -67,27 +64,33 @@ requests_log.propagate = True
 class OfxGetter(object):
 
     @staticmethod
-    def accounts():
+    def accounts(client):
         """
-        Return a sorted list of all Account objects that are for ofxgetter.
-        """
-        return [a for a in db_session.query(
-                Account).filter(
-            Account.for_ofxgetter).order_by(Account.name).all()
-        ]
+        Return a dict of account information of ofxgetter-enabled accounts,
+        str account name to dict of information about the account.
 
-    def __init__(self, savedir='./'):
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
+        :returns: dict of account information; see
+          :py:meth:`~.OfxApiLocal.get_accounts` for details.
+        :rtype: dict
+        """
+        return client.get_accounts()
+
+    def __init__(self, client, savedir='./'):
+        """
+        Initialize OfxGetter class.
+
+        :param client: API client
+        :type client: Instance of :py:class:`~.OfxApiLocal` or
+          :py:class:`~.OfxApiRemote`
+        :param savedir: directory/path to save statements in
+        :type savedir: str
+        """
+        self._client = client
         self.savedir = savedir
-        self._account_data = {}
-        for acct in self.accounts():
-            if acct.vault_creds_path is None and acct.ofxgetter_config == {}:
-                continue
-            self._account_data[acct.name] = {
-                'vault_path': acct.vault_creds_path,
-                'config': acct.ofxgetter_config,
-                'id': acct.id,
-                'cat_memo': acct.ofx_cat_memo_to_name
-            }
+        self._account_data = self.accounts(self._client)
         logger.debug('Initialized with data for %d accounts',
                      len(self._account_data))
         self._accounts = {}
@@ -97,8 +100,23 @@ class OfxGetter(object):
             vault_path = self._account_data[acct_name]['vault_path']
             logger.debug('Getting secrets for account %s', acct_name)
             secrets = self.vault.read(vault_path)
+            if list(data.keys()) == ['key']:
+                logger.debug(
+                    'Account %s has ofxgetter_config_json stored in Vault key: '
+                    '%s' % (acct_name, data['key'])
+                )
+                if data['key'] not in secrets:
+                    raise RuntimeError(
+                        'Account %s should have ofxgetter_config_json stored '
+                        'in Vault key %s, but Vault entry at %s has no such '
+                        'key' % (
+                            acct_name, data['key'], vault_path
+                        )
+                    )
+                data = json.loads(secrets[data['key']])
             data['institution']['password'] = secrets['password']
             data['institution']['username'] = secrets['username']
+            self._account_data[acct_name]['config'] = data
             if 'class_name' not in data:
                 self._accounts[acct_name] = OfxClientAccount.deserialize(data)
         logger.debug('Initialized %d accounts', len(self._accounts))
@@ -152,23 +170,10 @@ class OfxGetter(object):
         """
         logger.debug('Parsing OFX')
         ofx = OfxParser.parse(StringIO(ofxdata))
-        logger.debug('Instantiating OFXUpdater')
-        updater = OFXUpdater(
-            self._account_data[account_name]['id'],
-            account_name,
-            cat_memo=self._account_data[account_name]['cat_memo']
-        )
         logger.debug('Updating OFX in DB')
-        updater.update(ofx, filename=fname)
-        count_new = 0
-        count_upd = 0
-        for obj in db_session.dirty:
-            if isinstance(obj, OFXTransaction):
-                count_upd += 1
-        for obj in db_session.new:
-            if isinstance(obj, OFXTransaction):
-                count_new += 1
-        db_session.commit()
+        _, count_new, count_upd = self._client.update_statement_ofx(
+            self._account_data[account_name]['id'], ofx, filename=fname
+        )
         logger.info('Account "%s" - inserted %d new OFXTransaction(s), updated '
                     '%d existing OFXTransaction(s)',
                     account_name, count_new, count_upd)
@@ -237,6 +242,22 @@ def parse_args():
                    help='verbose output. specify twice for debug-level output.')
     p.add_argument('-l', '--list-accts', dest='list', action='store_true',
                    help='list accounts and exit')
+    p.add_argument('-r', '--remote', dest='remote', action='store', type=str,
+                   default=None,
+                   help='biweeklybudget API URL to use instead of direct DB '
+                        'access')
+    p.add_argument('--ca-bundle', dest='ca_bundle', action='store', type=str,
+                   default=None,
+                   help='Path to CA certificate bundle file or directory to '
+                        'use for SSL verification')
+    p.add_argument('--client-cert', dest='client_cert', action='store',
+                   type=str, default=None,
+                   help='path to client certificate to use for SSL client '
+                        'cert auth')
+    p.add_argument('--client-key', dest='client_key', action='store',
+                   type=str, default=None,
+                   help='path to unencrypted client key to use for SSL client '
+                        'cert auth, if key is not contained in the cert file')
     p.add_argument('ACCOUNT_NAME', type=str, action='store', default=None,
                    nargs='?',
                    help='Account name; omit to download all accounts')
@@ -264,29 +285,30 @@ def main():
         lgr = logging.getLogger('biweeklybudget.db')
         lgr.setLevel(logging.WARNING)
 
-    atexit.register(cleanup_db)
-    init_db()
-
+    client = apiclient(
+        api_url=args.remote, ca_bundle=args.ca_bundle,
+        client_cert=args.client_cert, client_key=args.client_key
+    )
     if args.list:
-        for k in OfxGetter.accounts():
-            print(k.name)
+        for k in sorted(OfxGetter.accounts(client).keys()):
+            print(k)
         raise SystemExit(0)
 
-    getter = OfxGetter(settings.STATEMENTS_SAVE_PATH)
+    getter = OfxGetter(client, settings.STATEMENTS_SAVE_PATH)
     if args.ACCOUNT_NAME is not None:
         getter.get_ofx(args.ACCOUNT_NAME)
         raise SystemExit(0)
     # else all of them
     total = 0
     success = 0
-    for acct in OfxGetter.accounts():
+    for acctname in sorted(OfxGetter.accounts(client).keys()):
         try:
             total += 1
-            getter.get_ofx(acct.name)
+            getter.get_ofx(acctname)
             success += 1
         except Exception:
             logger.error(
-                'Failed to download account %s', acct.name, exc_info=True
+                'Failed to download account %s', acctname, exc_info=True
             )
     if success != total:
         logger.warning('Downloaded %d of %d accounts', success, total)

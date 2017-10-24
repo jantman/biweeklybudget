@@ -69,9 +69,20 @@ it will copy all of your credentials from LastPass to Vault, preserving the fold
 Configuring Accounts for Downloading with ofxclient
 ---------------------------------------------------
 
-1. Use the ``ofxclient`` CLI to configure and test your account.
-2. Put your creds in Vault.
-3. Migrate ~/ofxclient.ini to JSON, add it to your :py:class:`~biweeklybudget.models.account.Account`.
+1. Use the ``ofxclient`` CLI to configure and test your account, according to the
+   `upstream documentation <http://captin411.github.io/ofxclient/usage.html>`_.
+2. Store the username and password for your account in Vault, as ``username`` and
+   ``password`` keys, respectively, of the same secret (path).
+3. Convert ~/ofxclient.ini to JSON (this will look something like the example below),
+   removing the ``institution.username`` and ``institution.password`` keys (these will
+   be read from Vault at runtime).
+4. If there is no sensitive information in the resulting JSON, store the JSON string in the
+   :py:attr:`~biweeklybudget.models.account.Account.ofxgetter_config_json`
+   attribute of the appropriate :py:class:`~biweeklybudget.models.account.Account`
+   object. This can be done via the ``/accounts`` view in the Web UI. If there *is*
+   sensitive information in the ofxclient configuration JSON, you can store the entire
+   JSON configuration in an additional key on the Vault secret, and then set the
+   ``ofxgetter_config_json`` attribute to ``{"key": "NameOfVaultKeyWithJSON"}``.
 
 A working configuration for a Bank account might look something like this:
 
@@ -107,7 +118,7 @@ Configuring Accounts for Downloading with Selenium
 In your `customization package <_getting_started.customization>`, subclass
 :py:class:`~biweeklybudget.screenscraper.ScreenScraper`. Override the constructor
 to take whatever keyword arguments are required, and add those to your account's
-``ofxgetter_config_json`` as shown below. :py:class:~biweeklybudget.ofxgetter.OfxGetter`
+``ofxgetter_config_json`` as shown below. :py:class:`~biweeklybudget.ofxgetter.OfxGetter`
 will instantiate the class passing it the specified keyword arguments in addition to
 ``username``, ``password`` and ``savedir`` keyword arguments. ``savedir`` is the
 directory under :py:const:`~biweeklybudget.settings_example.STATEMENTS_SAVE_PATH` where the account's
@@ -132,6 +143,11 @@ If you need to persist cookies across sessions, look into the
             "acct_num": "1234"
         }
     }
+
+This JSON configuration will have the username and password from Vault interpolated
+as keyword arguments, similar to how they will be added to ``institution`` for
+ofxclient accounts. As described in ofxclient accounts #4, above, you can also
+store the entire JSON configuration in Vault if desired.
 
 Here's a simple, contrived example of such a class:
 
@@ -218,3 +234,17 @@ Here's a simple, contrived example of such a class:
                     fh.write(post_list)
                 raise SystemExit("Got non-OFX response")
             return post_list
+
+OFX Related Account Settings
+----------------------------
+
+The following attributes on the :py:class:`~biweeklybudget.models.account.Account` model
+effect OFX downloads and how OFX statements are handled:
+
+* :py:attr:`~biweeklybudget.models.account.Account.ofxgetter_config_json` - Stores the configuration required for
+  ofxclient- or Selenium-based OFX downloads. See above. This is exposed as the "OFXGetter Config (JSON)" form field
+  when adding or editing accounts through the UI.
+* :py:attr:`~biweeklybudget.models.account.Account.ofx_cat_memo_to_name` - This is exposed as the "OFX Cat Memo to Name"
+  checkbox when adding or editing accounts through the UI.
+* :py:attr:`~biweeklybudget.models.account.Account.negate_ofx_amounts` - This is exposed as the "Negate OFX Amounts"
+  checkbox when adding or editing accounts through the UI.
