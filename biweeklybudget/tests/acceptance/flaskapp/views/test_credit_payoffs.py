@@ -442,3 +442,30 @@ class TestSettings(AcceptanceHelper):
             ],
             ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
         ]
+
+    def test_10_input_and_save_remove_lines(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        selenium.find_element_by_id('rm_increase_2_link').click()
+        selenium.find_element_by_id('rm_onetime_1_link').click()
+        selenium.find_element_by_id('btn_recalc_payoffs').click()
+        assert len(selenium.find_elements_by_class_name('formfeedback')) == 0
+
+    def test_11_verify_db(self, testdb):
+        b = testdb.query(DBSetting).get('credit-payoff')
+        assert b is not None
+        assert b.value == json.dumps({
+            'increases': [
+                {
+                    'enabled': True,
+                    'date': '2017-05-14',
+                    'amount': '160.23'
+                }
+            ],
+            'onetimes': [
+                {
+                    'enabled': False,
+                    'date': '2017-07-21',
+                    'amount': '98.76'
+                }
+            ]
+        }, sort_keys=True)

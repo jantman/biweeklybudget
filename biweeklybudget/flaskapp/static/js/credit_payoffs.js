@@ -54,7 +54,7 @@ function addIncrease(settings) {
   s = s + '<label for="payoff_increase_frm_' + idx + '_amt" class="control-label sr-only">Payment Increase ' + idx + ' Amount</label>';
   s = s + '<div class="input-group">';
   s = s + '<span class="input-group-addon">$</span><input class="form-control" id="payoff_increase_frm_' + idx + '_amt" name="payoff_increase_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
-  s = s + '</div> .</div></form>';
+  s = s + '</div> . (<a href="#" onclick="removeIncrease(' + idx + ')" id="rm_increase_' + idx + '_link">remove</a>)</div></form>';
   s = s + '<!-- /#payoff_increase_frm_' + idx + ' -->';
   $('#payoff_increase_forms').append(s);
   if ( settings !== undefined ) {
@@ -68,6 +68,13 @@ function addIncrease(settings) {
     todayHighlight: true,
     format: 'yyyy-mm-dd'
   });
+}
+
+/**
+ * Remove the specified Increase form.
+ */
+function removeIncrease(idx) {
+  $('#payoff_increase_frm_' + idx).remove();
 }
 
 /**
@@ -98,7 +105,7 @@ function addOnetime(settings) {
   s = s + '<label for="payoff_onetime_frm_' + idx + '_amt" class="control-label sr-only">Onetime Payment ' + idx + ' Amount</label>';
   s = s + '<div class="input-group">';
   s = s + '<span class="input-group-addon">$</span><input class="form-control" id="payoff_onetime_frm_' + idx + '_amt" name="payoff_onetime_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
-  s = s + '</div> to the payment amount.</div></form>';
+  s = s + '</div> to the payment amount. (<a href="#" onclick="removeOnetime(' + idx + ')" id="rm_onetime_' + idx + '_link">remove</a>)</div></form>';
   s = s + '<!-- /#payoff_onetime_frm_' + idx + ' -->';
   $('#payoff_onetime_forms').append(s);
   if ( settings !== undefined ) {
@@ -112,6 +119,13 @@ function addOnetime(settings) {
     todayHighlight: true,
     format: 'yyyy-mm-dd'
   });
+}
+
+/**
+ * Remove the specified Onetime form.
+ */
+function removeOnetime(idx) {
+  $('#payoff_onetime_frm_' + idx).remove();
 }
 
 /**
