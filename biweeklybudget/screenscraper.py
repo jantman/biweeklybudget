@@ -72,8 +72,8 @@ class ScreenScraper(object):
         self._screenshot = screenshot
         if self._screenshot:
             logger.warning("screenshotting all actions")
-        self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:33.0) ' \
-                          'Gecko/20100101 Firefox/33.0'
+        self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:56.0) ' \
+                          'Gecko/20100101 Firefox/56.0'
 
     def load_cookies(self, cookie_file):
         """
