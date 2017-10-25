@@ -80,7 +80,6 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
-from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 engine = create_engine(
