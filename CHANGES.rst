@@ -18,6 +18,7 @@ Unreleased Changes
 * `Issue #114 <https://github.com/jantman/biweeklybudget/issues/114>`_
 
   * Add ``transfer_id`` field and ``transfer`` relationship to Transaction model, to link the halves of budget transfer transactions in the database. The alembic migration for this release iterates all Transactions in the database, and populates these links based on inferences of the description, date, account_id and notes fields of sequential pairs of Transactions. (Note: this migration would likely miss some links if two transfers were created simultaneously, and ended up with the Transaction IDs interleaved).
+  * Identify transfer Transactions on the Edit Transaction modal, and provide link to the matching Transaction.
 
 0.4.0 (2017-08-22)
 ------------------

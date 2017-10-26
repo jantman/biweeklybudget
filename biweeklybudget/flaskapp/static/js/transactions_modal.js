@@ -47,6 +47,7 @@ function transModalDivForm() {
         .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
         .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
         .addText('trans_frm_notes', 'notes', 'Notes')
+        .addHTML('<p id="trans_frm_transfer_p" style="display: none;"></p>')
         .render();
 }
 
@@ -62,6 +63,13 @@ function transModalDivFillAndShow(msg) {
     $('#trans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#trans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
     $('#trans_frm_notes').val(msg['notes']);
+    if(msg['transfer_id'] !== null) {
+      $('#trans_frm_transfer_p').html(
+        'This transaction is one half of a transfer, along with <a href="javascript:transModal(' +
+        msg['transfer_id'] + ', mytable)">Transaction ' + msg['transfer_id'] + '</a>.'
+      );
+      $('#trans_frm_transfer_p').show();
+    }
     $("#modalDiv").modal('show');
 }
 
