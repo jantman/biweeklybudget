@@ -51,11 +51,15 @@ import glob
 import socket
 import logging
 from time import sleep
+from random import uniform, choice, randrange
+from datetime import timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import biweeklybudget.settings
 from biweeklybudget.settings import PAY_PERIOD_START_DATE
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+from biweeklybudget.utils import dtnow
+from decimal import Decimal, ROUND_HALF_UP
 try:
     from pytest_flask.fixtures import LiveServer
 except ImportError:
@@ -63,6 +67,10 @@ except ImportError:
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from PIL import Image
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
@@ -81,6 +89,11 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
 from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.fuel import FuelFill, Vehicle
+from biweeklybudget.models.account import Account
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.models.budget_model import Budget
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -100,14 +113,47 @@ class Screenshotter(object):
             'path': '/',
             'filename': 'index',
             'title': 'Index Page',
-            'description': 'Main landing page.'
+            'description': 'Main landing page.',
+            'postshot_func': '_index_postshot',
+            'preshot_func': '_index_preshot'
+        },
+        {
+            'path': '/reconcile',
+            'filename': 'reconcile',
+            'title': 'Reconcile Transactions with OFX',
+            'description': 'OFX Transactions reported by financial institutions'
+                           ' can be marked as reconciled with a corresponding '
+                           'Transaction.',
+            'preshot_func': '_reconcile_preshot'
+        },
+        {
+            'path': '/reconcile',
+            'filename': 'reconcile-drag',
+            'title': 'Drag-and-Drop Reconciling',
+            'description': 'To reconcile an OFX transaction with a Transaction,'
+                           ' just drag and drop.',
+            'preshot_func': '_reconcile_drag_preshot',
+            'postshot_func': '_reconcile_drag_postshot'
         },
         {
             'path': '/payperiods',
             'filename': 'payperiods',
             'title': 'Pay Periods View',
             'description': 'Summary of previous, current and upcoming pay '
-                           'periods, plus date selector to find a pay period.'
+                           'periods, plus date selector to find a pay period.',
+            'preshot_func': '_payperiods_preshot'
+        },
+        {
+            'path': '/budgets',
+            'filename': 'budgets',
+            'title': 'Budgets',
+            'description': 'List all budgets'
+        },
+        {
+            'path': '/budgets/2',
+            'filename': 'budget2',
+            'title': 'Single Budget View',
+            'description': 'Budget detail modal to view and edit a budget.'
         },
         {
             'path': '/payperiod/%s' % PAY_PERIOD_START_DATE.strftime(
@@ -118,7 +164,33 @@ class Screenshotter(object):
             'description': 'Shows a pay period (current in this example) '
                            'balances (income, allocated, spent, remaining), '
                            'budgets and transactions (previous/manually-'
-                           'entered and scheduled).'
+                           'entered and scheduled).',
+            'postshot_func': '_payperiod_postshot'
+        },
+        {
+            'path': '/payperiod/%s' % (
+                PAY_PERIOD_START_DATE - timedelta(days=14)
+            ).strftime('%Y-%m-%d'),
+            'filename': 'budget_balancing',
+            'title': 'Budget Balancing',
+            'description': 'Pushbutton balancing of budgets and transfer of '
+                           'additional funds to standing budget, for previous '
+                           'pay period.',
+            'postshot_func': '_balance_postshot',
+            'preshot_func': '_balance_preshot'
+        },
+        {
+            'path': '/transactions',
+            'filename': 'transactions',
+            'title': 'Transactions View',
+            'description': 'Shows all manually-entered transactions.'
+        },
+        {
+            'path': '/transactions/2',
+            'filename': 'transaction2',
+            'title': 'Transaction Detail',
+            'description': 'Transaction detail modal to view and edit a '
+                           'transaction.'
         },
         {
             'path': '/accounts',
@@ -136,31 +208,6 @@ class Screenshotter(object):
             'filename': 'ofx',
             'title': 'OFX Transactions',
             'description': 'Shows transactions imported from OFX statements.'
-        },
-        {
-            'path': '/transactions',
-            'filename': 'transactions',
-            'title': 'Transactions View',
-            'description': 'Shows all manually-entered transactions.'
-        },
-        {
-            'path': '/transactions/2',
-            'filename': 'transaction2',
-            'title': 'Transaction Detail',
-            'description': 'Transaction detail modal to view and edit a '
-                           'transaction.'
-        },
-        {
-            'path': '/budgets',
-            'filename': 'budgets',
-            'title': 'Budgets',
-            'description': 'List all budgets'
-        },
-        {
-            'path': '/budgets/2',
-            'filename': 'budget2',
-            'title': 'Single Budget View',
-            'description': 'Budget detail modal to view and edit a budget.'
         },
         {
             'path': '/scheduled',
@@ -191,27 +238,11 @@ class Screenshotter(object):
                            'of times per pay period.'
         },
         {
-            'path': '/reconcile',
-            'filename': 'reconcile',
-            'title': 'Reconcile Transactions with OFX',
-            'description': 'OFX Transactions reported by financial institutions'
-                           ' can be marked as reconciled with a corresponding '
-                           'Transaction.',
-            'preshot_func': '_reconcile_preshot'
-        },
-        {
-            'path': '/reconcile',
-            'filename': 'reconcile-drag',
-            'title': 'Drag-and-Drop Reconciling',
-            'description': 'To reconcile an OFX transaction with a Transaction,'
-                           ' just drag and drop.',
-            'preshot_func': '_reconcile_drag_preshot'
-        },
-        {
             'path': '/fuel',
             'filename': 'fuel',
             'title': 'Fuel Log',
-            'description': 'Vehicle fuel log and fuel economy tracking.'
+            'description': 'Vehicle fuel log and fuel economy tracking.',
+            'preshot_func': '_fuel_log_preshot'
         },
         {
             'path': '/projects',
@@ -283,7 +314,8 @@ class Screenshotter(object):
         logger.info('screenshots.rst written to: %s', r_path)
 
     def take_screenshot(self, path=None, filename=None, title=None,
-                        preshot_func=None, description=None):
+                        preshot_func=None, description=None,
+                        postshot_func=None):
         """Take a screenshot and save it."""
         self.get(path)
         sleep(1)
@@ -295,12 +327,57 @@ class Screenshotter(object):
         logger.info('Screenshotting "%s" to %s', path, fpath)
         self.browser.get_screenshot_as_file(fpath)
         self._resize_image(filename)
+        if postshot_func is not None:
+            getattr(self, postshot_func)()
+            sleep(1)
 
     def _reconcile_preshot(self):
         logger.info('Reconcile preshot')
         self._update_db()
         self.get('/reconcile')
         sleep(1)
+
+    def _fuel_log_preshot(self):
+        logger.info('Fuel log preshot')
+        # BEGIN DB update
+        conn = engine.connect()
+        logger.info('Updating DB for fuel fills')
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        vehicles = {
+            1: 1011,
+            2: 1012
+        }
+        for veh_id, last_odo in vehicles.items():
+            veh = data_sess.query(Vehicle).get(veh_id)
+            assert veh is not None
+            for i in range(3, 33):
+                last_odo += 200 + randrange(-50, 50)
+                cpg = 2.0 + (randrange(-100, 100) / 100)
+                gals = 10.0 + (randrange(-300, 300) / 100)
+                fill = FuelFill(
+                    date=(dtnow() + timedelta(days=i)).date(),
+                    cost_per_gallon=cpg,
+                    fill_location='foo',
+                    gallons=gals,
+                    level_before=choice([0, 10, 20, 30, 40]),
+                    level_after=100,
+                    odometer_miles=last_odo,
+                    reported_miles=last_odo,
+                    total_cost=cpg * gals,
+                    vehicle=veh
+                )
+                data_sess.add(fill)
+                data_sess.flush()
+                data_sess.commit()
+                fill.calculate_mpg()
+                data_sess.commit()
+        data_sess.close()
+        conn.close()
+        # END DB update
+        self.get('/fuel')
+        sleep(10)
 
     def _reconcile_drag_preshot(self):
         ofxdiv = self.browser.find_element_by_id('ofx-2-0')
@@ -317,6 +394,216 @@ class Screenshotter(object):
         actions.move_by_offset(-400, -50)
         actions.perform()
         self.browser.get_screenshot_as_file('docs/source/foo.png')
+
+    def _reconcile_drag_postshot(self):
+        logger.info('Reconcile drag postshot')
+        conn = engine.connect()
+        logger.info('Updating DB')
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        for t in OFXTransaction.unreconciled(data_sess):
+            data_sess.delete(t)
+        data_sess.flush()
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+
+    def _index_preshot(self):
+        logger.info('Index preshot')
+        # BEGIN DB update
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        for acct in data_sess.query(Account).all():
+            end_bal = acct.balance.ledger
+            pctrange = float(end_bal) * 0.1
+            for i in range(1, 30):
+                dt = dtnow() - timedelta(days=i)
+                b = end_bal + Decimal(uniform(-1 * pctrange, pctrange))
+                b = Decimal(b.quantize(Decimal('.001'), rounding=ROUND_HALF_UP))
+                acct.set_balance(ledger=b, ledger_date=dt, overall_date=dt)
+        data_sess.flush()
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        # END DB update
+        self.get('/')
+        sleep(1)
+
+    def _index_postshot(self):
+        logger.info('Index postshot')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        for acct_id in [2, 5]:
+            acct = data_sess.query(Account).get(acct_id)
+            s = acct.ofx_statement
+            s.as_of = dtnow()
+            data_sess.add(s)
+        data_sess.flush()
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('Done updating DB (index postshot)')
+
+    def _payperiods_preshot(self):
+        logger.info('payperiods preshot')
+        # BEGIN DB update
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
+        data_sess.add(Budget(
+            name='Budget3', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget4', is_periodic=True, starting_balance=0
+        ))
+        data_sess.flush()
+        data_sess.commit()
+        budgets = list(data_sess.query(Budget).filter(
+            Budget.is_active.__eq__(True),
+            Budget.is_income.__eq__(False),
+            Budget.is_periodic.__eq__(True)
+        ).all())
+        for i in range(0, 12):  # payperiods
+            mult = choice([-1, 1])
+            target = 2011.67 + (mult * uniform(0, 500))
+            total = 0
+            count = 0
+            while total < target:
+                count += 1
+                amt = uniform(0, target * 0.2)
+                if total + amt > target:
+                    amt = target - total
+                total += amt
+                amt = Decimal(Decimal(amt).quantize(
+                    Decimal('.001'), rounding=ROUND_HALF_UP
+                ))
+                data_sess.add(Transaction(
+                    account_id=1,
+                    budgeted_amount=amt,
+                    actual_amount=amt,
+                    budget=choice(budgets),
+                    date=pp.start_date + timedelta(days=1),
+                    description='Transaction %d.%d' % (i, count)
+                ))
+                data_sess.flush()
+                data_sess.commit()
+            pp = pp.next
+        data_sess.close()
+        conn.close()
+        # END DB update
+        self.get('/payperiods')
+        sleep(1)
+
+    def _payperiod_postshot(self):
+        logger.info('Payperiods postshot')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        for t in data_sess.query(Transaction).filter(
+            Transaction.id.__ge__(4)
+        ).all():
+            data_sess.delete(t)
+        data_sess.delete(data_sess.query(Budget).get(8))
+        data_sess.delete(data_sess.query(Budget).get(9))
+        data_sess.flush()
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('Done updating DB')
+
+    def _balance_preshot(self):
+        logger.info('balance preshot - DB update')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
+        data_sess.add(Budget(
+            name='Budget3', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget4', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget5', is_periodic=True, starting_balance=250
+        ))
+        data_sess.flush()
+        data_sess.commit()
+        budgets = list(data_sess.query(Budget).filter(
+            Budget.is_active.__eq__(True),
+            Budget.is_income.__eq__(False),
+            Budget.is_periodic.__eq__(True)
+        ).all())
+        target = 1950
+        total = 0
+        count = 0
+        while total < target:
+            count += 1
+            amt = uniform(0, target * 0.2)
+            if total + amt > target:
+                amt = target - total
+            total += amt
+            amt = Decimal(Decimal(amt).quantize(
+                Decimal('.001'), rounding=ROUND_HALF_UP
+            ))
+            data_sess.add(Transaction(
+                account_id=1,
+                budgeted_amount=amt,
+                actual_amount=amt,
+                budget=choice(budgets),
+                date=pp.start_date + timedelta(days=randrange(0, 12)),
+                description='Transaction %d' % count
+            ))
+            data_sess.flush()
+            data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('balance preshot - DB update done; click')
+        self.get('/payperiod/%s' % pp.start_date.strftime('%Y-%m-%d'))
+        sleep(1)
+        self.browser.find_element_by_id('btn-pp-balance-budgets').click()
+        WebDriverWait(self.browser, 10).until(
+            EC.element_to_be_clickable((By.ID, 'bal_budg_frm_standing_budget'))
+        )
+        Select(
+            self.browser.find_element_by_id('bal_budg_frm_standing_budget')
+        ).select_by_value('5')
+        Select(self.browser.find_element_by_id(
+            'bal_budg_frm_periodic_overage_budget'
+        )).select_by_value('2')
+        self.browser.find_element_by_id('modalSaveButton').click()
+        logger.info('balance preshot done')
+        sleep(2)
+
+    def _balance_postshot(self):
+        logger.info('Payperiods postshot')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        for t in data_sess.query(Transaction).filter(
+            Transaction.id.__ge__(4)
+        ).all():
+            data_sess.delete(t)
+        data_sess.flush()
+        data_sess.commit()
+        for b in data_sess.query(Budget).filter(
+            Budget.id.__ge__(7)
+        ).all():
+            data_sess.delete(b)
+        data_sess.flush()
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('Done updating DB')
 
     def _cursor_script(self, x_pos, y_pos):
         s = '<img width="37" height="37" src="data:image/png;base64,iVBOR' \

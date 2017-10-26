@@ -14,6 +14,7 @@ Unreleased Changes
 * **Experimental** - `Issue #117 <https://github.com/jantman/biweeklybudget/issues/117>`_ - Experimental, initial support for pushbutton balancing of budgets in the most recent previous payperiod. This feature will transfer funds between periodic budgets in the pay period attempting to get them all to a zero remaining amount. Once as many periodic budgets are zeroed as possible, a user-selected standing budget will be used to transfer excess funds to or cover negative budgets from. Finally, funds will be transferred to or from the standing budget to result in the overall remaining amount for the pay period being zero. This feature is new and experimental, and the confirmation dialog should be closely checked for accuracy and correctness.
 * `Issue #124 <https://github.com/jantman/biweeklybudget/issues/124>`_ - Major changes to the ``ofxgetter`` and ``ofxbackfiller`` console scripts; centralize all database access in them to the new ``biweeklybudget.ofxapi.local.OfxApiLocal`` class and allow these scripts to function remotely, interacting with the ReST API instead of requiring direct database access.
 * `Issue #123 <https://github.com/jantman/biweeklybudget/issues/123>`_ - Modify the Credit Payoffs view to allow removal of Increase and Onetime Payment settings lines.
+* `Issue #131 <https://github.com/jantman/biweeklybudget/issues/131>`_ - Add better example data for screenshots.
 
 0.4.0 (2017-08-22)
 ------------------

@@ -9,6 +9,22 @@ Main landing page.
 .. image:: index_sm.png
    :target: index.png
 
+Reconcile Transactions with OFX
+-------------------------------
+
+OFX Transactions reported by financial institutions can be marked as reconciled with a corresponding Transaction.
+
+.. image:: reconcile_sm.png
+   :target: reconcile.png
+
+Drag-and-Drop Reconciling
+-------------------------
+
+To reconcile an OFX transaction with a Transaction, just drag and drop.
+
+.. image:: reconcile-drag_sm.png
+   :target: reconcile-drag.png
+
 Pay Periods View
 ----------------
 
@@ -17,6 +33,22 @@ Summary of previous, current and upcoming pay periods, plus date selector to fin
 .. image:: payperiods_sm.png
    :target: payperiods.png
 
+Budgets
+-------
+
+List all budgets
+
+.. image:: budgets_sm.png
+   :target: budgets.png
+
+Single Budget View
+------------------
+
+Budget detail modal to view and edit a budget.
+
+.. image:: budget2_sm.png
+   :target: budget2.png
+
 Single Pay Period View
 ----------------------
 
@@ -24,6 +56,30 @@ Shows a pay period (current in this example) balances (income, allocated, spent,
 
 .. image:: payperiod_sm.png
    :target: payperiod.png
+
+Budget Balancing
+----------------
+
+Pushbutton balancing of budgets and transfer of additional funds to standing budget, for previous pay period.
+
+.. image:: budget_balancing_sm.png
+   :target: budget_balancing.png
+
+Transactions View
+-----------------
+
+Shows all manually-entered transactions.
+
+.. image:: transactions_sm.png
+   :target: transactions.png
+
+Transaction Detail
+------------------
+
+Transaction detail modal to view and edit a transaction.
+
+.. image:: transaction2_sm.png
+   :target: transaction2.png
 
 Accounts View
 -------------
@@ -46,38 +102,6 @@ Shows transactions imported from OFX statements.
 
 .. image:: ofx_sm.png
    :target: ofx.png
-
-Transactions View
------------------
-
-Shows all manually-entered transactions.
-
-.. image:: transactions_sm.png
-   :target: transactions.png
-
-Transaction Detail
-------------------
-
-Transaction detail modal to view and edit a transaction.
-
-.. image:: transaction2_sm.png
-   :target: transaction2.png
-
-Budgets
--------
-
-List all budgets
-
-.. image:: budgets_sm.png
-   :target: budgets.png
-
-Single Budget View
-------------------
-
-Budget detail modal to view and edit a budget.
-
-.. image:: budget2_sm.png
-   :target: budget2.png
 
 Scheduled Transactions
 ----------------------
@@ -110,22 +134,6 @@ Scheduled transactions can occur a given number of times per pay period.
 
 .. image:: scheduled3_sm.png
    :target: scheduled3.png
-
-Reconcile Transactions with OFX
--------------------------------
-
-OFX Transactions reported by financial institutions can be marked as reconciled with a corresponding Transaction.
-
-.. image:: reconcile_sm.png
-   :target: reconcile.png
-
-Drag-and-Drop Reconciling
--------------------------
-
-To reconcile an OFX transaction with a Transaction, just drag and drop.
-
-.. image:: reconcile-drag_sm.png
-   :target: reconcile-drag.png
 
 Fuel Log
 --------
