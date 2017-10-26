@@ -97,6 +97,16 @@ class Transaction(Base, ModelAsDict):
         "Budget", backref="transactions", uselist=False
     )
 
+    #: If the transaction is one half of a transfer, the Transaction ID of the
+    #: other half/side of the transfer.
+    transfer_id = Column(Integer, ForeignKey('transactions.id'))
+
+    #: Relationship - the :py:class:`~.Transaction` that makes up the other
+    #: half/side of a transfer, if this transaction was for a transfer.
+    transfer = relationship(
+        "Transaction", remote_side=[id], post_update=True, uselist=False
+    )
+
     def __repr__(self):
         return "<Transaction(id=%s)>" % (
             self.id
