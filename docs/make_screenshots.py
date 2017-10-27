@@ -144,18 +144,6 @@ class Screenshotter(object):
             'preshot_func': '_payperiods_preshot'
         },
         {
-            'path': '/budgets',
-            'filename': 'budgets',
-            'title': 'Budgets',
-            'description': 'List all budgets'
-        },
-        {
-            'path': '/budgets/2',
-            'filename': 'budget2',
-            'title': 'Single Budget View',
-            'description': 'Budget detail modal to view and edit a budget.'
-        },
-        {
             'path': '/payperiod/%s' % PAY_PERIOD_START_DATE.strftime(
                 '%Y-%m-%d'
             ),
@@ -166,6 +154,22 @@ class Screenshotter(object):
                            'budgets and transactions (previous/manually-'
                            'entered and scheduled).',
             'postshot_func': '_payperiod_postshot'
+        },
+        {
+            'path': '/budgets',
+            'filename': 'budgets',
+            'title': 'Budgets',
+            'description': 'List all budgets, along with graphs of spending '
+                           'per budget, per payperiod and per month.',
+            'preshot_func': '_budgets_preshot'
+        },
+        {
+            'path': '/budgets/2',
+            'filename': 'budget2',
+            'title': 'Single Budget View',
+            'description': 'Budget detail modal to view and edit a budget.',
+            'postshot_func': '_balance_postshot',
+            'preshot_func': '_sleep_2'
         },
         {
             'path': '/payperiod/%s' % (
@@ -519,24 +523,7 @@ class Screenshotter(object):
         conn.close()
         logger.info('Done updating DB')
 
-    def _balance_preshot(self):
-        logger.info('balance preshot - DB update')
-        conn = engine.connect()
-        data_sess = scoped_session(
-            sessionmaker(autocommit=False, autoflush=False, bind=conn)
-        )
-        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
-        data_sess.add(Budget(
-            name='Budget3', is_periodic=True, starting_balance=0
-        ))
-        data_sess.add(Budget(
-            name='Budget4', is_periodic=True, starting_balance=0
-        ))
-        data_sess.add(Budget(
-            name='Budget5', is_periodic=True, starting_balance=250
-        ))
-        data_sess.flush()
-        data_sess.commit()
+    def _add_transactions(self, data_sess, pp):
         budgets = list(data_sess.query(Budget).filter(
             Budget.is_active.__eq__(True),
             Budget.is_income.__eq__(False),
@@ -564,6 +551,26 @@ class Screenshotter(object):
             ))
             data_sess.flush()
             data_sess.commit()
+
+    def _balance_preshot(self):
+        logger.info('balance preshot - DB update')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
+        data_sess.add(Budget(
+            name='Budget3', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget4', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget5', is_periodic=True, starting_balance=250
+        ))
+        data_sess.flush()
+        data_sess.commit()
+        self._add_transactions(data_sess, pp)
         data_sess.close()
         conn.close()
         logger.info('balance preshot - DB update done; click')
@@ -584,7 +591,7 @@ class Screenshotter(object):
         sleep(2)
 
     def _balance_postshot(self):
-        logger.info('Payperiods postshot')
+        logger.info('Balance postshot')
         conn = engine.connect()
         data_sess = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=conn)
@@ -604,6 +611,42 @@ class Screenshotter(object):
         data_sess.close()
         conn.close()
         logger.info('Done updating DB')
+
+    def _sleep_2(self):
+        sleep(2)
+
+    def _budgets_preshot(self):
+        logger.info('budgets preshot - DB update')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
+        data_sess.add(Budget(
+            name='Budget3', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget4', is_periodic=True, starting_balance=0
+        ))
+        data_sess.add(Budget(
+            name='Budget5', is_periodic=True, starting_balance=250
+        ))
+        data_sess.flush()
+        data_sess.commit()
+        for i in range(0, 10):
+            self._add_transactions(data_sess, pp)
+            pp = pp.previous
+        data_sess.close()
+        conn.close()
+        logger.info('budgets preshot - DB update done; click')
+        self.get('/budgets')
+        sleep(10)
+        logger.info('budgets preshot - executing script')
+        self.browser.execute_script(
+            "$('#budget-per-period-chart').find('.morris-hover').show()"
+        )
+        sleep(2)
+        logger.info('budgets preshot done')
 
     def _cursor_script(self, x_pos, y_pos):
         s = '<img width="37" height="37" src="data:image/png;base64,iVBOR' \

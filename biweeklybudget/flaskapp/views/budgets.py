@@ -39,6 +39,7 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify
 from datetime import datetime
+from decimal import Decimal
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
@@ -46,6 +47,9 @@ from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account
 from biweeklybudget.budget_balancer import do_budget_transfer
+from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.utils import dtnow
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +300,80 @@ class BudgetTxfrFormHandler(FormHandlerView):
         )
 
 
+class BudgetSpendingChartView(MethodView):
+    """
+    Handle GET /ajax/chart-data/budget-spending/<str:aggregation> endpoint.
+    """
+
+    def get(self, aggregation):
+        if aggregation == 'by-pay-period':
+            return self._by_pay_period()
+        elif aggregation == 'by-month':
+            return self._by_month()
+        raise RuntimeError('Unknown aggregation type: %s' % aggregation)
+
+    def _by_pay_period(self):
+        min_txn = db_session.query(Transaction).order_by(
+            Transaction.date.asc()
+        ).first()
+        budget_names = self._budget_names()
+        logger.debug('budget_names=%s', budget_names)
+        records = []
+        budgets_present = set()
+        pp = BiweeklyPayPeriod.period_for_date(min_txn.date, db_session)
+        dt_now = dtnow().date()
+        while pp.end_date <= dt_now:
+            sums = pp.budget_sums
+            logger.debug('sums=%s', sums)
+            records.append({
+                budget_names[y]: sums[y]['spent'] for y in sums.keys()
+                if y in budget_names
+            })
+            records[-1]['date'] = pp.start_date.strftime('%Y-%m-%d')
+            budgets_present.update(
+                [budget_names[y] for y in sums.keys() if y in budget_names]
+            )
+            pp = pp.next
+        res = {
+            'data': records,
+            'keys': sorted(list(budgets_present))
+        }
+        return jsonify(res)
+
+    def _by_month(self):
+        dt_now = dtnow().date()
+        budget_names = self._budget_names()
+        logger.debug('budget_names=%s', budget_names)
+        records = {}
+        budgets_present = set()
+        for t in db_session.query(Transaction).filter(
+            Transaction.budget.has(is_income=False),
+            Transaction.date.__le__(dt_now)
+        ).all():
+            if t.budget_id not in budget_names:
+                continue
+            budgets_present.add(t.budget.name)
+            ds = t.date.strftime('%Y-%m')
+            if ds not in records:
+                records[ds] = {'date': ds}
+            if t.budget.name not in records[ds]:
+                records[ds][t.budget.name] = Decimal('0')
+            records[ds][t.budget.name] += t.actual_amount
+        result = [records[k] for k in sorted(records.keys())]
+        res = {
+            'data': result,
+            'keys': sorted(list(budgets_present))
+        }
+        return jsonify(res)
+
+    def _budget_names(self):
+        return {
+            x.id: x.name for x in db_session.query(Budget).filter(
+                Budget.is_income.__eq__(False)
+            ).all()
+        }
+
+
 app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
 app.add_url_rule(
     '/budgets/<int:budget_id>',
@@ -312,4 +390,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/budget_transfer',
     view_func=BudgetTxfrFormHandler.as_view('budget_transfer_form')
+)
+app.add_url_rule(
+    '/ajax/chart-data/budget-spending/<string:aggregation>',
+    view_func=BudgetSpendingChartView.as_view('budget_spending_chart_view')
 )
