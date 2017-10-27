@@ -3,6 +3,8 @@
 {% block extra_head_css %}
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
+    <!-- Morris Charts CSS -->
+    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
 
     <script>
         var acct_names_to_id = {};
@@ -18,6 +20,28 @@
 {% block body %}
 {% include 'notifications.html' %}
             <div class="row" id="content-row">
+                <div class="col-lg-12">
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <i class="fa fa-bar-chart-o fa-fw"></i> Spending By Budget, Per Pay Period
+                            </div><!-- /.panel-heading -->
+                            <div class="panel-body">
+                                <div id="budget-per-period-chart"></div>
+                            </div><!-- /.panel-body -->
+                        </div><!-- /.panel -->
+                    </div><!-- /.col-lg-6 -->
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <i class="fa fa-bar-chart-o fa-fw"></i> Spending By Budget, Per Calendar Month
+                            </div><!-- /.panel-heading -->
+                            <div class="panel-body">
+                                <div id="budget-per-month-chart"></div>
+                            </div><!-- /.panel-body -->
+                        </div><!-- /.panel -->
+                    </div><!-- /.col-lg-6 -->
+                </div><!-- /.col-lg-12 -->
                 <div class="col-lg-12">
                     <div><p>
                         <button type="button" class="btn btn-primary" id="btn_add_budget">Add Budget</button>
@@ -48,17 +72,13 @@
                                     {% endfor %}
                                     </tbody>
                                 </table>
-                            </div>
-                            <!-- /.table-responsive -->
-                        </div>
-                        <!-- /.panel-body -->
-                    </div>
-                    <!-- /.panel -->
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
                     <div class="panel panel-default" id="panel-standing-budgets">
                         <div class="panel-heading">
                             Standing Budgets
-                        </div>
-                        <!-- /.panel-heading -->
+                        </div><!-- /.panel-heading -->
                         <div class="panel-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover table-striped" id="table-standing-budgets">
@@ -81,22 +101,17 @@
                                     {% endfor %}
                                     </tbody>
                                 </table>
-                            </div>
-                            <!-- /.table-responsive -->
-                        </div>
-                        <!-- /.panel-body -->
-                    </div>
-                    <!-- /.panel -->
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            <!-- /.row -->
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+            </div><!-- /.row -->
 {% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
-    <!-- BootStrap DatePicker JS -->
-    <script src="/utils/datetest.js"></script>
-    <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+<!-- BootStrap DatePicker JS -->
+<script src="/utils/datetest.js"></script>
+<script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
 <script>
 var default_account_id = {{ settings.DEFAULT_ACCOUNT_ID }};
 </script>
@@ -113,4 +128,9 @@ budgetModal({{ budget_id }}, null);
 /* END conditional default modal for /budgets/<id> */
 $('#btn_budget_txfr').click(function() { budgetTransferModal(); });
 </script>
+
+<!-- Morris Charts JavaScript -->
+<script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
+<script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+<script src="/static/js/budget_charts.js"></script>
 {% endblock %}

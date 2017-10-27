@@ -33,10 +33,18 @@ Summary of previous, current and upcoming pay periods, plus date selector to fin
 .. image:: payperiods_sm.png
    :target: payperiods.png
 
+Single Pay Period View
+----------------------
+
+Shows a pay period (current in this example) balances (income, allocated, spent, remaining), budgets and transactions (previous/manually-entered and scheduled).
+
+.. image:: payperiod_sm.png
+   :target: payperiod.png
+
 Budgets
 -------
 
-List all budgets
+List all budgets, along with graphs of spending per budget, per payperiod and per month.
 
 .. image:: budgets_sm.png
    :target: budgets.png
@@ -48,14 +56,6 @@ Budget detail modal to view and edit a budget.
 
 .. image:: budget2_sm.png
    :target: budget2.png
-
-Single Pay Period View
-----------------------
-
-Shows a pay period (current in this example) balances (income, allocated, spent, remaining), budgets and transactions (previous/manually-entered and scheduled).
-
-.. image:: payperiod_sm.png
-   :target: payperiod.png
 
 Budget Balancing
 ----------------

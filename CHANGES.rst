@@ -15,6 +15,11 @@ Unreleased Changes
 * `Issue #124 <https://github.com/jantman/biweeklybudget/issues/124>`_ - Major changes to the ``ofxgetter`` and ``ofxbackfiller`` console scripts; centralize all database access in them to the new ``biweeklybudget.ofxapi.local.OfxApiLocal`` class and allow these scripts to function remotely, interacting with the ReST API instead of requiring direct database access.
 * `Issue #123 <https://github.com/jantman/biweeklybudget/issues/123>`_ - Modify the Credit Payoffs view to allow removal of Increase and Onetime Payment settings lines.
 * `Issue #131 <https://github.com/jantman/biweeklybudget/issues/131>`_ - Add better example data for screenshots.
+* `Issue #114 <https://github.com/jantman/biweeklybudget/issues/114>`_
+
+  * Add ``transfer_id`` field and ``transfer`` relationship to Transaction model, to link the halves of budget transfer transactions in the database. The alembic migration for this release iterates all Transactions in the database, and populates these links based on inferences of the description, date, account_id and notes fields of sequential pairs of Transactions. (Note: this migration would likely miss some links if two transfers were created simultaneously, and ended up with the Transaction IDs interleaved).
+  * Identify transfer Transactions on the Edit Transaction modal, and provide link to the matching Transaction.
+  * Add graph of spending by budget to Budgets view.
 
 0.4.0 (2017-08-22)
 ------------------

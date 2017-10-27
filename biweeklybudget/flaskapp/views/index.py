@@ -92,7 +92,7 @@ class IndexView(MethodView):
 
 class AcctBalanaceChartView(MethodView):
     """
-    Handle GET //ajax/chart-data/account-balances endpoint.
+    Handle GET /ajax/chart-data/account-balances endpoint.
     """
 
     def get(self):
