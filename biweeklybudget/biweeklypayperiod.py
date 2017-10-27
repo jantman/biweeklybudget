@@ -481,7 +481,8 @@ class BiweeklyPayPeriod(object):
           ``self._data_cache['budget_sums']``) should be negative, but is
           returned as its positive inverse (absolute value).
         - ``remaining`` *(Decimal.decimal)* income minus the greater of
-          ``allocated`` or ``spent``
+          ``allocated`` or ``spent`` for current or future pay periods, or minus
+          ``spent`` for pay periods ending in the past (:py:attr:`~.is_in_past`)
 
         :return: dict describing sums for the pay period
         :rtype: dict
@@ -504,10 +505,10 @@ class BiweeklyPayPeriod(object):
             else:
                 res['allocated'] += b['budget_amount']
             res['spent'] += b['spent']
-        if res['allocated'] > res['spent']:
-            res['remaining'] = res['income'] - res['allocated']
-        else:
+        if res['spent'] > res['allocated'] or self.is_in_past:
             res['remaining'] = res['income'] - res['spent']
+        else:
+            res['remaining'] = res['income'] - res['allocated']
         return res
 
     def _trans_dict(self, t):

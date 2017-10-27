@@ -22,6 +22,7 @@ Unreleased Changes
   * Add ``transfer_id`` field and ``transfer`` relationship to Transaction model, to link the halves of budget transfer transactions in the database. The alembic migration for this release iterates all Transactions in the database, and populates these links based on inferences of the description, date, account_id and notes fields of sequential pairs of Transactions. (Note: this migration would likely miss some links if two transfers were created simultaneously, and ended up with the Transaction IDs interleaved).
   * Identify transfer Transactions on the Edit Transaction modal, and provide link to the matching Transaction.
   * Add graph of spending by budget to Budgets view.
+* `Issue #133 <https://github.com/jantman/biweeklybudget/issues/133>`_ - Change BiweeklyPayPeriod model to only use actual spent amount when creating remaining amount on payperiods in the past. Previously, all pay periods calculated the overall "remaining" amount as income minus the greater of ``allocated`` or ``spent``; this resulted in pay periods in the past still including allocated-but-not-spent amounts counted against "remaining".
 
 0.4.0 (2017-08-22)
 ------------------
