@@ -22,7 +22,6 @@ Submodules
 
    biweeklybudget.backfill_ofx
    biweeklybudget.biweeklypayperiod
-   biweeklybudget.budget_balancer
    biweeklybudget.cliutils
    biweeklybudget.db
    biweeklybudget.db_event_handlers

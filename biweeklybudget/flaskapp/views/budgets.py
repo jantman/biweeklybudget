@@ -46,7 +46,7 @@ from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account
-from biweeklybudget.budget_balancer import do_budget_transfer
+from biweeklybudget.models.utils import do_budget_transfer
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import dtnow
@@ -197,10 +197,6 @@ class BudgetFormHandler(FormHandlerView):
             budget.is_income = True
         else:
             budget.is_income = False
-        if data['skip_balance'] == 'true':
-            budget.skip_balance = True
-        else:
-            budget.skip_balance = False
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()

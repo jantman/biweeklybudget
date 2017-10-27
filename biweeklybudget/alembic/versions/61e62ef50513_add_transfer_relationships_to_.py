@@ -1,7 +1,7 @@
 """add transfer relationships to transactions
 
 Revision ID: 61e62ef50513
-Revises: 64dcc80b4b0c
+Revises: 32b34a664b5a
 Create Date: 2017-10-26 16:13:27.227932
 
 """
@@ -21,7 +21,7 @@ Base = declarative_base()
 
 # revision identifiers, used by Alembic.
 revision = '61e62ef50513'
-down_revision = '64dcc80b4b0c'
+down_revision = '32b34a664b5a'
 branch_labels = None
 depends_on = None
 

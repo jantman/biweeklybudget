@@ -70,10 +70,6 @@ Main Features
 * Tracking of vehicle fuel fills (fuel log) and graphing of fuel economy.
 * Cost tracking for multiple projects, including bills-of-materials for them. Optional synchronization from Amazon Wishlists to projects.
 * Calculation of estimated credit card payoff amount and time, with configurable payment methods, payment increases on specific dates, and additional payments on specific dates.
-* Pushbutton balancing of budgets in the most recent previous payperiod.
-  This feature will transfer funds between periodic budgets in the pay period attempting to get them all to a zero remaining amount. Once as many periodic budgets are zeroed as possible, a user-selected
-  standing budget will be used to transfer excess funds to or cover negative budgets from. Finally, funds will be transferred to or from the standing budget to result in the overall remaining amount for
-  the pay period being zero.
 
 Requirements
 ------------

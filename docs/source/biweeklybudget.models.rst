@@ -24,4 +24,5 @@ Submodules
    biweeklybudget.models.scheduled_transaction
    biweeklybudget.models.transaction
    biweeklybudget.models.txn_reconcile
+   biweeklybudget.models.utils
 

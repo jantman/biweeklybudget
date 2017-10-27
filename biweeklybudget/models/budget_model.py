@@ -71,10 +71,6 @@ class Budget(Base, ModelAsDict):
     #: whether this is an Income budget (True) or expense (False).
     is_income = Column(Boolean, default=False)
 
-    #: If true, do not include this budget in those that can be balanced after
-    #: each pay period.
-    skip_balance = Column(Boolean, default=False)
-
     def __repr__(self):
         return "<Budget(id=%d)>" % (
             self.id
