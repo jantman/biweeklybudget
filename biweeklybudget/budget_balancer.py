@@ -101,7 +101,7 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
     t1.transfer = t2
     db_sess.add(t1)
     t2.transfer = t1
-    db_sess.add(t1)
+    db_sess.add(t2)
     db_sess.add(TxnReconcile(
         transaction=t1,
         note=desc

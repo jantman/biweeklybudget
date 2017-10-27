@@ -159,6 +159,8 @@ class TestDoBudgetTransfer(BudgetBalanceSetup):
             call.query().get(1),
             call.add(t1),
             call.add(t2),
+            call.add(t1),
+            call.add(t2),
             call.add(tr1),
             call.add(tr2)
         ]
