@@ -39,6 +39,8 @@ import os
 import importlib
 import logging
 from datetime import timedelta, datetime
+from babel.numbers import validate_currency, UnknownCurrencyError
+from babel import Locale, UnknownLocaleError
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,8 @@ _REQUIRED_VARS = [
     'DEFAULT_ACCOUNT_ID',
     'PAY_PERIOD_START_DATE',
     'RECONCILE_BEGIN_DATE',
-    'STALE_DATA_TIMEDELTA'
+    'STALE_DATA_TIMEDELTA',
+    'CURRENCY_CODE'
 ]
 
 _DATE_VARS = [
@@ -66,8 +69,26 @@ _STRING_VARS = [
     'DB_CONNSTRING',
     'STATEMENTS_SAVE_PATH',
     'TOKEN_PATH',
-    'VAULT_ADDR'
+    'VAULT_ADDR',
+    'LOCALE_NAME',
+    'CURRENCY_CODE'
 ]
+
+#: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
+#: with a Region suffix to use for number (currency) formatting, i.e. "en_US",
+#:  "en_GB", "de_DE", etc. If this is not specified (None), it will be looked up
+#: from environment variables in the following order: LC_ALL, LC_MONETARY, LANG.
+#: If none of those variables are set to a valid locale name (not including
+#: the "C" locale, which does not specify currency formatting) and this variable
+#: is not set, the application will default to "en_US". This setting only
+#: effects how monetary values are displayed in the UI, logs, etc.
+LOCALE_NAME = None
+
+#: An `ISO 4217 <https://en.wikipedia.org/wiki/ISO_4217>`_ Currency Code
+#: specifying the currency to use for all monetary amounts, i.e. "USD", "EUR",
+#: etc. This setting only effects how monetary values are displayed in the UI,
+#: logs, etc. Currently defaults to "USD".
+CURRENCY_CODE = 'USD'
 
 #: string - SQLAlchemy database connection string. See the
 #: :ref:`SQLAlchemy Database URLS docs <sqlalchemy:database_urls>`
@@ -176,5 +197,40 @@ for varname in _REQUIRED_VARS:
         raise SystemExit(
             'ERROR: setting or environment variable "%s" must be set' % varname
         )
+
+# Handle the "LOCALE_NAME" variable special logic for default if not specified.
+if LOCALE_NAME is None or LOCALE_NAME == 'C' or LOCALE_NAME.startswith('C.'):
+    logger.debug('LOCALE_NAME unset or C locale')
+    for varname in ['LC_ALL', 'LC_MONETARY', 'LANG']:
+        val = os.environ.get(varname, '').strip()
+        if val != '' and val != 'C' and not val.startswith('C.'):
+            logger.debug(
+                'Setting LOCALE_NAME to %s from env var %s', val, varname
+            )
+            LOCALE_NAME = val
+            break
+    if LOCALE_NAME is None:
+        logger.debug('LOCALE_NAME not set; defaulting to en_US')
+        LOCALE_NAME = 'en_US'
+
+# Check for a valid locale
+try:
+    Locale.parse(LOCALE_NAME)
+except UnknownLocaleError:
+    raise SystemExit(
+        'ERROR: LOCALE_NAME setting of "%s" is not a valid BCP 47 Language Tag.'
+        ' See <https://tools.ietf.org/html/bcp47> for more information.' %
+        LOCALE_NAME
+    )
+
+# Check for a valid currency code
+try:
+    validate_currency(CURRENCY_CODE)
+except UnknownCurrencyError:
+    raise SystemExit(
+        'ERROR: CURRENCY_CODE setting of "%s" is not a valid currency code. See'
+        ' <https://en.wikipedia.org/wiki/ISO_4217> for more information and '
+        'a list of valid codes.' % CURRENCY_CODE
+    )
 
 logger.debug('Done loading settings.')
