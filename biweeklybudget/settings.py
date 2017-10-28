@@ -76,7 +76,7 @@ _STRING_VARS = [
 
 #: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
 #: with a Region suffix to use for number (currency) formatting, i.e. "en_US",
-#:  "en_GB", "de_DE", etc. If this is not specified (None), it will be looked up
+#: "en_GB", "de_DE", etc. If this is not specified (None), it will be looked up
 #: from environment variables in the following order: LC_ALL, LC_MONETARY, LANG.
 #: If none of those variables are set to a valid locale name (not including
 #: the "C" locale, which does not specify currency formatting) and this variable

@@ -65,11 +65,11 @@ def fix_werkzeug_logger():
 
 def fmt_currency(amt):
     """
-    Using :py:attr:`~.settings.LOCALE_NAME` and
-    :py:attr:`~.settings.CURRENCY_CODE`, return ``amt`` formatted as currency.
+    Using :py:attr:`~biweeklybudget.settings.LOCALE_NAME` and
+    :py:attr:`~biweeklybudget.settings.CURRENCY_CODE`, return ``amt`` formatted
+    as currency.
 
-    :param amt: The amount to format
-    :type amt: Any numeric type.
+    :param amt: The amount to format; any numeric type.
     :return: ``amt`` formatted for the appropriate locale and currency
     :rtype: str
     """
