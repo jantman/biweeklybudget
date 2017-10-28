@@ -172,18 +172,6 @@ class Screenshotter(object):
             'preshot_func': '_sleep_2'
         },
         {
-            'path': '/payperiod/%s' % (
-                PAY_PERIOD_START_DATE - timedelta(days=14)
-            ).strftime('%Y-%m-%d'),
-            'filename': 'budget_balancing',
-            'title': 'Budget Balancing',
-            'description': 'Pushbutton balancing of budgets and transfer of '
-                           'additional funds to standing budget, for previous '
-                           'pay period.',
-            'postshot_func': '_balance_postshot',
-            'preshot_func': '_balance_preshot'
-        },
-        {
             'path': '/transactions',
             'filename': 'transactions',
             'title': 'Transactions View',
@@ -551,44 +539,6 @@ class Screenshotter(object):
             ))
             data_sess.flush()
             data_sess.commit()
-
-    def _balance_preshot(self):
-        logger.info('balance preshot - DB update')
-        conn = engine.connect()
-        data_sess = scoped_session(
-            sessionmaker(autocommit=False, autoflush=False, bind=conn)
-        )
-        pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
-        data_sess.add(Budget(
-            name='Budget3', is_periodic=True, starting_balance=0
-        ))
-        data_sess.add(Budget(
-            name='Budget4', is_periodic=True, starting_balance=0
-        ))
-        data_sess.add(Budget(
-            name='Budget5', is_periodic=True, starting_balance=250
-        ))
-        data_sess.flush()
-        data_sess.commit()
-        self._add_transactions(data_sess, pp)
-        data_sess.close()
-        conn.close()
-        logger.info('balance preshot - DB update done; click')
-        self.get('/payperiod/%s' % pp.start_date.strftime('%Y-%m-%d'))
-        sleep(1)
-        self.browser.find_element_by_id('btn-pp-balance-budgets').click()
-        WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable((By.ID, 'bal_budg_frm_standing_budget'))
-        )
-        Select(
-            self.browser.find_element_by_id('bal_budg_frm_standing_budget')
-        ).select_by_value('5')
-        Select(self.browser.find_element_by_id(
-            'bal_budg_frm_periodic_overage_budget'
-        )).select_by_value('2')
-        self.browser.find_element_by_id('modalSaveButton').click()
-        logger.info('balance preshot done')
-        sleep(2)
 
     def _balance_postshot(self):
         logger.info('Balance postshot')

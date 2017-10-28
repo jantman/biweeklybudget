@@ -108,8 +108,7 @@ class SampleDataLoader(object):
                 name='Periodic2',
                 is_periodic=True,
                 description='P2desc',
-                starting_balance=234,
-                skip_balance=True
+                starting_balance=234
             ),
             'Periodic3 Inactive': Budget(
                 name='Periodic3 Inactive',
@@ -142,8 +141,7 @@ class SampleDataLoader(object):
                 is_periodic=True,
                 description='IncomeDesc',
                 starting_balance=2345.67,
-                is_income=True,
-                skip_balance=True
+                is_income=True
             )
         }
         for x in [

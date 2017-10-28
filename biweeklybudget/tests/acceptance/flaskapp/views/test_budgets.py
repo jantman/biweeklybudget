@@ -113,7 +113,6 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert b.starting_balance == 100.00
         assert b.is_active is True
         assert b.is_income is False
-        assert b.skip_balance is False
 
     def test_1_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -141,8 +140,6 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
-            'budget_frm_skip_balance').is_selected() is False
 
     def test_2_update_modal(self, base_url, selenium):
         # Fill in the form
@@ -162,13 +159,10 @@ class TestEditPeriodic1(AcceptanceHelper):
         sb.clear()
         sb.send_keys('2345.67')
         selenium.find_element_by_id('budget_frm_active').click()
-        selenium.find_element_by_id('budget_frm_skip_balance').click()
         assert selenium.find_element_by_id(
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
-            'budget_frm_skip_balance').is_selected() is True
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -197,7 +191,6 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert float(b.starting_balance) == 2345.6700
         assert b.is_active is False
         assert b.is_income is False
-        assert b.skip_balance is True
 
 
 @pytest.mark.acceptance
@@ -230,8 +223,6 @@ class TestEditPeriodic2(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
-            'budget_frm_skip_balance').is_selected() is True
 
 
 @pytest.mark.acceptance

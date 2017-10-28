@@ -47,6 +47,22 @@ File: ``biweeklybudget/flaskapp/static/js/credit_payoffs.js``
 
    
 
+.. js:function:: removeIncrease(idx)
+
+   Remove the specified Increase form.
+
+   
+
+   
+
+.. js:function:: removeOnetime(idx)
+
+   Remove the specified Onetime form.
+
+   
+
+   
+
 .. js:function:: serializeForms()
 
    Serialize the form data into an object and return it.

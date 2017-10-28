@@ -48,6 +48,7 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
+from biweeklybudget.utils import dtnow
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -781,10 +782,11 @@ class TestMakeOverallSums(object):
 
     def setup(self):
         self.mock_sess = Mock(spec_set=Session)
-        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
 
-    def test_simple(self):
-        self.cls._data_cache['budget_sums'] = {
+    def test_past(self):
+        cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+        assert cls.is_in_past is True
+        cls._data_cache['budget_sums'] = {
             1: {
                 'budget_amount': Decimal('123.45'),
                 'allocated': Decimal('53.53'),
@@ -814,7 +816,91 @@ class TestMakeOverallSums(object):
                 'is_income': True
             }
         }
-        assert self.cls._make_overall_sums() == {
+        assert cls._make_overall_sums() == {
+            'allocated': Decimal('945.88'),
+            'spent': Decimal('77.77'),
+            'income': Decimal('1234.56'),
+            'remaining': Decimal('1156.79')
+        }
+
+    def test_current(self):
+        cls = BiweeklyPayPeriod(
+            dtnow().date() - timedelta(days=4), self.mock_sess
+        )
+        assert cls.is_in_past is False
+        cls._data_cache['budget_sums'] = {
+            1: {
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('53.53'),
+                'spent': Decimal('44.44'),
+                'trans_total': Decimal('55.55'),
+                'is_income': False
+            },
+            2: {
+                'budget_amount': Decimal('10.00'),
+                'allocated': Decimal('33.33'),
+                'spent': Decimal('33.33'),
+                'trans_total': Decimal('33.33'),
+                'is_income': False
+            },
+            3: {
+                'budget_amount': Decimal('789.10'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': False
+            },
+            4: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-1192.56'),
+                'spent': Decimal('-254.38'),
+                'trans_total': Decimal('-1234.56'),
+                'is_income': True
+            }
+        }
+        assert cls._make_overall_sums() == {
+            'allocated': Decimal('945.88'),
+            'spent': Decimal('77.77'),
+            'income': Decimal('1234.56'),
+            'remaining': Decimal('288.68')
+        }
+
+    def test_future(self):
+        cls = BiweeklyPayPeriod(
+            dtnow().date() + timedelta(days=24), self.mock_sess
+        )
+        assert cls.is_in_past is False
+        cls._data_cache['budget_sums'] = {
+            1: {
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('53.53'),
+                'spent': Decimal('44.44'),
+                'trans_total': Decimal('55.55'),
+                'is_income': False
+            },
+            2: {
+                'budget_amount': Decimal('10.00'),
+                'allocated': Decimal('33.33'),
+                'spent': Decimal('33.33'),
+                'trans_total': Decimal('33.33'),
+                'is_income': False
+            },
+            3: {
+                'budget_amount': Decimal('789.10'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': False
+            },
+            4: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('-1192.56'),
+                'spent': Decimal('-254.38'),
+                'trans_total': Decimal('-1234.56'),
+                'is_income': True
+            }
+        }
+        assert cls._make_overall_sums() == {
             'allocated': Decimal('945.88'),
             'spent': Decimal('77.77'),
             'income': Decimal('1234.56'),

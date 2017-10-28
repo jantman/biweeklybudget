@@ -638,7 +638,7 @@ class TestSums(AcceptanceHelper):
             'allocated': Decimal('1100.0'),
             'spent': Decimal('853.0'),
             'income': Decimal('322.45'),
-            'remaining': Decimal('-777.55')
+            'remaining': Decimal('-530.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))

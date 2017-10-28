@@ -57,14 +57,6 @@ Budget detail modal to view and edit a budget.
 .. image:: budget2_sm.png
    :target: budget2.png
 
-Budget Balancing
-----------------
-
-Pushbutton balancing of budgets and transfer of additional funds to standing budget, for previous pay period.
-
-.. image:: budget_balancing_sm.png
-   :target: budget_balancing.png
-
 Transactions View
 -----------------
 
