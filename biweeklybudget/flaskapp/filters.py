@@ -35,7 +35,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from locale import currency
 from jinja2.runtime import Undefined
 from humanize import naturaltime
 
