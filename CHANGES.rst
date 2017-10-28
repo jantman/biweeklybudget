@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.5.0 (2017-10-28)
 ------------------
 
 **This release includes database migrations.**
