@@ -35,5 +35,5 @@ selenium==3.6.0
 six==1.10.0
 versionfinder==0.1.0
 # dependencies of biweeklybudget/vendored/wishlist
-captain
-pyvirtualdisplay
+captain==0.4.9
+pyvirtualdisplay==0.2.1
