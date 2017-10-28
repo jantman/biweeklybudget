@@ -30,6 +30,10 @@
     <script>
         var CURRENCY_SYMBOL = "{{ CURRENCY_SYM }}";
         var LOCALE_NAME = "{{ settings.LOCALE_NAME }}";
+        if(LOCALE_NAME.indexOf('.') !== -1) {
+          LOCALE_NAME = LOCALE_NAME.substr(0, LOCALE_NAME.indexOf('.'));
+        }
+        if(LOCALE_NAME.indexOf('_') !== -1) { LOCALE_NAME = LOCALE_NAME.replace('_', '-'); }
         var CURRENCY_CODE = "{{ settings.CURRENCY_CODE }}";
     </script>
 
