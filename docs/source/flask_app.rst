@@ -3,12 +3,20 @@
 Flask Application
 =================
 
-Running
--------
+Running Flask Development Server
+--------------------------------
+
+Flask comes bundled with a builtin development server for fast local development and testing.
+This is an easy way to take biweeklybudget for a spin, but carries some important and critical
+warnings if you use it with real data. For upstream documentation, see the
+`Flask Development Server docs <http://flask.pocoo.org/docs/0.12/server/>`_. Please note that
+the development server is a single process and defaults to single-threaded, and is only realistically
+usable by one user.
 
 1. First, setup your environment per :ref:`Getting Started - Setup <getting_started.setup>`.
 2. ``export FLASK_APP="biweeklybudget.flaskapp.app"``
-3. ``flask --help`` for information on usage:
+3. If you're running against an existing database, see important information in the "Database Migrations" section, below.
+4. ``flask --help`` for information on usage:
 
   * Run App: ``flask run``
   * Run with debug/reload: ``flask rundev``
@@ -21,6 +29,21 @@ If you wish to run the flask app in a multi-process/thread/worker WSGI container
 be sure that you run the ``initdb`` entrypoint before starting the workers. Otherwise,
 it's likely that all workers will attempt to create the database tables or run migrations
 at the same time, and fail.
+
+.. _flask_app.migrations:
+
+Database Migrations
+-------------------
+
+If you run the Flask application (whether in the flask development server or a separate WSGI container)
+against an existing database and there are unapplied Alembic database migrations, it's very likely that
+multiple threads or processes will attempt to perform the same migrations at the same time, and leave the
+database in an inconsistent and unusable state. As such, there are two important warnings:
+
+1. Always be sure that you have a recent database backup before upgrading.
+2. You must manually trigger database migrations before starting Flask. This can be done
+   by running the ``initdb`` console script provided by the biweeklybudget package
+   (``bin/initdb`` in your virtualenv).
 
 Security
 --------

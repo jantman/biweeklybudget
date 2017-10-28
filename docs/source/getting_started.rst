@@ -37,6 +37,24 @@ not support Python3 < 3.3.
     source bin/activate
     pip install biweeklybudget
 
+**Important Note:** Anyone who's using this project for actual data should install
+from the package on PyPI. While the ``master`` branch of the git repository is always
+in a runnable state, there is no guarantee that data will be not be harmed by upgrading
+directly to master. Specifically, database migrations are only compatible between released
+versions; ``master`` is considered a pre-release/development version, and can have migrations
+removed or altered in breaking ways between official releases.
+
+Upgrading
+---------
+
+Documentation for upgrades depends on how you've installed and run biweeklybudget:
+
+* For non-docker installations, see :ref:`Flask Application - Database Migrations <flask_app.migrations>`
+* For Docker installations, no special action is needed.
+* For development installations, see :ref:`Development - Alembic DB Migrations <development.alembic>`
+
+In all cases, you should always perform a full backup of your database before an upgrade.
+
 .. _getting_started.configuration:
 
 Configuration
@@ -97,7 +115,8 @@ variables (see above).
 Flask
 +++++
 
-For information on the Flask application, see :ref:`Flask App <flask_app>`.
+For information on the Flask application and on running the Flask development
+server, see :ref:`Flask App <flask_app>`.
 
 .. _docker:
 
@@ -108,7 +127,8 @@ Biweeklybudget is also distributed as a `docker image <https://hub.docker.com/r/
 to make it easier to run without installing as many :ref:`Requirements <getting_started.requirements>`.
 
 You can pull the latest version of the image with ``docker pull jantman/biweeklybudget:latest``, or
-a specific release version ``X.Y.Z`` with ``docker pull jantman/biweeklybudget:X.Y.Z``.
+a specific release version ``X.Y.Z`` with ``docker pull jantman/biweeklybudget:X.Y.Z``. It is recommended
+that you run a specific version number, and that you make sure to perform a database backup before upgrading.
 
 The only dependencies for a Docker installation are:
 
@@ -121,7 +141,8 @@ is backed up and will not be removed.
 The `image <https://hub.docker.com/r/jantman/biweeklybudget/>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
 wrapper and uses `gunicorn <http://gunicorn.org/>`_ under Python 3.6 to serve the web UI, exposed on port 80. Note that,
 while it runs with 4 worker threads, there is no HTTP proxy in front of Gunicorn and this image is intended for local network
-use by a single user/client.
+use by a single user/client. The image also automatically runs database migrations in a safe manner at start, before starting
+the Flask application.
 
 For ease of running, the image defaults the ``SETTINGS_MODULE`` environment variable to
 ``biweeklybudget.settings_example``. This allows leveraging the environment variable

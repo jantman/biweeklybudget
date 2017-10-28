@@ -85,6 +85,8 @@ If you want to run the acceptance tests without dumping and refreshing the test 
 environment variable will prevent refreshing the DB after classes that manipulate data;
 this will cause subsequent tests to fail but can be useful for debugging.
 
+.. _development.alembic:
+
 Alembic DB Migrations
 ---------------------
 
