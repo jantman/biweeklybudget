@@ -42,6 +42,7 @@ from biweeklybudget import settings
 from datetime import datetime
 import pytz
 from contextlib import contextmanager
+from babel.numbers import format_currency
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,21 @@ def fix_werkzeug_logger():
     logger.info('Removing handlers from "werkzeug" logger')
     for h in wlog.handlers:
         wlog.removeHandler(h)
+
+
+def fmt_currency(amt):
+    """
+    Using :py:attr:`~.settings.LOCALE_NAME` and
+    :py:attr:`~.settings.CURRENCY_CODE`, return ``amt`` formatted as currency.
+
+    :param amt: The amount to format
+    :type amt: Any numeric type.
+    :return: ``amt`` formatted for the appropriate locale and currency
+    :rtype: str
+    """
+    return format_currency(
+        amt, settings.CURRENCY_CODE, locale=settings.LOCALE_NAME
+    )
 
 
 def dtnow():

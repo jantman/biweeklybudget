@@ -39,7 +39,7 @@ from locale import currency
 from jinja2.runtime import Undefined
 from humanize import naturaltime
 
-from biweeklybudget.utils import dtnow
+from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.account import AcctType
 
@@ -112,15 +112,15 @@ def ago_filter(dt):
 @app.template_filter('dollars')
 def dollars_filter(x):
     """
-    Format as USD currency.
+    Format as currency using :py:func:`~.utils.fmt_currency`.
 
-    :param x: dollar amount, int, float, decimal, etc.
+    :param x: currency amount, int, float, decimal, etc.
     :return: formatted currency
     :rtype: str
     """
     if x == '' or x is None or isinstance(x, Undefined):
         return ''
-    return currency(x, grouping=True)
+    return fmt_currency(x)
 
 
 @app.template_filter('reddollars')

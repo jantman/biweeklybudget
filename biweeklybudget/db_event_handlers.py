@@ -42,6 +42,7 @@ from sqlalchemy import event, inspect
 
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +119,10 @@ def handle_new_transaction(session):
         old_amt = float(budg.current_balance)
         budg.current_balance = old_amt - float(obj.actual_amount)
         logger.info(
-            'New transaction (%s) for $%s against standing budget id=%s; '
+            'New transaction (%s) for %s against standing budget id=%s; '
             'update budget current_balance from %s to %s', obj.description,
-            obj.actual_amount, budg.id, old_amt, budg.current_balance
+            fmt_currency(obj.actual_amount), budg.id, fmt_currency(old_amt),
+            fmt_currency(budg.current_balance)
         )
         session.add(budg)
         updated += 1

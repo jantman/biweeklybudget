@@ -35,6 +35,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from babel.numbers import get_currency_symbol
+
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.notifications import NotificationsController
 from biweeklybudget import settings as settingsmod
@@ -56,7 +58,7 @@ def settings():
     """
     Add settings to template context for all templates.
 
-    :return: template context with notifications added
+    :return: template context with settings added
     :rtype: dict
     """
     return {'settings': {x: getattr(settingsmod, x) for x in dir(settingsmod)}}
@@ -73,3 +75,17 @@ def utilities():
     def cast_float(x):
         return float(x)
     return dict(cast_float=cast_float)
+
+
+@app.context_processor
+def add_currency_symbol():
+    """
+    Context processor to inject the proper currency symbol into the Jinja2
+    context as the "CURRENCY_SYM" variable.
+
+    :return: proper currency symbol for our locale and currency
+    :rtype: str
+    """
+    return dict(CURRENCY_SYM=get_currency_symbol(
+        settingsmod.CURRENCY_CODE, locale=settingsmod.LOCALE_NAME
+    ))

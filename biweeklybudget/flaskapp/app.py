@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-import locale
 
 from flask import Flask
 
@@ -48,8 +47,6 @@ format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
          "%(name)s.%(funcName)s() ] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=format)
 logger = logging.getLogger()
-
-locale.setlocale(locale.LC_ALL, '')
 
 fix_werkzeug_logger()
 
