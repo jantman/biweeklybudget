@@ -46,7 +46,7 @@ $(function() {
       pointSize: 2,
       hideHover: 'auto',
       resize: true,
-      preUnits: '$',
+      preUnits: CURRENCY_SYMBOL,
       continuousLine: true
     });
   });

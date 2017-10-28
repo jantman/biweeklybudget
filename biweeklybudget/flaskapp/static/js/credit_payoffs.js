@@ -53,7 +53,7 @@ function addIncrease(settings) {
   s = s + ' , increase sum of monthly payments to ';
   s = s + '<label for="payoff_increase_frm_' + idx + '_amt" class="control-label sr-only">Payment Increase ' + idx + ' Amount</label>';
   s = s + '<div class="input-group">';
-  s = s + '<span class="input-group-addon">$</span><input class="form-control" id="payoff_increase_frm_' + idx + '_amt" name="payoff_increase_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
+  s = s + '<span class="input-group-addon">' + CURRENCY_SYMBOL + '</span><input class="form-control" id="payoff_increase_frm_' + idx + '_amt" name="payoff_increase_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
   s = s + '</div> . (<a href="#" onclick="removeIncrease(' + idx + ')" id="rm_increase_' + idx + '_link">remove</a>)</div></form>';
   s = s + '<!-- /#payoff_increase_frm_' + idx + ' -->';
   $('#payoff_increase_forms').append(s);
@@ -104,7 +104,7 @@ function addOnetime(settings) {
   s = s + ' , add ';
   s = s + '<label for="payoff_onetime_frm_' + idx + '_amt" class="control-label sr-only">Onetime Payment ' + idx + ' Amount</label>';
   s = s + '<div class="input-group">';
-  s = s + '<span class="input-group-addon">$</span><input class="form-control" id="payoff_onetime_frm_' + idx + '_amt" name="payoff_onetime_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
+  s = s + '<span class="input-group-addon">' + CURRENCY_SYMBOL + '</span><input class="form-control" id="payoff_onetime_frm_' + idx + '_amt" name="payoff_onetime_frm_' + idx + '_amt" type="text" size="8" style="width: auto;" onchange="setChanged()">';
   s = s + '</div> to the payment amount. (<a href="#" onclick="removeOnetime(' + idx + ')" id="rm_onetime_' + idx + '_link">remove</a>)</div></form>';
   s = s + '<!-- /#payoff_onetime_frm_' + idx + ' -->';
   $('#payoff_onetime_forms').append(s);
