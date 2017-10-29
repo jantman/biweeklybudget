@@ -45,6 +45,9 @@ from time import sleep
 from selenium.webdriver import ActionChains
 import requests
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -1643,7 +1646,14 @@ class TestOFXMakeTrans(AcceptanceHelper):
             )
         ]
         assert actual_trans == expected_trans
-        # click submit button
+        # wait for submit button to be visible and clickable, and click it
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.invisibility_of_element_located((By.ID, 'modalDiv'))
+        )
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'reconcile-submit'))
+        )
         selenium.find_element_by_id('reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
