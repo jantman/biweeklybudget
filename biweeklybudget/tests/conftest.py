@@ -204,6 +204,12 @@ def selenium(selenium):
     return selenium
 
 
+@pytest.fixture
+def chrome_options(chrome_options):
+    chrome_options.add_argument('headless')
+    return chrome_options
+
+
 """
 Begin generated/parametrized tests for interest calculation.
 
