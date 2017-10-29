@@ -8,6 +8,11 @@ cache:
 services:
   - mysql
 
+addons:
+  apt:
+    packages:
+      - google-chrome-stable
+
 before_install:
   - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest;'
   - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest27;'
@@ -46,6 +51,12 @@ install:
 - pip install tox codecov boto3
 - pip freeze
 - virtualenv --version
+- wget -N http://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip -P ~/
+- unzip ~/chromedriver_linux64.zip -d ~/
+- rm ~/chromedriver_linux64.zip
+- chmod +x ~/chromedriver
+- cp ~/chromedriver ~/bin/
+
 script:
   - tox -r
 
