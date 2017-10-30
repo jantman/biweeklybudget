@@ -137,7 +137,7 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
         )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
-    s += '<div class="col-lg-3">%s</div>' % fmt_currency(amt, grouping=True)
+    s += '<div class="col-lg-3">%s</div>' % fmt_currency(amt)
     s += '<div class="col-lg-3"><strong>Acct:</strong> '
     s += '<span style="white-space: nowrap;">'
     s += '<a href="/accounts/%s">%s (%s)</a>' % (acct_id, acct_name, acct_id)
