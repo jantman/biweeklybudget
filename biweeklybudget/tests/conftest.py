@@ -40,9 +40,13 @@ import os
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-import biweeklybudget.settings
 import socket
+from distutils.spawn import find_executable
+import subprocess
+
+import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+
 try:
     from pytest_flask.fixtures import LiveServer
 except ImportError:
@@ -74,10 +78,78 @@ selenium_log.setLevel(logging.INFO)
 selenium_log.propagate = True
 
 
-@pytest.fixture(scope="session")
-def refreshdb():
+@pytest.fixture(scope='session')
+def dump_file_path(tmpdir_factory):
     """
-    Refresh/Load DB data before tests
+    Return the path to use for the SQL dump file
+    """
+    return tmpdir_factory.mktemp('sqldump').join('dbdump.sql')
+
+
+def do_mysqldump(fpath):
+    """
+    Shell out and mysqldump the database to the path specified by fpath.
+
+    :param fpath: path to save dump file to
+    :type fpath: str
+    :raises: RuntimeError, AssertionError
+    """
+    mysqldump = find_executable('mysqldump')
+    assert mysqldump is not None
+    assert engine.url.drivername == 'mysql+pymysql'
+    args = [
+        mysqldump,
+        '--create-options',
+        '--routines',
+        '--triggers',
+        '--no-create-db',
+        '--host=%s' % engine.url.host,
+        '--port=%s' % engine.url.port,
+        '--user=%s' % engine.url.username,
+        '--password=%s' % engine.url.password,
+        engine.url.database
+    ]
+    logger.info('Running: %s', ' '.join(args))
+    res = subprocess.check_output(args)
+    with open(fpath, 'wb') as fh:
+        fh.write(res)
+    logger.info('Wrote %d bytes of SQL to %s', len(res), fpath)
+
+
+def restore_mysqldump(fpath):
+    """
+    Shell out and restore a mysqldump file to the database.
+
+    :param fpath: path to save dump file to
+    :type fpath: str
+    :raises: RuntimeError, AssertionError
+    """
+    mysql_path = find_executable('mysql')
+    assert mysql_path is not None
+    assert engine.url.drivername == 'mysql+pymysql'
+    args = [
+        mysql_path,
+        '--batch',
+        '--host=%s' % engine.url.host,
+        '--port=%s' % engine.url.port,
+        '--user=%s' % engine.url.username,
+        '--password=%s' % engine.url.password,
+        '--database=%s' % engine.url.database
+    ]
+    logger.info('Passing %s to %s', fpath, ' '.join(args))
+    with open(fpath, 'rb') as fh:
+        proc = subprocess.Popen(args, stdin=fh)
+        stdout, stderr = proc.communicate()
+    logger.info('MySQL dump restore complete.')
+    logger.debug('mysql STDOUT: %s', stdout)
+    logger.debug('mysql STDERR: %s', stderr)
+
+
+@pytest.fixture(scope="session")
+def refreshdb(dump_file_path):
+    """
+    Refresh/Load DB data before tests; also exec mysqldump to write a
+    SQL dump file for faster refreshes during test runs.
     """
     # setup the connection
     conn = engine.connect()
@@ -97,6 +169,8 @@ def refreshdb():
         data_sess.close()
     else:
         logger.info('Skipping session-scoped DB refresh')
+    # write the dump file
+    do_mysqldump(dump_file_path)
     # create a session to use for the tests
     sess = scoped_session(
         sessionmaker(autocommit=False, bind=conn)
@@ -110,7 +184,7 @@ def refreshdb():
 
 
 @pytest.fixture(scope="class")
-def class_refresh_db():
+def class_refresh_db(dump_file_path):
     """
     This fixture rolls the DB back to the previous state when the class is
     finished; to be used on classes that alter data.
@@ -131,20 +205,7 @@ def class_refresh_db():
     if 'NO_CLASS_REFRESH_DB' in os.environ:
         return
     logger.info('Refreshing DB (class-scoped)')
-    # clean the database
-    biweeklybudget.models.base.Base.metadata.reflect(engine)
-    biweeklybudget.models.base.Base.metadata.drop_all(engine)
-    biweeklybudget.models.base.Base.metadata.create_all(engine)
-    # load the sample data
-    data_sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=conn)
-    )
-    SampleDataLoader(data_sess).load()
-    data_sess.flush()
-    data_sess.commit()
-    data_sess.close()
-    # when we're done, close
-    conn.close()
+    restore_mysqldump(dump_file_path)
 
 
 @pytest.fixture
