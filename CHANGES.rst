@@ -5,6 +5,7 @@ Unreleased Changes
 ------------------
 
 * `PR #141 <https://github.com/jantman/biweeklybudget/pull/141>`_ - Switch acceptance tests from PhantomJS to headless Chrome.
+* Switch docs build screenshot script to use headless Chrome instead of PhantomJS.
 
 0.5.0 (2017-10-28)
 ------------------

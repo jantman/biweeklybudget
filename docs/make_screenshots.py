@@ -67,10 +67,7 @@ except ImportError:
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 from PIL import Image
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
@@ -316,8 +313,18 @@ class Screenshotter(object):
             sleep(1)
         # get_screenshot_as_png() -> binary data
         fpath = os.path.join(self.srcdir, '%s.png' % filename)
+        height = self.browser.execute_script(
+            "return Math.max(document.body.scrollHeight, "
+            "document.body.offsetHeight, document.documentElement."
+            "clientHeight, document.documentElement.scrollHeight, "
+            "document.documentElement.offsetHeight);"
+        )
+        height += 100
+        logger.info('Resizing browser to %d high', height)
         logger.info('Screenshotting "%s" to %s', path, fpath)
+        self.browser.set_window_size(1920, height)
         self.browser.get_screenshot_as_file(fpath)
+        self.browser.set_window_size(1920, 1080)
         self._resize_image(filename)
         if postshot_func is not None:
             getattr(self, postshot_func)()
@@ -664,7 +671,9 @@ class Screenshotter(object):
         self.browser.get(url)
 
     def _get_browser(self):
-        b = webdriver.PhantomJS()
+        copt = Options()
+        copt.add_argument('--headless')
+        b = webdriver.Chrome(chrome_options=copt)
         b.set_window_size(1920, 1080)
         b.implicitly_wait(2)
         return b
