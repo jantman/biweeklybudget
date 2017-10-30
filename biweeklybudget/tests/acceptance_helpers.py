@@ -337,6 +337,8 @@ class AcceptanceHelper(object):
                 print('selenium.get(%s) timed out; trying again', url)
             except Exception:
                 raise
+        self.wait_for_load_complete(_selenium)
+        self.wait_for_jquery_done(_selenium)
 
     def inner_htmls(self, elems):
         """
