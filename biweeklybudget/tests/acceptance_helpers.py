@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-import locale
 from time import sleep
 from selenium.common.exceptions import (
     StaleElementReferenceException, TimeoutException
@@ -44,10 +43,9 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
-
-locale.setlocale(locale.LC_ALL, '')
 
 
 class AcceptanceHelper(object):
@@ -376,6 +374,6 @@ class AcceptanceHelper(object):
             tmp_rows.append(row)
         ret = []
         for row in sorted(tmp_rows, key=lambda x: (x[0], x[1])):
-            row[1] = locale.currency(row[1], grouping=True)
+            row[1] = fmt_currency(row[1])
             ret.append(row)
         return ret

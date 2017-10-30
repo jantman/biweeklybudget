@@ -10,6 +10,7 @@ Werkzeug==0.12.1
 alembic==0.9.1
 appdirs==1.4.3
 asn1crypto==0.22.0
+babel==2.5.1
 beautifulsoup4==4.5.3
 cffi==1.9.1
 click==6.7
@@ -35,5 +36,5 @@ selenium==3.6.0
 six==1.10.0
 versionfinder==0.1.0
 # dependencies of biweeklybudget/vendored/wishlist
-captain
-pyvirtualdisplay
+captain==0.4.9
+pyvirtualdisplay==0.2.1

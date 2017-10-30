@@ -37,10 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import func
-from locale import currency
 
 from biweeklybudget.db import db_session
-from biweeklybudget.utils import dtnow
+from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
@@ -193,14 +192,13 @@ class NotificationsController(object):
                            'period remaining</a>; %s <a href="/reconcile">'
                            'unreconciled</a>)!'
                            '' % (
-                               currency(accounts_bal, grouping=True),
-                               currency(
-                                   (standing_bal + curr_pp + unrec_amt),
-                                   grouping=True
+                               fmt_currency(accounts_bal),
+                               fmt_currency(
+                                   (standing_bal + curr_pp + unrec_amt)
                                ),
-                               currency(standing_bal, grouping=True),
-                               currency(curr_pp, grouping=True),
-                               currency(unrec_amt, grouping=True)
+                               fmt_currency(standing_bal),
+                               fmt_currency(curr_pp),
+                               fmt_currency(unrec_amt)
                            )
             })
         unreconciled_ofx = NotificationsController.num_unreconciled_ofx()

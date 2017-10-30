@@ -52,6 +52,12 @@ application available to anything other than localhost, but if you do, you need 
 application is **not** designed to be accessible in any way to anyone other than authorized users (i.e. if you just serve it
 over the web, someone *will* get your account numbers, or worse).
 
+*Note:* Any potential users outside of the US should see the documentation section on
+`Currency Formatting and Localization <http://biweeklybudget.readthedocs.io/en/latest/app_usage.html#currency-formatting-and-localization>`_;
+the short version is that I've done my best to make this configurable, but as far as I know I'm the
+only person using this software. If anyone else wants to use it and it doesn't work for your currency
+or locale, let me know and I'll fix it.
+
 Important Warning
 +++++++++++++++++
 

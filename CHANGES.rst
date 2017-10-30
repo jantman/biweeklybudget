@@ -4,6 +4,9 @@ Changelog
 Unreleased Changes
 ------------------
 
+* `PR #140 <https://github.com/jantman/biweeklybudget/issues/140>`_ - Support user-configurable currencies and currency formatting.
+  This isn't all-out localization, but adds ``CURRENCY_CODE`` and ``LOCALE_NAME`` configuration settings to control the currency symbol
+  and formatting used in the user interface and logs.
 * `PR #141 <https://github.com/jantman/biweeklybudget/pull/141>`_ - Switch acceptance tests from PhantomJS to headless Chrome.
 * Switch docs build screenshot script to use headless Chrome instead of PhantomJS.
 

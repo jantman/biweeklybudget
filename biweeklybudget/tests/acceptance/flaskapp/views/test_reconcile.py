@@ -38,7 +38,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import datetime, date
 from pytz import UTC
-from locale import currency
 import re
 import json
 from time import sleep
@@ -49,7 +48,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from biweeklybudget.utils import dtnow
+from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import *
 import biweeklybudget.models.base  # noqa
@@ -74,7 +73,7 @@ def txn_div(id, dt, amt, acct_name, acct_id,
         )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt.strftime('%Y-%m-%d')
-    s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
+    s += '<div class="col-lg-3">%s</div>' % fmt_currency(amt)
     s += '<div class="col-lg-3"><strong>Acct:</strong> '
     s += '<span style="white-space: nowrap;">'
     s += '<a href="/accounts/%s">%s (%s)</a>' % (acct_id, acct_name, acct_id)
@@ -138,7 +137,7 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
         )
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
-    s += '<div class="col-lg-3">%s</div>' % currency(amt, grouping=True)
+    s += '<div class="col-lg-3">%s</div>' % fmt_currency(amt)
     s += '<div class="col-lg-3"><strong>Acct:</strong> '
     s += '<span style="white-space: nowrap;">'
     s += '<a href="/accounts/%s">%s (%s)</a>' % (acct_id, acct_name, acct_id)

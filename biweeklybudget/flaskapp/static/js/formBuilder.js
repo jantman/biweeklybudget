@@ -167,7 +167,7 @@ FormBuilder.prototype.addCurrency = function(id, name, label, options) {
     if (options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<div class="input-group">' +
-        '<span class="input-group-addon">$</span>' +
+        '<span class="input-group-addon">' + CURRENCY_SYMBOL + '</span>' +
         '<input class="' + options.htmlClass + '" id="' + id + '" name="' + name + '" type="text">' +
         '</div>';
     if (options.helpBlock !== null) {

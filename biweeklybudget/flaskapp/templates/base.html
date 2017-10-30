@@ -26,6 +26,17 @@
     <!-- App custom CSS -->
     <link href="/static/css/custom.css" rel="stylesheet" type="text/css">
 
+    <!-- Python settings we need to be able to access from Javascript -->
+    <script>
+        var CURRENCY_SYMBOL = "{{ CURRENCY_SYM }}";
+        var LOCALE_NAME = "{{ settings.LOCALE_NAME }}";
+        if(LOCALE_NAME.indexOf('.') !== -1) {
+          LOCALE_NAME = LOCALE_NAME.substr(0, LOCALE_NAME.indexOf('.'));
+        }
+        if(LOCALE_NAME.indexOf('_') !== -1) { LOCALE_NAME = LOCALE_NAME.replace('_', '-'); }
+        var CURRENCY_CODE = "{{ settings.CURRENCY_CODE }}";
+    </script>
+
     <!-- apply custom JS -->
     <script src="/static/js/custom.js"></script>
 

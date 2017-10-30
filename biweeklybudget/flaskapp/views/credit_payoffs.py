@@ -39,7 +39,6 @@ import logging
 import json
 from decimal import Decimal, ROUND_UP
 from datetime import datetime
-from locale import currency
 
 from flask.views import MethodView
 from flask import render_template, request, jsonify
@@ -49,6 +48,7 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.interest import InterestHelper
 from biweeklybudget.models.dbsetting import DBSetting
+from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class CreditPayoffsView(MethodView):
                 tmp['results'].append({
                     'name': '%s (%d) (%s @ %s%%)' % (
                         acct.name, k,
-                        currency(abs(acct.balance.ledger), grouping=True),
+                        fmt_currency(abs(acct.balance.ledger)),
                         (acct.effective_apr * Decimal('100')).quantize(
                             Decimal('.01')
                         )

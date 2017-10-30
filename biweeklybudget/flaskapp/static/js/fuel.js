@@ -225,17 +225,13 @@ $(document).ready(function() {
             {
                 data: "cost_per_gallon",
                 "render": function(data, type, row) {
-                    return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
-                        data;
+                    return type === "display" || type === "filter" ? fmt_currency(data) : data;
                 }
             },
             {
                 data: "total_cost",
                 "render": function(data, type, row) {
-                    return type === "display" || type === "filter" ?
-                        '$' + data.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") :
-                        data;
+                    return type === "display" || type === "filter" ? fmt_currency(data) : data;
                 }
             },
             {
