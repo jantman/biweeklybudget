@@ -81,13 +81,16 @@ _STRING_VARS = [
 #: If none of those variables are set to a valid locale name (not including
 #: the "C" locale, which does not specify currency formatting) and this variable
 #: is not set, the application will default to "en_US". This setting only
-#: effects how monetary values are displayed in the UI, logs, etc.
+#: effects how monetary values are displayed in the UI, logs, etc. For further
+#: information, see
+#: :ref:`Currency Formatting and Localization <app_usage.l10n>`.
 LOCALE_NAME = None
 
 #: An `ISO 4217 <https://en.wikipedia.org/wiki/ISO_4217>`_ Currency Code
 #: specifying the currency to use for all monetary amounts, i.e. "USD", "EUR",
 #: etc. This setting only effects how monetary values are displayed in the UI,
-#: logs, etc. Currently defaults to "USD".
+#: logs, etc. Currently defaults to "USD". For further information, see
+#: :ref:`Currency Formatting and Localization <app_usage.l10n>`.
 CURRENCY_CODE = 'USD'
 
 #: string - SQLAlchemy database connection string. See the
