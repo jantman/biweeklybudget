@@ -190,9 +190,9 @@ class AcceptanceHelper(object):
         :param driver: Selenium driver instance
         :type driver: selenium.webdriver.remote.webdriver.WebDriver
         """
-        self.wait_until_clickable_by_id(driver, 'modalLabel', timeout=10)
+        self.wait_until_clickable(driver, 'modalLabel', timeout=10)
 
-    def wait_until_clickable_by_id(self, driver, elem_id, timeout=10):
+    def wait_until_clickable(self, driver, elem_id, by=By.ID, timeout=10):
         """
         Wait for the modal to be shown.
 
@@ -200,11 +200,15 @@ class AcceptanceHelper(object):
         :type driver: selenium.webdriver.remote.webdriver.WebDriver
         :param elem_id: element ID
         :type elem_id: str
+        :param by: What method to use to find the element. This must be one of
+          the strings which are values of
+          :py:class:`selenium.webdriver.common.by.By` attributes.
+        :type by: str
         :param timeout: timeout in seconds
         :type timeout: int
         """
         WebDriverWait(driver, timeout).until(
-            EC.element_to_be_clickable((By.ID, elem_id))
+            EC.element_to_be_clickable((by, elem_id))
         )
 
     def wait_for_id(self, driver, id):

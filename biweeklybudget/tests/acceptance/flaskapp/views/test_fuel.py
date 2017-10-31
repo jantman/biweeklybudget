@@ -266,6 +266,9 @@ class TestVehicleModal(AcceptanceHelper):
     def test_01_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
+        self.wait_until_clickable_by_id(
+            selenium, '//a[text()="Veh1"]', by='xpath'
+        )
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -279,6 +282,9 @@ class TestVehicleModal(AcceptanceHelper):
     def test_02_edit_modal_inactive(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh3Inactive"]')
+        self.wait_until_clickable_by_id(
+            selenium, '//a[text()="Veh3Inactive"]', by='xpath'
+        )
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -340,7 +346,7 @@ class TestVehicleModal(AcceptanceHelper):
     def test_04_modal_add(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
-        self.wait_until_clickable_by_id(selenium, 'btn-add-vehicle')
+        self.wait_until_clickable(selenium, 'btn-add-vehicle')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -412,6 +418,7 @@ class TestFuelLogModal(AcceptanceHelper):
     def test_01_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
+        self.wait_until_clickable_by_id(selenium, 'btn-add-fuel')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -482,6 +489,7 @@ class TestFuelLogModal(AcceptanceHelper):
     def test_02_add_no_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
+        self.wait_until_clickable_by_id(selenium, 'btn-add-fuel')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -584,7 +592,7 @@ class TestFuelLogModal(AcceptanceHelper):
     def test_04_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
-        self.wait_until_clickable_by_id(selenium, 'btn-add-fuel')
+        self.wait_until_clickable(selenium, 'btn-add-fuel')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
