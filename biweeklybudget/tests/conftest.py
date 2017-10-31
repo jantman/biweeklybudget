@@ -112,7 +112,7 @@ def do_mysqldump(fpath):
     args.append(engine.url.database)
     logger.info('Running: %s', ' '.join(args))
     res = subprocess.check_output(args)
-    with open(fpath, 'wb') as fh:
+    with open(str(fpath), 'wb') as fh:
         fh.write(res)
     logger.info('Wrote %d bytes of SQL to %s', len(res), fpath)
 
@@ -139,7 +139,7 @@ def restore_mysqldump(fpath):
     if engine.url.password is not None:
         args.append('--password=%s' % engine.url.password)
     logger.info('Passing %s to %s', fpath, ' '.join(args))
-    with open(fpath, 'rb') as fh:
+    with open(str(fpath), 'rb') as fh:
         proc = subprocess.Popen(args, stdin=fh)
         stdout, stderr = proc.communicate()
     logger.info('MySQL dump restore complete.')
