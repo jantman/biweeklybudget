@@ -105,10 +105,11 @@ def do_mysqldump(fpath):
         '--no-create-db',
         '--host=%s' % engine.url.host,
         '--port=%s' % engine.url.port,
-        '--user=%s' % engine.url.username,
-        '--password=%s' % engine.url.password,
-        engine.url.database
+        '--user=%s' % engine.url.username
     ]
+    if engine.url.password is not None:
+        args.append('--password=%s' % engine.url.password)
+    args.append(engine.url.database)
     logger.info('Running: %s', ' '.join(args))
     res = subprocess.check_output(args)
     with open(fpath, 'wb') as fh:
@@ -133,9 +134,10 @@ def restore_mysqldump(fpath):
         '--host=%s' % engine.url.host,
         '--port=%s' % engine.url.port,
         '--user=%s' % engine.url.username,
-        '--password=%s' % engine.url.password,
         '--database=%s' % engine.url.database
     ]
+    if engine.url.password is not None:
+        args.append('--password=%s' % engine.url.password)
     logger.info('Passing %s to %s', fpath, ' '.join(args))
     with open(fpath, 'rb') as fh:
         proc = subprocess.Popen(args, stdin=fh)
