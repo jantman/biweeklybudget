@@ -196,14 +196,7 @@ def class_refresh_db(dump_file_path):
         @pytest.mark.usefixtures('class_refresh_db', 'testdb')
         class MyClass(AcceptanceHelper):
     """
-    logger.info('Connecting to DB (class-scoped)')
-    # setup the connection
-    conn = engine.connect()
-    sess = sessionmaker(autocommit=False, bind=conn)()
-    init_event_listeners(sess)
-    # yield the session
-    yield(sess)
-    sess.close()
+    yield
     if 'NO_CLASS_REFRESH_DB' in os.environ:
         return
     logger.info('Refreshing DB (class-scoped)')
