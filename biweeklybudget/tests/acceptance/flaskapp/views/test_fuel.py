@@ -340,6 +340,7 @@ class TestVehicleModal(AcceptanceHelper):
     def test_04_modal_add(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
+        self.wait_until_clickable_by_id(selenium, 'btn-add-vehicle')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
@@ -583,6 +584,7 @@ class TestFuelLogModal(AcceptanceHelper):
     def test_04_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
+        self.wait_until_clickable_by_id(selenium, 'btn-add-fuel')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)

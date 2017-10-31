@@ -190,8 +190,21 @@ class AcceptanceHelper(object):
         :param driver: Selenium driver instance
         :type driver: selenium.webdriver.remote.webdriver.WebDriver
         """
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, 'modalLabel'))
+        self._wait_until_clickable_by_id(driver, 'modalLabel', timeout=10)
+
+    def wait_until_clickable_by_id(self, driver, elem_id, timeout=10):
+        """
+        Wait for the modal to be shown.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem_id: element ID
+        :type elem_id: str
+        :param timeout: timeout in seconds
+        :type timeout: int
+        """
+        WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.ID, elem_id))
         )
 
     def wait_for_id(self, driver, id):
