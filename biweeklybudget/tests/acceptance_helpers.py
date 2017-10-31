@@ -190,7 +190,7 @@ class AcceptanceHelper(object):
         :param driver: Selenium driver instance
         :type driver: selenium.webdriver.remote.webdriver.WebDriver
         """
-        self._wait_until_clickable_by_id(driver, 'modalLabel', timeout=10)
+        self.wait_until_clickable_by_id(driver, 'modalLabel', timeout=10)
 
     def wait_until_clickable_by_id(self, driver, elem_id, timeout=10):
         """
