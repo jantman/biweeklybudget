@@ -48,8 +48,8 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.settings import PAY_PERIOD_START_DATE
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models import *
-import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 
 dt = dtnow()
 
@@ -212,10 +212,9 @@ class TestFindPayPeriod(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestPayPeriodsIndex(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(
@@ -532,10 +531,9 @@ class TestPayPeriod(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(

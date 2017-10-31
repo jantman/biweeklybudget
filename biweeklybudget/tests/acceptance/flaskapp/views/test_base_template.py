@@ -40,8 +40,8 @@ from datetime import datetime, timedelta
 from pytz import UTC
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
-import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
@@ -127,10 +127,9 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
-    def test_00_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_01_add(self, testdb):
         a = Account(

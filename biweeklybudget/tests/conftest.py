@@ -41,11 +41,10 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
-from distutils.spawn import find_executable
-import subprocess
 
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
 
 try:
     from pytest_flask.fixtures import LiveServer
@@ -81,70 +80,9 @@ selenium_log.propagate = True
 @pytest.fixture(scope='session')
 def dump_file_path(tmpdir_factory):
     """
-    Return the path to use for the SQL dump file
+    Return the directory to use for the SQL dump files
     """
-    return tmpdir_factory.mktemp('sqldump').join('dbdump.sql')
-
-
-def do_mysqldump(fpath):
-    """
-    Shell out and mysqldump the database to the path specified by fpath.
-
-    :param fpath: path to save dump file to
-    :type fpath: str
-    :raises: RuntimeError, AssertionError
-    """
-    mysqldump = find_executable('mysqldump')
-    assert mysqldump is not None
-    assert engine.url.drivername == 'mysql+pymysql'
-    args = [
-        mysqldump,
-        '--create-options',
-        '--routines',
-        '--triggers',
-        '--no-create-db',
-        '--host=%s' % engine.url.host,
-        '--port=%s' % engine.url.port,
-        '--user=%s' % engine.url.username
-    ]
-    if engine.url.password is not None:
-        args.append('--password=%s' % engine.url.password)
-    args.append(engine.url.database)
-    logger.info('Running: %s', ' '.join(args))
-    res = subprocess.check_output(args)
-    with open(str(fpath), 'wb') as fh:
-        fh.write(res)
-    logger.info('Wrote %d bytes of SQL to %s', len(res), fpath)
-
-
-def restore_mysqldump(fpath):
-    """
-    Shell out and restore a mysqldump file to the database.
-
-    :param fpath: path to save dump file to
-    :type fpath: str
-    :raises: RuntimeError, AssertionError
-    """
-    mysql_path = find_executable('mysql')
-    assert mysql_path is not None
-    assert engine.url.drivername == 'mysql+pymysql'
-    args = [
-        mysql_path,
-        '--batch',
-        '--host=%s' % engine.url.host,
-        '--port=%s' % engine.url.port,
-        '--user=%s' % engine.url.username,
-        '--database=%s' % engine.url.database
-    ]
-    if engine.url.password is not None:
-        args.append('--password=%s' % engine.url.password)
-    logger.info('Passing %s to %s', fpath, ' '.join(args))
-    with open(str(fpath), 'rb') as fh:
-        proc = subprocess.Popen(args, stdin=fh)
-        stdout, stderr = proc.communicate()
-    logger.info('MySQL dump restore complete.')
-    logger.debug('mysql STDOUT: %s', stdout)
-    logger.debug('mysql STDERR: %s', stderr)
+    return tmpdir_factory.mktemp('sqldump')
 
 
 @pytest.fixture(scope="session")
@@ -172,8 +110,9 @@ def refreshdb(dump_file_path):
         conn.close()
     else:
         logger.info('Skipping session-scoped DB refresh')
-    # write the dump file
-    do_mysqldump(dump_file_path)
+    # write the dump files
+    do_mysqldump(dump_file_path, engine)
+    do_mysqldump(dump_file_path, engine, with_data=False)
     yield
 
 
@@ -192,7 +131,7 @@ def class_refresh_db(dump_file_path):
     if 'NO_CLASS_REFRESH_DB' in os.environ:
         return
     logger.info('Refreshing DB (class-scoped)')
-    restore_mysqldump(dump_file_path)
+    restore_mysqldump(dump_file_path, engine)
 
 
 @pytest.fixture

@@ -51,7 +51,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import *
-import biweeklybudget.models.base  # noqa
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 from biweeklybudget.tests.conftest import engine
 
 dnow = dtnow()
@@ -210,10 +210,9 @@ class ReconcileHelper(AcceptanceHelper):
         r = json.loads(res)
         return {int(x): r[x] for x in r}
 
-    def test_00_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_00_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -1443,10 +1442,9 @@ class TestOFXMakeTrans(AcceptanceHelper):
         r = json.loads(res)
         return {int(x): r[x] for x in r}
 
-    def test_00_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_00_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
