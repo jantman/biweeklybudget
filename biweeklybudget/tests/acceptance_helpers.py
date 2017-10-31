@@ -190,8 +190,25 @@ class AcceptanceHelper(object):
         :param driver: Selenium driver instance
         :type driver: selenium.webdriver.remote.webdriver.WebDriver
         """
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, 'modalLabel'))
+        self.wait_until_clickable(driver, 'modalLabel', timeout=10)
+
+    def wait_until_clickable(self, driver, elem_id, by=By.ID, timeout=10):
+        """
+        Wait for the modal to be shown.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem_id: element ID
+        :type elem_id: str
+        :param by: What method to use to find the element. This must be one of
+          the strings which are values of
+          :py:class:`selenium.webdriver.common.by.By` attributes.
+        :type by: str
+        :param timeout: timeout in seconds
+        :type timeout: int
+        """
+        WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((by, elem_id))
         )
 
     def wait_for_id(self, driver, id):
@@ -337,6 +354,8 @@ class AcceptanceHelper(object):
                 print('selenium.get(%s) timed out; trying again', url)
             except Exception:
                 raise
+        self.wait_for_load_complete(_selenium)
+        self.wait_for_jquery_done(_selenium)
 
     def inner_htmls(self, elems):
         """
