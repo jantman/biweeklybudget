@@ -153,9 +153,9 @@ def refreshdb(dump_file_path):
     Refresh/Load DB data before tests; also exec mysqldump to write a
     SQL dump file for faster refreshes during test runs.
     """
-    # setup the connection
-    conn = engine.connect()
     if 'NO_REFRESH_DB' not in os.environ:
+        # setup the connection
+        conn = engine.connect()
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
         biweeklybudget.models.base.Base.metadata.reflect(engine)
@@ -169,20 +169,13 @@ def refreshdb(dump_file_path):
         data_sess.flush()
         data_sess.commit()
         data_sess.close()
+        # close connection
+        conn.close()
     else:
         logger.info('Skipping session-scoped DB refresh')
     # write the dump file
     do_mysqldump(dump_file_path)
-    # create a session to use for the tests
-    sess = scoped_session(
-        sessionmaker(autocommit=False, bind=conn)
-    )
-    init_event_listeners(sess)
-    # yield the session
-    yield(sess)
-    # when we're done, close
-    sess.close()
-    conn.close()
+    yield
 
 
 @pytest.fixture(scope="class")

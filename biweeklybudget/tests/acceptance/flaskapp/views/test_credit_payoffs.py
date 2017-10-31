@@ -91,10 +91,11 @@ def set_payoff_form(selenium, f_type, idx, enabled, date_s, amt):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestCreditPayoffs(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/accounts/credit-payoff')
 

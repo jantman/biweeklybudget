@@ -53,10 +53,11 @@ LEVEL_OPTS = [
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestFuel(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/fuel')
 
@@ -77,10 +78,11 @@ class TestFuel(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestFuelLogView(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.dt = dtnow()
         self.get(selenium, base_url + '/fuel')
@@ -221,7 +223,7 @@ class TestFuelLogView(AcceptanceHelper):
         odo = [t[2] for t in texts]
         assert odo == ['1,011']
 
-    def test_05_vehicles(self, base_url, selenium, testdb):
+    def test_05_vehicles(self, base_url, selenium):
         self.get(selenium, self.baseurl + '/fuel')
         table = selenium.find_element_by_id('vehicles-table')
         elems = self.tbody2elemlist(table)
