@@ -212,7 +212,6 @@ class ReconcileHelper(AcceptanceHelper):
 
     def test_00_clean_db(self, testdb):
         # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
 
@@ -1446,7 +1445,6 @@ class TestOFXMakeTrans(AcceptanceHelper):
 
     def test_00_clean_db(self, testdb):
         # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
 

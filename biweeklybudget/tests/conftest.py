@@ -158,7 +158,6 @@ def refreshdb(dump_file_path):
         conn = engine.connect()
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
         # load the sample data

@@ -466,9 +466,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 class TestSums(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
+    def test_0_clean_db(self):
         # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
 
