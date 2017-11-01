@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import re
 from distutils.spawn import find_executable
 import subprocess
 
@@ -83,6 +84,9 @@ def do_mysqldump(dumpdir, eng, with_data=True):
     args.append(eng.url.database)
     logger.info('Running: %s', ' '.join(args))
     res = subprocess.check_output(args)
+    if not with_data:
+        # for no-data dumps, need to remove the AUTO_INCREMENT setters
+        res = re.sub(b'AUTO_INCREMENT=\d+\s', b'', res)
     with open(str(fpath), 'wb') as fh:
         fh.write(res)
     logger.info('Wrote %d bytes of SQL to %s', len(res), fpath)
