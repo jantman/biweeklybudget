@@ -41,6 +41,7 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
+import json
 
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
@@ -195,6 +196,38 @@ def selenium(selenium):
 def chrome_options(chrome_options):
     chrome_options.add_argument('headless')
     return chrome_options
+
+
+def pytest_addoption(parser):
+    group = parser.getgroup("terminal reporting", "reporting", after="general")
+    group.addoption('--durations-file',
+                    action="store", type=str, default=None, metavar="P",
+                    help="write all durations as JSON to P")
+
+
+def pytest_terminal_summary(terminalreporter):
+    """Write all test durations to results/durations.json"""
+    fpath = terminalreporter.config.option.durations_file
+    if fpath is None:
+        return
+    tr = terminalreporter
+    dlist = []
+    for replist in tr.stats.values():
+        for rep in replist:
+            if hasattr(rep, 'duration'):
+                dlist.append(rep)
+    if not dlist:
+        return
+    dlist.sort(key=lambda x: x.duration)
+    dlist.reverse()
+    tr.write_sep("-", "wrote all test durations to: %s" % fpath)
+
+    result = []
+    for rep in dlist:
+        nodeid = rep.nodeid.replace("::()::", "::")
+        result.append([nodeid, rep.when, rep.duration])
+    with open(fpath, 'w') as fh:
+        fh.write(json.dumps(result))
 
 
 """
