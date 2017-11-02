@@ -537,7 +537,7 @@ class TestBudgetModals(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element_by_id('table-periodic-budgets')
         selems = self.tbody2elemlist(stable)
-        assert selems[-1][1].get_attribute(
+        assert selems[2][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(9, null)">' \
                             'NewIncome (9)</a> <em class="text-success">' \
                             '(income)</em>'

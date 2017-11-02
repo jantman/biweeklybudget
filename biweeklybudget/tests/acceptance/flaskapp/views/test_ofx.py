@@ -63,7 +63,8 @@ fixturedir = os.path.abspath(
 @pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestOFX(AcceptanceHelper):
 
-    def test_0_get_page(self, base_url, selenium):
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/ofx')
 
