@@ -67,17 +67,17 @@ class TestOFX(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/ofx')
 
-    def test_heading(self, selenium):
+    def test_1_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
         assert heading.text == 'OFX Transactions - BiweeklyBudget'
 
-    def test_nav_menu(self, selenium):
+    def test_2_nav_menu(self, selenium):
         ul = selenium.find_element_by_id('side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
-    def test_notifications(self, selenium):
+    def test_3_notifications(self, selenium):
         div = selenium.find_element_by_id('notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'

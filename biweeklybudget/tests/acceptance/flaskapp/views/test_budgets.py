@@ -426,22 +426,23 @@ class TestBudgetModals(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
-            'value') == 'Periodic1'
+            'value') == 'EditedPeriodic1'
         assert selenium.find_element_by_id(
             'budget_frm_type_periodic').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_type_standing').is_selected() is False
         assert selenium.find_element_by_id(
-            'budget_frm_description').get_attribute('value') == 'P1desc'
+            'budget_frm_description').get_attribute('value') == 'EditedP1desc'
         assert selenium.find_element_by_id(
-            'budget_frm_starting_balance').get_attribute('value') == '100'
+            'budget_frm_starting_balance').get_attribute('value') == '2345.67'
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
@@ -536,7 +537,7 @@ class TestBudgetModals(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element_by_id('table-periodic-budgets')
         selems = self.tbody2elemlist(stable)
-        assert selems[1][1].get_attribute(
+        assert selems[-1][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(9, null)">' \
                             'NewIncome (9)</a> <em class="text-success">' \
                             '(income)</em>'
