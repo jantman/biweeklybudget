@@ -42,6 +42,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
 import json
+from time import time
 
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
@@ -76,6 +77,8 @@ logger = logging.getLogger(__name__)
 selenium_log = logging.getLogger("selenium")
 selenium_log.setLevel(logging.INFO)
 selenium_log.propagate = True
+
+class_refresh_db_durations = []
 
 
 @pytest.fixture(scope='session')
@@ -128,11 +131,14 @@ def class_refresh_db(dump_file_path):
         @pytest.mark.usefixtures('class_refresh_db', 'testdb')
         class MyClass(AcceptanceHelper):
     """
+    global class_refresh_db_durations
     yield
     if 'NO_CLASS_REFRESH_DB' in os.environ:
         return
     logger.info('Refreshing DB (class-scoped)')
+    s = time()
     restore_mysqldump(dump_file_path, engine)
+    class_refresh_db_durations.append(time() - s)
 
 
 @pytest.fixture
@@ -227,7 +233,10 @@ def pytest_terminal_summary(terminalreporter):
         nodeid = rep.nodeid.replace("::()::", "::")
         result.append([nodeid, rep.when, rep.duration])
     with open(fpath, 'w') as fh:
-        fh.write(json.dumps(result))
+        fh.write(json.dumps({
+            'requests': result,
+            'class_refresh_db': class_refresh_db_durations
+        }))
 
 
 # next section from:
