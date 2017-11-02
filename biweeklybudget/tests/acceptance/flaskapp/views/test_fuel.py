@@ -79,6 +79,7 @@ class TestFuel(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestFuelLogView(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
@@ -253,6 +254,7 @@ class TestFuelLogView(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestVehicleModal(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
@@ -401,6 +403,7 @@ class TestVehicleModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestFuelLogModal(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):

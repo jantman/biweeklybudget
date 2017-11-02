@@ -364,6 +364,7 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSchedTransDateInactive(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -468,6 +469,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSchedTransAddDate(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
@@ -540,6 +542,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSchedTransAddMonthly(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
@@ -601,6 +604,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSchedTransAddPerPeriod(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):
@@ -662,6 +666,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSchedTransAddIncome(AcceptanceHelper):
 
     def test_1_modal_on_click(self, base_url, selenium):

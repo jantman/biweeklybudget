@@ -69,6 +69,7 @@ class TestProjects(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestProjectsView(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
@@ -385,6 +386,7 @@ class TestProjectsView(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestOneProjectView(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):

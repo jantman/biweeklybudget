@@ -283,6 +283,7 @@ class TestTransactionsDefault(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestTransModalCantEditReconciled(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -372,6 +373,7 @@ class TestTransModalCantEditReconciled(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestTransModal(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -624,6 +626,7 @@ class TestTransAddModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestTransAddStandingBudgetModal(AcceptanceHelper):
     """Test that updating a transaction against a standing budget actually
     updates the balance on the standing budget."""
@@ -702,6 +705,7 @@ class TestTransAddStandingBudgetModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestTransReconciledModal(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):

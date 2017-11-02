@@ -210,6 +210,7 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):
@@ -529,6 +530,7 @@ class TestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):
@@ -794,6 +796,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -1267,6 +1270,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -1491,6 +1495,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestBudgetTransfer(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -2134,6 +2139,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSkipScheduled(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):

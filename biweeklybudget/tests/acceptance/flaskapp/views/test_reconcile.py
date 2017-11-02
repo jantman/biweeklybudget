@@ -472,6 +472,7 @@ class ReconcileHelper(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestColumns(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
@@ -603,6 +604,7 @@ class TestColumns(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
@@ -810,6 +812,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransactionEditModal(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -909,6 +912,7 @@ class TestTransactionEditModal(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestDragLimitations(ReconcileHelper):
 
     def test_06_success(self, base_url, selenium):
@@ -1143,6 +1147,7 @@ class TestDragLimitations(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1229,6 +1234,7 @@ class TestDragAndDropReconcile(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestUIReconcileMulti(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1312,6 +1318,7 @@ class TestUIReconcileMulti(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestReconcileBackend(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1423,6 +1430,7 @@ class TestReconcileBackend(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestOFXMakeTrans(AcceptanceHelper):
 
     def get_reconciled(self, driver):
@@ -1680,6 +1688,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransReconcileNoOfx(ReconcileHelper):
 
     def test_06_transactions_column(self, base_url, selenium):

@@ -125,6 +125,7 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):
@@ -219,6 +220,7 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):
@@ -267,6 +269,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestPPOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):

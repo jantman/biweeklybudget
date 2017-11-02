@@ -368,6 +368,7 @@ class TestOFXTransURL(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestTransReconciledModal(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):

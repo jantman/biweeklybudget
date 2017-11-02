@@ -66,6 +66,7 @@ pbm = 'biweeklybudget.biweeklypayperiod'
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
     def find_income_trans_id(self, db):
@@ -213,6 +214,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
@@ -464,6 +466,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSums(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):

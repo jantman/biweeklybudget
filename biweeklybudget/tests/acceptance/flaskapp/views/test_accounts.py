@@ -155,6 +155,7 @@ class TestAccountsMainPage(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestAccountModal(AcceptanceHelper):
 
     def test_10_verify_db(self, testdb):

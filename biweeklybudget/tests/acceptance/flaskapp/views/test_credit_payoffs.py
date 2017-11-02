@@ -117,6 +117,7 @@ class TestCreditPayoffs(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('testflask')
+@pytest.mark.incremental
 class TestNoSettings(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):
@@ -240,6 +241,7 @@ class TestNoSettings(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestSettings(AcceptanceHelper):
 
     def test_00_verify_db(self, testdb):

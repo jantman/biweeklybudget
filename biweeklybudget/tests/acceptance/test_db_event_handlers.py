@@ -45,6 +45,7 @@ from biweeklybudget.models.budget_model import Budget
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):

@@ -175,6 +175,7 @@ class TestIndexBudgets(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestIndexPayPeriods(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):

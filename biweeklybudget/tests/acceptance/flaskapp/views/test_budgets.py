@@ -102,6 +102,7 @@ class TestBudgets(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestEditPeriodic1(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -599,6 +600,7 @@ class TestAddIncomeBudget(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestBudgetTransfer(AcceptanceHelper):
 
     def test_1_verify_db(self, testdb):
@@ -742,6 +744,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestBudgetTransferStoP(AcceptanceHelper):
 
     def test_1_verify_db(self, testdb):
