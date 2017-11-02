@@ -494,7 +494,7 @@ class TestTransModal(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestTransModalByURL(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -704,7 +704,7 @@ class TestTransAddStandingBudgetModal(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 @pytest.mark.incremental
 class TestTransReconciledModal(AcceptanceHelper):
 

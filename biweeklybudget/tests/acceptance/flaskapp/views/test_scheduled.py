@@ -248,7 +248,7 @@ class TestSchedTransDefault(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -319,7 +319,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTransMonthlyURL(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):

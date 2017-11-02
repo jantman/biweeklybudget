@@ -63,8 +63,7 @@ fixturedir = os.path.abspath(
 @pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestOFX(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def test_0_get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/ofx')
 
@@ -367,7 +366,7 @@ class TestOFXTransURL(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 @pytest.mark.incremental
 class TestTransReconciledModal(AcceptanceHelper):
 
