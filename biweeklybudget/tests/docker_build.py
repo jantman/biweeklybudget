@@ -82,7 +82,7 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
-FROM python:3.6.3-alpine3.6
+FROM python:3.6.3-alpine3.4
 
 ARG version
 USER root
@@ -112,16 +112,15 @@ RUN set -ex \
     && /app/bin/pip install gunicorn==19.7.1 \
     && apk del .build-deps
 
-# install fontconfig and tini, then install phantomjs per
-# https://github.com/Overbryd/docker-phantomjs-alpine/releases/tag/2.11
+# install phantomjs per https://github.com/fgrehm/docker-phantomjs2
 RUN set -ex \
     && apk add --no-cache --virtual .fetch-deps \
         curl \
     && mkdir -p /usr/share \
     && cd /usr/share \
-    && curl -L https://github.com/Overbryd/docker-phantomjs-alpine/releases/\
-download/2.11/phantomjs-alpine-x86_64.tar.bz2 | tar xj \
-    && ln -s /usr/share/phantomjs/phantomjs /usr/bin/phantomjs \
+    && curl -Ls https://github.com/fgrehm/docker-phantomjs2/releases/download/\
+v2.0.0-20150722/dockerized-phantomjs.tar.gz | tar xz -C / \
+    && ln -s /usr/local/bin/phantomjs /usr/bin/phantomjs \
     && apk del .fetch-deps \
     && phantomjs --version
 
@@ -402,7 +401,7 @@ class DockerImageBuilder(object):
         :type container: ``docker.models.containers.Container``
         """
         cmd = [
-            '/bin/bash',
+            '/bin/sh',
             '-c',
             '/usr/bin/phantomjs --version'
         ]
@@ -427,7 +426,7 @@ class DockerImageBuilder(object):
         phantom_script = self._string_to_tarfile('phantomtest.js', phantomtest)
         container.put_archive('/', phantom_script)
         cmd = [
-            '/bin/bash',
+            '/bin/sh',
             '-c',
             '/usr/bin/phantomjs /phantomtest.js; '
             'echo "exitcode=$?"'
