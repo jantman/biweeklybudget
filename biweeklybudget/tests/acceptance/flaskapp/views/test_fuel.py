@@ -53,10 +53,11 @@ LEVEL_OPTS = [
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestFuel(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/fuel')
 
@@ -77,10 +78,12 @@ class TestFuel(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestFuelLogView(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.dt = dtnow()
         self.get(selenium, base_url + '/fuel')
@@ -221,7 +224,7 @@ class TestFuelLogView(AcceptanceHelper):
         odo = [t[2] for t in texts]
         assert odo == ['1,011']
 
-    def test_05_vehicles(self, base_url, selenium, testdb):
+    def test_05_vehicles(self, base_url, selenium):
         self.get(selenium, self.baseurl + '/fuel')
         table = selenium.find_element_by_id('vehicles-table')
         elems = self.tbody2elemlist(table)
@@ -251,9 +254,10 @@ class TestFuelLogView(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestVehicleModal(AcceptanceHelper):
+@pytest.mark.incremental
+class TestModals(AcceptanceHelper):
 
-    def test_00_verify_db(self, testdb):
+    def test_00_vehicle_verify_db(self, testdb):
         b = testdb.query(Vehicle).get(1)
         assert b is not None
         assert b.name == 'Veh1'
@@ -263,7 +267,7 @@ class TestVehicleModal(AcceptanceHelper):
         assert b.name == 'Veh3Inactive'
         assert b.is_active is False
 
-    def test_01_populate_modal(self, base_url, selenium):
+    def test_01_vehicle_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
         self.wait_until_clickable(selenium, '//a[text()="Veh1"]', by='xpath')
@@ -277,7 +281,7 @@ class TestVehicleModal(AcceptanceHelper):
             'vehicle_frm_name').get_attribute('value') == 'Veh1'
         assert selenium.find_element_by_id('vehicle_frm_active').is_selected()
 
-    def test_02_edit_modal_inactive(self, base_url, selenium):
+    def test_02_vehicle_edit_modal_inactive(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh3Inactive"]')
         self.wait_until_clickable(
@@ -335,13 +339,13 @@ class TestVehicleModal(AcceptanceHelper):
             ]
         ]
 
-    def test_03_verify_db(self, testdb):
+    def test_03_vehicle_verify_db(self, testdb):
         b = testdb.query(Vehicle).get(3)
         assert b is not None
         assert b.name == 'Veh3Edited'
         assert b.is_active is True
 
-    def test_04_modal_add(self, base_url, selenium):
+    def test_04_vehicle_modal_add(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
         self.wait_until_clickable(selenium, 'btn-add-vehicle')
@@ -396,12 +400,7 @@ class TestVehicleModal(AcceptanceHelper):
             ]
         ]
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestFuelLogModal(AcceptanceHelper):
-
-    def test_00_verify_db(self, testdb):
+    def test_10_fuel_verify_db(self, testdb):
         ids = [
             t.id for t in testdb.query(FuelFill).all()
         ]
@@ -413,7 +412,7 @@ class TestFuelLogModal(AcceptanceHelper):
         assert len(trans_ids) == 3
         assert max(trans_ids) == 3
 
-    def test_01_populate_modal(self, base_url, selenium):
+    def test_11_fuel_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
@@ -423,7 +422,7 @@ class TestFuelLogModal(AcceptanceHelper):
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
         opts = [[o.get_attribute('value'), o.text] for o in veh_sel.options]
-        assert opts == [['1', 'Veh1'], ['2', 'Veh2']]
+        assert opts == [['1', 'Veh1'], ['2', 'Veh2'], ['3', 'Veh3Edited']]
         assert veh_sel.first_selected_option.get_attribute('value') == '1'
         date = selenium.find_element_by_id('fuel_frm_date')
         assert date.get_attribute(
@@ -484,7 +483,7 @@ class TestFuelLogModal(AcceptanceHelper):
         notes = selenium.find_element_by_id('fuel_frm_notes')
         assert notes.get_attribute('value') == ''
 
-    def test_02_add_no_trans(self, base_url, selenium):
+    def test_12_fuel_add_no_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
@@ -554,12 +553,12 @@ class TestFuelLogModal(AcceptanceHelper):
         table = selenium.find_element_by_id('table-fuel-log')
         odo_reads = [y[2] for y in self.tbody2textlist(table)]
         assert odo_reads == [
-            '1,011', '1,012', '1,001', '1,002', '1,123'
+            '1,011', '1,012', '1,013', '1,001', '1,002', '1,003', '1,123'
         ]
         notif = selenium.find_element_by_id('last_mpg_notice')
         assert notif.get_attribute('innerHTML') == 'Last fill MPG: 16.349'
 
-    def test_03_verify_db(self, testdb):
+    def test_13_fuel_verify_db(self, testdb):
         ids = [
             t.id for t in testdb.query(FuelFill).all()
         ]
@@ -587,7 +586,7 @@ class TestFuelLogModal(AcceptanceHelper):
         assert len(trans_ids) == 3
         assert max(trans_ids) == 3
 
-    def test_04_add_with_trans(self, base_url, selenium):
+    def test_14_fuel_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
@@ -656,10 +655,12 @@ class TestFuelLogModal(AcceptanceHelper):
         table = selenium.find_element_by_id('table-fuel-log')
         odo_reads = [y[2] for y in self.tbody2textlist(table)]
         assert odo_reads == [
-            '1,011', '1,012', '1,001', '1,002', '1,256', '1,123'
+            '1,011', '1,012', '1,013',
+            '1,001', '1,002', '1,003',
+            '1,256', '1,123'
         ]
 
-    def test_05_verify_db(self, testdb):
+    def test_15_fuel_verify_db(self, testdb):
         ids = [
             t.id for t in testdb.query(FuelFill).all()
         ]

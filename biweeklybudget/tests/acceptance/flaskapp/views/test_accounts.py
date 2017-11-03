@@ -43,10 +43,11 @@ from selenium.webdriver.support.ui import Select
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestAccountsNavigation(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/accounts')
 
@@ -67,10 +68,11 @@ class TestAccountsNavigation(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestAccountsMainPage(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/accounts')
 
@@ -153,6 +155,7 @@ class TestAccountsMainPage(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestAccountModal(AcceptanceHelper):
 
     def test_10_verify_db(self, testdb):

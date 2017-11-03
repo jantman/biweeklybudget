@@ -40,9 +40,14 @@ import os
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-import biweeklybudget.settings
 import socket
+import json
+from time import time
+
+import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
+
 try:
     from pytest_flask.fixtures import LiveServer
 except ImportError:
@@ -73,18 +78,28 @@ selenium_log = logging.getLogger("selenium")
 selenium_log.setLevel(logging.INFO)
 selenium_log.propagate = True
 
+class_refresh_db_durations = []
+
+
+@pytest.fixture(scope='session')
+def dump_file_path(tmpdir_factory):
+    """
+    Return the directory to use for the SQL dump files
+    """
+    return tmpdir_factory.mktemp('sqldump')
+
 
 @pytest.fixture(scope="session")
-def refreshdb():
+def refreshdb(dump_file_path):
     """
-    Refresh/Load DB data before tests
+    Refresh/Load DB data before tests; also exec mysqldump to write a
+    SQL dump file for faster refreshes during test runs.
     """
-    # setup the connection
-    conn = engine.connect()
     if 'NO_REFRESH_DB' not in os.environ:
+        # setup the connection
+        conn = engine.connect()
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
         biweeklybudget.models.base.Base.metadata.drop_all(engine)
         biweeklybudget.models.base.Base.metadata.create_all(engine)
         # load the sample data
@@ -95,22 +110,18 @@ def refreshdb():
         data_sess.flush()
         data_sess.commit()
         data_sess.close()
+        # close connection
+        conn.close()
     else:
         logger.info('Skipping session-scoped DB refresh')
-    # create a session to use for the tests
-    sess = scoped_session(
-        sessionmaker(autocommit=False, bind=conn)
-    )
-    init_event_listeners(sess)
-    # yield the session
-    yield(sess)
-    # when we're done, close
-    sess.close()
-    conn.close()
+    # write the dump files
+    do_mysqldump(dump_file_path, engine)
+    do_mysqldump(dump_file_path, engine, with_data=False)
+    yield
 
 
 @pytest.fixture(scope="class")
-def class_refresh_db():
+def class_refresh_db(dump_file_path):
     """
     This fixture rolls the DB back to the previous state when the class is
     finished; to be used on classes that alter data.
@@ -120,31 +131,14 @@ def class_refresh_db():
         @pytest.mark.usefixtures('class_refresh_db', 'testdb')
         class MyClass(AcceptanceHelper):
     """
-    logger.info('Connecting to DB (class-scoped)')
-    # setup the connection
-    conn = engine.connect()
-    sess = sessionmaker(autocommit=False, bind=conn)()
-    init_event_listeners(sess)
-    # yield the session
-    yield(sess)
-    sess.close()
+    global class_refresh_db_durations
+    yield
     if 'NO_CLASS_REFRESH_DB' in os.environ:
         return
     logger.info('Refreshing DB (class-scoped)')
-    # clean the database
-    biweeklybudget.models.base.Base.metadata.reflect(engine)
-    biweeklybudget.models.base.Base.metadata.drop_all(engine)
-    biweeklybudget.models.base.Base.metadata.create_all(engine)
-    # load the sample data
-    data_sess = scoped_session(
-        sessionmaker(autocommit=False, autoflush=False, bind=conn)
-    )
-    SampleDataLoader(data_sess).load()
-    data_sess.flush()
-    data_sess.commit()
-    data_sess.close()
-    # when we're done, close
-    conn.close()
+    s = time()
+    restore_mysqldump(dump_file_path, engine)
+    class_refresh_db_durations.append(time() - s)
 
 
 @pytest.fixture
@@ -208,6 +202,60 @@ def selenium(selenium):
 def chrome_options(chrome_options):
     chrome_options.add_argument('headless')
     return chrome_options
+
+
+def pytest_addoption(parser):
+    group = parser.getgroup("terminal reporting", "reporting", after="general")
+    group.addoption('--durations-file',
+                    action="store", type=str, default=None, metavar="P",
+                    help="write all durations as JSON to P")
+
+
+def pytest_terminal_summary(terminalreporter):
+    """Write all test durations to results/durations.json"""
+    fpath = terminalreporter.config.option.durations_file
+    if fpath is None:
+        return
+    tr = terminalreporter
+    dlist = []
+    for replist in tr.stats.values():
+        for rep in replist:
+            if hasattr(rep, 'duration'):
+                dlist.append(rep)
+    if not dlist:
+        return
+    dlist.sort(key=lambda x: x.duration)
+    dlist.reverse()
+    tr.write_sep("-", "wrote all test durations to: %s" % fpath)
+
+    result = []
+    for rep in dlist:
+        nodeid = rep.nodeid.replace("::()::", "::")
+        result.append([nodeid, rep.when, rep.duration])
+    with open(fpath, 'w') as fh:
+        fh.write(json.dumps({
+            'requests': result,
+            'class_refresh_db': class_refresh_db_durations
+        }))
+
+
+# next section from:
+# https://docs.pytest.org/en/latest/example/simple.html#\
+# incremental-testing-test-steps
+
+
+def pytest_runtest_makereport(item, call):
+    if "incremental" in item.keywords:
+        if call.excinfo is not None:
+            parent = item.parent
+            parent._previousfailed = item
+
+
+def pytest_runtest_setup(item):
+    if "incremental" in item.keywords:
+        previousfailed = getattr(item.parent, "_previousfailed", None)
+        if previousfailed is not None:
+            pytest.xfail("previous test failed (%s)" % previousfailed.name)
 
 
 """

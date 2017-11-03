@@ -48,17 +48,18 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.settings import PAY_PERIOD_START_DATE
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models import *
-import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 
 dt = dtnow()
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestPayPeriods(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/payperiods')
 
@@ -209,13 +210,12 @@ class TestFindPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestPayPeriodsIndex(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(
@@ -496,10 +496,11 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestPayPeriod(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(
             selenium,
@@ -529,13 +530,12 @@ class TestPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(
@@ -796,6 +796,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestCurrentPayPeriod(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -1269,6 +1270,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestMakeTransModal(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -1493,6 +1495,7 @@ class TestMakeTransModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestBudgetTransfer(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):
@@ -2136,6 +2139,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSkipScheduled(AcceptanceHelper):
 
     def test_00_inactivate_scheduled(self, testdb):

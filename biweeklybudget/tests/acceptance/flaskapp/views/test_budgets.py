@@ -47,7 +47,7 @@ from biweeklybudget.utils import dtnow
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestBudgets(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
@@ -102,9 +102,9 @@ class TestBudgets(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditPeriodic1(AcceptanceHelper):
+class TestBudgetModals(AcceptanceHelper):
 
-    def test_0_verify_db(self, testdb):
+    def test_00_budget_modal_verify_db(self, testdb):
         b = testdb.query(Budget).get(1)
         assert b is not None
         assert b.name == 'Periodic1'
@@ -114,7 +114,7 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert b.is_active is True
         assert b.is_income is False
 
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_01_budget_modal_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
         link.click()
@@ -141,7 +141,7 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-    def test_2_update_modal(self, base_url, selenium):
+    def test_02_budget_modal_update_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
@@ -182,7 +182,7 @@ class TestEditPeriodic1(AcceptanceHelper):
             'innerHTML') == '<a href="javascript:budgetModal(1, null)">' \
                             'EditedPeriodic1 (1)</a>'
 
-    def test_3_verify_db(self, testdb):
+    def test_03_budget_modal_verify_db(self, testdb):
         b = testdb.query(Budget).get(1)
         assert b is not None
         assert b.name == 'EditedPeriodic1'
@@ -192,12 +192,7 @@ class TestEditPeriodic1(AcceptanceHelper):
         assert b.is_active is False
         assert b.is_income is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditPeriodic2(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_10_populate_edit_periodic_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
         link.click()
@@ -224,12 +219,7 @@ class TestEditPeriodic2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditPeriodic3(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_11_populate_edit_periodic_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath(
             '//a[text()="Periodic3 Inactive (3)"]'
@@ -259,12 +249,7 @@ class TestEditPeriodic3(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditStanding1(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_12_populate_edit_standing_1_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
         link.click()
@@ -291,12 +276,7 @@ class TestEditStanding1(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditStanding2(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_13_populate_edit_standing_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
         link.click()
@@ -323,12 +303,7 @@ class TestEditStanding2(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditStanding3(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_14_populate_edit_standing_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath(
             '//a[text()="Standing3 Inactive (6)"]'
@@ -358,12 +333,7 @@ class TestEditStanding3(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestEditIncome(AcceptanceHelper):
-
-    def test_0_verify_db(self, testdb):
+    def test_20_income_verify_db(self, testdb):
         b = testdb.query(Budget).get(7)
         assert b is not None
         assert b.name == 'Income'
@@ -373,7 +343,7 @@ class TestEditIncome(AcceptanceHelper):
         assert b.is_active is True
         assert b.is_income is True
 
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_21_populate_income_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
         link.click()
@@ -399,7 +369,7 @@ class TestEditIncome(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id('budget_frm_income').is_selected()
 
-    def test_2_update_modal(self, base_url, selenium):
+    def test_22_update_income_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
@@ -440,7 +410,7 @@ class TestEditIncome(AcceptanceHelper):
                             'EditedIncome (7)</a> ' \
                             '<em class="text-success">(income)</em>'
 
-    def test_3_verify_db(self, testdb):
+    def test_23_verify_income_db(self, testdb):
         b = testdb.query(Budget).get(7)
         assert b is not None
         assert b.name == 'EditedIncome'
@@ -450,42 +420,33 @@ class TestEditIncome(AcceptanceHelper):
         assert b.is_active is False
         assert b.is_income is True
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestDirectURLPeriodic1(AcceptanceHelper):
-
-    def test_1_populate_modal(self, base_url, selenium):
+    def test_31_populate_direct_url_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets/1')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
-            'value') == 'Periodic1'
+            'value') == 'EditedPeriodic1'
         assert selenium.find_element_by_id(
             'budget_frm_type_periodic').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_type_standing').is_selected() is False
         assert selenium.find_element_by_id(
-            'budget_frm_description').get_attribute('value') == 'P1desc'
+            'budget_frm_description').get_attribute('value') == 'EditedP1desc'
         assert selenium.find_element_by_id(
-            'budget_frm_starting_balance').get_attribute('value') == '100'
+            'budget_frm_starting_balance').get_attribute('value') == '2345.67'
         assert selenium.find_element_by_id(
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element_by_id(
             'budget_frm_current_balance').get_attribute('value') == ''
         assert selenium.find_element_by_id(
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestAddStandingBudget(AcceptanceHelper):
-
-    def test_2_update_modal(self, base_url, selenium):
+    def test_41_add_standing_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
@@ -527,7 +488,7 @@ class TestAddStandingBudget(AcceptanceHelper):
             'innerHTML') == '<a href="javascript:budgetModal(8, null)">' \
                             'NewStanding (8)</a>'
 
-    def test_3_verify_db(self, testdb):
+    def test_41_add_standing_verify_db(self, testdb):
         b = testdb.query(Budget).get(8)
         assert b is not None
         assert b.name == 'NewStanding'
@@ -537,12 +498,7 @@ class TestAddStandingBudget(AcceptanceHelper):
         assert b.is_active is True
         assert b.is_income is False
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestAddIncomeBudget(AcceptanceHelper):
-
-    def test_2_update_modal(self, base_url, selenium):
+    def test_51_add_income_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
@@ -573,7 +529,7 @@ class TestAddIncomeBudget(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Budget 8 in database.'
+        assert x.text.strip() == 'Successfully saved Budget 9 in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_load_complete(selenium)
@@ -581,13 +537,13 @@ class TestAddIncomeBudget(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element_by_id('table-periodic-budgets')
         selems = self.tbody2elemlist(stable)
-        assert selems[1][1].get_attribute(
-            'innerHTML') == '<a href="javascript:budgetModal(8, null)">' \
-                            'NewIncome (8)</a> <em class="text-success">' \
+        assert selems[2][1].get_attribute(
+            'innerHTML') == '<a href="javascript:budgetModal(9, null)">' \
+                            'NewIncome (9)</a> <em class="text-success">' \
                             '(income)</em>'
 
-    def test_3_verify_db(self, testdb):
-        b = testdb.query(Budget).get(8)
+    def test_52_add_income_verify_db(self, testdb):
+        b = testdb.query(Budget).get(9)
         assert b is not None
         assert b.name == 'NewIncome'
         assert b.is_periodic is True
@@ -599,6 +555,7 @@ class TestAddIncomeBudget(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestBudgetTransfer(AcceptanceHelper):
 
     def test_1_verify_db(self, testdb):
@@ -742,6 +699,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestBudgetTransferStoP(AcceptanceHelper):
 
     def test_1_verify_db(self, testdb):

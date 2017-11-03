@@ -45,10 +45,11 @@ from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTrans(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
 
@@ -69,10 +70,11 @@ class TestSchedTrans(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTransDefault(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.dt = dtnow()
         self.get(selenium, base_url + '/scheduled')
@@ -246,7 +248,7 @@ class TestSchedTransDefault(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -317,7 +319,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestSchedTransMonthlyURL(AcceptanceHelper):
 
     def test_0_verify_db(self, testdb):
@@ -362,9 +364,10 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSchedTransDateInactive(AcceptanceHelper):
+@pytest.mark.incremental
+class TestSchedTransModal(AcceptanceHelper):
 
-    def test_0_verify_db(self, testdb):
+    def test_00_edit_date_inactive_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(4)
         assert t is not None
         assert t.description == 'ST4'
@@ -379,7 +382,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         assert t.notes == 'notesST4'
         assert t.is_active is False
 
-    def test_1_modal_from_url(self, base_url, selenium):
+    def test_01_edit_date_inactive_modal_from_url(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled/4')
         modal, title, body = self.get_modal_parts(selenium)
@@ -407,7 +410,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'sched_frm_active').is_selected() is False
 
-    def test_2_modal_edit(self, base_url, selenium):
+    def test_02_edit_date_inactive_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled/4')
         modal, title, body = self.get_modal_parts(selenium)
@@ -448,7 +451,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         assert texts[2][0] == 'yes'
         assert texts[2][4] == 'ST4edited'
 
-    def test_3_verify_db(self, testdb):
+    def test_03_edit_date_inactive_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(4)
         assert t is not None
         assert t.description == 'ST4edited'
@@ -463,12 +466,7 @@ class TestSchedTransDateInactive(AcceptanceHelper):
         assert t.notes == 'notesST4'
         assert t.is_active is True
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSchedTransAddDate(AcceptanceHelper):
-
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_10_add_date_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
@@ -521,7 +519,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
         texts = [y[4] for y in self.tbody2textlist(table)]
         assert 'NewST7' in texts
 
-    def test_3_verify_db(self, testdb):
+    def test_13_add_date_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(7)
         assert t is not None
         assert t.description == 'NewST7'
@@ -535,12 +533,7 @@ class TestSchedTransAddDate(AcceptanceHelper):
         assert t.notes == 'foo bar baz'
         assert t.is_active is True
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSchedTransAddMonthly(AcceptanceHelper):
-
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_21_add_monthly_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
@@ -549,7 +542,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
-        desc.send_keys('NewST7Monthly')
+        desc.send_keys('NewST8Monthly')
         _type = body.find_element_by_id('sched_frm_type_monthly')
         _type.click()
         day_input = body.find_element_by_id('sched_frm_day_of_month')
@@ -573,7 +566,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 8 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -581,12 +574,12 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
         texts = [y[4] for y in self.tbody2textlist(table)]
-        assert 'NewST7Monthly' in texts
+        assert 'NewST8Monthly' in texts
 
-    def test_3_verify_db(self, testdb):
-        t = testdb.query(ScheduledTransaction).get(7)
+    def test_23_add_monthly_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(8)
         assert t is not None
-        assert t.description == 'NewST7Monthly'
+        assert t.description == 'NewST8Monthly'
         assert t.num_per_period is None
         assert t.date is None
         assert t.day_of_month == 4
@@ -596,12 +589,7 @@ class TestSchedTransAddMonthly(AcceptanceHelper):
         assert t.notes == 'foo bar baz'
         assert t.is_active is True
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSchedTransAddPerPeriod(AcceptanceHelper):
-
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_31_add_per_period_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
@@ -610,7 +598,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
-        desc.send_keys('NewST7PerPeriod')
+        desc.send_keys('NewST9PerPeriod')
         _type = body.find_element_by_id('sched_frm_type_per_period')
         _type.click()
         date_input = body.find_element_by_id('sched_frm_num_per_period')
@@ -634,7 +622,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 9 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -642,12 +630,12 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
         texts = [y[4] for y in self.tbody2textlist(table)]
-        assert 'NewST7PerPeriod' in texts
+        assert 'NewST9PerPeriod' in texts
 
-    def test_3_verify_db(self, testdb):
-        t = testdb.query(ScheduledTransaction).get(7)
+    def test_33_add_per_period_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(9)
         assert t is not None
-        assert t.description == 'NewST7PerPeriod'
+        assert t.description == 'NewST9PerPeriod'
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
@@ -657,12 +645,7 @@ class TestSchedTransAddPerPeriod(AcceptanceHelper):
         assert t.notes == 'foo bar baz'
         assert t.is_active is True
 
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
-class TestSchedTransAddIncome(AcceptanceHelper):
-
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_41_add_income_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
@@ -671,7 +654,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
-        desc.send_keys('NewST8PerPeriod')
+        desc.send_keys('NewST10PerPeriod')
         _type = body.find_element_by_id('sched_frm_type_per_period')
         _type.click()
         date_input = body.find_element_by_id('sched_frm_num_per_period')
@@ -695,7 +678,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved ScheduledTransaction 7 ' \
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 10 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -703,12 +686,12 @@ class TestSchedTransAddIncome(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('table-scheduled-txn')
         texts = [y[4] for y in self.tbody2textlist(table)]
-        assert 'NewST8PerPeriod' in texts
+        assert 'NewST10PerPeriod' in texts
 
-    def test_3_verify_db(self, testdb):
-        t = testdb.query(ScheduledTransaction).get(7)
+    def test_43_add_income_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).get(10)
         assert t is not None
-        assert t.description == 'NewST8PerPeriod'
+        assert t.description == 'NewST10PerPeriod'
         assert t.num_per_period == 1
         assert t.date is None
         assert t.day_of_month is None
@@ -718,7 +701,7 @@ class TestSchedTransAddIncome(AcceptanceHelper):
         assert t.notes == 'foo bar baz'
         assert t.is_active is True
 
-    def test_4_table(self, base_url, selenium):
+    def test_44_add_income_table(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         table = selenium.find_element_by_id('table-scheduled-txn')
@@ -729,12 +712,12 @@ class TestSchedTransAddIncome(AcceptanceHelper):
             'per period',
             '1 per period',
             '$123.45',
-            'NewST8PerPeriod',
+            'NewST10PerPeriod',
             'BankOne (1)',
             'Income (income) (7)'
         ]
         assert elems[1][4].get_attribute('innerHTML') == '' \
-            '<a href="javascript:schedModal(7, mytable)">NewST8PerPeriod</a>'
+            '<a href="javascript:schedModal(10, mytable)">NewST10PerPeriod</a>'
         assert elems[1][5].get_attribute('innerHTML') == '' \
             '<a href="/accounts/1">BankOne (1)</a>'
         assert elems[1][6].get_attribute('innerHTML') == '' \

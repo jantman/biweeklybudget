@@ -48,8 +48,8 @@ from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
-import biweeklybudget.models.base  # noqa
 from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -66,6 +66,7 @@ pbm = 'biweeklybudget.biweeklypayperiod'
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
     def find_income_trans_id(self, db):
@@ -213,6 +214,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
@@ -464,13 +466,12 @@ class TestTransFromSchedTrans(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestSums(AcceptanceHelper):
 
-    def test_0_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_0_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(

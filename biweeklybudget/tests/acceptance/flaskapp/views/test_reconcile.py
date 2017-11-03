@@ -51,7 +51,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import *
-import biweeklybudget.models.base  # noqa
+from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 from biweeklybudget.tests.conftest import engine
 
 dnow = dtnow()
@@ -167,10 +167,11 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
 class TestReconcile(AcceptanceHelper):
 
     @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium, testflask, refreshdb):  # noqa
+    def get_page(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
 
@@ -209,11 +210,9 @@ class ReconcileHelper(AcceptanceHelper):
         r = json.loads(res)
         return {int(x): r[x] for x in r}
 
-    def test_00_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_00_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -473,6 +472,7 @@ class ReconcileHelper(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestColumns(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
@@ -604,6 +604,7 @@ class TestColumns(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
@@ -811,6 +812,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransactionEditModal(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -910,6 +912,7 @@ class TestTransactionEditModal(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestDragLimitations(ReconcileHelper):
 
     def test_06_success(self, base_url, selenium):
@@ -1144,6 +1147,7 @@ class TestDragLimitations(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1230,6 +1234,7 @@ class TestDragAndDropReconcile(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestUIReconcileMulti(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1313,6 +1318,7 @@ class TestUIReconcileMulti(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestReconcileBackend(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1424,6 +1430,7 @@ class TestReconcileBackend(ReconcileHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestOFXMakeTrans(AcceptanceHelper):
 
     def get_reconciled(self, driver):
@@ -1443,11 +1450,9 @@ class TestOFXMakeTrans(AcceptanceHelper):
         r = json.loads(res)
         return {int(x): r[x] for x in r}
 
-    def test_00_clean_db(self, testdb):
-        # clean the database
-        biweeklybudget.models.base.Base.metadata.reflect(engine)
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+    def test_00_clean_db(self, dump_file_path):
+        # clean the database; empty schema
+        restore_mysqldump(dump_file_path, engine, with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -1683,6 +1688,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
 class TestTransReconcileNoOfx(ReconcileHelper):
 
     def test_06_transactions_column(self, base_url, selenium):
