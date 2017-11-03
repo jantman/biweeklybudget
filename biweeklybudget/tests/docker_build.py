@@ -82,7 +82,7 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
-FROM python:3.6.3-alpine3.4
+FROM python:3.6.3-alpine3.6
 
 ARG version
 USER root
@@ -478,12 +478,6 @@ class DockerImageBuilder(object):
             {
                 'cmd': '/app/bin/loaddata --help',
                 'output': 'Load initial data to DB'
-            },
-            {
-                'cmd': 'python -c "import locale; locale.setlocale('
-                       'locale.LC_ALL, \'\'); print(locale.currency('
-                       '1234.56, grouping=True))"',
-                'output': '$1,234.56'
             }
         ]
         for cmd_info in test_cmds:
