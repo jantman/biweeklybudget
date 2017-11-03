@@ -143,7 +143,7 @@ CMD ["/app/bin/entrypoint.sh"]
 class DockerImageBuilder(object):
 
     image_name = 'jantman/biweeklybudget'
-    _phantomjs_version = '2.1.1'
+    _phantomjs_version = '2.0.0'
 
     def __init__(self, toxinidir, distdir):
         """
