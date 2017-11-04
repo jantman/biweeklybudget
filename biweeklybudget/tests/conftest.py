@@ -162,19 +162,17 @@ def testflask():
     This is a version of pytest-flask's live_server fixture, modified for
     session use.
     """
-    if 'BIWEEKLYBUDGET_TEST_BASE_URL' in os.environ:
-        return None
-    # Bind to an open port
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('', 0))
-    port = s.getsockname()[1]
-    s.close()
-
-    from biweeklybudget.flaskapp.app import app  # noqa
-    server = LiveServer(app, port)
-    server.start()
-    yield(server)
-    server.stop()
+    if 'BIWEEKLYBUDGET_TEST_BASE_URL' not in os.environ:
+        # Bind to an open port
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('', 0))
+        port = s.getsockname()[1]
+        s.close()
+        from biweeklybudget.flaskapp.app import app  # noqa
+        server = LiveServer(app, port)
+        server.start()
+        yield(server)
+        server.stop()
 
 
 @pytest.fixture(scope="session")
