@@ -162,6 +162,8 @@ def testflask():
     This is a version of pytest-flask's live_server fixture, modified for
     session use.
     """
+    if 'BIWEEKLYBUDGET_TEST_BASE_URL' in os.environ:
+        return None
     # Bind to an open port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', 0))
@@ -180,6 +182,9 @@ def base_url(testflask):
     """
     Simple fixture to return ``testflask`` base URL
     """
+    url = os.environ.get('BIWEEKLYBUDGET_TEST_BASE_URL', None)
+    if url is not None:
+        return url
     return testflask.url()
 
 
