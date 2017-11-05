@@ -14,6 +14,7 @@ Unreleased Changes
 * `Issue #138 <https://github.com/jantman/biweeklybudget/issues/138>`_ - Improvements to build process
 
   * Run acceptance tests against the built Docker container during runs of the ``docker`` tox environment / ``tests/docker_build.py``.
+  * Reminder to sign git release tags
 
 0.5.0 (2017-10-28)
 ------------------
