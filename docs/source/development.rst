@@ -89,39 +89,11 @@ Running Acceptance Tests Against Docker
 +++++++++++++++++++++++++++++++++++++++
 
 The acceptance tests have a "hidden" hook to run against an already-running Flask application,
-such as testing the Docker containers. **Be warned** that the acceptance tests modify data,
+run during the ``docker`` tox environment build. **Be warned** that the acceptance tests modify data,
 so they should never be run against a real database. This hook is controlled via the
 ``BIWEEKLYBUDGET_TEST_BASE_URL`` environment variable. If this variable is set, the acceptance
 tests will not start a Flask server, but will instead use the specified URL. The URL must not
 end with a trailing slash.
-
-An example of testing a recently-built Docker container is below:
-
-```bash
-tox -e docker
-# lots of output; ending with something like: Image "<DOCKER_TAG>" built and tested.
-# get a timestamp to use in the container names
-TS=$(date +%s)
-# run mysql container
-docker run -d --name biweeklybudget-mariadb-${TS} -e MYSQL_ROOT_PASSWORD=root -p 3306 mariadb:5.5.56
-# wait a few seconds for the DB to start up. If this next command fails, wait a bit and try again
-docker exec -it biweeklybudget-mariadb-${TS} /usr/bin/mysql -uroot -proot -e "CREATE DATABASE budgetfoo;"
-# Find the port number (<DockerPort>) that the MySQL container is bound to on the host
-export DB_CONNSTRING='mysql+pymysql://root:root@127.0.0.1:<DockerPort>/budgetfoo?charset=utf8mb4'
-# run docker container
-docker run -d --name biweeklybudget-test-${TS} -e DB_CONNSTRING='mysql+pymysql://root:root@mysql:3306/budgetfoo?charset=utf8mb4' --link biweeklybudget-mariadb-${TS}:mysql -p 80 jantman/biweeklybudget:<DOCKER_TAG>
-docker ps
-# in the docker ps output, find the host port (<DockerPort>) that is bound to port 80 on the biweeklybudget container
-export BIWEEKLYBUDGET_TEST_BASE_URL=http://127.0.0.1:<DockerPort>
-# if you want, run `docker logs -f biweeklybudget-test-${TS}` in another shell
-tox -e acceptance36
-# when the tests finish:
-docker stop biweeklybudget-test-${TS} biweeklybudget-mariadb-${TS}
-docker rm biweeklybudget-test-${TS} biweeklybudget-mariadb-${TS}
-```
-
-To ensure that the tests are running against the appropriate container, you may want
-to watch the Docker container's logs during the test run.
 
 .. _development.alembic:
 
