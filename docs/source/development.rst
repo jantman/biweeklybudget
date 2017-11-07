@@ -160,8 +160,7 @@ Release Checklist
 2. Verify whether or not DB migrations are needed. If they are, ensure they've been created, tested and verified.
 3. Confirm that there are CHANGES.rst entries for all major changes.
 4. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
-5. Run the Docker image build and tests locally: ``tox -e docker``. If the pull request includes changes to the Dockerfile
-   or the container build process, run acceptance tests against the newly-built container as described above.
+5. Run the Docker image build and tests locally: ``tox -e docker``.
 6. Ensure that Travis tests passing in all environments.
 7. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
 8. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
