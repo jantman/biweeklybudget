@@ -43,15 +43,15 @@ import os
 import sys
 import logging
 import subprocess
-import re
-from datetime import datetime
-from biweeklybudget.version import VERSION as _VERSION
-from distutils.spawn import find_executable
+import json
+from github_releaser import GithubReleaser
+from release_utils import (
+    StepRegistry, prompt_user, BaseStep, fail, is_git_dirty
+)
+from biweeklybudget.version import VERSION
 
-try:
-    from github3 import login
-except ImportError:
-    raise SystemExit('ERROR: you must "pip install github3.py==1.0.0a4"')
+if sys.version_info[0:2] != (3, 6):
+    raise SystemExit('ERROR: release.py can only run under py 3.6')
 
 FORMAT = "[%(levelname)s %(filename)s:%(lineno)s - %(name)s.%(funcName)s() ] " \
          "%(message)s"
@@ -64,106 +64,187 @@ for n in ['urllib3', 'urllib', 'requests', 'git', 'github3']:
     l.propagate = True
 
 
-class GithubReleaser(object):
+steps = StepRegistry()
 
-    head_re = re.compile(r'^## (\d+\.\d+\.\d+).*')
 
-    def __init__(self):
-        self._pandoc = find_executable('pandoc')
-        if self._pandoc is None:
-            sys.stderr.write("ERROR: pandoc not found on PATH.\n")
+@steps.register(1)
+class InitialChecks(BaseStep):
+
+    def run(self):
+        if not prompt_user('Have you opened an issue for the release?'):
+            fail('You must open an issue for the release.')
+        b = self._current_branch
+        if b == 'master':
+            fail('release.py cannot be run from master for a new release')
+        if not prompt_user(
+            'Is the current branch (%s) the release branch?' % b
+        ):
+            fail('You must run this script from the release branch.')
+        if not prompt_user(
+            'Have you verified whether or not DB migrations are needed, and '
+            'if they are, ensure they’ve been created, tested and verified?'
+        ):
+            fail('You must verify migrations first.')
+        if not prompt_user(
+            'Have you confirmed that there are CHANGES.rst entries for all '
+            'major changes?'
+        ):
+            fail('Please check CHANGES.rst before releasing code.')
+        if not prompt_user(
+            'Is the current version (%s) the version being released?' % VERSION
+        ):
+            fail(
+                'Please increment the version in biweeklybudget/version.py '
+                'before running the release script.'
+            )
+        if not prompt_user(
+            'Is the test coverage at least as high as the last release, and '
+            'are there acceptance tests for all non-trivial changes?'
+        ):
+            fail('Test coverage!!!')
+
+
+@steps.register(2)
+class RegenerateScreenshots(BaseStep):
+
+    def run(self):
+        self._run_tox_env('screenshots')
+        self._ensure_committed()
+
+
+@steps.register(3)
+class RegenerateJsdoc(BaseStep):
+
+    def run(self):
+        self._run_tox_env('jsdoc')
+        self._ensure_committed()
+
+
+@steps.register(4)
+class RegenerateDocs(BaseStep):
+
+    def run(self):
+        self._run_tox_env('docs')
+        self._ensure_committed()
+
+
+@steps.register(5)
+class BuildDocker(BaseStep):
+
+    def run(self):
+        self._run_tox_env('docker')
+        self._ensure_committed()
+
+
+@steps.register(6)
+class EnsurePushed(BaseStep):
+
+    def run(self):
+        self._ensure_pushed()
+
+
+@steps.register(7)
+class GistReleaseNotes(BaseStep):
+
+    def run(self):
+        """
+        Run dev/release.py gist to convert the CHANGES.rst entry for the current version to Markdown and upload it as a Github Gist. View the gist and ensure that the Markdown rendered properly and all links are valid. Iterate on this until the rendered version looks correct.
+        """
+        self._gh.do_something()
+
+
+@steps.register(8)
+class ConfirmTravisAndCoverage(BaseStep):
+
+    def run(self):
+        if not prompt_user('Are Travis tests passing in all envs?'):
+            fail('Travis tests must pass in all environments')
+        if not prompt_user(
+            'Is the test coverage at least as high as the last release, and '
+            'are there acceptance tests for all non-trivial changes?'
+        ):
+            fail('Test coverage!!!')
+
+
+# 12. Confirm that README.rst renders correctly on GitHub.
+# 13. Upload to testpypi and verify
+# 14. Create PR; wait for build; merge
+# 15. Tag release (signed) and push
+# 16. upload
+# 17. GitHub release
+# 18. Build and push Docker
+# 19. make sure GH issues closed; readthedocs build
+
+class BwbReleaseAutomator(object):
+
+    def __init__(self, savepath):
+        self._savepath = savepath
+        logger.info('Release step/position save path: %s', savepath)
+        self.gh = GithubReleaser()
+
+    def run(self):
+        if self.gh.get_tag(VERSION) != (None, None):
+            logger.error(
+                'Version %s is already released on GitHub. Either you need to '
+                'increment the version number in biweeklybudget/version.py or '
+                'the release is complete.', VERSION
+            )
             raise SystemExit(1)
-        self._gh_token = os.environ.get('GITHUB_TOKEN', None)
-        if self._gh_token is None:
-            sys.stderr.write("ERROR: GITHUB_TOKEN env var must be set\n")
-            raise SystemExit(1)
-        self._gh = login(token=self._gh_token)
-        self._repo = self._gh.repository('jantman', 'biweeklybudget')
+        is_git_dirty(raise_on_dirty=True)
+        last_step = self._last_step
+        for stepnum in steps.step_numbers:
+            if stepnum <= last_step:
+                logger.debug('Skipping step %d - already completed', stepnum)
+                continue
+            cls = steps.step(stepnum)
+            logger.info('Running step %d (%s)', stepnum, cls.__name__)
+            cls(self.gh).run()
+            self._record_successful_step(stepnum)
+        logger.info('DONE!')
+        logger.debug('Removing: %s', self._savepath)
+        os.unlink(self._savepath)
 
-    def run(self, action):
-        logger.info('Github Releaser running action: %s', action)
-        logger.info('Current biweeklybudget version: %s', _VERSION)
-        md = self._get_markdown()
-        print("Markdown:\n%s\n" % md)
+    @property
+    def _last_step(self):
+        """
+        If ``self._savepath`` doesn't exist, can't be read as JSON, or doesn't
+        match ``VERSION``, return 0. Otherwise, return the step which that file
+        lists as the last-run step for this release.
+
+        :return: last-run step from the release or 0
+        :rtype: int
+        """
+        if not os.path.exists(self._savepath):
+            return 0
         try:
-            raw_input(
-                'Does this look right? <Enter> to continue or Ctrl+C otherwise'
-            )
+            with open(self._savepath, 'r') as fh:
+                j = json.loads(fh.read())
         except Exception:
-            input(
-                'Does this look right? <Enter> to continue or Ctrl+C otherwise'
+            logger.warning(
+                'Could not read or JSON-deserialize %s', self._savepath
             )
-        if action == 'release':
-            self._release(md)
-        else:
-            self._gist(md)
+            return 0
+        if j.get('version', '') != VERSION:
+            return 0
+        return j.get('last_successful_step', 0)
 
-    def _release(self, markdown):
-        for rel in self._repo.releases():
-            if rel.tag_name == _VERSION:
-                logger.error('Error: Release already present for %s: "%s" (%s)',
-                             _VERSION, rel.name, rel.html_url)
-                raise SystemExit(1)
-        name = '%s released %s' % (
-            _VERSION, datetime.now().strftime('%Y-%m-%d')
-        )
-        logger.info('Creating release: %s', name)
-        r = self._repo.create_release(
-            _VERSION,
-            name=name,
-            body=markdown,
-            draft=False,
-            prerelease=False
-        )
-        logger.info('Created release: %s', r.html_url)
-
-    def _gist(self, markdown):
-        logger.info('Creating private gist...')
-        g = self._gh.create_gist(
-            'biweeklybudget %s release notes test' % _VERSION,
-            {
-                'release_notes.md': {'content': markdown}
-            },
-            public=False
-        )
-        logger.info('Created gist: %s', g.html_url)
-
-    def _get_markdown(self):
-        fpath = os.path.abspath(os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            '..',
-            'CHANGES.rst'
-        ))
-        cmd = [
-            self._pandoc,
-            '-f', 'rst',
-            '-t', 'markdown',
-            '--normalize',
-            '--wrap=none',
-            '--atx-headers',
-            fpath
-        ]
-        logger.debug('Running: %s', cmd)
-        markdown = subprocess.check_output(cmd)
-        buf = ''
-        in_ver = False
-        for line in markdown.split("\n"):
-            if not in_ver and line.startswith('## %s ' % _VERSION):
-                in_ver = True
-            elif in_ver and line.startswith('## '):
-                return buf
-            elif in_ver:
-                buf += line + "\n"
-        return buf
+    def _record_successful_step(self, stepnum):
+        with open(self._savepath, 'w') as fh:
+            fh.write(json.dumps({
+                'version': VERSION,
+                'last_successful_step': stepnum
+            }))
+        logger.debug('Updated last_successful_step to %d', stepnum)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.stderr.write("USAGE: release.py <gist|release>\n")
-        raise SystemExit(1)
-
-    action = sys.argv[1]
-    if action not in ['gist', 'release']:
-        sys.stderr.write("USAGE: release.py <gist|release>\n")
-        raise SystemExit(1)
-    GithubReleaser().run(action)
+    BwbReleaseAutomator(
+        os.path.abspath(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                '..',
+                '.release_position.json'
+            )
+        )
+    ).run()
+    raise NotImplementedError('Uncomment is_git_dirty call in run()')

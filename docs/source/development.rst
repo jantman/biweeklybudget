@@ -159,15 +159,16 @@ Release Checklist
 1. Open an issue for the release; cut a branch off master for that issue.
 2. Verify whether or not DB migrations are needed. If they are, ensure they've been created, tested and verified.
 3. Confirm that there are CHANGES.rst entries for all major changes.
-4. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
-5. Run the Docker image build and tests locally: ``tox -e docker``.
-6. Ensure that Travis tests passing in all environments.
-7. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
-8. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
-9. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
-10. Run ``dev/release.py gist`` to convert the CHANGES.rst entry for the current version to Markdown and upload it as a Github Gist. View the gist and ensure that the Markdown rendered properly and all links are valid. Iterate on this until the rendered version looks correct.
-11. Confirm that README.rst renders correctly on GitHub.
-12. Upload package to testpypi:
+4. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst.
+5. Rebuild documentation and javascript documentation locally: ``tox -e jsdoc,docs``. Commit any changes.
+6. Run the Docker image build and tests locally: ``tox -e docker``.
+7. Ensure that Travis tests passing in all environments.
+8. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
+9. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
+10. Commit any changes and push to GitHub.
+11. Run ``dev/release.py gist`` to convert the CHANGES.rst entry for the current version to Markdown and upload it as a Github Gist. View the gist and ensure that the Markdown rendered properly and all links are valid. Iterate on this until the rendered version looks correct.
+12. Confirm that README.rst renders correctly on GitHub.
+13. Upload package to testpypi:
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
@@ -175,24 +176,24 @@ Release Checklist
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
 
-13. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
-14. Tag the release in Git (using a signed tag), push tag to GitHub:
+14. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
+15. Tag the release in Git (using a signed tag), push tag to GitHub:
 
    * tag the release with a signed tag: ``git tag -s -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
    * verify the signature: ``git tag -v X.Y.Z``
    * push the tag to GitHub: ``git push origin X.Y.Z``
 
-15. Upload package to live pypi:
+16. Upload package to live pypi:
 
     * ``twine upload dist/*``
 
-16. Run ``dev/release.py release`` to create the release on GitHub.
-17. Build and push the new Docker image:
+17. Run ``dev/release.py release`` to create the release on GitHub.
+18. Build and push the new Docker image:
 
    * Check out the git tag: ``git checkout X.Y.Z``
    * Build the Docker image: ``DOCKER_BUILD_VER=X.Y.Z tox -e docker``
    * Follow the instructions from that script to push the image to the
      Docker Hub and tag a "latest" version.
 
-18. make sure any GH issues fixed in the release were closed.
-19. Log in to readthedocs.org and enable building of the release tag. You may need to re-run another build to get the tag to be picked up.
+19. make sure any GH issues fixed in the release were closed.
+20. Log in to readthedocs.org and enable building of the release tag. You may need to re-run another build to get the tag to be picked up.
