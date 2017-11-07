@@ -166,8 +166,9 @@ Release Checklist
 7. Ensure that test coverage is no less than the last release, and that there are acceptance tests for any non-trivial changes.
 8. If there have been any major visual or functional changes to the UI, regenerate screenshots via ``tox -e screenshots``.
 9. Increment the version number in biweeklybudget/version.py and add version and release date to CHANGES.rst, then push to GitHub.
-10. Confirm that README.rst renders correctly on GitHub.
-11. Upload package to testpypi:
+10. Run ``dev/release.py gist`` to convert the CHANGES.rst entry for the current version to Markdown and upload it as a Github Gist. View the gist and ensure that the Markdown rendered properly and all links are valid. Iterate on this until the rendered version looks correct.
+11. Confirm that README.rst renders correctly on GitHub.
+12. Upload package to testpypi:
 
    * Make sure your ~/.pypirc file is correct (a repo called ``test`` for https://testpypi.python.org/pypi)
    * ``rm -Rf dist``
@@ -175,22 +176,24 @@ Release Checklist
    * ``twine upload -r test dist/*``
    * Check that the README renders at https://testpypi.python.org/pypi/biweeklybudget
 
-12. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
-13. Tag the release in Git, push tag to GitHub:
+13. Create a pull request for the release to be merged into master. Upon successful Travis build, merge it.
+14. Tag the release in Git (using a signed tag), push tag to GitHub:
 
-   * tag the release. for now the message is quite simple: ``git tag -s -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
+   * tag the release with a signed tag: ``git tag -s -a X.Y.Z -m 'X.Y.Z released YYYY-MM-DD'``
+   * verify the signature: ``git tag -v X.Y.Z``
    * push the tag to GitHub: ``git push origin X.Y.Z``
 
-14. Upload package to live pypi:
+15. Upload package to live pypi:
 
     * ``twine upload dist/*``
 
-15. Build and push the new Docker image:
+16. Run ``dev/release.py release`` to create the release on GitHub.
+17. Build and push the new Docker image:
 
    * Check out the git tag: ``git checkout X.Y.Z``
    * Build the Docker image: ``DOCKER_BUILD_VER=X.Y.Z tox -e docker``
    * Follow the instructions from that script to push the image to the
      Docker Hub and tag a "latest" version.
 
-16. make sure any GH issues fixed in the release were closed.
-17. Log in to readthedocs.org and enable building of the release tag. You may need to re-run another build to get the tag to be picked up.
+18. make sure any GH issues fixed in the release were closed.
+19. Log in to readthedocs.org and enable building of the release tag. You may need to re-run another build to get the tag to be picked up.

@@ -15,6 +15,7 @@ Unreleased Changes
 
   * Run acceptance tests against the built Docker container during runs of the ``docker`` tox environment / ``tests/docker_build.py``.
   * Reminder to sign git release tags
+  * Add ``dev/release.py`` script to handle GitHub releases.
 
 0.5.0 (2017-10-28)
 ------------------
