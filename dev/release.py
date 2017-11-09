@@ -44,10 +44,12 @@ import sys
 import logging
 import json
 import subprocess
+import re
 import requests
 from shutil import rmtree
 from time import sleep
 from copy import deepcopy
+from datetime import datetime
 from github_releaser import GithubReleaser
 from release_utils import (
     StepRegistry, prompt_user, BaseStep, fail, is_git_dirty, TravisChecker
@@ -75,8 +77,6 @@ steps = StepRegistry()
 class InitialChecks(BaseStep):
 
     def run(self):
-        if not prompt_user('Have you opened an issue for the release?'):
-            fail('You must open an issue for the release.')
         b = self._current_branch
         if b == 'master':
             fail('release.py cannot be run from master for a new release')
@@ -162,6 +162,7 @@ class GistReleaseNotes(BaseStep):
             url = self._gist(md)
             logger.info('Gist URL: <%s>', url)
             result = prompt_user('Does the gist at <%s> look right?' % url)
+        self._ensure_pushed()
 
 
 @steps.register(8)
@@ -170,10 +171,10 @@ class ConfirmTravisAndCoverage(BaseStep):
     def run(self):
         commit = self._current_commit
         logger.info('Polling for finished TravisCI build of %s', commit)
-        build = self._travis.poll_for_build(commit)
+        build = self._travis.commit_latest_build_status(commit)
         while build is None or build.finished is False:
             sleep(10)
-            build = self._travis.poll_for_build(commit)
+            build = self._travis.commit_latest_build_status(commit)
         logger.info('Travis build finished')
         if not build.passed:
             fail('Travis build %s (%s) did not pass. Please fix build failures '
@@ -240,11 +241,11 @@ class TestPyPI(BaseStep):
             )
             fail('%s failed.' % ' '.join(cmd))
         logger.info('Package generated and uploaded to Test PyPI.')
-        res = self.pypi_has_version(test=True)
+        res = self.pypi_has_version(VERSION, test=True)
         while not res:
             logger.info('Waiting for new version to show up on TestPyPI...')
             sleep(10)
-            res = self.pypi_has_version(test=True)
+            res = self.pypi_has_version(VERSION, test=True)
         logger.info(
             'Package is live on Test PyPI. URL: <https://testpypi.python.org/'
             'pypi/biweeklybudget>'
@@ -252,27 +253,220 @@ class TestPyPI(BaseStep):
         if not prompt_user('Does the Readme at the above URL render properly?'):
             fail('Please fix the README and then re-run.')
 
-    def pypi_has_version(self, test=False):
-        host = 'pypi'
-        if test:
-            host = 'testpypi'
-        url = 'https://%s.python.org/pypi/biweeklybudget/json' % host
-        try:
-            r = requests.get(url)
-            if r.json()['info']['version'] == VERSION:
-                return True
-            return False
-        except Exception:
-            logger.warning('Exception getting JSON from %s', url, exc_info=True)
-        return False
+
+@steps.register(11)
+class PullRequest(BaseStep):
+
+    def run(self):
+        pr_num = self.has_pr()
+        if pr_num is None:
+            pr_num = self.create_pr()
+        self.wait_for_travis(pr_num)
+        self.wait_for_merge(pr_num)
+
+    def has_pr(self):
+        repo = self._gh._repo
+        branch = self._current_branch
+        logger.debug('Looking for existing PR for %s into master', branch)
+        for pr in repo.pull_requests(
+            state='open', head='jantman:%s' % branch, base='master'
+        ):
+            if str(pr.head.user) != 'jantman':
+                continue
+            if pr.head.ref == branch:
+                logger.debug('Found PR for %s: PR #%s', branch, pr.number)
+                return pr.number
+        logger.debug('No existing PR for branch')
+        return None
+
+    def create_pr(self):
+        branch = self._current_branch
+        logger.debug('Creating PR for %s into master', branch)
+        pull = self._gh._repo.create_pull(
+            'fixes #%s - %s release' % (self._release_issue_num, VERSION),
+            'master',
+            'jantman:%s' % branch,
+            body='%s release' % VERSION
+        )
+        if pull is None:
+            fail('ERROR: Could not create PR for release')
+        logger.info('Opened PR for %s into master; PR #%s', branch, pull.number)
+        return pull.number
+
+    def wait_for_travis(self, pr_num):
+        logger.info('Waiting for Travis PR build to complete...')
+        pr = self._gh._repo.pull_request(pr_num)
+        headsha = pr.head.sha
+        while True:
+            for s in self._gh._repo.statuses(sha=headsha):
+                if s.context == 'continuous-integration/travis-ci/pr':
+                    logger.info(
+                        'Last TravisCI PR status: %s <%s> (at %s)',
+                        s.state, s.target_url, s.updated_at
+                    )
+                    if s.state == 'success':
+                        return True
+            logger.debug('No successful TravisCI PR build; trying again in 15s')
+            sleep(15)
+
+    def wait_for_merge(self, pr_num):
+        pull = self._gh._repo.pull_request(pr_num)
+        logger.info('Polling state of PR #%s (<%s>)', pr_num, pull.html_url)
+        while not pull.is_merged():
+            logger.info(
+                'PR state is: %s; checking for merge again in 15s', pull.state
+            )
+            sleep(15)
+            pull = pull.refresh()
+        logger.info('OK; PR %s is merged to master', pr_num)
 
 
-# 14. Create PR; wait for build; merge
-# 15. Tag release (signed) and push
-# 16. upload
-# 17. GitHub release
-# 18. Build and push Docker
-# 19. make sure GH issues closed; readthedocs build
+@steps.register(12)
+class WaitForTag(BaseStep):
+
+    def run(self):
+        input(
+            "Please run: git tag -s -a %s -m '%s released %s' && git tag -v "
+            "%s && git push origin %s\nand then press any key." % (
+                VERSION, VERSION, datetime.now().strftime('%Y-%m-%d'),
+                VERSION, VERSION
+            )
+        )
+        self._wait_for_tag(VERSION)
+
+    def _wait_for_tag(self, tagname):
+        logger.info('Waiting for tag to show up on GitHub...')
+        while True:
+            for t in self._gh._repo.tags():
+                if t.name == tagname:
+                    logger.info('GitHub has %s tag.', tagname)
+                    return
+
+
+@steps.register(13)
+class UploadToPyPI(BaseStep):
+
+    def run(self):
+        projdir = self.projdir
+        if not prompt_user('Ready to upload to PyPI?'):
+            fail('Not ready to upload to PyPI.')
+        env = deepcopy(os.environ)
+        env['PATH'] = self._fixed_path(projdir)
+        cmd = ['twine', 'upload', 'dist/*']
+        logger.info(
+            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+        )
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=projdir, timeout=1800, env=env, shell=True
+        )
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: command exited %d:\n%s',
+                res.returncode, res.stdout.decode()
+            )
+            fail('%s failed.' % ' '.join(cmd))
+        logger.info(
+            'Package generated and uploaded to live/production PyPI.')
+        res = self.pypi_has_version(VERSION)
+        while not res:
+            logger.info(
+                'Waiting for new version to show up on PyPI...')
+            sleep(10)
+            res = self.pypi_has_version(VERSION)
+        logger.info('Package is live on PyPI.')
+
+
+@steps.register(14)
+class DoGitHubRelease(BaseStep):
+
+    def run(self):
+        md = self._gh._get_markdown()
+        print("Markdown:\n%s\n" % md)
+        if not prompt_user('Does this look right?'):
+            fail('Changelog apparently does not look right.')
+        self._gh._release(md)
+
+
+@steps.register(15)
+class BuildAndPushDocker(BaseStep):
+
+    def run(self):
+        logger.info('Running release Docker image build')
+        tox_output = self._run_tox_env(
+            'docker',
+            extra_env_vars={'DOCKER_BUILD_VER': VERSION}
+        )
+        m = re.search(r'Image "([^"]+)" built and tested\.', tox_output)
+        if m is None:
+            fail('Error: could not find build image tag in tox output.')
+        tag = m.group(1)
+        img_name = 'jantman/biweeklybudget'
+        self._prompt_tag(img_name, tag, VERSION)
+        self._prompt_tag(img_name, tag, 'latest')
+        if not prompt_user('Push images to Docker Hub?'):
+            fail('Do not push.')
+        self._push_docker(img_name, VERSION)
+        self._push_docker(img_name, 'latest')
+
+    def _push_docker(self, img_name, img_tag):
+        cmd = [
+            'docker',
+            'push',
+            '%s:%s' % (img_name, img_tag)
+        ]
+        logger.info('Running: %s', ' '.join(cmd))
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, timeout=1800
+        )
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: command exited %d:\n%s',
+                res.returncode, res.stdout.decode()
+            )
+            fail('%s failed.' % ' '.join(cmd))
+        logger.info('Docker image pushed: %s:%s', img_name, img_tag)
+
+    def _prompt_tag(self, img_name, orig_tag, new_tag):
+        if not prompt_user(
+            'Tag %s:%s as %s:%s ?' % (img_name, orig_tag, img_name, new_tag)
+        ):
+            fail('Error.')
+        cmd = [
+            'docker',
+            'tag',
+            '%s:%s' % (img_name, orig_tag),
+            '%s:%s' % (img_name, new_tag)
+        ]
+        logger.info('Running: %s', ' '.join(cmd))
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, timeout=1800
+        )
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: command exited %d:\n%s',
+                res.returncode, res.stdout.decode()
+            )
+            fail('%s failed.' % ' '.join(cmd))
+        logger.info('Docker image tagged as %s', new_tag)
+
+
+@steps.register(16)
+class FinalChecks(BaseStep):
+
+    def run(self):
+        prompt_user(
+            'Please ensure that all GitHub issues included in this release '
+            'have been closed.'
+        )
+        prompt_user(
+            'Please log in to readthedocs.org and ensure the %s tag has '
+            'been built.' % VERSION
+        )
+
 
 class BwbReleaseAutomator(object):
 
@@ -281,6 +475,7 @@ class BwbReleaseAutomator(object):
         logger.info('Release step/position save path: %s', savepath)
         self.gh = GithubReleaser()
         self.travis = TravisChecker()
+        self.release_issue_num = None
 
     def run(self):
         if self.gh.get_tag(VERSION) != (None, None):
@@ -291,6 +486,9 @@ class BwbReleaseAutomator(object):
             )
             raise SystemExit(1)
         is_git_dirty(raise_on_dirty=True)
+        self.release_issue_num = self._release_issue_number
+        if self.release_issue_num is None:
+            self.release_issue_num = self._open_release_issue()
         last_step = self._last_step
         for stepnum in steps.step_numbers:
             if stepnum <= last_step:
@@ -298,7 +496,7 @@ class BwbReleaseAutomator(object):
                 continue
             cls = steps.step(stepnum)
             logger.info('Running step %d (%s)', stepnum, cls.__name__)
-            cls(self.gh, self.travis).run()
+            cls(self.gh, self.travis, self.release_issue_num).run()
             self._record_successful_step(stepnum)
         logger.info('DONE!')
         logger.debug('Removing: %s', self._savepath)
@@ -328,13 +526,39 @@ class BwbReleaseAutomator(object):
             return 0
         return j.get('last_successful_step', 0)
 
+    @property
+    def _release_issue_number(self):
+        if not os.path.exists(self._savepath):
+            return None
+        try:
+            with open(self._savepath, 'r') as fh:
+                j = json.loads(fh.read())
+        except Exception:
+            logger.warning(
+                'Could not read or JSON-deserialize %s', self._savepath
+            )
+            return None
+        if j.get('version', '') != VERSION:
+            return None
+        return j.get('release_issue_num', None)
+
     def _record_successful_step(self, stepnum):
         with open(self._savepath, 'w') as fh:
             fh.write(json.dumps({
                 'version': VERSION,
-                'last_successful_step': stepnum
+                'last_successful_step': stepnum,
+                'release_issue_num': self.release_issue_num
             }))
         logger.debug('Updated last_successful_step to %d', stepnum)
+
+    def _open_release_issue(self):
+        logger.info('Opening new issue for %s release', VERSION)
+        issue = self.gh._repo.create_issue(
+            '%s release' % VERSION,
+            body='Issue for %s release' % VERSION
+        )
+        logger.info('Opened issue %d (%s)', issue.number, issue.id)
+        return issue.number
 
 
 if __name__ == "__main__":

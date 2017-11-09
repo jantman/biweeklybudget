@@ -43,6 +43,7 @@ import logging
 import subprocess
 import warnings
 from copy import deepcopy
+import requests
 
 try:
     from travispy import TravisPy
@@ -178,9 +179,10 @@ class StepRegistry(object):
 
 class BaseStep(object):
 
-    def __init__(self, github_releaser, travis_checker):
+    def __init__(self, github_releaser, travis_checker, issue_num):
         self._gh = github_releaser
         self._travis = travis_checker
+        self._release_issue_num = issue_num
 
     def run(self):
         raise NotImplementedError('BaseStep run() not overridden')
@@ -227,17 +229,22 @@ class BaseStep(object):
             )
         )
 
-    def _run_tox_env(self, env_name):
+    def _run_tox_env(self, env_name, extra_env_vars={}):
         """
         Run the specified tox environment.
 
         :param env_name: name of the tox environment to run
         :type env_name: str
+        :param extra_env_vars: additional variables to set in the environment
+        :type extra_env_vars: dict
         :raises: RuntimeError
+        :returns: combined STDOUT / STDERR
+        :rtype: str
         """
         projdir = self.projdir
         env = deepcopy(os.environ)
         env['PATH'] = self._fixed_path(projdir)
+        env.update(extra_env_vars)
         cmd = [os.path.join(projdir, 'bin', 'tox'), '-e', env_name]
         logger.info(
             'Running tox environment %s: args="%s" cwd=%s '
@@ -257,6 +264,7 @@ class BaseStep(object):
                 'tox output:\n%s', res.stdout.decode()
             )
             res.check_returncode()
+        return res.stdout.decode()
 
     def _fixed_path(self, projdir):
         """
@@ -271,3 +279,18 @@ class BaseStep(object):
             if not p.startswith(toxdir):
                 res.append(p)
         return ':'.join(res)
+
+    def pypi_has_version(self, ver, test=False):
+        host = 'pypi'
+        if test:
+            host = 'testpypi'
+        url = 'https://%s.python.org/pypi/biweeklybudget/json' % host
+        try:
+            r = requests.get(url)
+            if r.json()['info']['version'] == ver:
+                return True
+            return False
+        except Exception:
+            logger.warning('Exception getting JSON from %s',
+                           url, exc_info=True)
+        return False
