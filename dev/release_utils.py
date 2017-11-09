@@ -41,7 +41,16 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 import logging
 import subprocess
+import warnings
 from copy import deepcopy
+
+try:
+    from travispy import TravisPy
+    from travispy.travispy import PUBLIC
+except ImportError:
+    raise SystemExit(
+        "ERROR: TravisPy not installed. Please run 'pip install TravisPy'"
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +87,56 @@ def is_git_dirty(raise_on_dirty=False):
             'ERROR: Git clone is dirty. Commit before continuing.'
         )
     return dirty
+
+
+class TravisChecker(object):
+
+    def __init__(self):
+        token = os.environ.get('GITHUB_TOKEN', None)
+        if token is None:
+            raise SystemExit(
+                'Please export your GitHub PAT as the "GITHUB_TOKEN" env var'
+            )
+        logger.debug('Connecting to TravisCI API...')
+        self._travis = TravisPy.github_auth(token)
+
+    def commit_latest_build_status(self, commit):
+        """
+        Find the latest build for the given commit and return it,
+        or None if no build for the commit yet.
+        """
+        build = self._latest_travis_build(commit)
+        if build is None:
+            return None
+        logger.info(
+            'Found latest build for commit %s: %s (%s)',
+            commit, build.number, build.id
+        )
+        return build
+
+    def _find_travis_job(self, build, toxenv):
+        """Given a build object, find the acceptance36 job"""
+        for jobid in build.job_ids:
+            j = self._travis.job(jobid)
+            if 'TOXENV=%s' % toxenv in j.config['env']:
+                logger.debug('Found %s job: %s', toxenv, j.number)
+                return j
+        raise SystemExit(
+            'ERROR: could not find %s job for build %s (%s)' % (
+                toxenv, build.number, build.id
+            )
+        )
+
+    def _latest_travis_build(self, commit):
+        logger.debug('Finding latest finished build...')
+        r = self._travis.repo('jantman/biweeklybudget')
+        for bnum in range(int(r.last_build_number), 0, -1):
+            b = self._travis.builds(
+                slug='jantman/biweeklybudget', number=bnum
+            )[0]
+            if b.commit_id == commit:
+                return b
+        return None
 
 
 class StepRegistry(object):
@@ -119,8 +178,9 @@ class StepRegistry(object):
 
 class BaseStep(object):
 
-    def __init__(self, github_releaser):
+    def __init__(self, github_releaser, travis_checker):
         self._gh = github_releaser
+        self._travis = travis_checker
 
     def run(self):
         raise NotImplementedError('BaseStep run() not overridden')
@@ -130,12 +190,42 @@ class BaseStep(object):
         res = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
         return res.stdout.strip()
 
+    @property
+    def _current_commit(self):
+        res = subprocess.run(['git', 'rev-parse', 'HEAD'])
+        return res.stdout.strip()
+
     def _ensure_committed(self):
         while is_git_dirty():
             input(
                 'Git repository has uncommitted changes; please commit '
                 'changes and press any key.'
             )
+
+    def _ensure_pushed(self):
+        pushed = None
+        while pushed is not True:
+            logger.debug('Running git fetch')
+            subprocess.run(['git', 'fetch'])
+            local_ref = self._current_commit
+            rmt_ref = subprocess.run(
+                ['git', 'rev-parse', 'origin/%s' % self._current_branch]
+            ).stdout.strip()
+            pushed = local_ref == rmt_ref
+            if not pushed:
+                input(
+                    'This branch must be pushed to origin. Git push and then '
+                    'press any key.'
+                )
+
+    @property
+    def projdir(self):
+        return os.path.abspath(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                '..'
+            )
+        )
 
     def _run_tox_env(self, env_name):
         """
@@ -145,12 +235,7 @@ class BaseStep(object):
         :type env_name: str
         :raises: RuntimeError
         """
-        projdir = os.path.abspath(
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                '..'
-            )
-        )
+        projdir = self.projdir
         env = deepcopy(os.environ)
         env['PATH'] = self._fixed_path(projdir)
         cmd = [os.path.join(projdir, 'bin', 'tox'), '-e', env_name]

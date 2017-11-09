@@ -135,6 +135,7 @@ class GithubReleaser(object):
             public=False
         )
         logger.info('Created gist: %s', g.html_url)
+        return g.html_url
 
     def _get_markdown(self):
         fpath = os.path.abspath(os.path.join(

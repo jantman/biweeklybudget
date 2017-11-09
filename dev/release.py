@@ -42,11 +42,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 import sys
 import logging
-import subprocess
 import json
+import subprocess
+import requests
+from shutil import rmtree
+from time import sleep
+from copy import deepcopy
 from github_releaser import GithubReleaser
 from release_utils import (
-    StepRegistry, prompt_user, BaseStep, fail, is_git_dirty
+    StepRegistry, prompt_user, BaseStep, fail, is_git_dirty, TravisChecker
 )
 from biweeklybudget.version import VERSION
 
@@ -147,18 +151,38 @@ class EnsurePushed(BaseStep):
 class GistReleaseNotes(BaseStep):
 
     def run(self):
-        """
-        Run dev/release.py gist to convert the CHANGES.rst entry for the current version to Markdown and upload it as a Github Gist. View the gist and ensure that the Markdown rendered properly and all links are valid. Iterate on this until the rendered version looks correct.
-        """
-        self._gh.do_something()
+        result = None
+        while result is not True:
+            md = self._gh._get_markdown()
+            print("Changelog Markdown:\n%s\n" % md)
+            result = prompt_user('Does this markdown look right?')
+            if result is not True:
+                input('Revise Changelog and then press any key.')
+                continue
+            url = self._gist(md)
+            logger.info('Gist URL: <%s>', url)
+            result = prompt_user('Does the gist at <%s> look right?' % url)
 
 
 @steps.register(8)
 class ConfirmTravisAndCoverage(BaseStep):
 
     def run(self):
-        if not prompt_user('Are Travis tests passing in all envs?'):
-            fail('Travis tests must pass in all environments')
+        commit = self._current_commit
+        logger.info('Polling for finished TravisCI build of %s', commit)
+        build = self._travis.poll_for_build(commit)
+        while build is None or build.finished is False:
+            sleep(10)
+            build = self._travis.poll_for_build(commit)
+        logger.info('Travis build finished')
+        if not build.passed:
+            fail('Travis build %s (%s) did not pass. Please fix build failures '
+                 'and then re-run.' % (build.number, build.id))
+        logger.info('OK, Travis build passed.')
+        logger.info(
+            'Build URL: <https://travis-ci.org/jantman/biweeklybudget/'
+            'builds/%s>', build.id
+        )
         if not prompt_user(
             'Is the test coverage at least as high as the last release, and '
             'are there acceptance tests for all non-trivial changes?'
@@ -166,8 +190,83 @@ class ConfirmTravisAndCoverage(BaseStep):
             fail('Test coverage!!!')
 
 
-# 12. Confirm that README.rst renders correctly on GitHub.
-# 13. Upload to testpypi and verify
+@steps.register(9)
+class ConfirmReadmeRenders(BaseStep):
+
+    def run(self):
+        logger.info(
+            'Readme URL: <https://github.com/jantman/biweeklybudget/blob/%s/'
+            'README.rst>', self._current_branch
+        )
+        if not prompt_user('Does the Readme at the above URL render properly?'):
+            fail('Please fix the README and then re-run.')
+
+
+@steps.register(10)
+class TestPyPI(BaseStep):
+
+    def run(self):
+        projdir = self.projdir
+        logger.info('Removing dist directory...')
+        rmtree(os.path.join(projdir, 'dist'))
+        env = deepcopy(os.environ)
+        env['PATH'] = self._fixed_path(projdir)
+        cmd = ['python', 'setup.py', 'sdist', 'bdist_wheel']
+        logger.info(
+            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+        )
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=projdir, timeout=1800, env=env
+        )
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: command exited %d:\n%s',
+                res.returncode, res.stdout.decode()
+            )
+            fail('%s failed.' % ' '.join(cmd))
+        cmd = ['twine', 'upload', '-r', 'test', 'dist/*']
+        logger.info(
+            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+        )
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=projdir, timeout=1800, env=env, shell=True
+        )
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: command exited %d:\n%s',
+                res.returncode, res.stdout.decode()
+            )
+            fail('%s failed.' % ' '.join(cmd))
+        logger.info('Package generated and uploaded to Test PyPI.')
+        res = self.pypi_has_version(test=True)
+        while not res:
+            logger.info('Waiting for new version to show up on TestPyPI...')
+            sleep(10)
+            res = self.pypi_has_version(test=True)
+        logger.info(
+            'Package is live on Test PyPI. URL: <https://testpypi.python.org/'
+            'pypi/biweeklybudget>'
+        )
+        if not prompt_user('Does the Readme at the above URL render properly?'):
+            fail('Please fix the README and then re-run.')
+
+    def pypi_has_version(self, test=False):
+        host = 'pypi'
+        if test:
+            host = 'testpypi'
+        url = 'https://%s.python.org/pypi/biweeklybudget/json' % host
+        try:
+            r = requests.get(url)
+            if r.json()['info']['version'] == VERSION:
+                return True
+            return False
+        except Exception:
+            logger.warning('Exception getting JSON from %s', url, exc_info=True)
+        return False
+
+
 # 14. Create PR; wait for build; merge
 # 15. Tag release (signed) and push
 # 16. upload
@@ -181,6 +280,7 @@ class BwbReleaseAutomator(object):
         self._savepath = savepath
         logger.info('Release step/position save path: %s', savepath)
         self.gh = GithubReleaser()
+        self.travis = TravisChecker()
 
     def run(self):
         if self.gh.get_tag(VERSION) != (None, None):
@@ -198,7 +298,7 @@ class BwbReleaseAutomator(object):
                 continue
             cls = steps.step(stepnum)
             logger.info('Running step %d (%s)', stepnum, cls.__name__)
-            cls(self.gh).run()
+            cls(self.gh, self.travis).run()
             self._record_successful_step(stepnum)
         logger.info('DONE!')
         logger.debug('Removing: %s', self._savepath)
