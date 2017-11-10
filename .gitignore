@@ -99,3 +99,4 @@ bin/*
 .ropeproject
 
 .idea
+/.release_position.json

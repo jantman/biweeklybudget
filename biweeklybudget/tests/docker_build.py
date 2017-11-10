@@ -70,6 +70,7 @@ from io import BytesIO
 import tarfile
 from biweeklybudget.version import VERSION
 from textwrap import dedent
+import subprocess
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -79,6 +80,9 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
     l = logging.getLogger(lname)
     l.setLevel(logging.CRITICAL)
     l.propagate = True
+
+if sys.version_info[0:2] != (3, 6):
+    raise SystemExit('ERROR: Docker build can only run under py 3.6')
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
@@ -322,12 +326,18 @@ class DockerImageBuilder(object):
                 )
             # do the tests
             try:
-                self._run_tests(container)
+                self._run_tests(db_container, container)
             except Exception as exc:
                 logger.critical("Tests failed: %s", exc, exc_info=True)
                 raise
         finally:
             try:
+                logger.info(
+                    'MariaDB container logs:\n%s',
+                    db_container.logs(
+                        stderr=True, stdout=True, stream=False, timestamps=True
+                    ).decode()
+                )
                 logger.info(
                     'biweeklybudget container logs:\n%s',
                     container.logs(
@@ -347,17 +357,16 @@ class DockerImageBuilder(object):
             except Exception:
                 pass
 
-    def _run_tests(self, container):
+    def _run_tests(self, db_container, container):
         """
         Run smoke tests against the container.
 
+        :param db_container: MariaDB Docker container
+        :type db_container: ``docker.models.containers.Container``
         :param container: biweeklybudget Docker container
         :type container: ``docker.models.containers.Container``
         """
-        container.reload()
-        cnet = container.attrs['NetworkSettings']
-        c_ip = cnet['IPAddress']
-        logger.debug('Container IP: %s / NetworkSettings: %s', c_ip, cnet)
+        c_ip = self._container_ip(container)
         baseurl = 'http://%s' % c_ip
         failures = False
         r = requests.get('%s/' % baseurl)
@@ -390,8 +399,89 @@ class DockerImageBuilder(object):
         except Exception as exc:
             logger.error('script tests failed: %s', exc, exc_info=True)
             failures = True
+        try:
+            self._run_acceptance_tests(db_container, container)
+            logger.info('Acceptance tests PASSED')
+        except Exception as exc:
+            logger.error('Acceptance tests FAILED: %s', exc, exc_info=True)
+            failures = True
         if failures:
             raise RuntimeError('Tests FAILED.')
+
+    def _run_acceptance_tests(self, db_container, container):
+        """
+        Run the ``acceptance36`` tox environment against the running container.
+
+        :param db_container: MariaDB Docker container
+        :type db_container: ``docker.models.containers.Container``
+        :param container: biweeklybudget Docker container
+        :type container: ``docker.models.containers.Container``
+        :raises: RuntimeError
+        """
+        db_ip = self._container_ip(db_container)
+        web_ip = self._container_ip(container)
+        env = {
+            'CI': os.environ.get('CI', 'true'),
+            'LANG': os.environ.get('LANG'),
+            'SETTINGS_MODULE': os.environ.get('SETTINGS_MODULE'),
+            'VIRTUAL_ENV': os.environ.get('VIRTUAL_ENV'),
+            'DB_CONNSTRING': 'mysql+pymysql://root:root@%s:3306/budgetfoo?'
+                             'charset=utf8mb4' % db_ip,
+            'BIWEEKLYBUDGET_TEST_BASE_URL': 'http://%s' % web_ip,
+            'PATH': self._fixed_path
+        }
+        cmd = [
+            os.path.join(self._toxinidir, 'bin', 'tox'),
+            '-e', 'acceptance36'
+        ]
+        logger.info(
+            'Running acceptance tests against container; args="%s" cwd=%s '
+            'timeout=1800 env=%s', ' '.join(cmd), self._toxinidir, env
+        )
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=self._toxinidir, timeout=1800, env=env
+        )
+        logger.info('Acceptance test tox process exited %d', res.returncode)
+        if res.returncode != 0:
+            logger.error(
+                'ERROR: Acceptance test process failed with exitcode %d',
+                res.returncode
+            )
+            logger.error(
+                'Acceptance test output:\n%s', res.stdout.decode()
+            )
+            res.check_returncode()
+
+    @property
+    def _fixed_path(self):
+        """
+        Return the current PATH, fixed to remove the docker tox env.
+
+        :return: sanitized path
+        :rtype: str
+        """
+        res = []
+        toxdir = os.path.join(self._toxinidir, '.tox')
+        for p in os.environ['PATH'].split(':'):
+            if not p.startswith(toxdir):
+                res.append(p)
+        return ':'.join(res)
+
+    def _container_ip(self, container):
+        """
+        Get the local (bridge) IP address for the specified container.
+
+        :param container: biweeklybudget Docker container
+        :type container: ``docker.models.containers.Container``
+        :return: Container's local (bridge) IP address
+        :rtype: str
+        """
+        container.reload()
+        cnet = container.attrs['NetworkSettings']
+        c_ip = cnet['IPAddress']
+        logger.debug('Container IP: %s / NetworkSettings: %s', c_ip, cnet)
+        return c_ip
 
     def _test_phantomjs(self, container):
         """
@@ -506,6 +596,9 @@ class DockerImageBuilder(object):
             'name': 'biweeklybudget-mariadb-%s' % int(time.time()),
             'environment': {
                 'MYSQL_ROOT_PASSWORD': 'root'
+            },
+            'ports': {
+                '3306/tcp': None
             }
         }
         logger.debug('Running %s with kwargs: %s', img, kwargs)
