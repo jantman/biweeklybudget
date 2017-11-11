@@ -189,13 +189,18 @@ class BaseStep(object):
 
     @property
     def _current_branch(self):
-        res = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-        return res.stdout.strip()
+        res = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            stdout=subprocess.PIPE
+        )
+        return res.stdout.decode().strip()
 
     @property
     def _current_commit(self):
-        res = subprocess.run(['git', 'rev-parse', 'HEAD'])
-        return res.stdout.strip()
+        res = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE
+        )
+        return res.stdout.decode().strip()
 
     def _ensure_committed(self):
         while is_git_dirty():
@@ -211,8 +216,9 @@ class BaseStep(object):
             subprocess.run(['git', 'fetch'])
             local_ref = self._current_commit
             rmt_ref = subprocess.run(
-                ['git', 'rev-parse', 'origin/%s' % self._current_branch]
-            ).stdout.strip()
+                ['git', 'rev-parse', 'origin/%s' % self._current_branch],
+                stdout=subprocess.PIPE
+            ).stdout.decode().strip()
             pushed = local_ref == rmt_ref
             if not pushed:
                 input(
