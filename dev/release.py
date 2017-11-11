@@ -248,9 +248,9 @@ class TestPyPI(BaseStep):
                 res.returncode, res.stdout.decode()
             )
             fail('%s failed.' % ' '.join(cmd))
-        cmd = ['twine', 'upload', '-r', 'test', 'dist/*']
+        cmd = ' '.join(['twine', 'upload', '-r', 'test', 'dist/*'])
         logger.info(
-            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+            'Running: %s (cwd=%s)', cmd, projdir
         )
         res = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
