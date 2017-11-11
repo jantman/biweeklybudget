@@ -506,6 +506,7 @@ class BwbReleaseAutomator(object):
         self.release_issue_num = self._release_issue_number
         if self.release_issue_num is None:
             self.release_issue_num = self._open_release_issue()
+            self._record_successful_step(0)
         is_git_dirty(raise_on_dirty=True)
         last_step = self._last_step
         for stepnum in steps.step_numbers:
@@ -589,4 +590,3 @@ if __name__ == "__main__":
             )
         )
     ).run()
-    raise NotImplementedError('Uncomment is_git_dirty call in run()')
