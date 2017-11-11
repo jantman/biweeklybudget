@@ -503,10 +503,10 @@ class BwbReleaseAutomator(object):
                 'the release is complete.', VERSION
             )
             raise SystemExit(1)
-        is_git_dirty(raise_on_dirty=True)
         self.release_issue_num = self._release_issue_number
         if self.release_issue_num is None:
             self.release_issue_num = self._open_release_issue()
+        is_git_dirty(raise_on_dirty=True)
         last_step = self._last_step
         for stepnum in steps.step_numbers:
             if stepnum <= last_step:
