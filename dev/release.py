@@ -177,7 +177,7 @@ class GistReleaseNotes(BaseStep):
             if result is not True:
                 input('Revise Changelog and then press any key.')
                 continue
-            url = self._gist(md)
+            url = self._gh._gist(md)
             logger.info('Gist URL: <%s>', url)
             result = prompt_user('Does the gist at <%s> look right?' % url)
         self._ensure_pushed()
