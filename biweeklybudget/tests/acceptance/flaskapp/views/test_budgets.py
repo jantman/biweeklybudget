@@ -113,6 +113,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.starting_balance == 100.00
         assert b.is_active is True
         assert b.is_income is False
+        assert b.omit_from_graphs is False
 
     def test_01_budget_modal_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -140,6 +141,8 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_02_budget_modal_update_modal(self, base_url, selenium):
         # Fill in the form
@@ -163,6 +166,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -191,6 +196,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert float(b.starting_balance) == 2345.6700
         assert b.is_active is False
         assert b.is_income is False
+        assert b.omit_from_graphs is False
 
     def test_10_populate_edit_periodic_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -218,6 +224,8 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_11_populate_edit_periodic_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -248,6 +256,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_12_populate_edit_standing_1_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -275,6 +285,8 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is True
 
     def test_13_populate_edit_standing_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -302,6 +314,8 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_14_populate_edit_standing_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -332,6 +346,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_20_income_verify_db(self, testdb):
         b = testdb.query(Budget).get(7)
@@ -342,6 +358,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert float(b.starting_balance) == 2345.67
         assert b.is_active is True
         assert b.is_income is True
+        assert b.omit_from_graphs is True
 
     def test_21_populate_income_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
@@ -368,6 +385,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_current_balance_group').is_displayed() is False
         assert selenium.find_element_by_id('budget_frm_active').is_selected()
         assert selenium.find_element_by_id('budget_frm_income').is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is True
 
     def test_22_update_income_modal(self, base_url, selenium):
         # Fill in the form
@@ -390,6 +409,9 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is True
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is True
+        selenium.find_element_by_id('budget_frm_omit_from_graphs').click()
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -419,6 +441,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert float(b.starting_balance) == 123.45
         assert b.is_active is False
         assert b.is_income is True
+        assert b.omit_from_graphs is False
 
     def test_31_populate_direct_url_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets/1')
@@ -445,6 +468,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected() is False
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_41_add_standing_modal(self, base_url, selenium):
         # Fill in the form
@@ -469,6 +494,8 @@ class TestBudgetModals(AcceptanceHelper):
             'budget_frm_active').is_selected()
         assert selenium.find_element_by_id(
             'budget_frm_income').is_selected() is False
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -497,6 +524,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert float(b.current_balance) == 6789.12
         assert b.is_active is True
         assert b.is_income is False
+        assert b.omit_from_graphs is False
 
     def test_51_add_income_modal(self, base_url, selenium):
         # Fill in the form
@@ -522,6 +550,9 @@ class TestBudgetModals(AcceptanceHelper):
         income = selenium.find_element_by_id('budget_frm_income')
         income.click()
         assert income.is_selected()
+        assert selenium.find_element_by_id(
+            'budget_frm_omit_from_graphs').is_selected() is False
+        selenium.find_element_by_id('budget_frm_omit_from_graphs').click()
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -551,6 +582,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert float(b.starting_balance) == 123.45
         assert b.is_active is True
         assert b.is_income is True
+        assert b.omit_from_graphs is True
 
 
 @pytest.mark.acceptance

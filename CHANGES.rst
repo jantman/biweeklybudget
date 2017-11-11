@@ -17,6 +17,8 @@ Unreleased Changes
   * Reminder to sign git release tags
   * Add ``dev/release.py`` script to handle GitHub releases.
 
+* `Issue #139 <https://github.com/jantman/biweeklybudget/issues/139>`_ - Add field to Budget model to allow omitting specific budgets from spending graphs (the graphs on the Budgets view).
+
 0.5.0 (2017-10-28)
 ------------------
 

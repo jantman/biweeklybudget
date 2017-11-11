@@ -121,7 +121,8 @@ class SampleDataLoader(object):
                 name='Standing1',
                 is_periodic=False,
                 description='S1desc',
-                current_balance=1284.23
+                current_balance=1284.23,
+                omit_from_graphs=True
             ),
             'Standing2': Budget(
                 name='Standing2',
@@ -141,7 +142,8 @@ class SampleDataLoader(object):
                 is_periodic=True,
                 description='IncomeDesc',
                 starting_balance=2345.67,
-                is_income=True
+                is_income=True,
+                omit_from_graphs=True
             )
         }
         for x in [

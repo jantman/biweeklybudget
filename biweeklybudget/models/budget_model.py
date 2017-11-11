@@ -71,6 +71,9 @@ class Budget(Base, ModelAsDict):
     #: whether this is an Income budget (True) or expense (False).
     is_income = Column(Boolean, default=False)
 
+    #: whether or not to omit this budget from spending graphs
+    omit_from_graphs = Column(Boolean, default=False)
+
     def __repr__(self):
         return "<Budget(id=%d)>" % (
             self.id

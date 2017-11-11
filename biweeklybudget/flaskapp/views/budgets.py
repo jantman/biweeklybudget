@@ -197,6 +197,10 @@ class BudgetFormHandler(FormHandlerView):
             budget.is_income = True
         else:
             budget.is_income = False
+        if data['omit_from_graphs'] == 'true':
+            budget.omit_from_graphs = True
+        else:
+            budget.omit_from_graphs = False
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()
@@ -365,7 +369,8 @@ class BudgetSpendingChartView(MethodView):
     def _budget_names(self):
         return {
             x.id: x.name for x in db_session.query(Budget).filter(
-                Budget.is_income.__eq__(False)
+                Budget.is_income.__eq__(False),
+                Budget.omit_from_graphs.__eq__(False)
             ).all()
         }
 
