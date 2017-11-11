@@ -68,6 +68,7 @@ function budgetModalDivForm() {
         .addCurrency('budget_frm_current_balance', 'current_balance', 'Current Balance', { groupHtml: 'style="display: none;"' })
         .addCheckbox('budget_frm_active', 'is_active', 'Active?', true)
         .addCheckbox('budget_frm_income', 'is_income', 'Income?')
+        .addCheckbox('budget_frm_omit_from_graphs', 'omit_from_graphs', 'Omit from graphs?')
         .render();
 }
 
@@ -99,6 +100,11 @@ function budgetModalDivFillAndShow(msg) {
         $('#budget_frm_income').prop('checked', true);
     } else {
         $('#budget_frm_income').prop('checked', false);
+    }
+    if(msg['omit_from_graphs'] === true) {
+        $('#budget_frm_omit_from_graphs').prop('checked', true);
+    } else {
+        $('#budget_frm_omit_from_graphs').prop('checked', false);
     }
     $("#modalDiv").modal('show');
 }
