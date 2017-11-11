@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.6.0 (2017-11-11)
 ------------------
 
 * `PR #140 <https://github.com/jantman/biweeklybudget/issues/140>`_ - Support user-configurable currencies and currency formatting.
