@@ -135,7 +135,7 @@ class TravisChecker(object):
             b = self._travis.builds(
                 slug='jantman/biweeklybudget', number=bnum
             )[0]
-            if b.commit_id == commit:
+            if b.commit.sha == commit:
                 return b
         return None
 
