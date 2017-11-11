@@ -179,6 +179,8 @@ class StepRegistry(object):
 
 class BaseStep(object):
 
+    always_run = False
+
     def __init__(self, github_releaser, travis_checker, issue_num):
         self._gh = github_releaser
         self._travis = travis_checker
