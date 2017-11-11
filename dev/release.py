@@ -101,6 +101,24 @@ class InitialChecks(BaseStep):
                 'Please increment the version in biweeklybudget/version.py '
                 'before running the release script.'
             )
+        # check for proper CHANGES.rst heading
+        have_ver = False
+        last_line = ''
+        expected = '%s (%s)' % (VERSION, datetime.now().strftime('%Y-%m-%d'))
+        with open(os.path.join(self.projdir, 'CHANGES.rst'), 'r') as fh:
+            for line in fh.readlines():
+                line = line.strip()
+                if (
+                    line == '------------------' and
+                    last_line == expected
+                ):
+                    have_ver = True
+                    break
+                last_line = line
+        if not have_ver:
+            fail('Expected to find a "%s" heading in CHANGES.rst, but did not. '
+                 'Please ensure there is a changelog heading for this release.'
+                 '' % expected)
         if not prompt_user(
             'Is the test coverage at least as high as the last release, and '
             'are there acceptance tests for all non-trivial changes?'
