@@ -401,17 +401,6 @@ class UploadToPyPI(BaseStep):
 
 
 @steps.register(14)
-class DoGitHubRelease(BaseStep):
-
-    def run(self):
-        md = self._gh._get_markdown()
-        print("Markdown:\n%s\n" % md)
-        if not prompt_user('Does this look right?'):
-            fail('Changelog apparently does not look right.')
-        self._gh._release(md)
-
-
-@steps.register(15)
 class BuildAndPushDocker(BaseStep):
 
     def run(self):
@@ -420,6 +409,7 @@ class BuildAndPushDocker(BaseStep):
             'docker',
             extra_env_vars={'DOCKER_BUILD_VER': VERSION}
         )
+        logger.info('Tox output:\n%s', tox_output)
         m = re.search(r'Image "([^"]+)" built and tested\.', tox_output)
         if m is None:
             fail('Error: could not find build image tag in tox output.')
@@ -474,6 +464,17 @@ class BuildAndPushDocker(BaseStep):
             )
             fail('%s failed.' % ' '.join(cmd))
         logger.info('Docker image tagged as %s', new_tag)
+
+
+@steps.register(15)
+class DoGitHubRelease(BaseStep):
+
+    def run(self):
+        md = self._gh._get_markdown()
+        print("Markdown:\n%s\n" % md)
+        if not prompt_user('Does this look right?'):
+            fail('Changelog apparently does not look right.')
+        self._gh._release(md)
 
 
 @steps.register(16)
