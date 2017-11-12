@@ -388,7 +388,7 @@ class UploadToPyPI(BaseStep):
                 'ERROR: command exited %d:\n%s',
                 res.returncode, res.stdout.decode()
             )
-            fail('%s failed.' % ' '.join(cmd))
+            fail('%s failed.' % cmd)
         logger.info(
             'Package generated and uploaded to live/production PyPI.')
         res = self.pypi_has_version(VERSION)
@@ -520,7 +520,8 @@ class BwbReleaseAutomator(object):
                 continue
             logger.info('Running step %d (%s)', stepnum, cls.__name__)
             cls(self.gh, self.travis, self.release_issue_num).run()
-            self._record_successful_step(stepnum)
+            if stepnum >= last_step:
+                self._record_successful_step(stepnum)
         logger.info('DONE!')
         logger.debug('Removing: %s', self._savepath)
         os.unlink(self._savepath)
