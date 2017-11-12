@@ -156,7 +156,7 @@ class GithubReleaser(object):
         markdown = subprocess.check_output(cmd)
         buf = ''
         in_ver = False
-        for line in markdown.split("\n"):
+        for line in markdown.decode().split("\n"):
             if not in_ver and line.startswith('## %s ' % _VERSION):
                 in_ver = True
             elif in_ver and line.startswith('## '):

@@ -161,6 +161,8 @@ class BuildDocker(BaseStep):
 @steps.register(6)
 class EnsurePushed(BaseStep):
 
+    always_run = True
+
     def run(self):
         self._ensure_pushed()
 
@@ -177,7 +179,7 @@ class GistReleaseNotes(BaseStep):
             if result is not True:
                 input('Revise Changelog and then press any key.')
                 continue
-            url = self._gist(md)
+            url = self._gh._gist(md)
             logger.info('Gist URL: <%s>', url)
             result = prompt_user('Does the gist at <%s> look right?' % url)
         self._ensure_pushed()
@@ -185,6 +187,8 @@ class GistReleaseNotes(BaseStep):
 
 @steps.register(8)
 class ConfirmTravisAndCoverage(BaseStep):
+
+    always_run = True
 
     def run(self):
         commit = self._current_commit
@@ -244,9 +248,9 @@ class TestPyPI(BaseStep):
                 res.returncode, res.stdout.decode()
             )
             fail('%s failed.' % ' '.join(cmd))
-        cmd = ['twine', 'upload', '-r', 'test', 'dist/*']
+        cmd = ' '.join(['twine', 'upload', '-r', 'test', 'dist/*'])
         logger.info(
-            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+            'Running: %s (cwd=%s)', cmd, projdir
         )
         res = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -503,16 +507,17 @@ class BwbReleaseAutomator(object):
                 'the release is complete.', VERSION
             )
             raise SystemExit(1)
-        is_git_dirty(raise_on_dirty=True)
         self.release_issue_num = self._release_issue_number
         if self.release_issue_num is None:
             self.release_issue_num = self._open_release_issue()
+            self._record_successful_step(0)
+        is_git_dirty(raise_on_dirty=True)
         last_step = self._last_step
         for stepnum in steps.step_numbers:
-            if stepnum <= last_step:
+            cls = steps.step(stepnum)
+            if stepnum <= last_step and not cls.always_run:
                 logger.debug('Skipping step %d - already completed', stepnum)
                 continue
-            cls = steps.step(stepnum)
             logger.info('Running step %d (%s)', stepnum, cls.__name__)
             cls(self.gh, self.travis, self.release_issue_num).run()
             self._record_successful_step(stepnum)
@@ -589,4 +594,3 @@ if __name__ == "__main__":
             )
         )
     ).run()
-    raise NotImplementedError('Uncomment is_git_dirty call in run()')
