@@ -374,9 +374,9 @@ class UploadToPyPI(BaseStep):
             fail('Not ready to upload to PyPI.')
         env = deepcopy(os.environ)
         env['PATH'] = self._fixed_path(projdir)
-        cmd = ['twine', 'upload', 'dist/*']
+        cmd = ' '.join(['twine', 'upload', 'dist/*'])
         logger.info(
-            'Running: %s (cwd=%s)', ' '.join(cmd), projdir
+            'Running: %s (cwd=%s)', cmd, projdir
         )
         res = subprocess.run(
             cmd, stdout=subprocess.PIPE,
