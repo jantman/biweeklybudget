@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased Changes
+------------------
+
+* `Issue #156 <https://github.com/jantman/biweeklybudget/issues/156>`_ - Add headless chrome support to ``screenscraper.py``.
+
 0.6.0 (2017-11-11)
 ------------------
 
