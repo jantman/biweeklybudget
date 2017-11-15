@@ -43,6 +43,7 @@ import json
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 logger = logging.getLogger(__name__)
@@ -72,8 +73,9 @@ class ScreenScraper(object):
         self._screenshot = screenshot
         if self._screenshot:
             logger.warning("screenshotting all actions")
-        self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:56.0) ' \
-                          'Gecko/20100101 Firefox/56.0'
+        self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' \
+                          ' (KHTML, like Gecko) Chrome/62.0.3202.62 ' \
+                          'Safari/537.36'
 
     def load_cookies(self, cookie_file):
         """
@@ -126,7 +128,9 @@ class ScreenScraper(object):
         fname = os.path.join(
             os.getcwd(), '{n}.png'.format(n=self._screenshot_num)
         )
+        self._pre_screenshot()
         self.browser.get_screenshot_as_file(fname)
+        self._post_screenshot()
         logger.debug(
             "Screenshot: {f} of: {s}".format(
                 f=fname,
@@ -138,7 +142,9 @@ class ScreenScraper(object):
     def error_screenshot(self, fname=None):
         if fname is None:
             fname = os.path.join(os.getcwd(), 'webdriver_fail.png')
+        self._pre_screenshot()
         self.browser.get_screenshot_as_file(fname)
+        self._post_screenshot()
         logger.error("Screenshot saved to: {s}".format(s=fname))
         logger.error("Page title: %s", self.browser.title)
         html_path = os.path.join(os.getcwd(), 'webdriver_fail.html')
@@ -148,6 +154,24 @@ class ScreenScraper(object):
         with codecs.open(html_path, 'w', 'utf-8') as fh:
             fh.write(source)
         logger.error('Page source saved to: %s', html_path)
+
+    def _pre_screenshot(self):
+        if not self._browser_name.startswith('chrome'):
+            return
+        height = self.browser.execute_script(
+            "return Math.max(document.body.scrollHeight, "
+            "document.body.offsetHeight, document.documentElement."
+            "clientHeight, document.documentElement.scrollHeight, "
+            "document.documentElement.offsetHeight);"
+        )
+        height += 100
+        logger.info('Resizing browser to %d high', height)
+        self.browser.set_window_size(1920, height)
+
+    def _post_screenshot(self):
+        if not self._browser_name.startswith('chrome'):
+            return
+        self.browser.set_window_size(1920, 1080)
 
     def xhr_get_url(self, url):
         """ use JS to download a given URL, return its contents """
@@ -195,6 +219,7 @@ class ScreenScraper(object):
 
     def get_browser(self, browser_name):
         """get a webdriver browser instance """
+        self._browser_name = browser_name
         if browser_name == 'firefox':
             logger.debug("getting Firefox browser (local)")
             if 'DISPLAY' not in os.environ:
@@ -204,6 +229,15 @@ class ScreenScraper(object):
         elif browser_name == 'chrome':
             logger.debug("getting Chrome browser (local)")
             browser = webdriver.Chrome()
+            browser.set_window_size(1920, 1080)
+            browser.implicitly_wait(2)
+        elif browser_name == 'chrome-headless':
+            logger.debug('getting Chrome browser (local) with --headless')
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            browser = webdriver.Chrome(chrome_options=chrome_options)
+            browser.set_window_size(1920, 1080)
+            browser.implicitly_wait(2)
         elif browser_name == 'phantomjs':
             logger.debug("getting PhantomJS browser (local)")
             dcap = dict(DesiredCapabilities.PHANTOMJS)
@@ -220,8 +254,11 @@ class ScreenScraper(object):
             browser.set_window_size(1024, 768)
         else:
             raise SystemExit(
-                "ERROR: browser type must be one of 'firefox', 'chrome' or "
-                "'phantomjs', not '{b}'".format(b=browser_name))
+                "ERROR: browser type must be one of 'firefox', 'chrome', "
+                "'chrome-headless' or 'phantomjs', not '{b}'".format(
+                    b=browser_name
+                )
+            )
         logger.debug("returning browser")
         return browser
 
