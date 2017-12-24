@@ -12,7 +12,7 @@ Requirements
 Using the dockerized version will eliminate all of these dependencies aside from MySQL and
 Vault (the latter only if you choose to take advantage of the OFX downloading), both of which you can also run in containers.
 
-* Python 2.7 or 3.3+ (currently tested with 2.7, 3.3, 3.4, 3.5, 3.6 and developed with 3.6)
+* Python 2.7 or 3.4+ (currently tested with 2.7, 3.4, 3.5, 3.6 and developed with 3.6)
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_ ). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the automated OFX transaction downloading functionality:
@@ -28,7 +28,7 @@ venv). See the `virtualenv usage documentation <http://www.virtualenv.org/en/lat
 for information on how to create a venv.
 
 This app is developed against Python 3.6, but should work back to 2.7. It does
-not support Python3 < 3.3.
+not support Python3 < 3.4.
 
 .. code-block:: bash
 

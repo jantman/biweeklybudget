@@ -6,6 +6,7 @@ Unreleased Changes
 
 * `Issue #156 <https://github.com/jantman/biweeklybudget/issues/156>`_ - Add headless chrome support to ``screenscraper.py``.
 * Remove ``pluggy`` transient dependency from requirements.txt; was breaking builds.
+* Following pytest, drop testing of and support for Python 3.3.
 
 0.6.0 (2017-11-11)
 ------------------
