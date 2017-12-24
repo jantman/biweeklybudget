@@ -5,6 +5,7 @@ Unreleased Changes
 ------------------
 
 * `Issue #156 <https://github.com/jantman/biweeklybudget/issues/156>`_ - Add headless chrome support to ``screenscraper.py``.
+* Remove ``pluggy`` transient dependency from requirements.txt; was breaking builds.
 
 0.6.0 (2017-11-11)
 ------------------

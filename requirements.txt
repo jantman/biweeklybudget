@@ -25,7 +25,6 @@ keyring==10.3.1
 lxml==3.7.3
 ofxhome==0.3.3
 packaging==16.8
-pluggy==0.4.0
 pycparser==2.17
 pyparsing==2.2.0
 python-dateutil==2.6.0
