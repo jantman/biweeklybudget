@@ -13,9 +13,9 @@ biweeklybudget
    :target: https://readthedocs.org/projects/biweeklybudget/?badge=latest
    :alt: sphinx documentation for latest release
 
-.. image:: http://www.repostatus.org/badges/latest/wip.svg
-   :alt: Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.
-   :target: http://www.repostatus.org/#wip
+.. image:: http://www.repostatus.org/badges/latest/active.svg
+   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+   :target: http://www.repostatus.org/#active
 
 .. image:: https://img.shields.io/waffle/label/jantman/biweeklybudget/ready.svg
    :target: https://waffle.io/jantman/biweeklybudget
