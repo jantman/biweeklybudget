@@ -24,6 +24,14 @@ specify currency formatting. The latter, ``CURRENCY_CODE``, must be a valid
 "USD", "EUR", etc.) and can also be set via a ``CURRENCY_CODE`` environment
 variable.
 
+In addition, the Fuel Log functionality supports customization of the volume,
+distance and fuel economy units via a set of settings (which can also be set
+via environment variables):
+
+* :py:attr:`biweeklybudget.settings.FUEL_VOLUME_UNIT` and :py:attr:`biweeklybudget.settings.FUEL_VOLUME_ABBREVIATION`
+* :py:attr:`biweeklybudget.settings.DISTANCE_UNIT` and :py:attr:`biweeklybudget.settings.DISTANCE_UNIT_ABBREVIATION`
+* :py:attr:`biweeklybudget.settings.FUEL_ECO_ABBREVIATION`
+
 These settings only effect the display of monetary units in the user interface
 and in log files. I haven't made any attempt at actual internationalization of
 the text, mainly because as far as I know I'm the only person in the world using
@@ -41,12 +49,6 @@ the following caveats (which I'd be happy to fix if anyone needs it):
   priced in USD, and currently only supports wishlists on the US amazon.com
   site; these are limitations of the upstream project used for wishlist
   parsing.
-* The Fuel Log currently calls the volume of fuel units "gallons", probably
-  specifies "dollars" or "$" in the UI, and calls the units of distance "miles".
-  There's nothing mathematical that would prevent it from handling Kilometers
-  per Liter or any other combination of distance, volume and cost. If anyone
-  outside of the US is interested in using it, I'll gladly make those parts of
-  the user interface configurable as well.
 * The database storage of monetary values assumes that they will all be a
   decimal number, and currently only allows for six digits to the left of the
   decimal and four digits to the right; this applies to all monetary units from
