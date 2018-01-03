@@ -70,17 +70,17 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Vehicle</th>
-                                <th>Odometer Mi.</th>
-                                <th>Mi. Traveled (from veh.)</th>
-                                <th>Mi. Traveled (calc.)</th>
+                                <th>Odometer {{ settings.DISTANCE_UNIT_ABBREVIATION }}</th>
+                                <th>{{ settings.DISTANCE_UNIT_ABBREVIATION }} Traveled (from veh.)</th>
+                                <th>{{ settings.DISTANCE_UNIT_ABBREVIATION }} Traveled (calc.)</th>
                                 <th>Start Fuel Level</th>
                                 <th>End Fuel Level</th>
                                 <th>Location</th>
-                                <th>{{ CURRENCY_SYM }}/Gal.</th>
+                                <th>{{ CURRENCY_SYM }}/{{ settings.FUEL_VOLUME_ABBREVIATION }}</th>
                                 <th>Total Cost</th>
-                                <th>Total Gallons</th>
-                                <th>MPG (from veh.)</th>
-                                <th>MPG (calc.)</th>
+                                <th>Total {{ settings.FUEL_VOLUME_UNIT }}</th>
+                                <th>{{ settings.FUEL_ECO_ABBREVIATION }} (from veh.)</th>
+                                <th>{{ settings.FUEL_ECO_ABBREVIATION }} (calc.)</th>
                                 <th>Notes</th>
                             </tr>
                             </thead>
@@ -88,17 +88,17 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Vehicle</th>
-                                <th>Odometer Mi.</th>
-                                <th>Mi. Traveled (from veh.)</th>
-                                <th>Mi. Traveled (calc.)</th>
+                                <th>Odometer {{ settings.DISTANCE_UNIT_ABBREVIATION }}</th>
+                                <th>{{ settings.DISTANCE_UNIT_ABBREVIATION }} Traveled (from veh.)</th>
+                                <th>{{ settings.DISTANCE_UNIT_ABBREVIATION }} Traveled (calc.)</th>
                                 <th>Start Fuel Level</th>
                                 <th>End Fuel Level</th>
                                 <th>Location</th>
-                                <th>{{ CURRENCY_SYM }}/Gal.</th>
+                                <th>{{ CURRENCY_SYM }}/{{ settings.FUEL_VOLUME_ABBREVIATION }}</th>
                                 <th>Total Cost</th>
-                                <th>Total Gallons</th>
-                                <th>MPG (from veh.)</th>
-                                <th>MPG (calc.)</th>
+                                <th>Total {{ settings.FUEL_VOLUME_UNIT }}</th>
+                                <th>{{ settings.FUEL_ECO_ABBREVIATION }} (from veh.)</th>
+                                <th>{{ settings.FUEL_ECO_ABBREVIATION }} (calc.)</th>
                                 <th>Notes</th>
                             </tr>
                             </tfoot>

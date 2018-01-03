@@ -49,7 +49,7 @@ function fuelModalDivForm() {
         .addLabelToValueSelect('fuel_frm_vehicle', 'vehicle', 'Vehicle', vehicleOptions, null, false)
         .addDatePicker('fuel_frm_date', 'date', 'Date')
         .addText(
-            'fuel_frm_odo_miles', 'odometer_miles', 'Odometer Mileage',
+            'fuel_frm_odo_miles', 'odometer_miles', 'Odometer ' + DISTANCE_UNIT,
             {
                 inputHtml: 'size="8" maxlength="8"',
                 helpBlock: 'Current vehicle odometer reading'
@@ -73,17 +73,17 @@ function fuelModalDivForm() {
             100, false
         )
         .addText('fuel_frm_fill_loc', 'fill_location', 'Fill Location')
-        .addCurrency('fuel_frm_cost_per_gallon', 'cost_per_gallon', 'Cost Per Gallon')
+        .addCurrency('fuel_frm_cost_per_gallon', 'cost_per_gallon', 'Cost Per ' + FUEL_VOLUME_UNIT)
         .addCurrency('fuel_frm_total_cost', 'total_cost', 'Total Cost')
         .addText(
-            'fuel_frm_gallons', 'gallons', 'Gallons',
+            'fuel_frm_gallons', 'gallons', FUEL_VOLUME_UNIT,
             { inputHtml: 'size="8" maxlength="8"' }
         )
         .addText(
-            'fuel_frm_reported_mpg', 'reported_mpg', 'Reported MPG',
+            'fuel_frm_reported_mpg', 'reported_mpg', 'Reported ' + FUEL_ECO_ABBREVIATION,
             {
                 inputHtml: 'size="8" maxlength="8"',
-                helpBlock: 'MPG reported by vehicle'
+                helpBlock: FUEL_ECO_ABBREVIATION + ' reported by vehicle'
             }
         )
         .addCheckbox('fuel_frm_add_trans', 'add_trans', 'Add Transaction?', true)

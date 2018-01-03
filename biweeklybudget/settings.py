@@ -71,7 +71,10 @@ _STRING_VARS = [
     'TOKEN_PATH',
     'VAULT_ADDR',
     'LOCALE_NAME',
-    'CURRENCY_CODE'
+    'CURRENCY_CODE',
+    'FUEL_VOLUME_UNIT',
+    'FUEL_VOLUME_ABBREVIATION',
+    'FUEL_ECO_ABBREVIATION'
 ]
 
 #: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
@@ -92,6 +95,26 @@ LOCALE_NAME = None
 #: logs, etc. Currently defaults to "USD". For further information, see
 #: :ref:`Currency Formatting and Localization <app_usage.l10n>`.
 CURRENCY_CODE = 'USD'
+
+#: The full written name of your unit of measure for volume of fuel, to be used
+#: for the Fuel Log feature. As an example, ``Gallons`` or ``Litres``.
+FUEL_VOLUME_UNIT = 'Gallons'
+
+#: Abbreviation of :py:attr:`biweeklybudget.settings.FUEL_VOLUME_UNIT`, such as
+#: ``Gal.`` or ``L``.
+FUEL_VOLUME_ABBREVIATION = 'Gal.'
+
+#: The full written name of your unit of distance for fuel economy calculations
+#: and the Fuel Log. As an example, ``Miles`` or ``Kilometers``.
+DISTANCE_UNIT = 'Miles'
+
+#: Abbreviation of :py:attr:`biweeklybudget.settings.DISTANCE_UNIT`, such as
+#: ``Mi.`` or ``KM``.
+DISTANCE_UNIT_ABBREVIATION = 'Mi.'
+
+#: Abbreviation for your distance-per-volume fuel economy measurement,
+#: such as ``MPG`` or ``KM/L``.
+FUEL_ECO_ABBREVIATION = 'MPG'
 
 #: string - SQLAlchemy database connection string. See the
 #: :ref:`SQLAlchemy Database URLS docs <sqlalchemy:database_urls>`
