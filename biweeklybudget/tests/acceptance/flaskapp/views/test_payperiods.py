@@ -42,6 +42,7 @@ from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from calendar import timegm
 from selenium.webdriver.support.ui import Select
+from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -1267,11 +1268,222 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t.notes == ''
         assert t.is_active is True
 
+    def test_20_issue152_active_budget(self, base_url, selenium):
+        """add a new Transaction against an active budget"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        btn = selenium.find_element_by_id('btn-add-txn')
+        btn.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        dt_text = body.find_element_by_id('trans_frm_date')
+        dt_text.clear()
+        dt_text.send_keys(
+            (dtnow() - timedelta(days=2)).strftime('%Y-%m-%d')
+        )
+        body.find_element_by_id('trans_frm_amount').send_keys('100.00')
+        body.find_element_by_id('trans_frm_description').send_keys(
+            'issue152regression1'
+        )
+        body.find_element_by_id('trans_frm_notes').clear()
+        body.find_element_by_id('trans_frm_notes').send_keys(
+            'regression test #1 for issue #152'
+        )
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == 'None'
+        budget_sel.select_by_value('2')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 8 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = [y[2] for y in self.tbody2textlist(table)]
+        assert 'issue152regression1 (8)' in texts
+
+    def test_21_issue152_verify_db(self, testdb):
+        """verify the transaction we added"""
+        t1 = testdb.query(Transaction).get(8)
+        assert t1.date == (dtnow() - timedelta(days=2)).date()
+        assert float(t1.actual_amount) == 100.00
+        assert t1.description == 'issue152regression1'
+        assert t1.notes == 'regression test #1 for issue #152'
+        assert t1.account_id == 1
+        assert t1.scheduled_trans_id is None
+        assert t1.budget_id == 2
+
+    def test_22_issue152_info_panels(self, base_url, selenium):
+        """verify pay period totals"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.67'
+        assert selenium.find_element_by_id('amt-allocated').text == '$511.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$445.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,834.57'
+
+    def test_23_issue152_periodic_budgets(self, base_url, selenium):
+        """verify budget totals"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$155.55',
+                '$123.13',
+                '<span class="text-danger">-$56.46</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$355.55',
+                '$322.22',
+                '<span class="text-danger">-$121.55</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.67',
+                '$0.00',
+                '$0.00',
+                '$2,345.67'
+            ]
+        ]
+
+    def test_24_issue152_attempt_add_inactive_budget(self, base_url, selenium):
+        """attempt to add a new Transaction against an INactive budget"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        btn = selenium.find_element_by_id('btn-add-txn')
+        btn.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        dt_text = body.find_element_by_id('trans_frm_date')
+        dt_text.clear()
+        dt_text.send_keys(
+            (dtnow() - timedelta(days=2)).strftime('%Y-%m-%d')
+        )
+        body.find_element_by_id('trans_frm_amount').send_keys('100.00')
+        body.find_element_by_id('trans_frm_description').send_keys(
+            'issue152regression2'
+        )
+        body.find_element_by_id('trans_frm_notes').clear()
+        body.find_element_by_id('trans_frm_notes').send_keys(
+            'regression test #2 for issue #152'
+        )
+        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        opts = []
+        for o in acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['6', 'Standing3 Inactive'],
+            ['7', 'Income (i)']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == 'None'
+        budget_sel.select_by_value('3')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' not in x.get_attribute('class')
+        budg_grp = body.find_element_by_id('trans_frm_budget_group')
+        assert 'has-error' in budg_grp.get_attribute('class')
+        p_elems = budg_grp.find_elements_by_tag_name('p')
+        assert len(p_elems) == 1
+        assert 'text-danger' in p_elems[0].get_attribute('class')
+        assert p_elems[0].get_attribute(
+            'innerHTML'
+        ) == 'New transactions cannot use an inactive budget.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = [y[2] for y in self.tbody2textlist(table)]
+        assert 'issue152regression2' not in texts
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 @pytest.mark.incremental
 class TestMakeTransModal(AcceptanceHelper):
+    """Tests the "Make Transaction" modal on scheuled trans"""
 
     def test_00_inactivate_scheduled(self, testdb):
         for s in testdb.query(
