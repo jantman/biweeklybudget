@@ -236,6 +236,10 @@ class TransactionFormHandler(FormHandlerView):
         """
         have_errors = False
         errors = {k: [] for k in data.keys()}
+        txn = None
+        if 'id' in data and data['id'].strip() != '':
+            # updating an existing budget
+            txn = db_session.query(Transaction).get(int(data['id']))
         if data.get('description', '').strip() == '':
             errors['description'].append('Description cannot be empty')
             have_errors = True
@@ -248,6 +252,19 @@ class TransactionFormHandler(FormHandlerView):
         if data['budget'] == 'None':
             errors['budget'].append('Transactions must have a budget')
             have_errors = True
+        else:
+            budg = db_session.query(Budget).get(int(data['budget']))
+            if (
+                not budg.is_active and
+                (
+                    txn is None or
+                    txn.budget_id != budg.id
+                )
+            ):
+                errors['budget'].append(
+                    'New transactions cannot use an inactive budget.'
+                )
+                have_errors = True
         if data['date'].strip() == '':
             errors['date'].append('Transactions must have a date')
             have_errors = True
