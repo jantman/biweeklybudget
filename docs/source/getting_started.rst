@@ -255,20 +255,18 @@ settings are needed:
 2. You must mount the Vault token file path (:py:const:`~biweeklybudget.settings.TOKEN_PATH`) into the container.
 3. You must set either the ``VAULT_ADDR`` environment variable, or the :py:const:`~biweeklybudget.settings.VAULT_ADDR` setting.
 
-As an example, for using ofxgetter with :py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH` in your settings file
-set to ``/statements`` and :py:const:`~biweeklybudget.settings.TOKEN_PATH` set to ``/.token`` (root paths used here
-for simplicity in the example), you would add to your ``docker run`` command:
+As an example, for using ofxgetter in Docker with your statements saved to ``/home/myuser/statements`` on your host computer and your Vault token stored in ``/home/myuser/.vault-token`` on your host computer, you would set :py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH` in your settings file to ``/statements`` and :py:const:`~biweeklybudget.settings.TOKEN_PATH` to ``/.token``, and add to your ``docker run`` command:
 
 .. code-block:: none
 
-    -v /statements:/statements \
-    -v /.token:/.token
+    -v /home/myuser/statements:/statements \
+    -v /home/myuser/.vault-token:/.token
 
 Assuming your container was running with ``--name biweeklybudget``, you could run ofxgetter (e.g. via cron) as:
 
-.. code-block::none
+.. code-block:: none
 
-    docker exec biweeklybudget /bin/bash -c 'cd /statements && /app/bin/ofxgetter'
+    docker exec biweeklybudget /bin/sh -c 'cd /statements && /app/bin/ofxgetter'
 
 We run explicitly in the statements directory so that if ``ofxgetter`` encounters an error
 when using a :py:class:`~biweeklybudget.screenscraper.ScreenScraper` class, the screenshots

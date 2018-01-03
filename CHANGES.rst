@@ -8,6 +8,7 @@ Unreleased Changes
 * Remove ``pluggy`` transient dependency from requirements.txt; was breaking builds.
 * Following pytest, drop testing of and support for Python 3.3.
 * `Issue #159 <https://github.com/jantman/biweeklybudget/issues/159>`_ - Implement internationalization of volume and distance units for Fuel Log pages. This change introduces five new settings: ``FUEL_VOLUME_UNIT``, ``FUEL_VOLUME_ABBREVIATION``, ``DISTANCE_UNIT``, ``DISTANCE_UNIT_ABBREVIATION`` and ``FUEL_ECO_ABBREVIATION``.
+* `Issue #154 <https://github.com/jantman/biweeklybudget/issues/154>`_ - Fix documentation errors on the Getting Started page, "Running ofxgetter in Docker" section.
 
 0.6.0 (2017-11-11)
 ------------------
