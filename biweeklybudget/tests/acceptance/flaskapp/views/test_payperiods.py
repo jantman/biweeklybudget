@@ -1478,6 +1478,71 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'issue152regression2' not in texts
 
+    def test_30_issue152_inactive_budget(self, testdb):
+        """create a transaction via an inactive budget"""
+        trans = Transaction(
+            account_id=1,
+            actual_amount=Decimal('200.00'),
+            budget_id=3,
+            date=(dtnow() - timedelta(days=1)).date(),
+            description='issue152regression3',
+            notes='issue #152 regression test #3'
+        )
+        testdb.add(trans)
+        testdb.commit()
+        t1 = testdb.query(Transaction).get(9)
+        assert t1.date == (dtnow() - timedelta(days=1)).date()
+        assert float(t1.actual_amount) == 200.00
+        assert t1.description == 'issue152regression3'
+        assert t1.notes == 'issue #152 regression test #3'
+        assert t1.account_id == 1
+        assert t1.scheduled_trans_id is None
+        assert t1.budget_id == 3
+
+    def test_31_issue152_edit_inactive(self, base_url, selenium):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_element_by_xpath(
+            '//a[text()="issue152regression3 (9)"]'
+        )
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 9'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '9'
+        desc = body.find_element_by_id('trans_frm_description')
+        desc.send_keys('-edited')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 9 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        # test that updated budget was removed from the page
+        table = selenium.find_element_by_id('trans-table')
+        texts = [y[2] for y in self.tbody2textlist(table)]
+        assert 'issue152regression3-edited (9)' in texts
+
+    def test_32_issue152_verify_db(self, testdb):
+        t1 = testdb.query(Transaction).get(9)
+        assert t1.date == (dtnow() - timedelta(days=1)).date()
+        assert float(t1.actual_amount) == 200.00
+        assert t1.description == 'issue152regression3-edited'
+        assert t1.notes == 'issue #152 regression test #3'
+        assert t1.account_id == 1
+        assert t1.scheduled_trans_id is None
+        assert t1.budget_id == 3
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')

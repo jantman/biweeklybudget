@@ -254,15 +254,15 @@ class TransactionFormHandler(FormHandlerView):
             have_errors = True
         else:
             budg = db_session.query(Budget).get(int(data['budget']))
-            if (
-                not budg.is_active and
-                (
-                    txn is None or
-                    txn.budget_id != budg.id
-                )
-            ):
+            if not budg.is_active and txn is None:
                 errors['budget'].append(
                     'New transactions cannot use an inactive budget.'
+                )
+                have_errors = True
+            elif not budg.is_active and txn.budget_id != budg.id:
+                errors['budget'].append(
+                    'Existing transactions cannot be changed to use an '
+                    'inactive budget.'
                 )
                 have_errors = True
         if data['date'].strip() == '':
