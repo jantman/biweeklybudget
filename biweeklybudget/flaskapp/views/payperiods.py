@@ -135,6 +135,12 @@ class PayPeriodView(MethodView):
                 Budget.is_active.__eq__(True)
             ).all()
         }
+        # Issue #161 - backfill inactive budgets that have transactions
+        # in this payperiod.
+        for budg_id in pp.budget_sums:
+            if budg_id not in periodic:
+                b = db_session.query(Budget).get(budg_id)
+                periodic[b.id] = b.current_balance
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         txfr_date_str = dtnow().strftime('%Y-%m-%d')
         if dtnow().date() < pp.start_date or dtnow().date() > pp.end_date:
