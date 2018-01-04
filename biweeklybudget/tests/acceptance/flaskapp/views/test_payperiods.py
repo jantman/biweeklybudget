@@ -1543,6 +1543,64 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t1.scheduled_trans_id is None
         assert t1.budget_id == 3
 
+    def test_40_issue161_info_panels(self, base_url, selenium):
+        """verify pay period totals"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element_by_id(
+            'amt-income').text == '$2,345.67'
+        assert selenium.find_element_by_id('amt-allocated').text == '$711.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$645.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,634.57'
+
+    def test_41_issue161_periodic_budgets(self, base_url, selenium):
+        """verify budget totals"""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element_by_id('pb-table')
+        elems = self.tbody2elemlist(table)
+        htmls = []
+        for row in elems:
+            htmls.append(
+                [x.get_attribute('innerHTML') for x in row]
+            )
+        assert htmls == [
+            [
+                '<a href="/budgets/1">Periodic1</a>',
+                '$100.00',
+                '$155.55',
+                '$123.13',
+                '<span class="text-danger">-$56.46</span>'
+            ],
+            [
+                '<a href="/budgets/2">Periodic2</a>',
+                '$234.00',
+                '$355.55',
+                '$322.22',
+                '<span class="text-danger">-$121.55</span>'
+            ],
+            [
+                '<a href="/budgets/3">Periodic3</a>',
+                '$0.00',
+                '$200.00',
+                '$200.00',
+                '<span class="text-danger">-$200.00</span>'
+            ],
+            [
+                '<a href="/budgets/7">Income (i)</a>',
+                '$2,345.67',
+                '$0.00',
+                '$0.00',
+                '$2,345.67'
+            ]
+        ]
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
