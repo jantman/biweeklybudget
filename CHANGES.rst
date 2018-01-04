@@ -10,6 +10,7 @@ Unreleased Changes
 * `Issue #159 <https://github.com/jantman/biweeklybudget/issues/159>`_ - Implement internationalization of volume and distance units for Fuel Log pages. This change introduces five new settings: ``FUEL_VOLUME_UNIT``, ``FUEL_VOLUME_ABBREVIATION``, ``DISTANCE_UNIT``, ``DISTANCE_UNIT_ABBREVIATION`` and ``FUEL_ECO_ABBREVIATION``.
 * `Issue #154 <https://github.com/jantman/biweeklybudget/issues/154>`_ - Fix documentation errors on the Getting Started page, "Running ofxgetter in Docker" section.
 * `Issue #152 <https://github.com/jantman/biweeklybudget/issues/152>`_ - Fix for bug where new Transactions could be entered against inactive budgets. Ensure that existing transactions against inactive budgets can still be edited, but existing transactions cannot be changed to an inactive budget.
+* `Issue #161 <https://github.com/jantman/biweeklybudget/issues/161>`_ - Fix bug where Transactions against inactive budgets weren't counted towards payperiod overall or per-budget totals.
 
 0.6.0 (2017-11-11)
 ------------------

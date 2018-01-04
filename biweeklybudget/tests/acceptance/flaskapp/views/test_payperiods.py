@@ -1586,11 +1586,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
                 '<span class="text-danger">-$121.55</span>'
             ],
             [
-                '<a href="/budgets/3">Periodic3</a>',
-                '$0.00',
+                '<a href="/budgets/3">Periodic3 Inactive</a>',
+                '$10.23',
                 '$200.00',
                 '$200.00',
-                '<span class="text-danger">-$200.00</span>'
+                '<span class="text-danger">-$189.77</span>'
             ],
             [
                 '<a href="/budgets/7">Income (i)</a>',

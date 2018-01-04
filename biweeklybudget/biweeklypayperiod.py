@@ -429,8 +429,18 @@ class BiweeklyPayPeriod(object):
             }
         for t in self.transactions_list:
             if t['budget_id'] not in res:
-                # inactive budget
-                continue
+                # Issue #161 - inactive budget, but transaction for it in this
+                # period. Add it if it's a periodic budget.
+                b = self._db.query(Budget).get(t['budget_id'])
+                if not b.is_periodic:
+                    continue
+                res[b.id] = {
+                    'budget_amount': b.starting_balance,
+                    'allocated': Decimal('0.0'),
+                    'spent': Decimal('0.0'),
+                    'trans_total': Decimal('0.0'),
+                    'is_income': b.is_income
+                }
             if t['type'] == 'ScheduledTransaction':
                 res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['trans_total'] += t['amount']
