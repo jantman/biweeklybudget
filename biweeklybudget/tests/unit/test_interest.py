@@ -287,13 +287,13 @@ class TestInterestHelper(object):
                 'payoff_months': 28,
                 'total_payments': Decimal('963.2130700030116938658705389'),
                 'total_interest': Decimal('11.1530700030116938658705389'),
-                'first_payment': Decimal('12.3')
+                'next_payment': Decimal('12.3')
             },
             4: {
                 'payoff_months': 164,
                 'total_payments': Decimal('8764.660910733671904414120065'),
                 'total_interest': Decimal('3266.010910733671904414120065'),
-                'first_payment': Decimal('4.56')
+                'next_payment': Decimal('4.56')
             }
         }
 

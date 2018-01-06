@@ -148,7 +148,7 @@ class InterestHelper(object):
           payoff method), "doc" (the docstring of the class), and "results".
           The "results" dict has integer `account_id` as the key, and values are
           dicts with keys "payoff_months" (int), "total_payments" (Decimal),
-          "total_interest" (Decimal) and ``first_payment`` (Decimal).
+          "total_interest" (Decimal) and ``next_payment`` (Decimal).
         :rtype: dict
         """
         res = {}
@@ -180,7 +180,7 @@ class InterestHelper(object):
         :type cls: biweeklybudget.interest._PayoffMethod
         :return: Dict with integer `account_id` as the key, and values are
           dicts with keys "payoff_months" (int), "total_payments" (Decimal),
-          "total_interest" (Decimal), "first_payment" (Decimal).
+          "total_interest" (Decimal), "next_payment" (Decimal).
         :rtype: dict
         """
         balances = {
@@ -194,7 +194,7 @@ class InterestHelper(object):
                 'payoff_months': result[0],
                 'total_payments': result[1],
                 'total_interest': result[1] - balances[a_id],
-                'first_payment': result[2]
+                'next_payment': result[2]
             }
         return res
 
@@ -860,7 +860,7 @@ def calculate_payoffs(payment_method, statements):
     for idx, stmt in enumerate(statements):
         payoffs[stmt] = {
             'months': 0, 'amt': Decimal('0.0'), 'idx': idx, 'done': False,
-            'first_pymt_amt': None
+            'next_pymt_amt': None
         }
     while len(unpaid(payoffs)) > 0:
         u = unpaid(payoffs)
@@ -873,13 +873,13 @@ def calculate_payoffs(payment_method, statements):
                 payoffs[stmt]['done'] = True
                 payoffs[stmt]['months'] += 1  # increment months
                 payoffs[stmt]['amt'] += stmt.principal
-                if payoffs[stmt]['first_pymt_amt'] is None:
-                    payoffs[stmt]['first_pymt_amt'] = stmt.principal
+                if payoffs[stmt]['next_pymt_amt'] is None:
+                    payoffs[stmt]['next_pymt_amt'] = stmt.principal
                 continue
             payoffs[stmt]['months'] += 1  # increment months
             payoffs[stmt]['amt'] += p_amt
-            if payoffs[stmt]['first_pymt_amt'] is None:
-                payoffs[stmt]['first_pymt_amt'] = p_amt
+            if payoffs[stmt]['next_pymt_amt'] is None:
+                payoffs[stmt]['next_pymt_amt'] = p_amt
             new_s = stmt.pay(Decimal('-1') * p_amt)
             payoffs[new_s] = payoffs[stmt]
             del payoffs[stmt]
@@ -888,9 +888,9 @@ def calculate_payoffs(payment_method, statements):
         tmp = (
             payoffs[s]['months'],
             payoffs[s]['amt'],
-            payoffs[s]['first_pymt_amt']
+            payoffs[s]['next_pymt_amt']
         )
-        if payoffs[s]['first_pymt_amt'] is None:
+        if payoffs[s]['next_pymt_amt'] is None:
             tmp = (
                 payoffs[s]['months'],
                 payoffs[s]['amt'],
