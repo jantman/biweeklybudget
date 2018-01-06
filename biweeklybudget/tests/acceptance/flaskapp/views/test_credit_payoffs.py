@@ -160,14 +160,14 @@ class TestNoSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.6 years', '$6,956.35', '$1,457.70'
             ],
-            ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
+            ['Totals', '$144.97', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
     def test_02_highest_interest_payment(self, base_url, selenium):
@@ -178,14 +178,14 @@ class TestNoSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.6 years', '$6,956.35', '$1,457.70'
             ],
-            ['Totals', '4.6 years', '$7,919.34', '$1,468.63']
+            ['Totals', '$144.97', '4.6 years', '$7,919.34', '$1,468.63']
         ]
 
     def test_03_lowest_balance_payment(self, base_url, selenium):
@@ -194,14 +194,14 @@ class TestNoSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '1.8 years', '$960.92', '$8.86'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.7 years', '$6,988.24', '$1,489.59'
             ],
-            ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
+            ['Totals', '$144.97', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
     def test_04_lowest_interest_payment(self, base_url, selenium):
@@ -212,14 +212,14 @@ class TestNoSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '1.8 years', '$960.92', '$8.86'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.7 years', '$6,988.24', '$1,489.59'
             ],
-            ['Totals', '4.7 years', '$7,949.15', '$1,498.44']
+            ['Totals', '$144.97', '4.7 years', '$7,949.15', '$1,498.44']
         ]
 
     def test_05_min_payment(self, base_url, selenium):
@@ -228,14 +228,14 @@ class TestNoSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '13.5 years', '$8,664.86', '$3,166.21'
             ],
-            ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
+            ['Totals', '$144.97', '13.5 years', '$9,627.86', '$3,177.15']
         ]
 
 
@@ -368,14 +368,14 @@ class TestSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$179.55',
                 '4.0 years', '$6,734.42', '$1,235.77'
             ],
-            ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
+            ['Totals', '$214.55', '4.0 years', '$7,697.42', '$1,246.71']
         ]
 
     def test_06_highest_interest_payment(self, base_url, selenium):
@@ -386,14 +386,14 @@ class TestSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$179.55',
                 '4.0 years', '$6,734.42', '$1,235.77'
             ],
-            ['Totals', '4.0 years', '$7,697.42', '$1,246.71']
+            ['Totals', '$214.55', '4.0 years', '$7,697.42', '$1,246.71']
         ]
 
     def test_07_lowest_balance_payment(self, base_url, selenium):
@@ -402,14 +402,14 @@ class TestSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$104.58',
                 '1.3 years', '$958.10', '$6.04'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.1 years', '$6,809.61', '$1,310.96'
             ],
-            ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
+            ['Totals', '$214.55', '4.1 years', '$7,767.71', '$1,317.00']
         ]
 
     def test_08_lowest_interest_payment(self, base_url, selenium):
@@ -420,14 +420,14 @@ class TestSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$104.58',
                 '1.3 years', '$958.10', '$6.04'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '4.1 years', '$6,809.61', '$1,310.96'
             ],
-            ['Totals', '4.1 years', '$7,767.71', '$1,317.00']
+            ['Totals', '$214.55', '4.1 years', '$7,767.71', '$1,317.00']
         ]
 
     def test_09_min_payment(self, base_url, selenium):
@@ -436,14 +436,14 @@ class TestSettings(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                'CreditOne (3) ($952.06 @ 1.00%)',
+                'CreditOne (3) ($952.06 @ 1.00%)', '$35.00',
                 '2.3 years', '$963.00', '$10.94'
             ],
             [
-                'CreditTwo (4) ($5,498.65 @ 10.00%)',
+                'CreditTwo (4) ($5,498.65 @ 10.00%)', '$109.97',
                 '13.5 years', '$8,664.86', '$3,166.21'
             ],
-            ['Totals', '13.5 years', '$9,627.86', '$3,177.15']
+            ['Totals', '$144.97', '13.5 years', '$9,627.86', '$3,177.15']
         ]
 
     def test_10_input_and_save_remove_lines(self, base_url, selenium):

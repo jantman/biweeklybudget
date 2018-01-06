@@ -53,20 +53,6 @@ from biweeklybudget.utils import fmt_currency
 logger = logging.getLogger(__name__)
 
 
-def parse_payoff_settings_json(j):
-    """
-    Given the 'credit-payoff' DBSettings JSON string value, parse it and return
-    a dict with keys "increases" and "onetimes", each having a value of a dict
-    of :py:class:`datetime.date` to :py:class:`decimal.Decimal`.
-
-    :param j: 'credit-payoff' DBSettings JSON string value
-    :type j: str
-    :return: credit payoff settings
-    :rtype: dict
-    """
-    pass
-
-
 class CreditPayoffsView(MethodView):
     """
     Render the top-level GET /accounts/credit-payoff view using
@@ -96,6 +82,7 @@ class CreditPayoffsView(MethodView):
                 continue
             total_pymt = Decimal('0')
             total_int = Decimal('0')
+            total_next = Decimal('0')
             max_mos = 0
             for k in sorted(res[methname]['results'].keys()):
                 r = res[methname]['results'][k]
@@ -110,16 +97,19 @@ class CreditPayoffsView(MethodView):
                     ),
                     'total_payments': r['total_payments'],
                     'total_interest': r['total_interest'],
-                    'payoff_months': r['payoff_months']
+                    'payoff_months': r['payoff_months'],
+                    'next_payment': r['next_payment']
                 })
                 total_pymt += r['total_payments']
                 total_int += r['total_interest']
+                total_next += r['next_payment']
                 if r['payoff_months'] > max_mos:
                     max_mos = r['payoff_months']
             tmp['total'] = {
                 'total_payments': total_pymt,
                 'total_interest': total_int,
-                'payoff_months': max_mos
+                'payoff_months': max_mos,
+                'next_payment': total_next
             }
             payoffs.append(tmp)
         return payoffs
@@ -200,14 +190,6 @@ class PayoffSettingsFormHandler(MethodView):
                     continue
                 fixeddata[key].append(d)
         val = json.dumps(fixeddata, sort_keys=True, cls=MagicJSONEncoder)
-        try:
-            parse_payoff_settings_json(val)
-        except Exception as ex:
-            logger.error('Error converting payoff settings JSON', exc_info=True)
-            return jsonify({
-                'success': False,
-                'error_message': 'Error parsing JSON: %s' % ex
-            })
         logger.info('Changing setting value to: %s', val)
         setting.value = val
         db_session.add(setting)
