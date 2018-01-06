@@ -26,6 +26,7 @@
                                     <thead>
                                         <tr>
                                             <th>Account</th>
+                                            <th>Next Payment</th>
                                             <th>Time To Pay Off</th>
                                             <th>Total Payments</th>
                                             <th>Total Interest</th>
@@ -35,6 +36,7 @@
                                     {% for row in res['results'] %}
                                         <tr>
                                             <td>{{ row['name'] }}</td>
+                                            <td>{{ row['next_payment']|dollars }}</td>
                                             <td>{{ row['payoff_months']|monthsyears }}</td>
                                             <td>{{ row['total_payments']|dollars }}</td>
                                             <td>{{ row['total_interest']|dollars }}</td>
@@ -42,6 +44,7 @@
                                     {% endfor %}
                                         <tr>
                                             <th>Totals</th>
+                                            <th>{{ res['total']['next_payment']|dollars }}</th>
                                             <th>{{ res['total']['payoff_months']|monthsyears }}</th>
                                             <th>{{ res['total']['total_payments']|dollars }}</th>
                                             <th>{{ res['total']['total_interest']|dollars }}</th>

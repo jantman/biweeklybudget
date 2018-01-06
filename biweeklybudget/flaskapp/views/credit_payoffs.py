@@ -82,6 +82,7 @@ class CreditPayoffsView(MethodView):
                 continue
             total_pymt = Decimal('0')
             total_int = Decimal('0')
+            total_next = Decimal('0')
             max_mos = 0
             for k in sorted(res[methname]['results'].keys()):
                 r = res[methname]['results'][k]
@@ -96,16 +97,19 @@ class CreditPayoffsView(MethodView):
                     ),
                     'total_payments': r['total_payments'],
                     'total_interest': r['total_interest'],
-                    'payoff_months': r['payoff_months']
+                    'payoff_months': r['payoff_months'],
+                    'next_payment': r['next_payment']
                 })
                 total_pymt += r['total_payments']
                 total_int += r['total_interest']
+                total_next += r['next_payment']
                 if r['payoff_months'] > max_mos:
                     max_mos = r['payoff_months']
             tmp['total'] = {
                 'total_payments': total_pymt,
                 'total_interest': total_int,
-                'payoff_months': max_mos
+                'payoff_months': max_mos,
+                'next_payment': total_next
             }
             payoffs.append(tmp)
         return payoffs
