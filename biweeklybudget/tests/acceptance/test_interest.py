@@ -110,7 +110,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '962.9988625702411101133192793'
-                        )
+                        ),
+                        'first_payment': Decimal('35')
                     },
                     4: {
                         'payoff_months': 55,
@@ -119,7 +120,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '6956.345228060182432444990377'
-                        )
+                        ),
+                        'first_payment': Decimal('109.9730')
                     }
                 }
             },
@@ -135,7 +137,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '962.9988625702411101133192793'
-                        )
+                        ),
+                        'first_payment': Decimal('35')
                     },
                     4: {
                         'payoff_months': 55,
@@ -144,7 +147,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '6956.345228060182432444990377'
-                        )
+                        ),
+                        'first_payment': Decimal('109.9730')
                     }
                 }
             },
@@ -161,7 +165,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '960.9178327498502165965138131'
-                        )
+                        ),
+                        'first_payment': Decimal('35')
                     },
                     4: {
                         'payoff_months': 56,
@@ -170,7 +175,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '6988.237124948955044765363412'
-                        )
+                        ),
+                        'first_payment': Decimal('109.9730')
                     }
                 }
             },
@@ -186,7 +192,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '960.9178327498502165965138131'
-                        )
+                        ),
+                        'first_payment': Decimal('35')
                     },
                     4: {
                         'payoff_months': 56,
@@ -195,7 +202,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '6988.237124948955044765363412'
-                        )
+                        ),
+                        'first_payment': Decimal('109.9730')
                     }
                 }
             },
@@ -210,7 +218,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '962.9988625702411101133192793'
-                        )
+                        ),
+                        'first_payment': Decimal('35')
                     },
                     4: {
                         'payoff_months': 162,
@@ -219,7 +228,8 @@ class TestInterestHelper(AcceptanceHelper):
                         ),
                         'total_payments': Decimal(
                             '8664.861877369277471400473622'
-                        )
+                        ),
+                        'first_payment': Decimal('109.9730')
                     }
                 }
             }

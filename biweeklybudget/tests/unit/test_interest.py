@@ -278,20 +278,22 @@ class TestInterestHelper(object):
         mock_m = Mock()
         with patch('%s.calculate_payoffs' % pbm) as mock_calc:
             mock_calc.return_value = [
-                (28, Decimal('963.2130700030116938658705389')),
-                (164, Decimal('8764.660910733671904414120065'))
+                (28, Decimal('963.2130700030116938658705389'), Decimal('12.3')),
+                (164, Decimal('8764.660910733671904414120065'), Decimal('4.56'))
             ]
             res = self.cls._calc_payoff_method(mock_m)
         assert res == {
             3: {
                 'payoff_months': 28,
                 'total_payments': Decimal('963.2130700030116938658705389'),
-                'total_interest': Decimal('11.1530700030116938658705389')
+                'total_interest': Decimal('11.1530700030116938658705389'),
+                'first_payment': Decimal('12.3')
             },
             4: {
                 'payoff_months': 164,
                 'total_payments': Decimal('8764.660910733671904414120065'),
-                'total_interest': Decimal('3266.010910733671904414120065')
+                'total_interest': Decimal('3266.010910733671904414120065'),
+                'first_payment': Decimal('4.56')
             }
         }
 
@@ -1038,6 +1040,7 @@ class TestCalculatePayoffs(object):
 
         def se_minpay_B(*args):
             return Decimal('60.00')
+
         b1 = _BillingPeriod(date(2017, 1, 2))
         i1 = Mock(spec_set=_InterestCalculation)
         i1.calculate.side_effect = se_interest
@@ -1060,9 +1063,9 @@ class TestCalculatePayoffs(object):
         meth = MinPaymentMethod()
         res = calculate_payoffs(meth, [s1, s2, s3])
         assert res == [
-            (8, Decimal('24.00')),
-            (1, Decimal('20.00')),
-            (0, Decimal('0.0'))
+            (8, Decimal('24.00'), Decimal('3.00')),
+            (1, Decimal('20.00'), Decimal('20.00')),
+            (0, Decimal('0.0'), Decimal('0.0'))
         ]
 
 
@@ -1169,14 +1172,22 @@ class TestAcceptanceData(object):
             MinPaymentMethod(),
             [self.stmt_cc_one]
         )
-        assert res == [(28, Decimal('962.9988625702411101133192793'))]
+        assert res == [
+            (28, Decimal('962.9988625702411101133192793'), Decimal('35'))
+        ]
 
     def test_cc_two_pay_min(self):
         res = calculate_payoffs(
             MinPaymentMethod(),
             [self.stmt_cc_two]
         )
-        assert res == [(162, Decimal('8664.861877369277471400473622'))]
+        assert res == [
+            (
+                162,
+                Decimal('8664.861877369277471400473622'),
+                Decimal('109.9730')
+            )
+        ]
 
     def test_cc_combined_minimum(self):
         assert (
@@ -1189,8 +1200,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (162, Decimal('8664.861877369277471400473622'))
+            (28, Decimal('962.9988625702411101133192793'), Decimal('35')),
+            (162, Decimal('8664.861877369277471400473622'), Decimal('109.9730'))
         ]
 
     def test_combined_pay_lowest_ir(self):
@@ -1199,8 +1210,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (21, Decimal('960.9178327498502165965138131')),
-            (56, Decimal('6988.237124948955044765363412'))
+            (21, Decimal('960.9178327498502165965138131'), Decimal('35')),
+            (56, Decimal('6988.237124948955044765363412'), Decimal('109.9730'))
         ]
 
     def test_combined_pay_lowest_bal(self):
@@ -1209,8 +1220,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (21, Decimal('960.9178327498502165965138131')),
-            (56, Decimal('6988.237124948955044765363412'))
+            (21, Decimal('960.9178327498502165965138131'), Decimal('35')),
+            (56, Decimal('6988.237124948955044765363412'), Decimal('109.9730'))
         ]
 
     def test_combined_pay_highest_ir(self):
@@ -1219,8 +1230,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (55, Decimal('6956.345228060182432444990377'))
+            (28, Decimal('962.9988625702411101133192793'), Decimal('35')),
+            (55, Decimal('6956.345228060182432444990377'), Decimal('109.9730'))
         ]
 
     def test_combined_pay_highest_bal(self):
@@ -1229,8 +1240,8 @@ class TestAcceptanceData(object):
             [self.stmt_cc_one, self.stmt_cc_two]
         )
         assert res == [
-            (28, Decimal('962.9988625702411101133192793')),
-            (55, Decimal('6956.345228060182432444990377'))
+            (28, Decimal('962.9988625702411101133192793'), Decimal('35')),
+            (55, Decimal('6956.345228060182432444990377'), Decimal('109.9730'))
         ]
 
 
@@ -1283,21 +1294,21 @@ class TestSimpleData(object):
             MinPaymentMethod(),
             [self.stmt_cc_one]
         )
-        assert res == [(6, Decimal('1060.0'))]
+        assert res == [(6, Decimal('1060.0'), Decimal('200.00'))]
 
     def test_cc_two_pay_min(self):
         res = calculate_payoffs(
             MinPaymentMethod(),
             [self.stmt_cc_two]
         )
-        assert res == [(13, Decimal('2520.0'))]
+        assert res == [(13, Decimal('2520.0'), Decimal('200.00'))]
 
     def test_cc_three_pay_min(self):
         res = calculate_payoffs(
             MinPaymentMethod(),
             [self.stmt_cc_three]
         )
-        assert res == [(25, Decimal('12500.0'))]
+        assert res == [(25, Decimal('12500.0'), Decimal('500.00'))]
 
     def test_combined_pay_min(self):
         res = calculate_payoffs(
@@ -1305,9 +1316,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (13, Decimal('2520.0')),
-            (25, Decimal('12500.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (13, Decimal('2520.0'), Decimal('200.00')),
+            (25, Decimal('12500.0'), Decimal('500.00'))
         ]
 
     def test_lowest_balance_first(self):
@@ -1316,9 +1327,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (4, Decimal('1040.0')),
-            (7, Decimal('2280.0')),
-            (15, Decimal('11500.0'))
+            (4, Decimal('1040.0'), Decimal('300.00')),
+            (7, Decimal('2280.0'), Decimal('200.00')),
+            (15, Decimal('11500.0'), Decimal('500.00'))
         ]
 
     def test_highest_balance_first(self):
@@ -1327,9 +1338,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (13, Decimal('2520.0')),
-            (16, Decimal('11600.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (13, Decimal('2520.0'), Decimal('200.00')),
+            (16, Decimal('11600.0'), Decimal('600.00'))
         ]
 
     def test_lowest_interest_rate_first(self):
@@ -1338,9 +1349,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (4, Decimal('1040.0')),
-            (7, Decimal('2280.0')),
-            (15, Decimal('11500.0'))
+            (4, Decimal('1040.0'), Decimal('300.00')),
+            (7, Decimal('2280.0'), Decimal('200.00')),
+            (15, Decimal('11500.0'), Decimal('500.00'))
         ]
 
     def test_highest_interest_rate_first(self):
@@ -1349,9 +1360,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (13, Decimal('2520.0')),
-            (16, Decimal('11600.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (13, Decimal('2520.0'), Decimal('200.00')),
+            (16, Decimal('11600.0'), Decimal('600.00'))
         ]
 
     def test_lowest_balance_first_with_increases(self):
@@ -1366,9 +1377,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (3, Decimal('1030.0')),
-            (6, Decimal('2240.0')),
-            (12, Decimal('11200.0'))
+            (3, Decimal('1030.0'), Decimal('300.00')),
+            (6, Decimal('2240.0'), Decimal('200.00')),
+            (12, Decimal('11200.0'), Decimal('500.00'))
         ]
 
     def test_highest_balance_first_with_increases(self):
@@ -1383,9 +1394,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (13, Decimal('2520.0')),
-            (12, Decimal('11200.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (13, Decimal('2520.0'), Decimal('200.00')),
+            (12, Decimal('11200.0'), Decimal('600.00'))
         ]
 
     def test_lowest_balance_first_with_onetimes(self):
@@ -1401,9 +1412,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (2, Decimal('1020.0')),
-            (5, Decimal('2200.0')),
-            (11, Decimal('11100.0'))
+            (2, Decimal('1020.0'), Decimal('300.00')),
+            (5, Decimal('2200.0'), Decimal('200.00')),
+            (11, Decimal('11100.0'), Decimal('500.00'))
         ]
 
     def test_highest_balance_first_with_onetimes(self):
@@ -1419,9 +1430,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (12, Decimal('2480.0')),
-            (11, Decimal('11100.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (12, Decimal('2480.0'), Decimal('200.00')),
+            (11, Decimal('11100.0'), Decimal('600.00'))
         ]
 
     def test_lowest_balance_first_with_increases_and_onetimes(self):
@@ -1441,9 +1452,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (3, Decimal('1030.0')),
-            (4, Decimal('2160.0')),
-            (11, Decimal('11100.0'))
+            (3, Decimal('1030.0'), Decimal('500.00')),
+            (4, Decimal('2160.0'), Decimal('200.00')),
+            (11, Decimal('11100.0'), Decimal('500.00'))
         ]
 
     def test_highest_balance_first_with_increases_and_onetimes(self):
@@ -1462,9 +1473,9 @@ class TestSimpleData(object):
             [self.stmt_cc_one, self.stmt_cc_two, self.stmt_cc_three]
         )
         assert res == [
-            (6, Decimal('1060.0')),
-            (6, Decimal('2240.0')),
-            (5, Decimal('10500.0'))
+            (6, Decimal('1060.0'), Decimal('200.00')),
+            (6, Decimal('2240.0'), Decimal('200.00')),
+            (5, Decimal('10500.0'), Decimal('600.00'))
         ]
 
 
