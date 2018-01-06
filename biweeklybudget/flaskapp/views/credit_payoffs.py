@@ -53,20 +53,6 @@ from biweeklybudget.utils import fmt_currency
 logger = logging.getLogger(__name__)
 
 
-def parse_payoff_settings_json(j):
-    """
-    Given the 'credit-payoff' DBSettings JSON string value, parse it and return
-    a dict with keys "increases" and "onetimes", each having a value of a dict
-    of :py:class:`datetime.date` to :py:class:`decimal.Decimal`.
-
-    :param j: 'credit-payoff' DBSettings JSON string value
-    :type j: str
-    :return: credit payoff settings
-    :rtype: dict
-    """
-    pass
-
-
 class CreditPayoffsView(MethodView):
     """
     Render the top-level GET /accounts/credit-payoff view using
@@ -200,14 +186,6 @@ class PayoffSettingsFormHandler(MethodView):
                     continue
                 fixeddata[key].append(d)
         val = json.dumps(fixeddata, sort_keys=True, cls=MagicJSONEncoder)
-        try:
-            parse_payoff_settings_json(val)
-        except Exception as ex:
-            logger.error('Error converting payoff settings JSON', exc_info=True)
-            return jsonify({
-                'success': False,
-                'error_message': 'Error parsing JSON: %s' % ex
-            })
         logger.info('Changing setting value to: %s', val)
         setting.value = val
         db_session.add(setting)
