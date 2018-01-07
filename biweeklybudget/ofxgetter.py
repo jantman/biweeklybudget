@@ -48,7 +48,7 @@ from ofxparse import OfxParser
 from biweeklybudget.vendored.ofxclient.account \
     import Account as OfxClientAccount
 
-from biweeklybudget.utils import Vault
+from biweeklybudget.vault import Vault
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 from biweeklybudget.ofxapi import apiclient
 

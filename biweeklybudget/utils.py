@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-import hvac
 import logging
 from biweeklybudget import settings
 from datetime import datetime
@@ -132,51 +131,3 @@ def in_directory(path):
     os.chdir(path)
     yield os.path.abspath(path)
     os.chdir(pwd)
-
-
-class SecretMissingException(Exception):
-
-    def __init__(self, path):
-        self.path = path
-
-    def __str__(self):
-        return repr(self.path)
-
-
-class Vault(object):
-    """
-    Provides simpler access to Vault
-    """
-
-    def __init__(self, addr=settings.VAULT_ADDR,
-                 token_path=settings.TOKEN_PATH):
-        """
-        Connect to Vault and maintain connection
-
-        :param addr: URL to connect to Vault at
-        :type addr: str
-        :param token_path: path to read Vault token from
-        :type token_path: str
-        """
-        token_path = os.path.expanduser(token_path)
-        logger.debug('Connecting to Vault at %s with token from %s',
-                     addr, token_path)
-        with open(token_path, 'r') as fh:
-            tkn = fh.read().strip()
-        self.conn = hvac.Client(url=addr, token=tkn)
-        assert self.conn.is_authenticated()
-        logger.debug('Connected to Vault')
-
-    def read(self, secret_path):
-        """
-        Read and return a secret from Vault. Return only the data portion.
-
-        :param secret_path: path to read in Vault
-        :type secret_path: str
-        :return: secret data
-        :rtype: dict
-        """
-        res = self.conn.read(secret_path)
-        if res is None:
-            raise SecretMissingException(secret_path)
-        return res['data']
