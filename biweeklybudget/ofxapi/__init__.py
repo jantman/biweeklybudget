@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 import logging
 
-from biweeklybudget.ofxapi.local import OfxApiLocal
 from biweeklybudget.ofxapi.remote import OfxApiRemote
 
 logger = logging.getLogger(__name__)
@@ -49,6 +48,7 @@ def apiclient(api_url=None, ca_bundle=None, client_cert=None, client_key=None):
         from biweeklybudget.db import init_db, cleanup_db, db_session
         atexit.register(cleanup_db)
         init_db()
+        from biweeklybudget.ofxapi.local import OfxApiLocal
         return OfxApiLocal(db_session)
     logger.info('Using OfxApiRemote with base_url %s', api_url)
     return OfxApiRemote(
