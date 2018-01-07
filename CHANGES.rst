@@ -13,6 +13,7 @@ Unreleased Changes
 * `Issue #161 <https://github.com/jantman/biweeklybudget/issues/161>`_ - Fix bug where Transactions against inactive budgets weren't counted towards payperiod overall or per-budget totals.
 * `Issue #163 <https://github.com/jantman/biweeklybudget/issues/163>`_ - Include next payment amount on Credit Payoffs view.
 * `Issue #84 <https://github.com/jantman/biweeklybudget/issues/84>`_ - Remove vendored-in ``ofxparse`` package now that `my PR <https://github.com/jseutter/ofxparse/pull/127>`_ has been merged and released on PyPI.
+* `Issue #165 <https://github.com/jantman/biweeklybudget/issues/165>`_ - Remove vendored-in ``wishlist`` package now that `my PR <https://github.com/Jaymon/wishlist/pull/8>`_ has been merged and released on PyPI.
 
 0.6.0 (2017-11-11)
 ------------------
