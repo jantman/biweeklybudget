@@ -147,7 +147,6 @@ class GithubReleaser(object):
             self._pandoc,
             '-f', 'rst',
             '-t', 'markdown',
-            '--normalize',
             '--wrap=none',
             '--atx-headers',
             fpath
