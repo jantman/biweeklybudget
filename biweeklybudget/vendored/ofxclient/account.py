@@ -12,7 +12,7 @@ except ImportError:
     IS_PYTHON_2 = True
 import time
 
-from biweeklybudget.vendored.ofxparse import OfxParser, AccountType
+from ofxparse import OfxParser, AccountType
 
 
 class Account(object):

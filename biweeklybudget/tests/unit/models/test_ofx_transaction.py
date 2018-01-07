@@ -38,7 +38,7 @@ import sys
 from datetime import datetime, date
 from decimal import Decimal
 
-from biweeklybudget.vendored.ofxparse.ofxparse import Transaction
+from ofxparse.ofxparse import Transaction
 from pytz import UTC
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import null

@@ -39,7 +39,7 @@ import logging
 from datetime import datetime
 from pytz import UTC
 
-from biweeklybudget.vendored.ofxparse import AccountType, OfxParser
+from ofxparse import AccountType, OfxParser
 from biweeklybudget.db import db_session, upsert_record
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.ofx_statement import OFXStatement

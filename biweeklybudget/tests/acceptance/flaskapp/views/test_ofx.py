@@ -52,7 +52,7 @@ from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.ofxapi import apiclient
 from biweeklybudget.ofxapi.exceptions import DuplicateFileException
-from biweeklybudget.vendored.ofxparse import OfxParser
+from ofxparse import OfxParser
 
 fixturedir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..', '..', 'fixtures')

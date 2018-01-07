@@ -43,7 +43,7 @@ from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.db import init_db, db_session, cleanup_db
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 
-from biweeklybudget.vendored.wishlist.core import Wishlist
+from wishlist.core import Wishlist
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,6 @@ class WishlistToProject(object):
     def __init__(self):
         atexit.register(cleanup_db)
         init_db()
-        self._wlist = Wishlist()
 
     def run(self):
         """
@@ -153,19 +152,20 @@ class WishlistToProject(object):
         res = {}
         list_name = list_url.split('/')[-1]
         logger.debug('Getting wishlist items for wishlist: %s', list_name)
-        items = [i for i in self._wlist.get(list_name)]
+        items = [i for i in Wishlist(list_name)]
         logger.debug("Found %d items in list" % len(items))
         for item in items:
-            d = {'name': item.title, 'url': item.url}
+            item = item.jsonable()
+            d = {'name': item['title'], 'url': item['url']}
             try:
-                d['quantity'] = item.wanted_count
+                d['quantity'] = item['wanted_count']
             except Exception:
                 d['quantity'] = 1
-            if item.price > 0:
-                d['cost'] = item.price
+            if item['price'] > 0:
+                d['cost'] = item['price']
             else:
-                d['cost'] = item.marketplace_price
-            res[item.url] = d
+                d['cost'] = item['marketplace_price']
+            res[item['url']] = d
         return res
 
     def _get_wishlist_projects(self):
