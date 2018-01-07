@@ -44,7 +44,7 @@ from io import StringIO
 import importlib
 import json
 
-from biweeklybudget.vendored.ofxparse import OfxParser
+from ofxparse import OfxParser
 from biweeklybudget.vendored.ofxclient.account \
     import Account as OfxClientAccount
 
