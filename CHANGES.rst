@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+0.7.0 (2018-01-07)
 ------------------
 
 **This version has a remote OFX upload incompatibility. See below.**
