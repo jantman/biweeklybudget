@@ -49,7 +49,6 @@ from biweeklybudget.vendored.ofxclient.account \
     import Account as OfxClientAccount
 
 from biweeklybudget.utils import Vault
-from biweeklybudget import settings
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 from biweeklybudget.ofxapi import apiclient
 
@@ -258,6 +257,10 @@ def parse_args():
                    type=str, default=None,
                    help='path to unencrypted client key to use for SSL client '
                         'cert auth, if key is not contained in the cert file')
+    p.add_argument('-s', '--save-path', dest='save_path', action='store',
+                   type=str, default=None,
+                   help='Statement save path; must be specified when running '
+                        'in remote (-r) mode.')
     p.add_argument('ACCOUNT_NAME', type=str, action='store', default=None,
                    nargs='?',
                    help='Account name; omit to download all accounts')
@@ -294,7 +297,17 @@ def main():
             print(k)
         raise SystemExit(0)
 
-    getter = OfxGetter(client, settings.STATEMENTS_SAVE_PATH)
+    if args.remote is None:
+        from biweeklybudget import settings
+        save_path = settings.STATEMENTS_SAVE_PATH
+    else:
+        if args.save_path is None:
+            logger.error('ERROR: -s|--save-path must be specified when running '
+                         'in remote mode.')
+            raise SystemExit(1)
+        save_path = os.path.abspath(args.save_path)
+
+    getter = OfxGetter(client, save_path)
     if args.ACCOUNT_NAME is not None:
         getter.get_ofx(args.ACCOUNT_NAME)
         raise SystemExit(0)
