@@ -14,8 +14,8 @@ Unreleased Changes
 * `Issue #152 <https://github.com/jantman/biweeklybudget/issues/152>`_ - Fix for bug where new Transactions could be entered against inactive budgets. Ensure that existing transactions against inactive budgets can still be edited, but existing transactions cannot be changed to an inactive budget.
 * `Issue #161 <https://github.com/jantman/biweeklybudget/issues/161>`_ - Fix bug where Transactions against inactive budgets weren't counted towards payperiod overall or per-budget totals.
 * `Issue #163 <https://github.com/jantman/biweeklybudget/issues/163>`_ - Include next payment amount on Credit Payoffs view.
-* `Issue #84 <https://github.com/jantman/biweeklybudget/issues/84>`_ - Remove vendored-in ``ofxparse`` package now that `my PR <https://github.com/jseutter/ofxparse/pull/127>`_ has been merged and released on PyPI. **Important note:** The version of ofxparse is changed in this release. If you are using ``ofxgetter -r`` (remote API mode), the versions of ofxparse (and therefore biweeklybudget/ofxgetter) must match between the client and server.
-* `Issue #165 <https://github.com/jantman/biweeklybudget/issues/165>`_ - Remove vendored-in ``wishlist`` package now that `my PR <https://github.com/Jaymon/wishlist/pull/8>`_ has been merged and released on PyPI.
+* `Issue #84 <https://github.com/jantman/biweeklybudget/issues/84>`_ - Remove vendored-in ``ofxparse`` package now that `my PR #127 <https://github.com/jseutter/ofxparse/pull/127>`_ has been merged and released on PyPI. **Important note:** The version of ofxparse is changed in this release. If you are using ``ofxgetter -r`` (remote API mode), the versions of ofxparse (and therefore biweeklybudget/ofxgetter) must match between the client and server.
+* `Issue #165 <https://github.com/jantman/biweeklybudget/issues/165>`_ - Remove vendored-in ``wishlist`` package now that `my PR #8 <https://github.com/Jaymon/wishlist/pull/8>`_ has been merged and released on PyPI.
 
 0.6.0 (2017-11-11)
 ------------------
