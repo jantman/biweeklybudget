@@ -45,7 +45,6 @@ from pytz import UTC
 from ofxparse import OfxParser
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 
-from biweeklybudget import settings
 from biweeklybudget.cliutils import set_log_debug, set_log_info
 from biweeklybudget.ofxapi import apiclient
 from biweeklybudget.ofxapi.exceptions import DuplicateFileException
@@ -79,7 +78,7 @@ class OfxBackfiller(object):
         logger.debug('Checking for Accounts with statement directories')
         accounts = self._client.get_accounts()
         for acctname in sorted(accounts.keys()):
-            p = os.path.join(settings.STATEMENTS_SAVE_PATH, acctname)
+            p = os.path.join(self.savedir, acctname)
             data = accounts[acctname]
             if not os.path.isdir(p):
                 logger.info('No statement directory for Account %d (%s)',
@@ -160,6 +159,10 @@ def parse_args():
                    default=None,
                    help='biweeklybudget API URL to use instead of direct DB '
                         'access')
+    p.add_argument('-s', '--save-path', dest='save_path', action='store',
+                   type=str, default=None,
+                   help='Statement save path; must be specified when running '
+                        'in remote (-r) mode.')
     p.add_argument('--ca-bundle', dest='ca_bundle', action='store', type=str,
                    default=None,
                    help='Path to CA certificate bundle file or directory to '
@@ -197,8 +200,20 @@ def main():
         api_url=args.remote, ca_bundle=args.ca_bundle,
         client_cert=args.client_cert, client_key=args.client_key
     )
-    cls = OfxBackfiller(client, settings.STATEMENTS_SAVE_PATH)
+
+    if args.remote is None:
+        from biweeklybudget import settings
+        save_path = settings.STATEMENTS_SAVE_PATH
+    else:
+        if args.save_path is None:
+            logger.error('ERROR: -s|--save-path must be specified when running '
+                         'in remote mode.')
+            raise SystemExit(1)
+        save_path = os.path.abspath(args.save_path)
+
+    cls = OfxBackfiller(client, save_path)
     cls.run()
+
 
 if __name__ == "__main__":
     main()
