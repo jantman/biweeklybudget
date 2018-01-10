@@ -114,19 +114,8 @@ RUN set -ex \
         openssl-dev \
     && /app/bin/pip install {install} \
     && /app/bin/pip install gunicorn==19.7.1 \
-    && apk del .build-deps
-
-# install phantomjs per https://github.com/fgrehm/docker-phantomjs2
-RUN set -ex \
-    && apk add --no-cache --virtual .fetch-deps \
-        curl \
-    && mkdir -p /usr/share \
-    && cd /usr/share \
-    && curl -Ls https://github.com/fgrehm/docker-phantomjs2/releases/download/\
-v2.0.0-20150722/dockerized-phantomjs.tar.gz | tar xz -C / \
-    && ln -s /usr/local/bin/phantomjs /usr/bin/phantomjs \
-    && apk del .fetch-deps \
-    && phantomjs --version
+    && apk del .build-deps \
+    && rm -Rf /root/.cache
 
 RUN install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
@@ -147,7 +136,6 @@ CMD ["/app/bin/entrypoint.sh"]
 class DockerImageBuilder(object):
 
     image_name = 'jantman/biweeklybudget'
-    _phantomjs_version = '2.0.0'
 
     def __init__(self, toxinidir, distdir):
         """
@@ -388,12 +376,6 @@ class DockerImageBuilder(object):
             logger.error('GET /payperiods: %s', r.status_code)
             failures = True
         try:
-            self._test_phantomjs(container)
-            logger.info('phantomjs test PASSED')
-        except Exception as exc:
-            logger.error('PhantomJS test failed: %s', exc, exc_info=True)
-            failures = True
-        try:
             self._test_scripts(container)
             logger.info('script tests PASSED')
         except Exception as exc:
@@ -482,59 +464,6 @@ class DockerImageBuilder(object):
         c_ip = cnet['IPAddress']
         logger.debug('Container IP: %s / NetworkSettings: %s', c_ip, cnet)
         return c_ip
-
-    def _test_phantomjs(self, container):
-        """
-        Test phantomjs on the container.
-
-        :param container: biweeklybudget Docker container
-        :type container: ``docker.models.containers.Container``
-        """
-        cmd = [
-            '/bin/sh',
-            '-c',
-            '/usr/bin/phantomjs --version'
-        ]
-        logger.debug('Running: %s', cmd)
-        res = container.exec_run(cmd).decode().strip()
-        logger.debug('Command output:\n%s', res)
-        if res != self._phantomjs_version:
-            raise RuntimeError('ERROR: expected phantomjs version to be %s'
-                               ' but got %s', self._phantomjs_version, res)
-        logger.debug('phamtomjs version correct: %s', res)
-        phantomtest = dedent("""
-        "use strict";
-        var page = require("webpage").create();
-        page.open("http://127.0.0.1:80/", function(status) {
-          console.log("Status: " + status);
-          if(status === "success") {
-            console.log(page.content);
-          }
-          phantom.exit();
-        });
-        """)
-        phantom_script = self._string_to_tarfile('phantomtest.js', phantomtest)
-        container.put_archive('/', phantom_script)
-        cmd = [
-            '/bin/sh',
-            '-c',
-            '/usr/bin/phantomjs /phantomtest.js; '
-            'echo "exitcode=$?"'
-        ]
-        logger.debug('Running: %s', cmd)
-        res = container.exec_run(cmd).decode().strip()
-        logger.debug('Command output:\n%s', res)
-        if 'FATAL' in res or 'PhantomJS has crashed' in res:
-            raise RuntimeError('PhantomJS crashed during test')
-        exitcode = res.split("\n")[-1]
-        if exitcode != 'exitcode=0':
-            raise RuntimeError('Expected PhantomJS to exit with code 0, but'
-                               ' got %s' % exitcode)
-        if '<title>BiweeklyBudget</title>' not in res:
-            raise RuntimeError('PhantomJS page source does not look correct')
-        if '<a class="navbar-brand" href="index.html">BiweeklyBud' not in res:
-            raise RuntimeError('PhantomJS page source does not look correct')
-        logger.info('PhantomJS test SUCCEEDED')
 
     def _test_scripts(self, container):
         """
