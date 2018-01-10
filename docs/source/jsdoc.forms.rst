@@ -6,7 +6,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 .. js:function:: handleForm(container_id, form_id, post_url, dataTableObj)
 
    Generic function to handle form submission with server-side validation.
-   
+
    See the Python server-side code for further information.
 
    :param string container_id: The ID of the container element (div) that is the visual parent of the form. On successful submission, this element will be emptied and replaced with a success message.
@@ -28,7 +28,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 .. js:function:: handleFormSubmitted(data, container_id, form_id, dataTableObj)
 
    Handle the response from the API URL that the form data is POSTed to.
-   
+
    This should either display a success message, or one or more error messages.
 
    :param Object data: response data
@@ -43,7 +43,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 
    Generic function to handle form submission with server-side validation of
    an inline (non-modal) form.
-   
+
    See the Python server-side code for further information.
 
    :param string container_id: The ID of the container element (div) that is the visual parent of the form. On successful submission, this element will be emptied and replaced with a success message.
@@ -66,7 +66,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 
    Handle the response from the API URL that the form data is POSTed to, for an
    inline (non-modal) form.
-   
+
    This should either display a success message, or one or more error messages.
 
    :param Object data: response data
@@ -80,7 +80,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
 .. js:function:: isFunction(functionToCheck)
 
    Return True if ``functionToCheck`` is a function, False otherwise.
-   
+
    From: http://stackoverflow.com/a/7356528/211734
 
    :param Object functionToCheck: The object to test.
