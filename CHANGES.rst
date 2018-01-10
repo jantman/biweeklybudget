@@ -1,12 +1,13 @@
 Changelog
 =========
 
-Unreleased Changes
+0.7.1 (2018-01-10)
 ------------------
 
 * `Issue #170 <https://github.com/jantman/biweeklybudget/issues/170>`_ - Upgrade **all** python dependencies to their latest versions.
 * `Issue #171 <https://github.com/jantman/biweeklybudget/issues/171>`_ - Upgrade Docker base image from ``python:3.6.3-alpine3.4`` to ``python:3.6.4-alpine3.7``.
 * `Issue #157 <https://github.com/jantman/biweeklybudget/issues/157>`_ - Remove PhantomJS from Docker image, as it's broken and shouldn't be needed.
+* Switch TravisCI builds from Docker (``sudo: false``) to VM (``sudo: enabled``) infrastructure.
 
 0.7.0 (2018-01-07)
 ------------------
