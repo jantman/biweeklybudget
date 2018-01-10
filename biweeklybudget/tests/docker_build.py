@@ -69,7 +69,6 @@ import docker
 from io import BytesIO
 import tarfile
 from biweeklybudget.version import VERSION
-from textwrap import dedent
 import subprocess
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
