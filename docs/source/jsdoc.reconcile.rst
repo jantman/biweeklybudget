@@ -115,7 +115,7 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    Ajax callback handler for :js:func:`reconcileGetTransactions`. Display the
    returned data in the proper div.
-   
+
    Sets each Transaction div as ``droppable``, using
    :js:func:`reconcileTransHandleDropEvent` as the drop event handler and
    :js:func:`reconcileTransDroppableAccept` to test if a draggable is droppable

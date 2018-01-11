@@ -108,7 +108,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 .. js:function:: FormBuilder.addRadioInline(name, label, options)
 
    Add an inline radio button set to the form.
-   
+
    Options is an Array of Objects, each object having keys ``id``, ``value``
    and ``label``. Optional keys are ``checked`` (Boolean) and ``onchange``,
    which will have its value placed literally in the HTML.
