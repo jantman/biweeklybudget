@@ -35,12 +35,17 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from sqlalchemy import Column, Integer, Numeric, String, Date, ForeignKey
+import logging
+from sqlalchemy import (
+    Column, Integer, Numeric, String, Date, ForeignKey, inspect
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.utils import dtnow
 from biweeklybudget.settings import RECONCILE_BEGIN_DATE
+
+logger = logging.getLogger(__name__)
 
 
 class Transaction(Base, ModelAsDict):
@@ -127,3 +132,19 @@ class Transaction(Base, ModelAsDict):
             Transaction.date.__ge__(RECONCILE_BEGIN_DATE),
             Transaction.account.has(reconcile_trans=True)
         )
+
+    def set_budget_amounts(self, budget_amounts):
+        """
+        Manage child :py:class:`~.BudgetTransaction` objects corresponding to
+        budget allocations of the amount of this transaction. Given a dictionary
+        (``budget_amounts``) of budgets (either int ID or :py:class:`~.Budget`
+        instances) to Decimal amounts, ensure that the BudgetTransactions for
+        this Transaction match those amounts.
+
+        :param budget_amounts: Mapping of one or more Budgets to the amount of
+          this Transaction allocated to that Budget. Keys may be either an int
+          :py:attr:`~.Budget.id` or a :py:class:`~.Budget` instance, values must
+          be a Decimal.
+        :type budget_amounts: dict
+        """
+        sess = inspect(self).session

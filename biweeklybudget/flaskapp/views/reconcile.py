@@ -124,7 +124,7 @@ class TransUnreconciledAjax(MethodView):
                 db_session).order_by(Transaction.date).all():
             d = t.as_dict
             d['account_name'] = t.account.name
-            d['budget_name'] = t.budget.name
+            d['budget_name'] = t.budget_transactions[0].budget.name
             res.append(d)
         return jsonify(res)
 

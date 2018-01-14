@@ -43,7 +43,9 @@ from collections import defaultdict
 from decimal import Decimal
 
 from biweeklybudget import settings
-from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
+from biweeklybudget.models import (
+    Transaction, ScheduledTransaction, Budget, BudgetTransaction
+)
 from biweeklybudget.utils import dtnow
 
 
@@ -603,8 +605,8 @@ class BiweeklyPayPeriod(object):
             'amount': t.actual_amount,
             'account_id': t.account_id,
             'account_name': t.account.name,
-            'budget_id': t.budget_id,
-            'budget_name': t.budget.name
+            'budget_id': t.budget_transactions[0].budget_id,
+            'budget_name': t.budget_transactions[0].budget.name
         }
         if t.reconcile is None:
             res['reconcile_id'] = None
