@@ -39,6 +39,7 @@ import logging
 from sqlalchemy import (
     Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_
 )
+from datetime import timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
@@ -46,6 +47,7 @@ from sqlalchemy.sql.expression import null
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import dtnow
 from biweeklybudget.prime_rate import PrimeRateCalculator
 import json
@@ -53,6 +55,19 @@ import enum
 from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
 
 logger = logging.getLogger(__name__)
+
+
+class NoInterestChargedError(Exception):
+    """
+    Exception raised when an :py:class:`~.Account` does not have an
+    OFXTransaction for interest charged within the last 32 days.
+    """
+
+    def __init__(self, acct):
+        self.account = acct
+        super(NoInterestChargedError, self).__init__(
+            'Could not find last interest charge for account %s' % self
+        )
 
 
 class AcctType(enum.Enum):
@@ -308,3 +323,32 @@ class Account(Base, ModelAsDict):
                 self.prime_rate_margin
             )
         return self.apr
+
+    @property
+    def last_interest_charge(self):
+        """
+        Return the amount of the last interest charge for this account. Raise an
+        exception if one could not be identified.
+
+        :return: amount of last interest charge for this account
+        :rtype: decimal.Decimal
+        """
+        sess = inspect(self).session
+        for t in sess.query(OFXTransaction).filter(
+            OFXTransaction.account_id.__eq__(self.id)
+        ).order_by(
+            OFXTransaction.date_posted.desc()
+        ):
+            if t.trans_type != 'debit':
+                continue
+            if 'interest charge' not in t.name.lower():
+                continue
+            if t.date_posted < (dtnow() - timedelta(days=32)):
+                continue
+            logger.debug(
+                'Account %s found last interest charge as %s (%s)',
+                self, (t.amount * -1), t
+            )
+            return t.amount * -1
+        logger.warning('Could not find last interest charge for: %s', self)
+        raise NoInterestChargedError(self)

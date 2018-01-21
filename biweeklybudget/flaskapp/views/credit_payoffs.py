@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import json
 from decimal import Decimal, ROUND_UP
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask.views import MethodView
 from flask import render_template, request, jsonify
@@ -48,7 +48,11 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.interest import InterestHelper
 from biweeklybudget.models.dbsetting import DBSetting
-from biweeklybudget.utils import fmt_currency
+from biweeklybudget.utils import fmt_currency, dtnow
+from biweeklybudget.models.account import NoInterestChargedError, Account
+from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +149,17 @@ class CreditPayoffsView(MethodView):
         else:
             pymt_settings_json = setting.value
         pymt_settings_kwargs = self._payment_settings_dict(pymt_settings_json)
-        ih = InterestHelper(db_session, **pymt_settings_kwargs)
-        mps = sum(ih.min_payments.values())
-        payoffs = self._payoffs_list(ih)
+        try:
+            ih = InterestHelper(db_session, **pymt_settings_kwargs)
+            mps = sum(ih.min_payments.values())
+            payoffs = self._payoffs_list(ih)
+        except NoInterestChargedError as ex:
+            resp = render_template(
+                'credit-payoffs-no-interest-error.html',
+                acct_name=ex.account.name,
+                acct_id=ex.account.id
+            )
+            return resp, 500
         return render_template(
             'credit-payoffs.html',
             monthly_pymt_sum=mps.quantize(Decimal('.01'), rounding=ROUND_UP),
@@ -201,6 +213,89 @@ class PayoffSettingsFormHandler(MethodView):
         })
 
 
+class AccountOfxAjax(MethodView):
+    """
+    Handle GET /ajax/account_ofx_ajax/<int:account_id> endpoint.
+    """
+
+    def get(self, account_id):
+        res = []
+        q = db_session.query(OFXStatement).filter(
+            OFXStatement.account_id.__eq__(account_id)
+        ).order_by(
+            OFXStatement.as_of.desc(),
+            OFXStatement.file_mtime.desc()
+        ).all()
+        for stmt in q:
+            if stmt.as_of < (dtnow() - timedelta(days=32)):
+                break
+            res.append({
+                'filename': stmt.filename,
+                'as_of': stmt.as_of.strftime('%Y-%m-%d'),
+                'ledger_bal': stmt.ledger_bal
+            })
+        return jsonify({
+            'account_id': account_id,
+            'statements': res
+        })
+
+
+class AccountOfxFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/credit-payoff-account-ofx
+    """
+
+    def validate(self, data):
+        pass
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        acct = db_session.query(Account).get(int(data['id']))
+        if acct is None:
+            raise RuntimeError('ERROR: No Account with ID %s' % data['id'])
+        stmt = db_session.query(OFXStatement).filter(
+            OFXStatement.account_id.__eq__(acct.id),
+            OFXStatement.filename.__eq__(data['filename'])
+        ).one()
+        if stmt is None:
+            raise RuntimeError(
+                'ERROR: No OFXStatement for account %d with filename %s' % (
+                    acct.id, data['filename']
+                )
+            )
+        int_amt = Decimal(data['interest_amt'])
+        if int_amt < Decimal('0'):
+            int_amt = int_amt * Decimal('-1')
+        trans = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
+            trans_type='debit',
+            date_posted=stmt.as_of,
+            amount=int_amt,
+            name='Interest Charged - MANUALLY ENTERED',
+            is_interest_charge=True
+        )
+        logger.info(
+            'Adding manual interest transaction to OFXTransactions: '
+            'account_id=%d statement_filename=%s statement=%s '
+            'OFXTransaction=%s', acct.id, data['filename'], stmt,
+            trans
+        )
+        db_session.add(trans)
+        db_session.commit()
+        return 'Successfully saved OFXTransaction with FITID %s in database' \
+               '.' % trans.fitid
+
+
 app.add_url_rule(
     '/accounts/credit-payoff',
     view_func=CreditPayoffsView.as_view('credit_payoffs_view')
@@ -208,4 +303,12 @@ app.add_url_rule(
 app.add_url_rule(
     '/settings/credit-payoff',
     view_func=PayoffSettingsFormHandler.as_view('payoff_settings_form')
+)
+app.add_url_rule(
+    '/ajax/account_ofx_ajax/<int:account_id>',
+    view_func=AccountOfxAjax.as_view('account_ofx_ajax')
+)
+app.add_url_rule(
+    '/forms/credit-payoff-account-ofx',
+    view_func=AccountOfxFormHandler.as_view('payoff_account_ofx_form')
 )

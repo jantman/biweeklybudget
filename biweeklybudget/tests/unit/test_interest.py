@@ -150,7 +150,8 @@ class TestInterestHelper(object):
                 interest_class_name='AdbCompoundedDaily',
                 min_payment_class_name='MinPaymentAmEx',
                 balance=bal3,
-                effective_apr=Decimal('0.0100')
+                effective_apr=Decimal('0.0100'),
+                last_interest_charge=Decimal('0.8089')
             ),
             4: Mock(
                 spec_set=Account,
@@ -167,7 +168,8 @@ class TestInterestHelper(object):
                 interest_class_name='AdbCompoundedDaily',
                 min_payment_class_name='MinPaymentDiscover',
                 balance=bal4,
-                effective_apr=Decimal('0.1000')
+                effective_apr=Decimal('0.1000'),
+                last_interest_charge=Decimal('46.9061')
             )
         }
         self.mock_sess = Mock(spec_set=Session)

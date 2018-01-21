@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}ERROR - Credit Card Payoffs - BiweeklyBudget{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="alert alert-danger" id="account-interest-error-message">
+                        <p><strong>Account Interest Error.</strong></p>
+                        <p>The account "<a href="/accounts/{{ acct_id }}">{{ acct_name }}</a>" (ID <a href="/accounts/{{ acct_id }}">{{ acct_id }}</a>) does not have a record of Interest Charged in the last 32 days. Credit card payments cannot be calculated without this information. Either this software does not know how to find the interest charges in your account's OFX statements (in which case you should <a href="https://github.com/jantman/biweeklybudget/issues">open an issue on GitHub</a>) or your financial institution (such as Discover Cards) does not report interest charges in their OFX statements, in which case you must <a href="#" onclick="creditPayoffErrorModal({{ acct_id }})">manually input the interest charge from your last statement</a>.</p>
+                    </div>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+<script src="/utils/datetest.js"></script>
+<script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+<script src="/static/js/custom.js"></script>
+<script src="/static/js/forms.js"></script>
+<script src="/static/js/formBuilder.js"></script>
+<script src="/static/js/creditPayoffErrorModal.js"></script>
+{% endblock %}

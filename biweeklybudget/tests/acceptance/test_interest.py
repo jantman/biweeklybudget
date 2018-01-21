@@ -44,13 +44,32 @@ from biweeklybudget.interest import (
     InterestHelper, CCStatement, _BillingPeriod, AdbCompoundedDaily,
     MinPaymentAmEx, MinPaymentDiscover
 )
-from biweeklybudget.models import Account
+from biweeklybudget.models import Account, OFXTransaction, OFXStatement
+from biweeklybudget.utils import dtnow
 
 
 @pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
 class TestInterestHelper(AcceptanceHelper):
 
-    def test_init_accounts(self, testdb):
+    def test_00_setup_interest_charge_in_db(self, testdb):
+        acct = testdb.query(Account).get(4)
+        stmt = testdb.query(OFXStatement).get(7)
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
+            trans_type='debit',
+            date_posted=stmt.as_of,
+            amount=Decimal('46.9061'),
+            name='Interest Charged - MANUALLY ENTERED',
+            is_interest_charge=True
+        )
+        testdb.add(txn)
+        testdb.commit()
+
+    def test_01_init_accounts(self, testdb):
         cls = InterestHelper(testdb)
         assert cls._sess == testdb
         res = cls.accounts
@@ -60,7 +79,7 @@ class TestInterestHelper(AcceptanceHelper):
         assert isinstance(res[4], Account)
         assert res[4].id == 4
 
-    def test_init_statements(self, testdb):
+    def test_02_init_statements(self, testdb):
         cls = InterestHelper(testdb)
         res = cls._statements
         assert sorted(res.keys()) == [3, 4]
@@ -89,14 +108,14 @@ class TestInterestHelper(AcceptanceHelper):
         assert s4._transactions == {}
         assert s4._principal == Decimal('5498.65')
 
-    def test_min_payments(self, testdb):
+    def test_03_min_payments(self, testdb):
         cls = InterestHelper(testdb)
         assert cls.min_payments == {
             3: Decimal('35'),
             4: Decimal('109.9730')
         }
 
-    def test_payoffs_simple(self, testdb):
+    def test_04_payoffs_simple(self, testdb):
         cls = InterestHelper(testdb)
         assert cls.calculate_payoffs() == {
             'HighestBalanceFirstMethod': {
