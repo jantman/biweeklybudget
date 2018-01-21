@@ -91,6 +91,8 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -252,7 +254,8 @@ class Screenshotter(object):
             'description': 'Credit card payoff calculations based on a '
                            'variety of payment methods, with configurable '
                            'payment increases over time or one-time additional '
-                           'payment amounts.'
+                           'payment amounts.',
+            'preshot_func': '_credit_payoff_preshot'
         }
     ]
 
@@ -604,6 +607,31 @@ class Screenshotter(object):
         )
         sleep(2)
         logger.info('budgets preshot done')
+
+    def _credit_payoff_preshot(self):
+        logger.info('credit payoff preshot - DB update')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        acct = data_sess.query(Account).get(4)
+        stmt = data_sess.query(OFXStatement).get(7)
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
+            trans_type='debit',
+            date_posted=stmt.as_of,
+            amount=Decimal('46.9061'),
+            name='Interest Charged - MANUALLY ENTERED',
+            is_interest_charge=True
+        )
+        data_sess.add(txn)
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('credit payoff preshot done')
+        self.get('/accounts/credit-payoff')
 
     def _cursor_script(self, x_pos, y_pos):
         s = '<img width="37" height="37" src="data:image/png;base64,iVBOR' \
