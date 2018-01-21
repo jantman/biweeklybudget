@@ -41,9 +41,7 @@ from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 
-from biweeklybudget.models.account import (
-    Account, AcctType, NoInterestChargedError
-)
+from biweeklybudget.models.account import Account, AcctType
 
 logger = logging.getLogger(__name__)
 
