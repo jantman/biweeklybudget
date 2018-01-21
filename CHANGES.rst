@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased Changes
+------------------
+
+* Fix major logic error in Credit Card Payoff calculations; interest fees were ignored for the current month/statement, resulting in "Next Payment" values significantly lower than they should be. Fixed to use the last Interest Charge retrieved via OFX (or, if no interest charges present in OFX statements, prompt users to manually enter the last Interest Charge via a new modal that will create an OFXTransaction for it) as the interest amount on the first month/statement when calculating payoffs. This fix now returns Next Payment values that aren't identical to sample cards, but are significantly closer (within 1-2%).
+
 0.7.1 (2018-01-10)
 ------------------
 

@@ -41,7 +41,9 @@ from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 
-from biweeklybudget.models import Account, AcctType
+from biweeklybudget.models.account import (
+    Account, AcctType, NoInterestChargedError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +121,7 @@ class InterestHelper(object):
                 min_pay_cls,
                 bill_period,
                 end_balance=abs(acct.balance.ledger),
-                interest_amt=Decimal('0')
+                interest_amt=acct.last_interest_charge
             )
         logger.debug('Statements: %s', res)
         return res

@@ -38,8 +38,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 import re
 import json
+from decimal import Decimal
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.dbsetting import DBSetting
+from biweeklybudget.models.account import Account, NoInterestChargedError
+from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.utils import dtnow
+from selenium.webdriver.support.ui import Select
 
 
 def get_payoff_forms(selenium):
@@ -91,34 +97,137 @@ def set_payoff_form(selenium, f_type, idx, enabled, date_s, amt):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('refreshdb', 'testflask')
-class TestCreditPayoffs(AcceptanceHelper):
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestCreditPayoffsNoInterest(AcceptanceHelper):
 
-    @pytest.fixture(autouse=True)
-    def get_page(self, base_url, selenium):
+    def test_01_heading(self, selenium, base_url):
         self.baseurl = base_url
         self.get(selenium, base_url + '/accounts/credit-payoff')
-
-    def test_heading(self, selenium):
         heading = selenium.find_element_by_class_name('navbar-brand')
-        assert heading.text == 'Credit Card Payoffs - BiweeklyBudget'
+        assert heading.text == 'ERROR - Credit Card Payoffs - BiweeklyBudget'
 
-    def test_nav_menu(self, selenium):
+    def test_02_nav_menu(self, selenium, base_url):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/accounts/credit-payoff')
         ul = selenium.find_element_by_id('side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
-    def test_notifications(self, selenium):
+    def test_03_notifications(self, selenium, base_url):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/accounts/credit-payoff')
         div = selenium.find_element_by_id('notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
+    def test_04_danger_message(self, selenium, base_url):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        div = selenium.find_element_by_id('account-interest-error-message')
+        assert div is not None
+        assert 'alert-danger' in div.get_attribute('class')
+        text = div.get_attribute('innerHTML')
+        assert 'Account Interest Error' in text
+        assert 'in which case you must <a href="#" onclick="creditPayoffError' \
+               'Modal(4)">manually input the interest charge ' \
+               'from your last statement</a>' in text
+
+    def test_05_verify_db(self, testdb):
+        acct = testdb.query(Account).get(4)
+        with pytest.raises(NoInterestChargedError):
+            assert isinstance(acct.last_interest_charge, Decimal)
+
+    def test_06_add_interest(self, selenium, base_url):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/accounts/credit-payoff')
+        link = selenium.find_element_by_xpath(
+            '//a[text()="manually input the interest charge from your '
+            'last statement"]'
+        )
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add Manual Interest Charge for Account 4'
+        frm_id = selenium.find_element_by_id('payoff_acct_frm_id')
+        frm_filename = selenium.find_element_by_id(
+            'payoff_acct_frm_statement_filename'
+        )
+        frm_int_amt = selenium.find_element_by_id(
+            'payoff_acct_frm_interest_amt'
+        )
+        assert frm_id.get_attribute('value') == '4'
+        fname = Select(frm_filename)
+        # find the options
+        opts = []
+        for o in fname.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['/stmt/CreditTwo/0', '2017-07-26 (-$5,498.65)']
+        ]
+        fname.select_by_value('/stmt/CreditTwo/0')
+        frm_int_amt.clear()
+        frm_int_amt.send_keys('123.45')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved OFXTransaction with ' \
+                                 'FITID 20170728062444-MANUAL-CCPAYOFF' \
+                                 ' in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        assert heading.text == 'Credit Card Payoffs - BiweeklyBudget'
+
+    def test_07_verify_db(self, testdb):
+        acct = testdb.query(Account).get(4)
+        assert acct.last_interest_charge == Decimal('-123.45')
+        stmt = testdb.query(OFXStatement).get(7)
+        ofxtxn = testdb.query(OFXTransaction).get(
+            (4, '20170728062444-MANUAL-CCPAYOFF')
+        )
+        assert ofxtxn.account == acct
+        assert ofxtxn.statement == stmt
+        assert ofxtxn.fitid == '20170728062444-MANUAL-CCPAYOFF'
+        assert ofxtxn.trans_type == 'debit'
+        assert ofxtxn.date_posted == stmt.as_of
+        assert ofxtxn.amount == Decimal('123.45')
+        assert ofxtxn.name == 'Interest Charged - MANUALLY ENTERED'
+        assert ofxtxn.memo is None
+        assert ofxtxn.sic is None
+        assert ofxtxn.mcc is None
+        assert ofxtxn.checknum is None
+        assert ofxtxn.description is None
+        assert ofxtxn.notes is None
+        assert ofxtxn.is_interest_charge is True
+
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('testflask')
+@pytest.mark.usefixtures('class_refresh_db', 'testflask')
 @pytest.mark.incremental
 class TestNoSettings(AcceptanceHelper):
+
+    def test_000_setup_interest_charge_in_db(self, testdb):
+        acct = testdb.query(Account).get(4)
+        stmt = testdb.query(OFXStatement).get(7)
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
+            trans_type='debit',
+            date_posted=stmt.as_of,
+            amount=Decimal('46.9061'),
+            name='Interest Charged - MANUALLY ENTERED',
+            is_interest_charge=True
+        )
+        testdb.add(txn)
+        testdb.commit()
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(DBSetting).get('credit-payoff')
@@ -243,6 +352,22 @@ class TestNoSettings(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
 class TestSettings(AcceptanceHelper):
+
+    def test_000_setup_interest_charge_in_db(self, testdb):
+        acct = testdb.query(Account).get(4)
+        stmt = testdb.query(OFXStatement).get(7)
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
+            trans_type='debit',
+            date_posted=stmt.as_of,
+            amount=Decimal('46.9061'),
+            name='Interest Charged - MANUALLY ENTERED',
+            is_interest_charge=True
+        )
+        testdb.add(txn)
+        testdb.commit()
 
     def test_00_verify_db(self, testdb):
         b = testdb.query(DBSetting).get('credit-payoff')
