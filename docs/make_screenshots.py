@@ -85,7 +85,6 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
-from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
@@ -115,6 +114,17 @@ class Screenshotter(object):
             'description': 'Main landing page.',
             'postshot_func': '_index_postshot',
             'preshot_func': '_index_preshot'
+        },
+        {
+            'path': '/accounts/credit-payoff',
+            'filename': 'credit-payoff',
+            'title': 'Credit Card Payoff Calculations',
+            'description': 'Credit card payoff calculations based on a '
+                           'variety of payment methods, with configurable '
+                           'payment increases over time or one-time additional '
+                           'payment amounts.',
+            'preshot_func': '_credit_payoff_preshot',
+            'postshot_func': '_credit_payoff_postshot'
         },
         {
             'path': '/reconcile',
@@ -246,16 +256,6 @@ class Screenshotter(object):
             'filename': 'bom',
             'title': 'Projects - Bill of Materials',
             'description': 'Track individual items/materials for projects.'
-        },
-        {
-            'path': '/accounts/credit-payoff',
-            'filename': 'credit-payoff',
-            'title': 'Credit Card Payoff Calculations',
-            'description': 'Credit card payoff calculations based on a '
-                           'variety of payment methods, with configurable '
-                           'payment increases over time or one-time additional '
-                           'payment amounts.',
-            'preshot_func': '_credit_payoff_preshot'
         }
     ]
 
@@ -632,6 +632,21 @@ class Screenshotter(object):
         conn.close()
         logger.info('credit payoff preshot done')
         self.get('/accounts/credit-payoff')
+
+    def _credit_payoff_postshot(self):
+        logger.info('credit payoff postshot - DB update')
+        conn = engine.connect()
+        data_sess = scoped_session(
+            sessionmaker(autocommit=False, autoflush=False, bind=conn)
+        )
+        txn = data_sess.query(OFXTransaction).get(
+            (4, '%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'))
+        )
+        data_sess.delete(txn)
+        data_sess.commit()
+        data_sess.close()
+        conn.close()
+        logger.info('credit payoff postshot done')
 
     def _cursor_script(self, x_pos, y_pos):
         s = '<img width="37" height="37" src="data:image/png;base64,iVBOR' \
