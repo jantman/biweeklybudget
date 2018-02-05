@@ -38,8 +38,16 @@ class Transaction(Base):
     #: Actual amount of the transaction
     actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
+    #: Budgeted amount of the transaction, if it was budgeted ahead of time
+    #: via a :py:class:`~.ScheduledTransaction`.
+    budgeted_amount = Column(Numeric(precision=10, scale=4))
+
     #: ID of the Budget this transaction is against
     budget_id = Column(Integer, ForeignKey('budgets.id'))
+
+    #: ID of the Budget this transaction was planned to be funded by, if it
+    #: was planned ahead via a :py:class:`~.ScheduledTransaction`
+    planned_budget_id = Column(Integer, ForeignKey('budgets.id'))
 
     def __repr__(self):
         return "<Transaction(id=%s)>" % (
@@ -106,6 +114,14 @@ def upgrade():
         sa.PrimaryKeyConstraint('id', name=op.f('pk_budget_transactions')),
         mysql_engine='InnoDB'
     )
+    op.add_column(
+        'transactions',
+        sa.Column('planned_budget_id', sa.Integer(), nullable=True)
+    )
+    op.create_foreign_key(
+        op.f('fk_transactions_planned_budget_id_budgets'),
+        'transactions', 'budgets', ['planned_budget_id'], ['id']
+    )
     # Copy amount and budget_id from each existing Transaction to a
     # corresponding BudgetTransaction
     bind = op.get_bind()
@@ -117,8 +133,17 @@ def upgrade():
             budget_id=txn.budget_id
         )
         session.add(b)
+        if txn.budgeted_amount is not None:
+            txn.planned_budget_id = txn.budget_id
+            session.add(txn)
     session.commit()
 
 
 def downgrade():
     op.drop_table('budget_transactions')
+    op.drop_constraint(
+        op.f('fk_transactions_planned_budget_id_budgets'),
+        'transactions',
+        type_='foreignkey'
+    )
+    op.drop_column('transactions', 'planned_budget_id')

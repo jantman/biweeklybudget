@@ -64,7 +64,8 @@ class Transaction(Base, ModelAsDict):
     #: Actual amount of the transaction
     actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
-    #: Budgeted amount of the transaction
+    #: Budgeted amount of the transaction, if it was budgeted ahead of time
+    #: via a :py:class:`~.ScheduledTransaction`.
     budgeted_amount = Column(Numeric(precision=10, scale=4))
 
     #: description
@@ -99,7 +100,20 @@ class Transaction(Base, ModelAsDict):
 
     #: Relationship - the :py:class:`~.Budget` this transaction is against
     budget = relationship(
-        "Budget", backref="transactions", uselist=False
+        "Budget", backref="transactions", uselist=False,
+        foreign_keys=[budget_id]
+    )
+
+    #: ID of the Budget this transaction was planned to be funded by, if it
+    #: was planned ahead via a :py:class:`~.ScheduledTransaction`
+    planned_budget_id = Column(Integer, ForeignKey('budgets.id'))
+
+    #: Relationship - the :py:class:`~.Budget` this transaction was planned to
+    #: be funded by, if it was planned ahead via a
+    #: :py:class:`~.ScheduledTransaction`.
+    planned_budget = relationship(
+        "Budget", backref="planned_transactions", uselist=False,
+        foreign_keys=[planned_budget_id]
     )
 
     #: If the transaction is one half of a transfer, the Transaction ID of the
