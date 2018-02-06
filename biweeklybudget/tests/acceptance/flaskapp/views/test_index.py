@@ -241,100 +241,169 @@ class TestIndexPayPeriods(AcceptanceHelper):
         periods = self.pay_periods(testdb)
         # previous pay period
         ppdate = periods[0].start_date
-        testdb.add(Transaction(
+        t1 = Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=100.00,
             budgeted_amount=100.00,
             description='prev income',
             account=acct,
+            planned_budget=ibudget
+        )
+        testdb.add(t1)
+        testdb.add(BudgetTransaction(
+            transaction=t1,
+            amount=100.00,
             budget=ibudget
         ))
-        testdb.add(Transaction(
+        t2 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=250.00,
             description='prev trans 1',
-            account=acct,
+            account=acct
+        )
+        testdb.add(t2)
+        testdb.add(BudgetTransaction(
+            transaction=t2,
+            amount=250.00,
             budget=e2budget
         ))
-        testdb.add(Transaction(
+        t3 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
             description='prev trans 2',
             account=acct,
+            planned_budget=e1budget
+        )
+        testdb.add(t3)
+        testdb.add(BudgetTransaction(
+            transaction=t3,
+            amount=600.00,
             budget=e1budget
         ))
         ppdate = periods[1].start_date
-        testdb.add(Transaction(
+        t4 = Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
             description='prev income',
             account=acct,
+            planned_budget=ibudget
+        )
+        testdb.add(t4)
+        testdb.add(BudgetTransaction(
+            transaction=t4,
+            amount=1400.00,
             budget=ibudget
         ))
-        testdb.add(Transaction(
+        t5 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=1850.00,
             description='prev trans 1',
-            account=acct,
+            account=acct
+        )
+        testdb.add(t5)
+        testdb.add(BudgetTransaction(
+            transaction=t5,
+            amount=1850.00,
             budget=e2budget
         ))
-        testdb.add(Transaction(
+        t6 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
             description='prev trans 2',
             account=acct,
+            planned_budget=e1budget
+        )
+        testdb.add(t6)
+        testdb.add(BudgetTransaction(
+            transaction=t6,
+            amount=600.00,
             budget=e1budget
         ))
         ppdate = periods[2].start_date
-        testdb.add(Transaction(
+        t7 = Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
             description='prev income',
             account=acct,
+            planned_budget=ibudget
+        )
+        testdb.add(t7)
+        testdb.add(BudgetTransaction(
+            transaction=t7,
+            amount=1400.00,
             budget=ibudget
         ))
-        testdb.add(Transaction(
+        t8 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=788.00,
             description='prev trans 1',
-            account=acct,
+            account=acct
+        )
+        testdb.add(t8)
+        testdb.add(BudgetTransaction(
+            transaction=t8,
+            amount=788.00,
             budget=e2budget
         ))
-        testdb.add(Transaction(
+        t9 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
             description='prev trans 2',
             account=acct,
+            planned_budget=e1budget
+        )
+        testdb.add(t9)
+        testdb.add(BudgetTransaction(
+            transaction=t9,
+            amount=600.00,
             budget=e1budget
         ))
         ppdate = periods[3].start_date
-        testdb.add(Transaction(
+        t10 = Transaction(
             date=(ppdate + timedelta(days=1)),
             actual_amount=1400.00,
             budgeted_amount=100.00,
             description='prev income',
             account=acct,
+            planned_budget=ibudget
+        )
+        testdb.add(t10)
+        testdb.add(BudgetTransaction(
+            transaction=t10,
+            amount=1400.00,
             budget=ibudget
         ))
-        testdb.add(Transaction(
+        t11 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=2.00,
             description='prev trans 1',
-            account=acct,
+            account=acct
+        )
+        testdb.add(t11)
+        testdb.add(BudgetTransaction(
+            transaction=t11,
+            amount=2.00,
             budget=e2budget
         ))
-        testdb.add(Transaction(
+        t12 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
             budgeted_amount=500.00,
             description='prev trans 2',
             account=acct,
-            budget=e1budget
+            planned_budget=e1budget
+        )
+        testdb.add(t12)
+        testdb.add(BudgetTransaction(
+            transaction=t12,
+            amount=600.00,
+            budget=e1budget,
+            foobarbaz=123
         ))
         testdb.flush()
         testdb.commit()

@@ -65,7 +65,10 @@ class Transaction(Base, ModelAsDict):
     actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
     #: Budgeted amount of the transaction, if it was budgeted ahead of time
-    #: via a :py:class:`~.ScheduledTransaction`.
+    #: via a :py:class:`~.ScheduledTransaction`. This attribute is only set by
+    #: :py:meth:`~.SchedToTransFormHandler.submit` and
+    #: :py:meth:`~.SkipSchedTransFormHandler.submit`. And, for some incorrect
+    #: reason, by :py:func:`biweeklybudget.models.utils.do_budget_transfer`.
     budgeted_amount = Column(Numeric(precision=10, scale=4))
 
     #: description

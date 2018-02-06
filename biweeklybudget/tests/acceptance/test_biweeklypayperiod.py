@@ -44,6 +44,7 @@ from decimal import Decimal
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.txn_reconcile import TxnReconcile
@@ -250,10 +251,15 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             date=date(2017, 4, 9),
             description='Trans_ST_day_9',
             account=acct,
-            budget=budg,
+            planned_budget=budg,
             scheduled_trans=st_daynum,
         )
         testdb.add(t_daynum)
+        testdb.add(BudgetTransaction(
+            transaction=t_daynum,
+            amount=111.33,
+            budget=budg
+        ))
         testdb.add(TxnReconcile(
             note='foo',
             transaction=t_daynum
@@ -280,20 +286,30 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             date=date(2017, 4, 14),
             description='Trans_ST_pp_3_A',
             account=acct,
-            budget=budg,
+            planned_budget=budg,
             scheduled_trans=st_pp3,
         )
         testdb.add(t_pp3A)
+        testdb.add(BudgetTransaction(
+            transaction=t_pp3A,
+            amount=333.33,
+            budget=budg
+        ))
         t_pp3B = Transaction(
             actual_amount=333.33,
             budgeted_amount=333.33,
             date=date(2017, 4, 15),
             description='Trans_ST_pp_3_B',
             account=acct,
-            budget=budg,
+            planned_budget=budg,
             scheduled_trans=st_pp3
         )
         testdb.add(t_pp3B)
+        testdb.add(BudgetTransaction(
+            transaction=t_pp3B,
+            amount=333.33,
+            budget=budg
+        ))
         st_date = ScheduledTransaction(
             amount=444.44,
             description='ST_date',
@@ -308,26 +324,39 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             date=date(2017, 4, 12),
             description='Trans_ST_date',
             account=acct,
-            budget=budg,
+            planned_budget=budg,
             scheduled_trans=st_date
         )
         testdb.add(t_date)
+        testdb.add(BudgetTransaction(
+            transaction=t_date,
+            amount=444.44,
+            budget=budg
+        ))
         t_foo = Transaction(
             actual_amount=555.55,
             date=date(2017, 4, 8),
             description='Trans_foo',
-            account=acct,
-            budget=budg
+            account=acct
         )
         testdb.add(t_foo)
+        testdb.add(BudgetTransaction(
+            transaction=t_foo,
+            amount=555.55,
+            budget=budg
+        ))
         t_bar = Transaction(
             actual_amount=666.66,
             date=date(2017, 4, 16),
             description='Trans_bar',
-            account=acct,
-            budget=budg
+            account=acct
         )
         testdb.add(t_bar)
+        testdb.add(BudgetTransaction(
+            transaction=t_bar,
+            amount=666.66,
+            budget=budg
+        ))
         testdb.flush()
         testdb.commit()
 
@@ -532,12 +561,17 @@ class TestSums(AcceptanceHelper):
         acct = testdb.query(Account).get(1)
         budgets = {x.id: x for x in testdb.query(Budget).all()}
         # Budget 3 Income Transaction
-        testdb.add(Transaction(
+        t1 = Transaction(
             date=date(2017, 4, 7),
             actual_amount=100.00,
             budgeted_amount=100.00,
             description='B3 Income',
-            account=acct,
+            account=acct
+        )
+        testdb.add(t1)
+        testdb.add(BudgetTransaction(
+            transaction=t1,
+            amount=100.00,
             budget=budgets[3]
         ))
         # Budget 3 Income ST
@@ -556,19 +590,30 @@ class TestSums(AcceptanceHelper):
             budget=budgets[4],
             date=date(2017, 4, 10)
         ))
-        testdb.add(Transaction(
+        t2 = Transaction(
             date=date(2017, 4, 11),
             actual_amount=250.00,
             description='B4 T no budgeted',
-            account=acct,
-            budget=budgets[4]
+            account=acct
+        )
+        testdb.add(t2)
+        testdb.add(BudgetTransaction(
+            transaction=t2,
+            budget=budgets[4],
+            amount=250.00
         ))
-        testdb.add(Transaction(
+        t3 = Transaction(
             date=date(2017, 4, 12),
             actual_amount=600.00,
             budgeted_amount=500.00,
             description='B4 T budgeted',
             account=acct,
+            planned_budget=budgets[4]
+        )
+        testdb.add(t3)
+        testdb.add(BudgetTransaction(
+            transaction=t3,
+            amount=600.00,
             budget=budgets[4]
         ))
         # Budget 5 budgeted greater than allocated (100)
@@ -579,12 +624,18 @@ class TestSums(AcceptanceHelper):
             budget=budgets[5],
             day_of_month=9
         ))
-        testdb.add(Transaction(
+        t4 = Transaction(
             date=date(2017, 4, 13),
             description='B5 T',
             actual_amount=3.00,
             budgeted_amount=1.00,
             account=acct,
+            planned_budget=budgets[5]
+        )
+        testdb.add(t4)
+        testdb.add(BudgetTransaction(
+            transaction=t4,
+            amount=3.00,
             budget=budgets[5]
         ))
         testdb.flush()
@@ -662,12 +713,18 @@ class TestSums(AcceptanceHelper):
     def test_7_spent_greater_than_allocated(self, testdb):
         acct = testdb.query(Account).get(1)
         budget = testdb.query(Budget).get(5)
-        testdb.add(Transaction(
+        t = Transaction(
             date=date(2017, 4, 13),
             description='B6 T',
             actual_amount=2032.0,
             budgeted_amount=32.0,
             account=acct,
+            planned_budget=budget
+        )
+        testdb.add(t)
+        testdb.add(BudgetTransaction(
+            transaction=t,
+            amount=2032.0,
             budget=budget
         ))
         testdb.flush()

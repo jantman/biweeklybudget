@@ -39,6 +39,7 @@ import pytest
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 
@@ -65,12 +66,18 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_1_add_trans_periodic_budget(self, testdb):
         """add a transaction against a periodic budget"""
-        testdb.add(Transaction(
+        t = Transaction(
             actual_amount=222.22,
             budgeted_amount=123.45,
             description='T4',
             notes='notesT4',
             account=testdb.query(Account).get(1),
+            planned_budget=testdb.query(Budget).get(2)
+        )
+        testdb.add(t)
+        testdb.add(BudgetTransaction(
+            transaction=t,
+            amount=222.22,
             budget=testdb.query(Budget).get(2)
         ))
         testdb.flush()
@@ -93,12 +100,18 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_3_add_trans_standing_budget(self, testdb):
         """add a transaction against a standing budget"""
-        testdb.add(Transaction(
+        t = Transaction(
             actual_amount=222.22,
             budgeted_amount=123.45,
             description='T5',
             notes='notesT5',
             account=testdb.query(Account).get(1),
+            planned_budget=testdb.query(Budget).get(5)
+        )
+        testdb.add(t)
+        testdb.add(BudgetTransaction(
+            transaction=t,
+            amount=222.22,
             budget=testdb.query(Budget).get(5)
         ))
         testdb.flush()
