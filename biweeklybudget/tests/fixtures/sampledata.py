@@ -222,7 +222,7 @@ class SampleDataLoader(object):
                 notes='notesT1',
                 account=self.accounts['BankOne']['account'],
                 scheduled_trans=self.scheduled_transactions[0],
-                budget=self.budgets['Periodic1']
+                planned_budget=self.budgets['Periodic1']
             ),
             Transaction(
                 date=self.dt.date(),
@@ -232,19 +232,33 @@ class SampleDataLoader(object):
                 notes='notesT2',
                 account=self.accounts['BankTwoStale']['account'],
                 scheduled_trans=self.scheduled_transactions[2],
-                budget=self.budgets['Standing1']
+                planned_budget=self.budgets['Standing1']
             ),
             Transaction(
                 date=(self.dt - timedelta(days=2)).date(),
                 actual_amount=222.22,
                 description='T3',
                 notes='notesT3',
-                account=self.accounts['CreditOne']['account'],
-                budget=self.budgets['Periodic2']
+                account=self.accounts['CreditOne']['account']
             )
         ]
         for x in res:
             self.db.add(x)
+        self.db.add(BudgetTransaction(
+            transaction=res[0],
+            amount=111.13,
+            budget=self.budgets['Periodic1']
+        ))
+        self.db.add(BudgetTransaction(
+            transaction=res[1],
+            amount=-333.33,
+            budget=self.budgets['Standing1']
+        ))
+        self.db.add(BudgetTransaction(
+            transaction=res[2],
+            amount=222.22,
+            budget=self.budgets['Periodic2']
+        ))
         return res
 
     def _add_account(self, acct, statements, transactions):

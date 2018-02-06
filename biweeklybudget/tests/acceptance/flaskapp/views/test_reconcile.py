@@ -274,20 +274,31 @@ class ReconcileHelper(AcceptanceHelper):
         e1budget = testdb.query(Budget).get(2)
         e2budget = testdb.query(Budget).get(3)
         # income - matches OFX1
-        testdb.add(Transaction(
+        t1 = Transaction(
             date=date(2017, 4, 10),
             actual_amount=-100.00,
             budgeted_amount=-100.00,
             description='income',
             account=acct1,
+            planned_budget=ibudget
+        )
+        testdb.add(t1)
+        testdb.add(BudgetTransaction(
+            transaction=t1,
+            amount=-100.00,
             budget=ibudget
         ))
         # one transaction - matches OFX2
-        testdb.add(Transaction(
+        t2 = Transaction(
             date=date(2017, 4, 10),
             actual_amount=250.00,
             description='trans1',
-            account=acct1,
+            account=acct1
+        )
+        testdb.add(t2)
+        testdb.add(BudgetTransaction(
+            transaction=t2,
+            amount=250.00,
             budget=e2budget
         ))
         # another transaction - matches OFX3
@@ -299,21 +310,32 @@ class ReconcileHelper(AcceptanceHelper):
             date=date(2017, 4, 10)
         )
         testdb.add(st1)
-        testdb.add(Transaction(
+        t3 = Transaction(
             date=date(2017, 4, 11),
             actual_amount=600.0,
             budgeted_amount=500.0,
             description='trans2',
             account=acct2,
-            budget=e1budget,
+            planned_budget=e1budget,
             scheduled_trans=st1
+        )
+        testdb.add(t3)
+        testdb.add(BudgetTransaction(
+            transaction=t3,
+            amount=600.00,
+            budget=e1budget
         ))
         # non-matched transaction
-        testdb.add(Transaction(
+        t4 = Transaction(
             date=date(2017, 4, 14),
             actual_amount=10.00,
             description='trans3',
-            account=acct2,
+            account=acct2
+        )
+        testdb.add(t4)
+        testdb.add(BudgetTransaction(
+            transaction=t4,
+            amount=10.00,
             budget=e2budget
         ))
         # matched ScheduledTransaction
@@ -326,18 +348,28 @@ class ReconcileHelper(AcceptanceHelper):
         )
         testdb.add(st2)
         # pair that matches OFXT6 and OFXT7
-        testdb.add(Transaction(
+        t5 = Transaction(
             date=date(2017, 4, 16),
             actual_amount=25.00,
             description='trans4',
-            account=acct2,
+            account=acct2
+        )
+        testdb.add(t5)
+        testdb.add(BudgetTransaction(
+            transaction=t5,
+            amount=25.00,
             budget=e2budget
         ))
-        testdb.add(Transaction(
+        t6 = Transaction(
             date=date(2017, 4, 17),
             actual_amount=25.00,
             description='trans5',
-            account=acct2,
+            account=acct2
+        )
+        testdb.add(t6)
+        testdb.add(BudgetTransaction(
+            transaction=t6,
+            amount=25.00,
             budget=e2budget
         ))
         testdb.flush()
@@ -461,10 +493,14 @@ class ReconcileHelper(AcceptanceHelper):
             date=date(2017, 4, 16),
             actual_amount=600.00,
             description='trans6',
-            account=acct2,
-            budget=e2budget
+            account=acct2
         )
         testdb.add(t)
+        testdb.add(BudgetTransaction(
+            transaction=t,
+            amount=600.00,
+            budget=e2budget
+        ))
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         testdb.flush()
         testdb.commit()
@@ -1511,12 +1547,18 @@ class TestOFXMakeTrans(AcceptanceHelper):
         acct1 = testdb.query(Account).get(1)
         ibudget = testdb.query(Budget).get(1)
         # income - matches OFX1
-        testdb.add(Transaction(
+        t = Transaction(
             date=date(2017, 4, 10),
             actual_amount=-123.45,
             budgeted_amount=-123.45,
             description='income',
             account=acct1,
+            planned_budget=ibudget
+        )
+        testdb.add(t)
+        testdb.add(BudgetTransaction(
+            transaction=t,
+            amount=-123.45,
             budget=ibudget
         ))
         testdb.flush()
