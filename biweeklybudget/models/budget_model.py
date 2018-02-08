@@ -75,6 +75,6 @@ class Budget(Base, ModelAsDict):
     omit_from_graphs = Column(Boolean, default=False)
 
     def __repr__(self):
-        return "<Budget(id=%d)>" % (
+        return "<Budget(id=%s)>" % (
             self.id
         )
