@@ -286,11 +286,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=100.00,
-            budget=ibudget
-        ))
+        t1.set_budget_amounts({ibudget: 100.00})
         t2 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=250.00,
@@ -298,11 +294,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=250.00,
-            budget=e2budget
-        ))
+        t2.set_budget_amounts({e2budget: 250.00})
         t3 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -312,11 +304,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t3.set_budget_amounts({e1budget: 600.00})
         ppdate = periods[1].start_date
         t4 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -327,11 +315,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t4.set_budget_amounts({ibudget: 1400.00})
         t5 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=1850.00,
@@ -339,11 +323,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct
         )
         testdb.add(t5)
-        testdb.add(BudgetTransaction(
-            transaction=t5,
-            amount=1850.00,
-            budget=e2budget
-        ))
+        t5.set_budget_amounts({e2budget: 1850.00})
         t6 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -353,11 +333,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t6)
-        testdb.add(BudgetTransaction(
-            transaction=t6,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t6.set_budget_amounts({e1budget: 600.00})
         ppdate = periods[2].start_date
         t7 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -368,11 +344,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t7)
-        testdb.add(BudgetTransaction(
-            transaction=t7,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t7.set_budget_amounts({ibudget: 1400.00})
         t8 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=788.00,
@@ -380,11 +352,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct
         )
         testdb.add(t8)
-        testdb.add(BudgetTransaction(
-            transaction=t8,
-            amount=788.00,
-            budget=e2budget
-        ))
+        t8.set_budget_amounts({e2budget: 788.00})
         t9 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -394,11 +362,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t9)
-        testdb.add(BudgetTransaction(
-            transaction=t9,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t9.set_budget_amounts({e1budget: 600.00})
         ppdate = periods[3].start_date
         t10 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -409,11 +373,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t10)
-        testdb.add(BudgetTransaction(
-            transaction=t10,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t10.set_budget_amounts({ibudget: 1400.00})
         t11 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=2.00,
@@ -421,11 +381,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             account=acct
         )
         testdb.add(t11)
-        testdb.add(BudgetTransaction(
-            transaction=t11,
-            amount=2.00,
-            budget=e2budget
-        ))
+        t11.set_budget_amounts({e2budget: 2.00})
         t12 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -435,11 +391,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t12)
-        testdb.add(BudgetTransaction(
-            transaction=t12,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t12.set_budget_amounts({e1budget: 600.00})
         testdb.flush()
         testdb.commit()
 
@@ -678,11 +630,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=100.00,
-            budget=ibudget
-        ))
+        t1.set_budget_amounts({ibudget: 100.00})
         t2 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=250.00,
@@ -690,11 +638,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             account=acct
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=250.00,
-            budget=e2budget
-        ))
+        t2.set_budget_amounts({e2budget: 250.00})
         t3 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -704,11 +648,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t3.set_budget_amounts({e1budget: 600.00})
         ppdate = periods['curr'].start_date
         t4 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -719,11 +659,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t4.set_budget_amounts({ibudget: 1400.00})
         t5 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=1850.00,
@@ -731,11 +667,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             account=acct
         )
         testdb.add(t5)
-        testdb.add(BudgetTransaction(
-            transaction=t5,
-            amount=1850.00,
-            budget=e2budget
-        ))
+        t5.set_budget_amounts({e2budget: 1850.00})
         t6 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -745,11 +677,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t6)
-        testdb.add(BudgetTransaction(
-            transaction=t6,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t6.set_budget_amounts({e1budget: 600.00})
         ppdate = periods['next'].start_date
         t7 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -760,11 +688,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t7)
-        testdb.add(BudgetTransaction(
-            transaction=t7,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t7.set_budget_amounts({ibudget: 1400.00})
         t8 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=788.00,
@@ -772,11 +696,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             account=acct
         )
         testdb.add(t8)
-        testdb.add(BudgetTransaction(
-            transaction=t8,
-            amount=788.00,
-            budget=e2budget
-        ))
+        t8.set_budget_amounts({e2budget: 788.00})
         t9 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -786,11 +706,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t9)
-        testdb.add(BudgetTransaction(
-            transaction=t9,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t9.set_budget_amounts({e1budget: 600.00})
         ppdate = periods['following'].start_date
         t10 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -801,11 +717,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t10)
-        testdb.add(BudgetTransaction(
-            transaction=t10,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t10.set_budget_amounts({ibudget: 1400.00})
         t11 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=2.00,
@@ -813,11 +725,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             account=acct
         )
         testdb.add(t11)
-        testdb.add(BudgetTransaction(
-            transaction=t11,
-            amount=2.00,
-            budget=e2budget
-        ))
+        t11.set_budget_amounts({e2budget: 2.00})
         t12 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=600.00,
@@ -827,11 +735,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t12)
-        testdb.add(BudgetTransaction(
-            transaction=t12,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t12.set_budget_amounts({e1budget: 600.00})
         ppdate = periods['last'].start_date
         t13 = Transaction(
             date=(ppdate + timedelta(days=1)),
@@ -842,11 +746,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t13)
-        testdb.add(BudgetTransaction(
-            transaction=t13,
-            amount=1400.00,
-            budget=ibudget
-        ))
+        t13.set_budget_amounts({ibudget: 1400.00})
         t14 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=2.00,
@@ -854,11 +754,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             account=acct
         )
         testdb.add(t14)
-        testdb.add(BudgetTransaction(
-            transaction=t14,
-            amount=2.00,
-            budget=e2budget
-        ))
+        t14.set_budget_amounts({e2budget: 2.00})
         t15 = Transaction(
             date=(ppdate + timedelta(days=3)),
             actual_amount=550.00,
@@ -868,11 +764,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t15)
-        testdb.add(BudgetTransaction(
-            transaction=t15,
-            amount=550.00,
-            budget=e1budget
-        ))
+        t15.set_budget_amounts({e1budget: 550.00})
         testdb.flush()
         testdb.commit()
 
@@ -1015,11 +907,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             scheduled_trans=st
         )
         testdb.add(t)
-        testdb.add(BudgetTransaction(
-            transaction=t,
-            amount=12.00,
-            budget=e1budget
-        ))
+        t.set_budget_amounts({e1budget: 12.00})
         t2 = Transaction(
             date=(ppdate + timedelta(days=6)),
             actual_amount=111.13,
@@ -1031,11 +919,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=111.13,
-            budget=e1budget
-        ))
+        t2.set_budget_amounts({e1budget: 111.13})
         t3 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=-333.33,
@@ -1047,11 +931,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(4)
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=-333.33,
-            budget=testdb.query(Budget).get(4)
-        ))
+        t3.set_budget_amounts({testdb.query(Budget).get(4): -333.33})
         t4 = Transaction(
             date=ppdate,
             actual_amount=222.22,
@@ -1060,11 +940,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             account=testdb.query(Account).get(3)
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=222.22,
-            budget=e2budget
-        ))
+        t4.set_budget_amounts({e2budget: 222.22})
         testdb.flush()
         testdb.commit()
         testdb.add(TxnReconcile(note='foo', txn_id=t.id))
@@ -1663,11 +1539,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             notes='issue #152 regression test #3'
         )
         testdb.add(trans)
-        testdb.add(BudgetTransaction(
-            transaction=trans,
-            amount=Decimal('200.00'),
-            budget=testdb.query(Budget).get(3)
-        ))
+        trans.set_budget_amounts({
+            testdb.query(Budget).get(3): Decimal('200.00')
+        })
         testdb.commit()
         t1 = testdb.query(Transaction).get(9)
         assert t1.date == (dtnow() - timedelta(days=1)).date()
@@ -1830,11 +1704,7 @@ class TestMakeTransModal(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=111.13,
-            budget=e1budget
-        ))
+        t1.set_budget_amounts({e1budget: 111.13})
         t2 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=-333.33,
@@ -1846,11 +1716,7 @@ class TestMakeTransModal(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(4)
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=-333.33,
-            budget=testdb.query(Budget).get(4)
-        ))
+        t2.set_budget_amounts({testdb.query(Budget).get(4): -333.33})
         t3 = Transaction(
             date=ppdate,
             actual_amount=222.22,
@@ -1859,11 +1725,7 @@ class TestMakeTransModal(AcceptanceHelper):
             account=testdb.query(Account).get(3)
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=222.22,
-            budget=testdb.query(Budget).get(2)
-        ))
+        t3.set_budget_amounts({testdb.query(Budget).get(2): 222.22})
         testdb.flush()
         testdb.commit()
 
@@ -2093,11 +1955,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             scheduled_trans=st
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=12.00,
-            budget=e1budget
-        ))
+        t1.set_budget_amounts({e1budget: 12.00})
         t2 = Transaction(
             date=(ppdate + timedelta(days=6)),
             actual_amount=111.13,
@@ -2109,11 +1967,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=111.13,
-            budget=e1budget
-        ))
+        t2.set_budget_amounts({e1budget: 111.13})
         t3 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=-333.33,
@@ -2125,11 +1979,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(4)
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=-333.33,
-            budget=testdb.query(Budget).get(4)
-        ))
+        t3.set_budget_amounts({testdb.query(Budget).get(4): -333.33})
         t4 = Transaction(
             date=ppdate,
             actual_amount=222.22,
@@ -2138,11 +1988,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             account=testdb.query(Account).get(3)
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=222.22,
-            budget=e2budget
-        ))
+        t4.set_budget_amounts({e2budget: 222.22})
         testdb.flush()
         testdb.commit()
         testdb.add(TxnReconcile(note='foo', txn_id=t1.id))
@@ -2759,11 +2605,7 @@ class TestSkipScheduled(AcceptanceHelper):
             scheduled_trans=st
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=12.00,
-            budget=e1budget
-        ))
+        t1.set_budget_amounts({e1budget: 12.00})
         t2 = Transaction(
             date=(ppdate + timedelta(days=6)),
             actual_amount=111.13,
@@ -2775,11 +2617,7 @@ class TestSkipScheduled(AcceptanceHelper):
             planned_budget=e1budget
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=111.13,
-            budget=e1budget
-        ))
+        t2.set_budget_amounts({e1budget: 111.13})
         t3 = Transaction(
             date=(ppdate + timedelta(days=2)),
             actual_amount=-333.33,
@@ -2791,11 +2629,7 @@ class TestSkipScheduled(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(4)
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=-333.33,
-            budget=testdb.query(Budget).get(4)
-        ))
+        t3.set_budget_amounts({testdb.query(Budget).get(4): -333.33})
         t4 = Transaction(
             date=ppdate,
             actual_amount=222.22,
@@ -2804,11 +2638,7 @@ class TestSkipScheduled(AcceptanceHelper):
             account=testdb.query(Account).get(3)
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=222.22,
-            budget=e2budget
-        ))
+        t4.set_budget_amounts({e2budget: 222.22})
         testdb.flush()
         testdb.commit()
         testdb.add(TxnReconcile(note='foo', txn_id=t1.id))

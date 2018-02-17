@@ -75,6 +75,7 @@ class BudgetTransaction(Base, ModelAsDict):
     )
 
     def __repr__(self):
-        return "<BudgetTransaction(id=%s, transaction=%s, budget=%s)>" % (
-            self.id, self.transaction, self.budget
-        )
+        return "<BudgetTransaction(id=%s, transaction=%s, " \
+               "budget=%s, amount=%s)>" % (
+                   self.id, self.transaction, self.budget, self.amount
+               )

@@ -34,6 +34,7 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
+
 from datetime import datetime
 import logging
 from decimal import Decimal
@@ -45,7 +46,6 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import dtnow
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
@@ -257,18 +257,12 @@ class SchedToTransFormHandler(FormHandlerView):
             scheduled_trans=st
         )
         db_session.add(t)
-        bt = BudgetTransaction(
-            amount=Decimal(data['amount']),
-            budget=st.budget,
-            transaction=t
-        )
-        db_session.add(bt)
+        t.set_budget_amounts({st.budget: Decimal(data['amount'])})
         db_session.commit()
-        logger.info('Created Transaction %d, BudgetTransaction(s) %s for '
-                    'ScheduledTransaction %d',
-                    t.id, bt.id, st.id)
-        return 'Successfully created Transaction %d and BudgetTransaction(s) ' \
-               '%s for ScheduledTransaction %d.' % (t.id, bt.id, st.id)
+        logger.info('Created Transaction %d for ScheduledTransaction %d',
+                    t.id, st.id)
+        return 'Successfully created Transaction %d ' \
+               '%s for ScheduledTransaction %d.' % (t.id, st.id)
 
 
 class SkipSchedTransFormHandler(FormHandlerView):
@@ -326,19 +320,14 @@ class SkipSchedTransFormHandler(FormHandlerView):
             scheduled_trans=st
         )
         db_session.add(t)
-        bt = BudgetTransaction(
-            amount=Decimal('0.0'),
-            budget=st.budget,
-            transaction=t
-        )
-        db_session.add(bt)
+        t.set_budget_amounts({st.budget: Decimal('0.0')})
         db_session.add(TxnReconcile(
             transaction=t,
             note=desc
         ))
         db_session.commit()
-        logger.info('Created Transaction %d and BudgetTransaction %s to skip '
-                    'ScheduledTransaction %d', t.id, bt.id, st.id)
+        logger.info('Created Transaction %d to skip '
+                    'ScheduledTransaction %d', t.id, st.id)
         return 'Successfully created Transaction %d to skip ' \
                'ScheduledTransaction %d.' % (t.id, st.id)
 

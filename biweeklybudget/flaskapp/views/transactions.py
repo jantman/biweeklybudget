@@ -309,12 +309,8 @@ class TransactionFormHandler(FormHandlerView):
                     "" % trans.id
                 )
             action = 'updating Transaction ' + data['id']
-            # @TODO this only supports a single budget per transaction
-            budg_trans = trans.budget_transactions[0]
         else:
             trans = Transaction()
-            budg_trans = BudgetTransaction()
-            budg_trans.transaction = trans
             action = 'creating new Transaction'
         budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
@@ -322,19 +318,16 @@ class TransactionFormHandler(FormHandlerView):
         trans.actual_amount = Decimal(data['amount'])
         trans.account_id = int(data['account'])
         trans.notes = data['notes'].strip()
-        budg_trans.budget = budg
-        budg_trans.amount = Decimal(data['amount'])
-        logger.info('%s: %s %s', action, trans.as_dict, budg_trans.as_dict)
+        # @TODO this only supports a single budget per transaction
+        trans.set_budget_amounts({budg: Decimal(data['amount'])})
+        logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
-        db_session.add(budg_trans)
         db_session.commit()
         return {
-            'success_message': 'Successfully saved Transaction %d '
-                               'and BudgetTransaction(s) %s in database.'
-                               '' % (trans.id, budg_trans.id),
+            'success_message': 'Successfully saved Transaction %d  in database.'
+                               '' % trans.id,
             'success': True,
-            'trans_id': trans.id,
-            'budg_trans_ids': [budg_trans.id]
+            'trans_id': trans.id
         }
 
 

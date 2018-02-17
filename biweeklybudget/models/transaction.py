@@ -196,12 +196,12 @@ class Transaction(Base, ModelAsDict):
         # or update amounts on any that are changed
         for btrans in self.budget_transactions:
             if btrans.budget not in budget_amounts.keys():
-                logger.debug('Removing %s', btrans)
+                logger.info('Removing %s from %s', btrans, self)
                 sess.delete(btrans)
             elif btrans.amount != budget_amounts[btrans.budget]:
                 logger.debug(
-                    'Updating amount to %s on %s',
-                    budget_amounts[btrans.budget], btrans
+                    'Updating amount to %s on %s for %s',
+                    budget_amounts[btrans.budget], btrans, self
                 )
                 btrans.amount = budget_amounts[btrans.budget]
                 sess.add(btrans)
@@ -214,5 +214,5 @@ class Transaction(Base, ModelAsDict):
                     budget=budg,
                     amount=budget_amounts[budg]
                 )
-                logger.debug('Adding %s', bt)
+                logger.debug('Adding %s to %s', bt, self)
                 sess.add(bt)

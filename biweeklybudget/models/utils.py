@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 import logging
 
-from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 
@@ -81,12 +80,7 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
         notes=notes
     )
     db_sess.add(t1)
-    bt1 = BudgetTransaction(
-        amount=amount,
-        budget=from_budget,
-        transaction=t1
-    )
-    db_sess.add(bt1)
+    t1.set_budget_amounts({from_budget: amount})
     t2 = Transaction(
         date=txn_date,
         actual_amount=(-1 * amount),
@@ -96,12 +90,7 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
         notes=notes
     )
     db_sess.add(t2)
-    bt2 = BudgetTransaction(
-        amount=(-1 * amount),
-        budget=to_budget,
-        transaction=t2
-    )
-    db_sess.add(bt2)
+    t2.set_budget_amounts({to_budget: (-1 * amount)})
     t1.transfer = t2
     db_sess.add(t1)
     t2.transfer = t1

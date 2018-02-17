@@ -49,7 +49,6 @@ from biweeklybudget.db import db_session
 from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
@@ -355,23 +354,17 @@ class FuelLogFormHandler(FormHandlerView):
         trans.notes = data['notes'].strip()
         logger.info('Creating new Transaction for FuelFill: %s', trans.as_dict)
         db_session.add(trans)
-        bt = BudgetTransaction(
-            amount=total,
-            transaction=trans,
-            budget=budg
-        )
-        db_session.add(bt)
+        trans.set_budget_amounts({budg: total})
         db_session.commit()
         return {
-            'success_message': 'Successfully saved FuelFill %d, '
-                               ' Transaction %d, and BudgetTransaction %d in '
-                               'database.' % (
-                                  fill.id, trans.id, bt.id),
+            'success_message': 'Successfully saved FuelFill %d and '
+                               ' Transaction %d in database.' % (
+                                   fill.id, trans.id
+                               ),
             'success': True,
             'trans_id': trans.id,
             'fill_id': fill.id,
-            'calculated_mpg': fill.calculated_mpg,
-            'budget_trans_ids': [bt.id]
+            'calculated_mpg': fill.calculated_mpg
         }
 
 

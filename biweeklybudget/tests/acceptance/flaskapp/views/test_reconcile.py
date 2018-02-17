@@ -283,11 +283,7 @@ class ReconcileHelper(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t1)
-        testdb.add(BudgetTransaction(
-            transaction=t1,
-            amount=-100.00,
-            budget=ibudget
-        ))
+        t1.set_budget_amounts({ibudget: -100.00})
         # one transaction - matches OFX2
         t2 = Transaction(
             date=date(2017, 4, 10),
@@ -296,11 +292,7 @@ class ReconcileHelper(AcceptanceHelper):
             account=acct1
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=250.00,
-            budget=e2budget
-        ))
+        t2.set_budget_amounts({e2budget: 250.00})
         # another transaction - matches OFX3
         st1 = ScheduledTransaction(
             amount=500.0,
@@ -320,11 +312,7 @@ class ReconcileHelper(AcceptanceHelper):
             scheduled_trans=st1
         )
         testdb.add(t3)
-        testdb.add(BudgetTransaction(
-            transaction=t3,
-            amount=600.00,
-            budget=e1budget
-        ))
+        t3.set_budget_amounts({e1budget: 600.00})
         # non-matched transaction
         t4 = Transaction(
             date=date(2017, 4, 14),
@@ -333,11 +321,7 @@ class ReconcileHelper(AcceptanceHelper):
             account=acct2
         )
         testdb.add(t4)
-        testdb.add(BudgetTransaction(
-            transaction=t4,
-            amount=10.00,
-            budget=e2budget
-        ))
+        t4.set_budget_amounts({e2budget: 10.00})
         # matched ScheduledTransaction
         st2 = ScheduledTransaction(
             amount=10.0,
@@ -355,11 +339,7 @@ class ReconcileHelper(AcceptanceHelper):
             account=acct2
         )
         testdb.add(t5)
-        testdb.add(BudgetTransaction(
-            transaction=t5,
-            amount=25.00,
-            budget=e2budget
-        ))
+        t5.set_budget_amounts({e2budget: 25.00})
         t6 = Transaction(
             date=date(2017, 4, 17),
             actual_amount=25.00,
@@ -367,11 +347,7 @@ class ReconcileHelper(AcceptanceHelper):
             account=acct2
         )
         testdb.add(t6)
-        testdb.add(BudgetTransaction(
-            transaction=t6,
-            amount=25.00,
-            budget=e2budget
-        ))
+        t6.set_budget_amounts({e2budget: 25.00})
         testdb.flush()
         testdb.commit()
 
@@ -496,11 +472,7 @@ class ReconcileHelper(AcceptanceHelper):
             account=acct2
         )
         testdb.add(t)
-        testdb.add(BudgetTransaction(
-            transaction=t,
-            amount=600.00,
-            budget=e2budget
-        ))
+        t.set_budget_amounts({e2budget: 600.00})
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         testdb.flush()
         testdb.commit()
@@ -1556,11 +1528,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
             planned_budget=ibudget
         )
         testdb.add(t)
-        testdb.add(BudgetTransaction(
-            transaction=t,
-            amount=-123.45,
-            budget=ibudget
-        ))
+        t.set_budget_amounts({ibudget: -123.45})
         testdb.flush()
         testdb.commit()
 

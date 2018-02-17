@@ -244,21 +244,9 @@ class SampleDataLoader(object):
         ]
         for x in res:
             self.db.add(x)
-        self.db.add(BudgetTransaction(
-            transaction=res[0],
-            amount=111.13,
-            budget=self.budgets['Periodic1']
-        ))
-        self.db.add(BudgetTransaction(
-            transaction=res[1],
-            amount=-333.33,
-            budget=self.budgets['Standing1']
-        ))
-        self.db.add(BudgetTransaction(
-            transaction=res[2],
-            amount=222.22,
-            budget=self.budgets['Periodic2']
-        ))
+        res[0].set_budget_amounts({self.budgets['Periodic1']: 111.13})
+        res[1].set_budget_amounts({self.budgets['Standing1']: -333.33})
+        res[2].set_budget_amounts({self.budgets['Periodic2']: 222.22})
         return res
 
     def _add_account(self, acct, statements, transactions):

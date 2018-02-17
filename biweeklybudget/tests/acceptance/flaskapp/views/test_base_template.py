@@ -47,7 +47,6 @@ from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.flaskapp.notifications import NotificationsController
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.utils import dtnow
@@ -309,11 +308,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
             account=acct
         )
         testdb.add(t)
-        testdb.add(BudgetTransaction(
-            transaction=t,
-            amount=600.00,
-            budget=budget
-        ))
+        t.set_budget_amounts({budget: 600.00})
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         t2 = Transaction(
             date=tdate,
@@ -322,11 +317,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
             account=acct
         )
         testdb.add(t2)
-        testdb.add(BudgetTransaction(
-            transaction=t2,
-            amount=34000.00,
-            budget=budget
-        ))
+        t2.set_budget_amounts({budget: 34000.00})
         testdb.flush()
         testdb.commit()
 
