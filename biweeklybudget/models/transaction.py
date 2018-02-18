@@ -100,15 +100,6 @@ class Transaction(Base, ModelAsDict):
         "ScheduledTransaction", backref="transactions", uselist=False
     )
 
-    #: ID of the Budget this transaction is against
-    budget_id = Column(Integer, ForeignKey('budgets.id'))
-
-    #: Relationship - the :py:class:`~.Budget` this transaction is against
-    budget = relationship(
-        "Budget", backref="transactions", uselist=False,
-        foreign_keys=[budget_id]
-    )
-
     #: ID of the Budget this transaction was planned to be funded by, if it
     #: was planned ahead via a :py:class:`~.ScheduledTransaction`
     planned_budget_id = Column(Integer, ForeignKey('budgets.id'))
