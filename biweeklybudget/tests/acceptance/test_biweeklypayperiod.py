@@ -46,6 +46,7 @@ from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.tests.conftest import engine
@@ -76,6 +77,7 @@ class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
         testdb.query(TxnReconcile).delete(synchronize_session='fetch')
+        testdb.query(BudgetTransaction).delete(synchronize_session='fetch')
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
             ScheduledTransaction).delete(synchronize_session='fetch')
@@ -219,6 +221,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
         testdb.query(TxnReconcile).delete(synchronize_session='fetch')
+        testdb.query(BudgetTransaction).delete(synchronize_session='fetch')
         testdb.query(Transaction).delete(synchronize_session='fetch')
         num_rows = testdb.query(
             ScheduledTransaction).delete(synchronize_session='fetch')
@@ -356,7 +359,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': None,
                 'sched_type': 'per period',
                 'type': 'ScheduledTransaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': None,
+                'planned_budget_name': None
             },
             {
                 'account_id': 1,
@@ -402,7 +407,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': 7,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': 2
+                'reconcile_id': 2,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1'
             },
             # ST10 (ST_date)
             {
@@ -418,7 +425,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': 10,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1'
             },
             {
                 'account_id': 1,
@@ -433,7 +442,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': 9,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1'
             },
             {
                 'account_id': 1,
@@ -448,7 +459,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': 9,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1'
             },
             {
                 'account_id': 1,
@@ -463,7 +476,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': None,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': None,
+                'planned_budget_name': None
             }
         ]
 

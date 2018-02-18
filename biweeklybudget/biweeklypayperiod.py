@@ -451,7 +451,12 @@ class BiweeklyPayPeriod(object):
                 res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['spent'] += t['amount']
             else:
-                res[t['planned_budget_id']]['allocated'] += t['budgeted_amount']
+                if t.get('planned_budget_id', None) is None:
+                    res[t['budget_id']]['allocated'] += t[
+                        'budgeted_amount']
+                else:
+                    res[t['planned_budget_id']]['allocated'] += t[
+                        'budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
         for b in res.keys():
             if res[b]['trans_total'] > res[b]['allocated']:

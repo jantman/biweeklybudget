@@ -119,11 +119,11 @@ def handle_new_or_deleted_budget_transaction(session):
             'budget id=%s', budg.id
         )
         old_amt = float(budg.current_balance)
-        budg.current_balance = old_amt - float(obj.actual_amount)
+        budg.current_balance = old_amt - float(obj.amount)
         logger.info(
             'New BudgetTransaction (%s) for %s against standing budget id=%s; '
-            'update budget current_balance from %s to %s', obj.description,
-            fmt_currency(obj.actual_amount), budg.id, fmt_currency(old_amt),
+            'update budget current_balance from %s to %s', obj,
+            fmt_currency(obj.amount), budg.id, fmt_currency(old_amt),
             fmt_currency(budg.current_balance)
         )
         session.add(budg)
@@ -148,11 +148,11 @@ def handle_new_or_deleted_budget_transaction(session):
             'budget id=%s', budg.id
         )
         old_amt = float(budg.current_balance)
-        budg.current_balance = old_amt + float(obj.actual_amount)
+        budg.current_balance = old_amt + float(obj.amount)
         logger.info(
             'Deleted BudgetTransaction (%s) for %s against standing budget '
             'id=%s; update budget current_balance from %s to %s',
-            obj.description, fmt_currency(obj.actual_amount), budg.id,
+            obj, fmt_currency(obj.amount), budg.id,
             fmt_currency(old_amt), fmt_currency(budg.current_balance)
         )
         session.add(budg)

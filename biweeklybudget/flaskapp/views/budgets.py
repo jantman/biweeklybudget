@@ -349,7 +349,7 @@ class BudgetSpendingChartView(MethodView):
         budgets_present = set()
         for t in db_session.query(Transaction).filter(
             Transaction.budget_transactions.any(
-                BudgetTransaction.budget.is_active.__eq__(False)
+                BudgetTransaction.budget.has(is_active=False)
             ),
             Transaction.date.__le__(dt_now)
         ).all():
@@ -362,7 +362,7 @@ class BudgetSpendingChartView(MethodView):
                 records[ds] = {'date': ds}
             if budg_name not in records[ds]:
                 records[ds][budg_name] = Decimal('0')
-            records[ds][budg_name] += t.actual_amount
+            records[ds][budg_name] += t.budget_transactions[0].amount
         result = [records[k] for k in sorted(records.keys())]
         res = {
             'data': result,
