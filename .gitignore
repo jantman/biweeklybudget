@@ -100,3 +100,4 @@ bin/*
 
 .idea
 /.release_position.json
+.pytest_cache
