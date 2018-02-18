@@ -50,8 +50,8 @@ logger = logging.getLogger(__name__)
 def handle_budget_trans_amount_change(**kwargs):
     """
     Handle change of :py:attr:`.BudgetTransaction.amount` for existing
-    instances (``trans_id`` is not None). For new instances, we rely on
-    :py:func:`~.handle_new_transaction` called via
+    instances (``trans_id`` is not None). For new or deleted instances, we rely
+    on :py:func:`~.handle_new_or_deleted_budget_transaction` called via
     :py:func:`~.handle_before_flush`.
 
     If the BudgetTransaction's :py:attr:`~.BudgetTransaction.budget` uses a
@@ -93,7 +93,7 @@ def handle_new_or_deleted_budget_transaction(session):
     (:py:meth:`sqlalchemy.orm.events.SessionEvents.before_flush`)
     on the DB session, to handle creation of *new* BudgetTransactions or
     deletion of BudgetTransactions. For updates to existing BudgetTransactions,
-    we rely on :py:func:`~.handle_trans_amount_change`.
+    we rely on :py:func:`~.handle_budget_trans_amount_change`.
 
     If the BudgetTransaction's :py:attr:`~.BudgetTransaction.budget` is a
     :py:class:`~.Budget` with :py:attr:`~.Budget.is_periodic` ``False`` (i.e. a
@@ -171,7 +171,7 @@ def handle_before_flush(session, flush_context, instances):
     data. Currently, this method just calls a number of other methods to handle
     specific cases:
 
-    * :py:func:`~.handle_new_transaction`
+    * :py:func:`~.handle_new_or_deleted_budget_transaction`
 
     :param session: current database session
     :type session: sqlalchemy.orm.session.Session
