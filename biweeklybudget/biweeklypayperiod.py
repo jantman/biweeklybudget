@@ -43,9 +43,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from biweeklybudget import settings
-from biweeklybudget.models import (
-    Transaction, ScheduledTransaction, Budget, BudgetTransaction
-)
+from biweeklybudget.models import Transaction, ScheduledTransaction, Budget
 from biweeklybudget.utils import dtnow
 
 
@@ -450,7 +448,7 @@ class BiweeklyPayPeriod(object):
             # t['type'] == 'Transaction'
             res[t['budget_id']]['trans_total'] += t['amount']
             if t['budgeted_amount'] is None:
-                res[t['planned_budget_id']]['allocated'] += t['amount']
+                res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['spent'] += t['amount']
             else:
                 res[t['planned_budget_id']]['allocated'] += t['budgeted_amount']
@@ -616,7 +614,7 @@ class BiweeklyPayPeriod(object):
             'budget_id': t.budget_transactions[0].budget_id,
             'budget_name': t.budget_transactions[0].budget.name,
             'planned_budget_id': t.planned_budget_id,
-            'planned_budget_name': t.planned_budget.name
+            'planned_budget_name': None
         }
         if t.reconcile is None:
             res['reconcile_id'] = None
@@ -626,6 +624,8 @@ class BiweeklyPayPeriod(object):
             res['budgeted_amount'] = None
         else:
             res['budgeted_amount'] = t.budgeted_amount
+        if t.planned_budget is not None:
+            res['planned_budget_name'] = t.planned_budget.name
         return res
 
     def _dict_for_sched_trans(self, t):

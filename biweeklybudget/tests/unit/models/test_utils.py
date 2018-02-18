@@ -97,7 +97,6 @@ class TestDoBudgetTransfer(object):
                 budgeted_amount=Decimal('123.45'),
                 description=desc,
                 account=acct,
-                budget=budg1,
                 notes='foo'
             ),
             call(
@@ -106,9 +105,14 @@ class TestDoBudgetTransfer(object):
                 budgeted_amount=Decimal('-123.45'),
                 description=desc,
                 account=acct,
-                budget=standing,
                 notes='foo'
             )
+        ]
+        assert t1.mock_calls == [
+            call.set_budget_amounts({budg1: Decimal('123.45')})
+        ]
+        assert t2.mock_calls == [
+            call.set_budget_amounts({standing: Decimal('-123.45')})
         ]
         assert mock_tr.mock_calls == [
             call(transaction=t1, note=desc),

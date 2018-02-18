@@ -101,7 +101,8 @@ class TestSetBudgetAmounts(object):
                     b1: Decimal('100.00'),
                     b2: Decimal('10.23')
                 })
-        assert 'sum of requested amounts is' in str(exc)
+        assert 'sum of requested amounts is 110.23 but actual amount of this ' \
+               'Transaction is 123.45' in str(exc)
         assert mock_sess.mock_calls == []
 
     def test_none(self):
@@ -128,12 +129,10 @@ class TestSetBudgetAmounts(object):
                 transaction=t, amount=Decimal('90.00'), budget=b2
             )
             assert t.budget_transactions == [bt1, bt2]
-            t.set_budget_amounts({})
-            assert t.budget_transactions == []
-        assert mock_sess.mock_calls == [
-            call.delete(bt1),
-            call.delete(bt2)
-        ]
+            with pytest.raises(RuntimeError) as exc:
+                t.set_budget_amounts({})
+            assert 'sum of requested amounts is 0' in str(exc)
+        assert mock_sess.mock_calls == []
 
     def test_add_one(self):
         mock_sess = Mock()
@@ -143,14 +142,14 @@ class TestSetBudgetAmounts(object):
             t = Transaction(
                 actual_amount=Decimal('10.00')
             )
-            bt1 = BudgetTransaction(
-                transaction=t, amount=Decimal('10.00'), budget=b1
-            )
             assert t.budget_transactions == []
             t.set_budget_amounts({b1: Decimal('10.00')})
-            assert t.budget_transactions == [bt1]
+            assert len(t.budget_transactions) == 1
+            assert t.budget_transactions[0].transaction == t
+            assert t.budget_transactions[0].budget == b1
+            assert t.budget_transactions[0].amount == Decimal('10.00')
         assert mock_sess.mock_calls == [
-            call.add(bt1)
+            call.add(t.budget_transactions[0])
         ]
 
     def test_add_three(self):
@@ -182,6 +181,9 @@ class TestSetBudgetAmounts(object):
             assert t.budget_transactions[2].budget == b3
             assert t.budget_transactions[2].amount == Decimal('40.00')
         assert mock_sess.mock_calls == [
+            call.add(t.budget_transactions[0]),
+            call.add(t.budget_transactions[1]),
+            call.add(t.budget_transactions[2])
         ]
 
     def test_sync(self):
@@ -205,8 +207,27 @@ class TestSetBudgetAmounts(object):
                 b1: Decimal('40.00'),
                 b3: Decimal('60.00')
             })
-            assert len(t.budget_transactions)
+        # NOTE: Since we don't have actual SQLAlchemy backing this, the
+        # deleted BudgetTransaction is never removed from the list...
+        assert len(t.budget_transactions) == 3
+        assert isinstance(t.budget_transactions[0], BudgetTransaction)
+        assert t.budget_transactions[0].budget == b1
+        assert t.budget_transactions[0].transaction == t
+        assert t.budget_transactions[0].amount == Decimal('40.00')
+        assert t.budget_transactions[0] == bt1
+        # BEGIN to-be-deleted BudgetTransaction
+        assert t.budget_transactions[1].budget == b2
+        assert t.budget_transactions[1].transaction == t
+        assert t.budget_transactions[1].amount == Decimal('90.00')
+        assert isinstance(t.budget_transactions[1], BudgetTransaction)
+        assert t.budget_transactions[1] == bt2
+        # END to-be-deleted BudgetTransaction
+        assert t.budget_transactions[2].budget == b3
+        assert t.budget_transactions[2].transaction == t
+        assert t.budget_transactions[2].amount == Decimal('60.00')
+        assert isinstance(t.budget_transactions[2], BudgetTransaction)
         assert mock_sess.mock_calls == [
-            call.delete(bt1),
-            call.delete(bt2)
+            call.add(t.budget_transactions[0]),
+            call.delete(bt2),
+            call.add(t.budget_transactions[2])
         ]
