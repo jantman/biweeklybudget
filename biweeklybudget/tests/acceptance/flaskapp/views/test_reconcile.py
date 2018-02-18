@@ -830,7 +830,10 @@ class TestTransactionEditModal(ReconcileHelper):
         assert t.date == date(2017, 4, 10)
         assert float(t.actual_amount) == -100.00
         assert t.account_id == 1
-        assert t.budget_id == 1
+        assert t.planned_budget_id is None
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 1
+        assert float(t.budget_transactions[0].amount) == -100.00
 
     def test_07_edit(self, base_url, selenium):
         self.baseurl = base_url
@@ -1692,8 +1695,10 @@ class TestOFXMakeTrans(AcceptanceHelper):
         assert res[1].date == date(2017, 4, 11)
         assert float(res[1].actual_amount) == -251.23
         assert res[1].description == 'ofx2-trans1'
-        assert res[1].budget_id == 2
         assert res[1].notes == 'created from OFXTransaction(2, OFX2)foo'
+        assert len(res[1].budget_transactions) == 1
+        assert res[1].budget_transactions[0].budget_id == 2
+        assert float(res[1].budget_transactions[0].amount) == -251.23
 
 
 @pytest.mark.acceptance

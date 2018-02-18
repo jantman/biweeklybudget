@@ -707,7 +707,10 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.budget_id == 2
+        assert t1.planned_budget_id == 2
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 2
+        assert float(t1.budget_transactions[0].amount) == 123.45
         rec1 = testdb.query(TxnReconcile).get(2)
         assert rec1.txn_id == 4
         assert rec1.ofx_fitid is None
@@ -722,6 +725,9 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
         assert t2.budget_id == 5
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 5
+        assert float(t2.budget_transactions[0].amount) == -123.45
         rec2 = testdb.query(TxnReconcile).get(3)
         assert rec2.txn_id == 5
         assert rec2.ofx_fitid is None
@@ -866,7 +872,10 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.budget_id == 5
+        assert t1.planned_budget_id == 5
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 5
+        assert float(t1.budget_transactions[0].amount) == 123.45
         rec1 = testdb.query(TxnReconcile).get(2)
         assert rec1.txn_id == 4
         assert rec1.ofx_fitid is None
@@ -881,6 +890,9 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
         assert t2.budget_id == 2
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 2
+        assert float(t2.budget_transactions[0].amount) == -123.45
         rec2 = testdb.query(TxnReconcile).get(3)
         assert rec2.txn_id == 5
         assert rec2.ofx_fitid is None

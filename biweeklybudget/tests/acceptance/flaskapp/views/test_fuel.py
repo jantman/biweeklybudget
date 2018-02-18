@@ -694,5 +694,8 @@ class TestModals(AcceptanceHelper):
         assert trans.description == 'Fill Location2 - FuelFill #8 (Veh1)'
         assert trans.notes == 'My Notes2'
         assert trans.account_id == 3
-        assert trans.budget_id == 1
+        assert trans.planned_budget_id is None
         assert trans.scheduled_trans_id is None
+        assert len(trans.budget_transactions) == 1
+        assert trans.budget_transactions[0].budget_id == 1
+        assert float(trans.budget_transactions[0].amount) == 14.82
