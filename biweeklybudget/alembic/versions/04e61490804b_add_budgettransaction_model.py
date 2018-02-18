@@ -8,7 +8,7 @@ Create Date: 2018-01-12 18:43:14.983133
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, Integer, ForeignKey, Numeric
 import logging
 
@@ -76,6 +76,11 @@ class BudgetTransaction(Base):
     #: ID of the Transaction this is part of
     trans_id = Column(Integer, ForeignKey('transactions.id'))
 
+    #: Relationship - the :py:class:`~.Transaction` this is part of
+    transaction = relationship(
+        "Transaction", backref="budget_transactions", uselist=False
+    )
+
     #: ID of the Budget this transaction is against
     budget_id = Column(Integer, ForeignKey('budgets.id'))
 
@@ -137,9 +142,34 @@ def upgrade():
             txn.planned_budget_id = txn.budget_id
             session.add(txn)
     session.commit()
+    op.drop_constraint(
+        'fk_transactions_budget_id_budgets', 'transactions', type_='foreignkey'
+    )
+    op.drop_column('transactions', 'budget_id')
 
 
 def downgrade():
+    op.add_column(
+        'transactions',
+        sa.Column(
+            'budget_id',
+            sa.Integer(),
+            autoincrement=False,
+            nullable=True
+        )
+    )
+    op.create_foreign_key(
+        'fk_transactions_budget_id_budgets',
+        'transactions', 'budgets', ['budget_id'], ['id']
+    )
+    # migrate budget_transactions back to Transaction.budget_id
+    bind = op.get_bind()
+    session = Session(bind=bind)
+    for txn in session.query(Transaction).all():
+        bt = txn.budget_transactions[0]
+        txn.budget_id = bt.budget_id
+        session.add(txn)
+    session.commit()
     op.drop_table('budget_transactions')
     op.drop_constraint(
         op.f('fk_transactions_planned_budget_id_budgets'),
