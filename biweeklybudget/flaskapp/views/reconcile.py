@@ -82,7 +82,7 @@ class TxnReconcileAjax(MethodView):
         res = {
             'reconcile': rec.as_dict,
             'transaction': rec.transaction.as_dict,
-            'budget_name': rec.transaction.budget.name
+            'budget_name': rec.transaction.budget_transactions[0].budget.name
         }
         if rec.ofx_trans is not None:
             res['ofx_trans'] = rec.ofx_trans.as_dict
