@@ -41,20 +41,20 @@ import logging
 from sqlalchemy import event, inspect
 
 from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
 
 
-def handle_trans_amount_change(**kwargs):
+def handle_budget_trans_amount_change(**kwargs):
     """
-    Handle change of :py:attr:`.Transaction.actual_amount` for existing
-    instances (``id`` is not None). For new instances, we rely on
+    Handle change of :py:attr:`.BudgetTransaction.amount` for existing
+    instances (``trans_id`` is not None). For new instances, we rely on
     :py:func:`~.handle_new_transaction` called via
     :py:func:`~.handle_before_flush`.
 
-    If the Transaction's :py:attr:`~.Transaction.budget` is a
+    If the BudgetTransaction's :py:attr:`~.BudgetTransaction.budget` uses a
     :py:class:`~.Budget` with :py:attr:`~.Budget.is_periodic` ``False`` (i.e. a
     standing budget), update the Budget's :py:attr:`~.Budget.current_balance`
     for this transaction.
@@ -65,11 +65,11 @@ def handle_trans_amount_change(**kwargs):
     :type kwargs: dict
     """
     tgt = kwargs['target']
-    if tgt.id is None:
-        logger.debug('got Transaction with id None; skipping')
+    if tgt.trans_id is None:
+        logger.debug('got BudgetTransaction with trans_id None; skipping')
         return
     if tgt.budget.is_periodic:
-        logger.debug('got Transaction with periodic budget; skipping')
+        logger.debug('got BudgetTransaction with periodic budget; skipping')
         return
     value = float(kwargs['value'])
     oldvalue = float(kwargs['oldvalue'])
@@ -78,7 +78,7 @@ def handle_trans_amount_change(**kwargs):
     old_budg_curr = float(tgt.budget.current_balance)
     new_budg = old_budg_curr + diff
     logger.info(
-        'Handle Transaction %d against standing budget %d UPDATE; '
+        'Handle BudgetTransaction %d against standing budget %d UPDATE; '
         'actual_amount change from %s to %s; update budget current_balance '
         'from %s to %s',
         tgt.id, tgt.budget.id, oldvalue, value, old_budg_curr, new_budg
@@ -87,14 +87,15 @@ def handle_trans_amount_change(**kwargs):
     session.add(tgt.budget)
 
 
-def handle_new_transaction(session):
+def handle_new_or_deleted_budget_transaction(session):
     """
     ``before_flush`` event handler
     (:py:meth:`sqlalchemy.orm.events.SessionEvents.before_flush`)
-    on the DB session, to handle creation of *new* Transactions. For updates to
-    existing Transactions, we rely on :py:func:`~.handle_trans_amount_change`.
+    on the DB session, to handle creation of *new* BudgetTransactions or
+    deletion of BudgetTransactions. For updates to existing BudgetTransactions,
+    we rely on :py:func:`~.handle_trans_amount_change`.
 
-    If the Transaction's :py:attr:`~.Transaction.budget` is a
+    If the BudgetTransaction's :py:attr:`~.BudgetTransaction.budget` is a
     :py:class:`~.Budget` with :py:attr:`~.Budget.is_periodic` ``False`` (i.e. a
     standing budget), update the Budget's :py:attr:`~.Budget.current_balance`
     for this transaction.
@@ -102,9 +103,10 @@ def handle_new_transaction(session):
     :param session: current database session
     :type session: sqlalchemy.orm.session.Session
     """
+    # handle NEW
     updated = 0
     for obj in session.new:
-        if not isinstance(obj, Transaction):
+        if not isinstance(obj, BudgetTransaction):
             continue
         if obj.budget is not None:
             budg = obj.budget
@@ -113,13 +115,13 @@ def handle_new_transaction(session):
         if budg.is_periodic:
             continue
         logger.debug(
-            'Session has new Transaction referencing standing budget id=%s',
-            budg.id
+            'Session has new BudgetTransaction referencing standing '
+            'budget id=%s', budg.id
         )
         old_amt = float(budg.current_balance)
         budg.current_balance = old_amt - float(obj.actual_amount)
         logger.info(
-            'New transaction (%s) for %s against standing budget id=%s; '
+            'New BudgetTransaction (%s) for %s against standing budget id=%s; '
             'update budget current_balance from %s to %s', obj.description,
             fmt_currency(obj.actual_amount), budg.id, fmt_currency(old_amt),
             fmt_currency(budg.current_balance)
@@ -127,7 +129,37 @@ def handle_new_transaction(session):
         session.add(budg)
         updated += 1
     logger.debug(
-        'Done handling new transactions; updated %d standing budgets', updated
+        'Done handling new BudgetTransactions; updated %d standing budgets',
+        updated
+    )
+    # handle DELETED
+    updated = 0
+    for obj in session.deleted:
+        if not isinstance(obj, BudgetTransaction):
+            continue
+        if obj.budget is not None:
+            budg = obj.budget
+        else:
+            budg = session.query(Budget).get(obj.budget_id)
+        if budg.is_periodic:
+            continue
+        logger.debug(
+            'Session has deleted BudgetTransaction referencing standing '
+            'budget id=%s', budg.id
+        )
+        old_amt = float(budg.current_balance)
+        budg.current_balance = old_amt + float(obj.actual_amount)
+        logger.info(
+            'Deleted BudgetTransaction (%s) for %s against standing budget '
+            'id=%s; update budget current_balance from %s to %s',
+            obj.description, fmt_currency(obj.actual_amount), budg.id,
+            fmt_currency(old_amt), fmt_currency(budg.current_balance)
+        )
+        session.add(budg)
+        updated += 1
+    logger.debug(
+        'Done handling deleted BudgetTransactions; '
+        'updated %d standing budgets', updated
     )
 
 
@@ -148,7 +180,7 @@ def handle_before_flush(session, flush_context, instances):
     :param instances: deprecated
     """
     logger.debug('handle_before_flush handler')
-    handle_new_transaction(session)
+    handle_new_or_deleted_budget_transaction(session)
     logger.debug('handle_before_flush done')
 
 
@@ -163,9 +195,9 @@ def init_event_listeners(db_session):
     """
     logger.debug('Setting up DB model event listeners')
     event.listen(
-        Transaction.actual_amount,
+        BudgetTransaction.amount,
         'set',
-        handle_trans_amount_change,
+        handle_budget_trans_amount_change,
         active_history=True,
         named=True
     )
