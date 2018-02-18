@@ -450,10 +450,10 @@ class BiweeklyPayPeriod(object):
             # t['type'] == 'Transaction'
             res[t['budget_id']]['trans_total'] += t['amount']
             if t['budgeted_amount'] is None:
-                res[t['budget_id']]['allocated'] += t['amount']
+                res[t['planned_budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['spent'] += t['amount']
             else:
-                res[t['budget_id']]['allocated'] += t['budgeted_amount']
+                res[t['planned_budget_id']]['allocated'] += t['budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
         for b in res.keys():
             if res[b]['trans_total'] > res[b]['allocated']:
@@ -551,6 +551,10 @@ class BiweeklyPayPeriod(object):
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
+        * ``planned_budget_id`` (**int**) the id of the Budget the transaction
+          was planned against, if any. May be None.
+        * ``planned_budget_name`` (**str**) the name of the Budget the
+          transaction was planned against, if any. May be None.
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
@@ -589,6 +593,10 @@ class BiweeklyPayPeriod(object):
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
+        * ``planned_budget_id`` (**int**) the id of the Budget the transaction
+          was planned against, if any. May be None.
+        * ``planned_budget_name`` (**str**) the name of the Budget the
+          transaction was planned against, if any. May be None.
 
         :param t: transaction to describe
         :type t: Transaction
@@ -606,7 +614,9 @@ class BiweeklyPayPeriod(object):
             'account_id': t.account_id,
             'account_name': t.account.name,
             'budget_id': t.budget_transactions[0].budget_id,
-            'budget_name': t.budget_transactions[0].budget.name
+            'budget_name': t.budget_transactions[0].budget.name,
+            'planned_budget_id': t.planned_budget_id,
+            'planned_budget_name': t.planned_budget.name
         }
         if t.reconcile is None:
             res['reconcile_id'] = None
