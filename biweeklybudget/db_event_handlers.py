@@ -176,35 +176,26 @@ def verify_budget_transaction_sums(session):
     :param session: current database session
     :type session: sqlalchemy.orm.session.Session
     """
-    # handle NEW
-    for obj in session.new:
-        if not isinstance(obj, Transaction):
-            continue
-        bt_sum = Decimal('0.0')
-        for bt in obj.budget_transactions:
-            bt_sum += bt.amount
-        if bt_sum != obj.actual_amount:
-            raise RuntimeError(
-                'ERROR: actual_amount of new Transaction %s (%s) is not equal '
-                'to sum (%s) of all associated BudgetTransactions (%s)' % (
-                    obj, obj.actual_amount, bt_sum, obj.budget_transactions
+    data = {
+        'new': session.new,
+        'updated': session.dirty
+    }
+    for title, objs in data.items():
+        for obj in objs:
+            if not isinstance(obj, Transaction):
+                continue
+            bt_sum = Decimal('0.0')
+            for bt in obj.budget_transactions:
+                bt_sum += bt.amount
+            if bt_sum != obj.actual_amount:
+                raise RuntimeError(
+                    'ERROR: actual_amount of %s Transaction %s (%s) is not '
+                    'equal to sum (%s) of all associated BudgetTransactions '
+                    '(%s)' % (
+                        title, obj, obj.actual_amount, bt_sum,
+                        obj.budget_transactions
+                    )
                 )
-            )
-    # handle UPDATED
-    for obj in session.dirty:
-        if not isinstance(obj, Transaction):
-            continue
-        bt_sum = Decimal('0.0')
-        for bt in obj.budget_transactions:
-            bt_sum += bt.amount
-        if bt_sum != obj.actual_amount:
-            raise RuntimeError(
-                'ERROR: actual_amount of updated Transaction %s (%s) is not '
-                'equal to sum (%s) of all associated BudgetTransactions (%s)'
-                '' % (
-                    obj, obj.actual_amount, bt_sum, obj.budget_transactions
-                )
-            )
 
 
 def handle_before_flush(session, flush_context, instances):
