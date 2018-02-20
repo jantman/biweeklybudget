@@ -41,8 +41,15 @@ import logging
 from decimal import Decimal
 from sqlalchemy import event, inspect
 
+from biweeklybudget.models.account import Account
+from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.budget_transaction import BudgetTransaction
+from biweeklybudget.models.fuel import FuelFill
+from biweeklybudget.models.ofx_statement import OFXStatement
+from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.projects import BoMItem
+from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import fmt_currency
 
@@ -198,6 +205,18 @@ def verify_budget_transaction_sums(session):
                 )
 
 
+def validate_decimal_or_none(target, value, oldvalue, initiator):
+    if isinstance(value, Decimal) or value is None:
+        return
+    raise ValueError(
+        'ERROR in %s on field %s of %s: value set to %s (from %s) but '
+        'new value is a %s; can only be Decimal or None.' % (
+            initiator.op.name, initiator.key, target, value, oldvalue,
+            type(value).__name__
+        )
+    )
+
+
 def issue_105_helper(session):
     """
     TEMPORARY helper for issue #105.
@@ -205,37 +224,27 @@ def issue_105_helper(session):
     :param session: current database session
     :type session: sqlalchemy.orm.session.Session
     """
-    data = {
-        'new': session.new,
-        'updated': session.dirty
-    }
-    decimal_types = {
-        'Account': ['credit_limit', 'apr', 'prime_rate_margin'],
-        'AccountBalance': ['ledger', 'avail'],
-        'Budget': ['starting_balance', 'current_balance'],
-        'BudgetTransaction': ['amount'],
-        'FuelFill': ['cost_per_gallon', 'total_cost'],
-        'OFXStatement': ['ledger_bal', 'avail_bal'],
-        'OFXTransaction': ['amount'],
-        'BoMItem': ['unit_cost'],
-        'ScheduledTransaction': ['amount'],
-        'Transaction': ['actual_amount', 'budgeted_amount']
-    }
-    for title, objs in data.items():
-        for obj in objs:
-            clsname = obj.__class__.__name__
-            if clsname not in decimal_types:
-                continue
-            for attrname in decimal_types[clsname]:
-                attrval = getattr(obj, attrname)
-                if not isinstance(attrval, Decimal) and attrval is not None:
-                    raise RuntimeError(
-                        'ERROR: Attribute %s of %s %s (object %s) has improper '
-                        'type; must be None or Decimal but is %s (value %s)' % (
-                            attrname, clsname, obj, title,
-                            type(attrval).__name__, attrval
-                        )
-                    )
+    decimal_fields = [
+        Account.credit_limit,
+        Account.apr,
+        Account.prime_rate_margin,
+        AccountBalance.ledger,
+        AccountBalance.avail,
+        Budget.starting_balance,
+        Budget.current_balance,
+        BudgetTransaction.amount,
+        FuelFill.cost_per_gallon,
+        FuelFill.total_cost,
+        OFXStatement.ledger_bal,
+        OFXStatement.avail_bal,
+        OFXTransaction.amount,
+        BoMItem.unit_cost,
+        ScheduledTransaction.amount,
+        Transaction.actual_amount,
+        Transaction.budgeted_amount
+    ]
+    for fld in decimal_fields:
+        event.listen(fld, 'set', validate_decimal_or_none)
 
 
 def handle_before_flush(session, flush_context, instances):
@@ -257,7 +266,6 @@ def handle_before_flush(session, flush_context, instances):
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
     verify_budget_transaction_sums(session)
-    issue_105_helper(session)
     logger.debug('handle_before_flush done')
 
 
@@ -271,6 +279,7 @@ def init_event_listeners(db_session):
     :type db_session: sqlalchemy.orm.session.Session
     """
     logger.debug('Setting up DB model event listeners')
+    issue_105_helper(db_session)
     event.listen(
         BudgetTransaction.amount,
         'set',
