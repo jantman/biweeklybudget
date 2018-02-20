@@ -198,6 +198,46 @@ def verify_budget_transaction_sums(session):
                 )
 
 
+def issue_105_helper(session):
+    """
+    TEMPORARY helper for issue #105.
+
+    :param session: current database session
+    :type session: sqlalchemy.orm.session.Session
+    """
+    data = {
+        'new': session.new,
+        'updated': session.dirty
+    }
+    decimal_types = {
+        'Account': ['credit_limit', 'apr', 'prime_rate_margin'],
+        'AccountBalance': ['ledger', 'avail'],
+        'Budget': ['starting_balance', 'current_balance'],
+        'BudgetTransaction': ['amount'],
+        'FuelFill': ['cost_per_gallon', 'total_cost'],
+        'OFXStatement': ['ledger_bal', 'avail_bal'],
+        'OFXTransaction': ['amount'],
+        'BoMItem': ['unit_cost'],
+        'ScheduledTransaction': ['amount'],
+        'Transaction': ['actual_amount', 'budgeted_amount']
+    }
+    for title, objs in data.items():
+        for obj in objs:
+            clsname = obj.__class__.__name__
+            if clsname not in decimal_types:
+                continue
+            for attrname in decimal_types[clsname]:
+                attrval = getattr(obj, attrname)
+                if not isinstance(attrval, Decimal) and attrval is not None:
+                    raise RuntimeError(
+                        'ERROR: Attribute %s of %s %s (object %s) has improper '
+                        'type; must be None or Decimal but is %s (value %s)' % (
+                            attrname, clsname, obj, title,
+                            type(attrval).__name__, attrval
+                        )
+                    )
+
+
 def handle_before_flush(session, flush_context, instances):
     """
     Hook into ``before_flush``
@@ -217,6 +257,7 @@ def handle_before_flush(session, flush_context, instances):
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
     verify_budget_transaction_sums(session)
+    issue_105_helper(session)
     logger.debug('handle_before_flush done')
 
 
