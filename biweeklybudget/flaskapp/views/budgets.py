@@ -186,10 +186,10 @@ class BudgetFormHandler(FormHandlerView):
         budget.description = data['description'].strip()
         if data['is_periodic'] == 'true':
             budget.is_periodic = True
-            budget.starting_balance = data['starting_balance']
+            budget.starting_balance = Decimal(data['starting_balance'])
         else:
             budget.is_periodic = False
-            budget.current_balance = data['current_balance']
+            budget.current_balance = Decimal(data['current_balance'])
         if data['is_active'] == 'true':
             budget.is_active = True
         else:
