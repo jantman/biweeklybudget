@@ -172,39 +172,6 @@ def handle_new_or_deleted_budget_transaction(session):
     )
 
 
-def verify_budget_transaction_sums(session):
-    """
-    ``before_flush`` event handler
-    (:py:meth:`sqlalchemy.orm.events.SessionEvents.before_flush`)
-    on the DB session, to verify that the :py:attr:`~.Transaction.actual_amount`
-    on any changed :py:class:`~.Transaction` matches the sums of all
-    :py:class:`~.BudgetTransaction instances associated with it.
-
-    :param session: current database session
-    :type session: sqlalchemy.orm.session.Session
-    """
-    data = {
-        'new': session.new,
-        'updated': session.dirty
-    }
-    for title, objs in data.items():
-        for obj in objs:
-            if not isinstance(obj, Transaction):
-                continue
-            bt_sum = Decimal('0.0')
-            for bt in obj.budget_transactions:
-                bt_sum += bt.amount
-            if bt_sum != obj.actual_amount:
-                raise RuntimeError(
-                    'ERROR: actual_amount of %s Transaction %s (%s) is not '
-                    'equal to sum (%s) of all associated BudgetTransactions '
-                    '(%s)' % (
-                        title, obj, obj.actual_amount, bt_sum,
-                        obj.budget_transactions
-                    )
-                )
-
-
 def validate_decimal_or_none(target, value, oldvalue, initiator):
     if isinstance(value, Decimal) or value is None:
         return
@@ -265,7 +232,6 @@ def handle_before_flush(session, flush_context, instances):
     """
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
-    verify_budget_transaction_sums(session)
     logger.debug('handle_before_flush done')
 
 

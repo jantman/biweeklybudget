@@ -146,6 +146,7 @@ def upgrade():
         'fk_transactions_budget_id_budgets', 'transactions', type_='foreignkey'
     )
     op.drop_column('transactions', 'budget_id')
+    op.drop_column('transactions', 'actual_amount')
 
 
 def downgrade():
@@ -162,12 +163,21 @@ def downgrade():
         'fk_transactions_budget_id_budgets',
         'transactions', 'budgets', ['budget_id'], ['id']
     )
+    op.add_column(
+        'transactions',
+        sa.Column(
+            'actual_amount',
+            Numeric(precision=10, scale=4),
+            nullable=False
+        )
+    )
     # migrate budget_transactions back to Transaction.budget_id
     bind = op.get_bind()
     session = Session(bind=bind)
     for txn in session.query(Transaction).all():
         bt = txn.budget_transactions[0]
         txn.budget_id = bt.budget_id
+        txn.actual_amount = bt.amount
         session.add(txn)
     session.commit()
     op.drop_table('budget_transactions')

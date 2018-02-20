@@ -37,10 +37,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, Integer, Numeric, String, Date, ForeignKey, inspect
+    Column, Integer, Numeric, String, Date, ForeignKey, inspect, func, select
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
+from sqlalchemy.ext.hybrid import hybrid_property
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.budget_model import Budget
@@ -51,6 +52,14 @@ logger = logging.getLogger(__name__)
 
 
 class Transaction(Base, ModelAsDict):
+    """
+    Class that describes Transactions that have actually occurred, against one
+    account and one or more budgets.
+
+    Note that in addition to the usual class attributes, the constructor of
+    this class also accepts a ``budget_amounts`` keyword argument, which passes
+    its value on to :py:meth:`~.set_budget_amounts`.
+    """
 
     __tablename__ = 'transactions'
     __table_args__ = (
@@ -62,9 +71,6 @@ class Transaction(Base, ModelAsDict):
 
     #: date of the transaction
     date = Column(Date, default=dtnow().date())
-
-    #: Actual amount of the transaction
-    actual_amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
     #: Budgeted amount of the transaction, if it was budgeted ahead of time
     #: via a :py:class:`~.ScheduledTransaction`. This attribute is only set by
@@ -122,10 +128,48 @@ class Transaction(Base, ModelAsDict):
         "Transaction", remote_side=[id], post_update=True, uselist=False
     )
 
+    def __init__(self, **kwargs):
+        """
+        Custom constructor for Transaction class to allow setting/syncing
+        BudgetTransactions via constructor.
+
+        :param kwargs: class constructor keyword arguments
+        :type kwargs: dict
+        """
+        cls_ = type(self)
+        for k in kwargs:
+            if k == 'budget_amounts':
+                self.set_budget_amounts(kwargs[k])
+            elif not hasattr(cls_, k):
+                raise TypeError(
+                    "%r is an invalid keyword argument for %s" %
+                    (k, cls_.__name__))
+            setattr(self, k, kwargs[k])
+
     def __repr__(self):
-        return "<Transaction(id=%s)>" % (
-            self.id
-        )
+        return "<Transaction(id=%s)>" % self.id
+
+    @hybrid_property
+    def actual_amount(self):
+        """
+        Actual amount of the transaction.
+
+        :return: actual total amount of the transaction
+        :rtype: decimal.Decimal
+        """
+        return sum([
+            bt.amount for bt in self.budget_transactions
+        ])
+
+    @actual_amount.expression
+    def actual_amount(cls):
+        # see: http://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html
+        # #correlated-subquery-relationship-hybrid
+        return select(
+            [func.sum(BudgetTransaction.amount)]
+        ).where(
+            BudgetTransaction.trans_id.__eq__(cls.id)
+        ).label('actual_amount')
 
     @staticmethod
     def unreconciled(db):
@@ -161,20 +205,10 @@ class Transaction(Base, ModelAsDict):
           be a Decimal.
         :type budget_amounts: dict
         """
+        assert isinstance(budget_amounts, type({}))
         logger.debug(
             'Setting budget amounts on %s to: %s', self, budget_amounts
         )
-        if (
-            self.actual_amount is not None and
-            sum(budget_amounts.values()) != self.actual_amount
-        ):
-            raise RuntimeError(
-                'ERROR in Transaction.set_budget_amounts: sum of requested '
-                'amounts is %s but actual amount of this Transaction is %s '
-                '(on %s)' % (
-                    sum(budget_amounts.values()), self.actual_amount, self
-                )
-            )
         sess = inspect(self).session
         # ensure keys are all Budget objects, not IDs
         for k in list(budget_amounts.keys()):
