@@ -241,8 +241,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         stand_bal = NotificationsController.standing_budgets_sum(testdb)
         assert stand_bal == Decimal('132939.07')
         pp_bal = NotificationsController.pp_sum(testdb)
-        # floating point awfulness
-        assert "%.2f" % pp_bal == '11.76'
+        assert pp_bal == Decimal('11.76')
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == Decimal('-333.33')
 
@@ -328,8 +327,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         stand_bal = NotificationsController.standing_budgets_sum(testdb)
         assert stand_bal == Decimal('11099.85')
         pp_bal = NotificationsController.pp_sum(testdb)
-        # floating point awfulness
-        assert "%.2f" % pp_bal == '11.76'
+        assert pp_bal == Decimal('11.76')
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == Decimal('33666.67')
 

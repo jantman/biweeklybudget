@@ -764,7 +764,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
         assert pp.budget_sums[2]['allocated'] == Decimal('222.22')
         assert pp.budget_sums[2]['budget_amount'] == Decimal('234.0')
-        assert "%.2f" % pp.budget_sums[2]['remaining'] == '11.78'
+        assert pp.budget_sums[2]['remaining'] == Decimal('11.78')
         assert pp.budget_sums[2]['spent'] == Decimal('222.22')
         assert pp.budget_sums[2]['trans_total'] == Decimal('222.22')
         link = selenium.find_element_by_id('btn_budget_txfr')
@@ -860,8 +860,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         print('Found period for %s: %s' % (d, pp))
         assert pp.budget_sums[2]['allocated'] == Decimal('98.77')
         assert pp.budget_sums[2]['budget_amount'] == Decimal('234.0')
-        # ugh, floating point issues...
-        assert "%.2f" % pp.budget_sums[2]['remaining'] == '135.23'
+        assert pp.budget_sums[2]['remaining'] == Decimal('135.23')
         assert pp.budget_sums[2]['spent'] == Decimal('98.77')
         assert pp.budget_sums[2]['trans_total'] == Decimal('98.77')
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
