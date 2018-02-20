@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from decimal import Decimal
 from datetime import timedelta
 from selenium.webdriver.support.ui import Select
 
@@ -572,14 +573,14 @@ class TestModals(AcceptanceHelper):
         assert fill.level_before == 50
         assert fill.level_after == 90
         assert fill.fill_location == 'Fill Location'
-        assert float(fill.cost_per_gallon) == 1.239
-        assert float(fill.total_cost) == 12.34
-        assert float(fill.gallons) == 6.789
-        assert float(fill.reported_mpg) == 34.5
+        assert float(fill.cost_per_gallon) == Decimal('1.239')
+        assert float(fill.total_cost) == Decimal('12.34')
+        assert float(fill.gallons) == Decimal('6.789')
+        assert float(fill.reported_mpg) == Decimal('34.5')
         assert fill.notes == 'My Notes'
         # calculated values
         assert fill.calculated_miles == 111
-        assert float(fill.calculated_mpg) == 16.349
+        assert float(fill.calculated_mpg) == Decimal('16.349')
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
@@ -674,14 +675,14 @@ class TestModals(AcceptanceHelper):
         assert fill.level_before == 10
         assert fill.level_after == 100
         assert fill.fill_location == 'Fill Location2'
-        assert float(fill.cost_per_gallon) == 1.459
-        assert float(fill.total_cost) == 14.82
-        assert float(fill.gallons) == 5.678
-        assert float(fill.reported_mpg) == 28.3
+        assert float(fill.cost_per_gallon) == Decimal('1.459')
+        assert float(fill.total_cost) == Decimal('14.82')
+        assert float(fill.gallons) == Decimal('5.678')
+        assert float(fill.reported_mpg) == Decimal('28.3')
         assert fill.notes == 'My Notes2'
         # calculated values
         assert fill.calculated_miles == 245
-        assert float(fill.calculated_mpg) == 43.148
+        assert float(fill.calculated_mpg) == Decimal('43.148')
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
@@ -689,7 +690,7 @@ class TestModals(AcceptanceHelper):
         assert max(trans_ids) == 4
         trans = testdb.query(Transaction).get(4)
         assert trans.date == (dtnow() - timedelta(days=2)).date()
-        assert float(trans.actual_amount) == 14.82
+        assert float(trans.actual_amount) == Decimal('14.82')
         assert trans.budgeted_amount is None
         assert trans.description == 'Fill Location2 - FuelFill #8 (Veh1)'
         assert trans.notes == 'My Notes2'
@@ -698,4 +699,4 @@ class TestModals(AcceptanceHelper):
         assert trans.scheduled_trans_id is None
         assert len(trans.budget_transactions) == 1
         assert trans.budget_transactions[0].budget_id == 1
-        assert float(trans.budget_transactions[0].amount) == 14.82
+        assert float(trans.budget_transactions[0].amount) == Decimal('14.82')

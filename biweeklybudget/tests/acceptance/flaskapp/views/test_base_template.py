@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import datetime, timedelta
 from pytz import UTC
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.tests.conftest import engine
@@ -144,14 +145,14 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
         testdb.add(a)
         a.set_balance(
             overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=1.0,
+            ledger=Decimal('1.0'),
             ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
         )
         b = Budget(
             name='1Income',
             is_periodic=True,
             description='1Income',
-            starting_balance=0.0,
+            starting_balance=Decimal('0.0'),
             is_income=True
         )
         testdb.add(b)
@@ -182,7 +183,7 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
             fitid='OFX1',
             trans_type='Deposit',
             date_posted=datetime(2017, 4, 10, 12, 3, 4, tzinfo=UTC),
-            amount=-100.0,
+            amount=Decimal('-100.0'),
             name='ofx1-income'
         ))
         # matches Transaction 2
@@ -192,7 +193,7 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
             fitid='OFX2',
             trans_type='Debit',
             date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
-            amount=250.0,
+            amount=Decimal('250.0'),
             name='ofx2-trans1'
         ))
         # matches Transcation 3
@@ -202,7 +203,7 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
             fitid='OFX3',
             trans_type='Purchase',
             date_posted=datetime(2017, 4, 9, 12, 3, 4, tzinfo=UTC),
-            amount=-600.0,
+            amount=Decimal('-600.0'),
             name='ofx3-trans2-st1'
         ))
         testdb.flush()
@@ -225,25 +226,25 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):
         b = testdb.query(Budget).get(4)
-        b.current_balance = 123456.78
+        b.current_balance = Decimal('123456.78')
         testdb.add(b)
         testdb.flush()
         testdb.commit()
 
     def test_1_confirm_db(self, testdb):
         b = testdb.query(Budget).get(4)
-        assert float(b.current_balance) == 123456.78
+        assert float(b.current_balance) == Decimal('123456.78')
 
     def test_2_confirm_pp(self, testdb):
         acct_bal = NotificationsController.budget_account_sum(testdb)
-        assert acct_bal == 12889.24
+        assert acct_bal == Decimal('12889.24')
         stand_bal = NotificationsController.standing_budgets_sum(testdb)
-        assert stand_bal == 132939.07
+        assert stand_bal == Decimal('132939.07')
         pp_bal = NotificationsController.pp_sum(testdb)
         # floating point awfulness
         assert "%.2f" % pp_bal == '11.76'
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
-        assert unrec_amt == -333.33
+        assert unrec_amt == Decimal('-333.33')
 
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
@@ -274,7 +275,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
 
     def test_0_update_db(self, testdb):
         b = testdb.query(Budget).get(4)
-        b.current_balance = 1617.56
+        b.current_balance = Decimal('1617.56')
         testdb.add(b)
         acct = testdb.query(Account).get(1)
         budget = testdb.query(Budget).get(1)
@@ -297,40 +298,40 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
             fitid='OFX8',
             trans_type='Purchase',
             date_posted=dtnow(),
-            amount=-600.0,
+            amount=Decimal('-600.0'),
             name='ofx8-trans4'
         )
         testdb.add(o)
         t = Transaction(
             date=tdate,
-            actual_amount=600.00,
+            actual_amount=Decimal('600.00'),
             description='trans6',
             account=acct
         )
         testdb.add(t)
-        t.set_budget_amounts({budget: 600.00})
+        t.set_budget_amounts({budget: Decimal('600.00')})
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         t2 = Transaction(
             date=tdate,
-            actual_amount=34000.00,
+            actual_amount=Decimal('34000.00'),
             description='transFoo',
             account=acct
         )
         testdb.add(t2)
-        t2.set_budget_amounts({budget: 34000.00})
+        t2.set_budget_amounts({budget: Decimal('34000.00')})
         testdb.flush()
         testdb.commit()
 
     def test_1_confirm_pp(self, testdb):
         acct_bal = NotificationsController.budget_account_sum(testdb)
-        assert acct_bal == 12889.24
+        assert acct_bal == Decimal('12889.24')
         stand_bal = NotificationsController.standing_budgets_sum(testdb)
-        assert stand_bal == 11099.85
+        assert stand_bal == Decimal('11099.85')
         pp_bal = NotificationsController.pp_sum(testdb)
         # floating point awfulness
         assert "%.2f" % pp_bal == '11.76'
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
-        assert unrec_amt == 33666.67
+        assert unrec_amt == Decimal('33666.67')
 
     def test_2_notification(self, base_url, selenium):
         self.baseurl = base_url

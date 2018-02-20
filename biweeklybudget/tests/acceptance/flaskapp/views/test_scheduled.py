@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import timedelta, date
 from selenium.webdriver.support.ui import Select
+from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -258,7 +259,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
         assert t.num_per_period == 1
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == -333.33
+        assert float(t.amount) == Decimal('-333.33')
         assert t.account_id == 2
         assert t.budget_id == 4
         assert t.notes == 'notesST3'
@@ -329,7 +330,7 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
         assert t.num_per_period is None
         assert t.date is None
         assert t.day_of_month == 4
-        assert float(t.amount) == 222.22
+        assert float(t.amount) == Decimal('222.22')
         assert t.account_id == 1
         assert t.budget_id == 2
         assert t.notes == 'notesST2'
@@ -376,7 +377,7 @@ class TestSchedTransModal(AcceptanceHelper):
             dtnow() + timedelta(days=5)
         ).date()
         assert t.day_of_month is None
-        assert float(t.amount) == 444.44
+        assert float(t.amount) == Decimal('444.44')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes == 'notesST4'
@@ -460,7 +461,7 @@ class TestSchedTransModal(AcceptanceHelper):
             dtnow() + timedelta(days=1)
         ).date()
         assert t.day_of_month is None
-        assert float(t.amount) == 123.45
+        assert float(t.amount) == Decimal('123.45')
         assert t.account_id == 2
         assert t.budget_id == 4
         assert t.notes == 'notesST4'
@@ -527,7 +528,7 @@ class TestSchedTransModal(AcceptanceHelper):
         dnow = dtnow()
         assert t.date == date(year=dnow.year, month=dnow.month, day=15)
         assert t.day_of_month is None
-        assert float(t.amount) == 123.45
+        assert float(t.amount) == Decimal('123.45')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes == 'foo bar baz'
@@ -583,7 +584,7 @@ class TestSchedTransModal(AcceptanceHelper):
         assert t.num_per_period is None
         assert t.date is None
         assert t.day_of_month == 4
-        assert float(t.amount) == 123.45
+        assert float(t.amount) == Decimal('123.45')
         assert t.account_id == 2
         assert t.budget_id == 2
         assert t.notes == 'foo bar baz'
@@ -639,7 +640,7 @@ class TestSchedTransModal(AcceptanceHelper):
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == 123.45
+        assert float(t.amount) == Decimal('123.45')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes == 'foo bar baz'
@@ -695,7 +696,7 @@ class TestSchedTransModal(AcceptanceHelper):
         assert t.num_per_period == 1
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == 123.45
+        assert float(t.amount) == Decimal('123.45')
         assert t.account_id == 1
         assert t.budget_id == 7
         assert t.notes == 'foo bar baz'

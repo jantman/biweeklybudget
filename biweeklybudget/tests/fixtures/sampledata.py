@@ -114,34 +114,34 @@ class SampleDataLoader(object):
                 name='Periodic3 Inactive',
                 is_periodic=True,
                 description='P3desc',
-                starting_balance=10.23,
+                starting_balance=Decimal('10.23'),
                 is_active=False
             ),
             'Standing1': Budget(
                 name='Standing1',
                 is_periodic=False,
                 description='S1desc',
-                current_balance=1284.23,
+                current_balance=Decimal('1284.23'),
                 omit_from_graphs=True
             ),
             'Standing2': Budget(
                 name='Standing2',
                 is_periodic=False,
                 description='S2desc',
-                current_balance=9482.29
+                current_balance=Decimal('9482.29')
             ),
             'Standing3 Inactive': Budget(
                 name='Standing3 Inactive',
                 is_periodic=False,
                 description='S3desc',
-                current_balance=-92.29,
+                current_balance=Decimal('-92.29'),
                 is_active=False
             ),
             'Income': Budget(
                 name='Income',
                 is_periodic=True,
                 description='IncomeDesc',
-                starting_balance=2345.67,
+                starting_balance=Decimal('2345.67'),
                 is_income=True,
                 omit_from_graphs=True
             )
@@ -157,7 +157,7 @@ class SampleDataLoader(object):
     def _scheduled_transactions(self):
         res = [
             ScheduledTransaction(
-                amount=111.11,
+                amount=Decimal('111.11'),
                 description='ST1',
                 notes='notesST1',
                 account=self.accounts['BankOne']['account'],
@@ -165,7 +165,7 @@ class SampleDataLoader(object):
                 date=(self.dt + timedelta(days=4)).date()
             ),
             ScheduledTransaction(
-                amount=222.22,
+                amount=Decimal('222.22'),
                 description='ST2',
                 notes='notesST2',
                 account=self.accounts['BankOne']['account'],
@@ -173,7 +173,7 @@ class SampleDataLoader(object):
                 day_of_month=4
             ),
             ScheduledTransaction(
-                amount=-333.33,
+                amount=Decimal('-333.33'),
                 description='ST3',
                 notes='notesST3',
                 account=self.accounts['BankTwoStale']['account'],
@@ -181,7 +181,7 @@ class SampleDataLoader(object):
                 num_per_period=1
             ),
             ScheduledTransaction(
-                amount=444.44,
+                amount=Decimal('444.44'),
                 description='ST4',
                 notes='notesST4',
                 account=self.accounts['BankOne']['account'],
@@ -190,7 +190,7 @@ class SampleDataLoader(object):
                 is_active=False
             ),
             ScheduledTransaction(
-                amount=555.55,
+                amount=Decimal('555.55'),
                 description='ST5',
                 notes='notesST5',
                 account=self.accounts['BankOne']['account'],
@@ -199,7 +199,7 @@ class SampleDataLoader(object):
                 is_active=False
             ),
             ScheduledTransaction(
-                amount=666.66,
+                amount=Decimal('666.66'),
                 description='ST6',
                 notes='notesST6',
                 account=self.accounts['BankTwoStale']['account'],
@@ -216,8 +216,8 @@ class SampleDataLoader(object):
         res = [
             Transaction(
                 date=(self.dt + timedelta(days=4)).date(),
-                actual_amount=111.13,
-                budgeted_amount=111.11,
+                actual_amount=Decimal('111.13'),
+                budgeted_amount=Decimal('111.11'),
                 description='T1foo',
                 notes='notesT1',
                 account=self.accounts['BankOne']['account'],
@@ -226,8 +226,8 @@ class SampleDataLoader(object):
             ),
             Transaction(
                 date=self.dt.date(),
-                actual_amount=-333.33,
-                budgeted_amount=-333.33,
+                actual_amount=Decimal('-333.33'),
+                budgeted_amount=Decimal('-333.33'),
                 description='T2',
                 notes='notesT2',
                 account=self.accounts['BankTwoStale']['account'],
@@ -236,7 +236,7 @@ class SampleDataLoader(object):
             ),
             Transaction(
                 date=(self.dt - timedelta(days=2)).date(),
-                actual_amount=222.22,
+                actual_amount=Decimal('222.22'),
                 description='T3',
                 notes='notesT3',
                 account=self.accounts['CreditOne']['account']
@@ -244,9 +244,9 @@ class SampleDataLoader(object):
         ]
         for x in res:
             self.db.add(x)
-        res[0].set_budget_amounts({self.budgets['Periodic1']: 111.13})
-        res[1].set_budget_amounts({self.budgets['Standing1']: -333.33})
-        res[2].set_budget_amounts({self.budgets['Periodic2']: 222.22})
+        res[0].set_budget_amounts({self.budgets['Periodic1']: Decimal('111.13')})
+        res[1].set_budget_amounts({self.budgets['Standing1']: Decimal('-333.33')})
+        res[2].set_budget_amounts({self.budgets['Periodic2']: Decimal('222.22')})
         return res
 
     def _add_account(self, acct, statements, transactions):
@@ -290,9 +290,9 @@ class SampleDataLoader(object):
                 acctid='1111',
                 type='Bank',
                 as_of=(self.dt - timedelta(hours=46)),
-                ledger_bal=12345.67,
+                ledger_bal=Decimal('12345.67'),
                 ledger_bal_as_of=(self.dt - timedelta(hours=46)),
-                avail_bal=12340.00,
+                avail_bal=Decimal('12340.00'),
                 avail_bal_as_of=(self.dt - timedelta(hours=46))
             ),
             OFXStatement(
@@ -306,9 +306,9 @@ class SampleDataLoader(object):
                 acctid='1111',
                 type='Bank',
                 as_of=(self.dt - timedelta(hours=14)),
-                ledger_bal=12789.01,
+                ledger_bal=Decimal('12789.01'),
                 ledger_bal_as_of=(self.dt - timedelta(hours=14)),
-                avail_bal=12563.18,
+                avail_bal=Decimal('12563.18'),
                 avail_bal_as_of=(self.dt - timedelta(hours=14))
             )
         ]
@@ -320,7 +320,7 @@ class SampleDataLoader(object):
                     fitid='BankOne.0.0',
                     trans_type='Credit',
                     date_posted=(self.dt - timedelta(days=7)),
-                    amount=1234.56,
+                    amount=Decimal('1234.56'),
                     name='BankOne.0.0'
                 ),
                 OFXTransaction(
@@ -329,7 +329,7 @@ class SampleDataLoader(object):
                     fitid='BankOne.0.1',
                     trans_type='Debit',
                     date_posted=(self.dt - timedelta(days=6)),
-                    amount=-20.00,
+                    amount=Decimal('-20.00'),
                     name='Late Fee'
                 )
             ],
@@ -374,7 +374,7 @@ class SampleDataLoader(object):
                 acctid='2222',
                 type='Bank',
                 as_of=(self.dt - timedelta(days=18)),
-                ledger_bal=100.23,
+                ledger_bal=Decimal('100.23'),
                 ledger_bal_as_of=(self.dt - timedelta(days=18))
             )
         ]
@@ -386,7 +386,7 @@ class SampleDataLoader(object):
                     fitid='0',
                     trans_type='Debit',
                     date_posted=(self.dt - timedelta(days=23)),
-                    amount=432.19,
+                    amount=Decimal('432.19'),
                     name='Transfer to Other Account'
                 ),
                 OFXTransaction(
@@ -395,7 +395,7 @@ class SampleDataLoader(object):
                     fitid='1',
                     trans_type='Interest',
                     date_posted=(self.dt - timedelta(days=22)),
-                    amount=0.23,
+                    amount=Decimal('0.23'),
                     name='Interest Paid',
                     memo='Some Date'
                 )
@@ -409,7 +409,7 @@ class SampleDataLoader(object):
             name='CreditOne',
             ofx_cat_memo_to_name=False,
             acct_type=AcctType.Credit,
-            credit_limit=2000.00,
+            credit_limit=Decimal('2000.00'),
             is_active=True,
             prime_rate_margin=Decimal('0.0050'),
             negate_ofx_amounts=True,
@@ -427,7 +427,7 @@ class SampleDataLoader(object):
                 acctid='CreditOneAcctId',
                 type='Credit',
                 as_of=(self.dt - timedelta(days=1)),
-                ledger_bal=-435.29,
+                ledger_bal=Decimal('-435.29'),
                 ledger_bal_as_of=(self.dt - timedelta(days=1)),
             ),
             OFXStatement(
@@ -440,7 +440,7 @@ class SampleDataLoader(object):
                 acctid='CreditOneAcctId',
                 type='Credit',
                 as_of=(self.dt - timedelta(days=30, hours=13)),
-                ledger_bal=-876.54,
+                ledger_bal=Decimal('-876.54'),
                 ledger_bal_as_of=(self.dt - timedelta(days=30, hours=13)),
             ),
             OFXStatement(
@@ -453,7 +453,7 @@ class SampleDataLoader(object):
                 acctid='CreditOneAcctId',
                 type='Credit',
                 as_of=(self.dt - timedelta(hours=13)),
-                ledger_bal=-952.06,
+                ledger_bal=Decimal('-952.06'),
                 ledger_bal_as_of=(self.dt - timedelta(hours=13)),
             )
         ]
@@ -465,7 +465,7 @@ class SampleDataLoader(object):
                     fitid='T1',
                     trans_type='Purchase',
                     date_posted=(self.dt - timedelta(hours=22)),
-                    amount=-123.81,
+                    amount=Decimal('-123.81'),
                     name='123.81 Credit Purchase T1',
                     memo='38328',
                     description='CreditOneT1Desc',
@@ -479,7 +479,7 @@ class SampleDataLoader(object):
                     fitid='T2',
                     trans_type='credit',
                     date_posted=(self.dt - timedelta(days=2)),
-                    amount=52.00,
+                    amount=Decimal('52.00'),
                     name='$52.00 Online Payment, thank you',
                     memo='38328',
                     description='CreditOneT2Desc'
@@ -490,7 +490,7 @@ class SampleDataLoader(object):
                     fitid='T3',
                     trans_type='debit',
                     date_posted=(self.dt - timedelta(hours=13)),
-                    amount=-16.25,
+                    amount=Decimal('-16.25'),
                     name='INTEREST CHARGED TO STANDARD PUR',
                     memo='38328',
                     description='CreditOneT3Desc'
@@ -503,7 +503,7 @@ class SampleDataLoader(object):
                     fitid='T2-1',
                     trans_type='credit',
                     date_posted=(self.dt - timedelta(days=32)),
-                    amount=60.00,
+                    amount=Decimal('60.00'),
                     name='$60.00 Online Payment, thank you',
                     memo='38328',
                     description='CreditOneT2Desc'
@@ -514,7 +514,7 @@ class SampleDataLoader(object):
                     fitid='T2-2',
                     trans_type='debit',
                     date_posted=(self.dt - timedelta(days=30, hours=13)),
-                    amount=-25.94,
+                    amount=Decimal('-25.94'),
                     name='INTEREST CHARGED TO STANDARD PUR',
                     memo='38328',
                     description='CreditOneT3Desc'
@@ -548,7 +548,7 @@ class SampleDataLoader(object):
                 acctid='',
                 type='CreditCard',
                 as_of=(self.dt - timedelta(hours=36)),
-                ledger_bal=-5498.65,
+                ledger_bal=Decimal('-5498.65'),
                 ledger_bal_as_of=(self.dt - timedelta(hours=36))
             )
         ]
@@ -560,7 +560,7 @@ class SampleDataLoader(object):
                     fitid='001',
                     trans_type='Purchase',
                     date_posted=(self.dt - timedelta(hours=36)),
-                    amount=28.53,
+                    amount=Decimal('28.53'),
                     name='Interest Charged',
                     memo=''
                 ),
@@ -570,7 +570,7 @@ class SampleDataLoader(object):
                     fitid='002',
                     trans_type='Credit',
                     date_posted=(self.dt - timedelta(days=5)),
-                    amount=-50.00,
+                    amount=Decimal('-50.00'),
                     name='Online Payment - Thank You',
                     memo=''
                 )
@@ -600,7 +600,7 @@ class SampleDataLoader(object):
                 acctid='1000001',
                 type='Investment',
                 as_of=(self.dt - timedelta(days=13, hours=6)),
-                ledger_bal=10362.91,
+                ledger_bal=Decimal('10362.91'),
                 ledger_bal_as_of=(self.dt - timedelta(days=13, hours=6))
             )
         ]
@@ -628,9 +628,9 @@ class SampleDataLoader(object):
                 acctid='D1111111',
                 type='Bank',
                 as_of=(self.dt - timedelta(hours=46)),
-                ledger_bal=10.00,
+                ledger_bal=Decimal('10.00'),
                 ledger_bal_as_of=(self.dt - timedelta(days=41)),
-                avail_bal=10.00,
+                avail_bal=Decimal('10.00'),
                 avail_bal_as_of=(self.dt - timedelta(days=41))
             )
         ]
@@ -642,7 +642,7 @@ class SampleDataLoader(object):
                     fitid='001',
                     trans_type='Credit',
                     date_posted=(self.dt - timedelta(days=43)),
-                    amount=0.01,
+                    amount=Decimal('0.01'),
                     name='Interest Paid',
                     memo=''
                 ),
@@ -652,7 +652,7 @@ class SampleDataLoader(object):
                     fitid='002',
                     trans_type='Debit',
                     date_posted=(self.dt - timedelta(days=51)),
-                    amount=3218.87,
+                    amount=Decimal('3218.87'),
                     name='ATM Withdrawal',
                     memo='Disabled002Memo',
                     description='Disabled002Desc'
@@ -686,9 +686,9 @@ class SampleDataLoader(object):
                 acctid='',
                 type='',
                 as_of=(self.dt - timedelta(hours=46)),
-                ledger_bal=12345.67,
+                ledger_bal=Decimal('12345.67'),
                 ledger_bal_as_of=(self.dt - timedelta(hours=46)),
-                avail_bal=12340.00,
+                avail_bal=Decimal('12340.00'),
                 avail_bal_as_of=(self.dt - timedelta(hours=46))
             )
         ]
@@ -700,7 +700,7 @@ class SampleDataLoader(object):
                     fitid='',
                     trans_type='',
                     date_posted=(self.dt - timedelta(days=7)),
-                    amount=1234.56,
+                    amount=Decimal('1234.56'),
                     name='',
                     memo=''
                 ),
@@ -710,7 +710,7 @@ class SampleDataLoader(object):
                     fitid='',
                     trans_type='',
                     date_posted=(self.dt - timedelta(days=7)),
-                    amount=1234.56,
+                    amount=Decimal('1234.56'),
                     name='',
                     memo=''
                 )
@@ -753,13 +753,13 @@ class SampleDataLoader(object):
             project=p1,
             name='P1Item1',
             notes='P1Item1Notes',
-            unit_cost=11.11
+            unit_cost=Decimal('11.11')
         ))
         self.db.add(BoMItem(
             project=p1,
             name='P1Item2',
             notes='P1Item2Notes',
-            unit_cost=22.22,
+            unit_cost=Decimal('22.22'),
             quantity=3,
             url='http://item2.p1.com'
         ))
@@ -767,7 +767,7 @@ class SampleDataLoader(object):
             project=p1,
             name='P1Item3',
             notes='P1Item3Notes',
-            unit_cost=1234.56,
+            unit_cost=Decimal('1234.56'),
             quantity=2,
             url='http://item3.p1.com',
             is_active=False
@@ -783,7 +783,7 @@ class SampleDataLoader(object):
             project=p3,
             name='P3Item2',
             notes='P3Item2Notes',
-            unit_cost=1.0,
+            unit_cost=Decimal('1.0'),
             quantity=3,
             url='http://item2.p3.com'
         ))
@@ -791,7 +791,7 @@ class SampleDataLoader(object):
             project=p3,
             name='P3Item3',
             notes='P3Item3Notes',
-            unit_cost=2.34,
+            unit_cost=Decimal('2.34'),
             url='http://item3.p3.com',
             is_active=False
         ))
