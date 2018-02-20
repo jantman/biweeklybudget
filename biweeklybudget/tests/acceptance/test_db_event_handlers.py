@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
@@ -126,7 +127,8 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_5_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
-        t.actual_amount = 111.11
+        t.actual_amount = Decimal('111.11')
+        t.set_budget_amounts({t.budget: Decimal('111.11')})
         testdb.add(t)
         testdb.flush()
         testdb.commit()
@@ -140,7 +142,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9371.18
+        assert float(standing.current_balance) == Decimal('9371.18')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -149,7 +151,8 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_7_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
-        t.actual_amount = -111.11
+        t.actual_amount = Decimal('-111.11')
+        t.set_budget_amounts({t.budget: Decimal('-111.11')})
         testdb.add(t)
         testdb.flush()
         testdb.commit()
