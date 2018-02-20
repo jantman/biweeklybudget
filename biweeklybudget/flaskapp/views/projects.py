@@ -40,6 +40,7 @@ from flask.views import MethodView
 from flask import render_template, jsonify, request
 from datatables import DataTable
 from sqlalchemy import or_
+from decimal import Decimal
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
@@ -397,7 +398,7 @@ class BoMItemFormHandler(FormHandlerView):
         item.name = data['name'].strip()
         item.notes = data['notes'].strip()
         item.quantity = int(data['quantity'].strip())
-        item.unit_cost = float(data['unit_cost'].strip())
+        item.unit_cost = Decimal(data['unit_cost'].strip())
         item.url = data['url'].strip()
         if data['is_active'] == 'true':
             item.is_active = True

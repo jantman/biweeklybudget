@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from babel.numbers import get_currency_symbol
+from decimal import Decimal
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.notifications import NotificationsController
@@ -62,19 +63,6 @@ def settings():
     :rtype: dict
     """
     return {'settings': {x: getattr(settingsmod, x) for x in dir(settingsmod)}}
-
-
-@app.context_processor
-def utilities():
-    """
-    Utility functions to put in the jinja context.
-
-    :return: template context with utility functions added
-    :rtype: dict
-    """
-    def cast_float(x):
-        return float(x)
-    return dict(cast_float=cast_float)
 
 
 @app.context_processor

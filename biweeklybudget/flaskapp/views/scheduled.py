@@ -41,6 +41,7 @@ from flask import render_template, jsonify, request
 from datatables import DataTable
 from copy import copy
 from datetime import datetime
+from decimal import Decimal
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
@@ -264,7 +265,7 @@ class SchedTransFormHandler(FormHandlerView):
         else:
             # date
             trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        trans.amount = float(data['amount'])
+        trans.amount = Decimal(data['amount'])
         trans.account_id = int(data['account'])
         trans.budget_id = int(data['budget'])
         trans.notes = data['notes'].strip()

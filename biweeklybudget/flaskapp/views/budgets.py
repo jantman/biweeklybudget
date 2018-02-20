@@ -271,7 +271,7 @@ class BudgetTxfrFormHandler(FormHandlerView):
         """
         # get the data
         trans_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        amt = float(data['amount'])
+        amt = Decimal(data['amount'])
         acct = db_session.query(Account).get(int(data['account']))
         if acct is None:
             raise RuntimeError(

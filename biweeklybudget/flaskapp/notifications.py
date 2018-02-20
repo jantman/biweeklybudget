@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import func
+from decimal import Decimal
 
 from biweeklybudget.db import db_session
 from biweeklybudget.utils import dtnow, fmt_currency
@@ -78,13 +79,13 @@ class NotificationsController(object):
         """
         if sess is None:
             sess = db_session
-        sum = 0
+        sum = Decimal('0.0')
         for acct in sess.query(Account).filter(
                 Account.is_budget_source.__eq__(True),
                 Account.is_active.__eq__(True)
         ):
             if acct.balance is not None:
-                sum += float(acct.balance.ledger)
+                sum += acct.balance.ledger
         return sum
 
     @staticmethod
@@ -97,7 +98,7 @@ class NotificationsController(object):
         """
         if sess is None:
             sess = db_session
-        sum = 0
+        sum = Decimal('0.0')
         for acct in sess.query(Account).filter(
                 Account.is_budget_source.__eq__(True),
                 Account.is_active.__eq__(True)
@@ -121,7 +122,7 @@ class NotificationsController(object):
         ).all()[0][0]
         if res is None:
             return 0
-        return float(res)
+        return res
 
     @staticmethod
     def pp_sum(sess=None):
@@ -136,8 +137,8 @@ class NotificationsController(object):
         if sess is None:
             sess = db_session
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), sess)
-        allocated = float(pp.overall_sums['allocated'])
-        spent = float(pp.overall_sums['spent'])
+        allocated = pp.overall_sums['allocated']
+        spent = pp.overall_sums['spent']
         logger.debug('PayPeriod=%s; allocated=%s; spent=%s',
                      pp, allocated, spent)
         return allocated - spent

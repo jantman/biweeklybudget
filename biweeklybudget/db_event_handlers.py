@@ -80,11 +80,11 @@ def handle_budget_trans_amount_change(**kwargs):
     if tgt.budget.is_periodic:
         logger.debug('got BudgetTransaction with periodic budget; skipping')
         return
-    value = float(kwargs['value'])
-    oldvalue = float(kwargs['oldvalue'])
+    value = kwargs['value']
+    oldvalue = kwargs['oldvalue']
     session = inspect(tgt).session
     diff = oldvalue - value
-    old_budg_curr = float(tgt.budget.current_balance)
+    old_budg_curr = tgt.budget.current_balance
     new_budg = old_budg_curr + diff
     logger.info(
         'Handle BudgetTransaction %d against standing budget %d UPDATE; '
@@ -127,8 +127,8 @@ def handle_new_or_deleted_budget_transaction(session):
             'Session has new BudgetTransaction referencing standing '
             'budget id=%s', budg.id
         )
-        old_amt = float(budg.current_balance)
-        budg.current_balance = old_amt - float(obj.amount)
+        old_amt = budg.current_balance
+        budg.current_balance = old_amt - obj.amount
         logger.info(
             'New BudgetTransaction (%s) for %s against standing budget id=%s; '
             'update budget current_balance from %s to %s', obj,
@@ -156,8 +156,8 @@ def handle_new_or_deleted_budget_transaction(session):
             'Session has deleted BudgetTransaction referencing standing '
             'budget id=%s', budg.id
         )
-        old_amt = float(budg.current_balance)
-        budg.current_balance = old_amt + float(obj.amount)
+        old_amt = budg.current_balance
+        budg.current_balance = old_amt + obj.amount
         logger.info(
             'Deleted BudgetTransaction (%s) for %s against standing budget '
             'id=%s; update budget current_balance from %s to %s',
