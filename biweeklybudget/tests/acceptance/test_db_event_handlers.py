@@ -127,8 +127,9 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_5_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
+        budg = testdb.query(Budget).get(5)
         t.actual_amount = Decimal('111.11')
-        t.set_budget_amounts({testdb.query(Budget).get(5): Decimal('111.11')})
+        t.set_budget_amounts({budg: Decimal('111.11')})
         testdb.add(t)
         testdb.flush()
         testdb.commit()
