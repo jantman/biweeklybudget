@@ -359,9 +359,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': None,
                 'sched_type': 'per period',
                 'type': 'ScheduledTransaction',
-                'reconcile_id': None,
-                'planned_budget_id': None,
-                'planned_budget_name': None
+                'reconcile_id': None
             },
             {
                 'account_id': 1,
@@ -391,7 +389,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'sched_trans_id': None,
                 'sched_type': None,
                 'type': 'Transaction',
-                'reconcile_id': None
+                'reconcile_id': None,
+                'planned_budget_id': None,
+                'planned_budget_name': None
             },
             # ST7 (ST_day_9)
             {
