@@ -1222,15 +1222,15 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t is not None
         assert t.description == 'T1fooedited'
         assert t.date == (pp.start_date + timedelta(days=6))
-        assert float(t.actual_amount) == Decimal('111.13')
-        assert float(t.budgeted_amount) == Decimal('111.11')
+        assert t.actual_amount == Decimal('111.13')
+        assert t.budgeted_amount == Decimal('111.11')
         assert t.account_id == 1
         assert t.planned_budget_id == 1
         assert t.scheduled_trans_id == 1
         assert t.notes == 'notesT1'
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 1
-        assert float(t.budget_transactions[0].amount) == Decimal('111.13')
+        assert t.budget_transactions[0].amount == Decimal('111.13')
 
     def test_11_sched_trans_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(7)
@@ -1239,7 +1239,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == Decimal('11.11')
+        assert t.amount == Decimal('11.11')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes is None
@@ -1316,7 +1316,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == Decimal('11.11')
+        assert t.amount == Decimal('11.11')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes == ''
@@ -1397,7 +1397,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         """verify the transaction we added"""
         t1 = testdb.query(Transaction).get(8)
         assert t1.date == (dtnow() - timedelta(days=2)).date()
-        assert float(t1.actual_amount) == Decimal('100.00')
+        assert t1.actual_amount == Decimal('100.00')
         assert t1.budgeted_amount is None
         assert t1.description == 'issue152regression1'
         assert t1.notes == 'regression test #1 for issue #152'
@@ -1406,7 +1406,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t1.planned_budget_id is None
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 2
-        assert float(t1.budget_transactions[0].amount) == Decimal('100.00')
+        assert t1.budget_transactions[0].amount == Decimal('100.00')
 
     def test_22_issue152_info_panels(self, base_url, selenium):
         """verify pay period totals"""
@@ -1552,7 +1552,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.commit()
         t1 = testdb.query(Transaction).get(9)
         assert t1.date == (dtnow() - timedelta(days=1)).date()
-        assert float(t1.actual_amount) == Decimal('200.00')
+        assert t1.actual_amount == Decimal('200.00')
         assert t1.budgeted_amount is None
         assert t1.description == 'issue152regression3'
         assert t1.notes == 'issue #152 regression test #3'
@@ -1561,7 +1561,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t1.planned_budget_id is None
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 3
-        assert float(t1.budget_transactions[0].amount) == Decimal('200.00')
+        assert t1.budget_transactions[0].amount == Decimal('200.00')
 
     def test_31_issue152_edit_inactive(self, base_url, selenium):
         self.get(
@@ -1600,7 +1600,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
     def test_32_issue152_verify_db(self, testdb):
         t1 = testdb.query(Transaction).get(9)
         assert t1.date == (dtnow() - timedelta(days=1)).date()
-        assert float(t1.actual_amount) == Decimal('200.00')
+        assert t1.actual_amount == Decimal('200.00')
         assert t1.budgeted_amount is None
         assert t1.description == 'issue152regression3-edited'
         assert t1.notes == 'issue #152 regression test #3'
@@ -1609,7 +1609,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert t1.planned_budget_id is None
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 3
-        assert float(t1.budget_transactions[0].amount) == Decimal('200.00')
+        assert t1.budget_transactions[0].amount == Decimal('200.00')
 
     def test_40_issue161_info_panels(self, base_url, selenium):
         """verify pay period totals"""
@@ -1796,7 +1796,7 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == Decimal('11.11')
+        assert t.amount == Decimal('11.11')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes is None
@@ -1885,7 +1885,7 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t.num_per_period == 2
         assert t.date is None
         assert t.day_of_month is None
-        assert float(t.amount) == Decimal('11.11')
+        assert t.amount == Decimal('11.11')
         assert t.account_id == 1
         assert t.budget_id == 1
         assert t.notes is None
@@ -1895,15 +1895,15 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t is not None
         assert t.description == 'ST7 per_period Trans'
         assert t.date == (pp.start_date + timedelta(days=2))
-        assert float(t.actual_amount) == Decimal('22.22')
-        assert float(t.budgeted_amount) == Decimal('11.11')
+        assert t.actual_amount == Decimal('22.22')
+        assert t.budgeted_amount == Decimal('11.11')
         assert t.account_id == 1
         assert t.planned_budget_id == 1
         assert t.scheduled_trans_id == 7
         assert t.notes == 'T4notes'
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 1
-        assert float(t.budget_transactions[0].amount) == Decimal('22.22')
+        assert t.budget_transactions[0].amount == Decimal('22.22')
 
 
 @pytest.mark.acceptance
@@ -2285,8 +2285,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
         t1 = testdb.query(Transaction).get(8)
         assert t1.date == dtnow().date()
-        assert float(t1.actual_amount) == Decimal('123.45')
-        assert float(t1.budgeted_amount) == Decimal('123.45')
+        assert t1.actual_amount == Decimal('123.45')
+        assert t1.budgeted_amount == Decimal('123.45')
         assert t1.description == desc
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
@@ -2294,7 +2294,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.planned_budget_id == 2
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 2
-        assert float(t1.budget_transactions[0].amount) == Decimal('123.45')
+        assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(3)
         assert rec1.txn_id == 8
         assert rec1.ofx_fitid is None
@@ -2302,8 +2302,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(9)
         assert t2.date == dtnow().date()
-        assert float(t2.actual_amount) == Decimal('-123.45')
-        assert float(t2.budgeted_amount) == Decimal('-123.45')
+        assert t2.actual_amount == Decimal('-123.45')
+        assert t2.budgeted_amount == Decimal('-123.45')
         assert t2.description == desc
         assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
@@ -2311,7 +2311,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.planned_budget_id == 5
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 5
-        assert float(t1.budget_transactions[0].amount) == Decimal('-123.45')
+        assert t1.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(4)
         assert rec2.txn_id == 9
         assert rec2.ofx_fitid is None
@@ -2928,8 +2928,8 @@ class TestSkipScheduled(AcceptanceHelper):
                pp.start_date.strftime('%Y-%m-%d')
         t1 = testdb.query(Transaction).get(8)
         assert t1.date == pp.start_date
-        assert float(t1.actual_amount) == Decimal('0.0')
-        assert float(t1.budgeted_amount) == Decimal('0.0')
+        assert t1.actual_amount == Decimal('0.0')
+        assert t1.budgeted_amount == Decimal('0.0')
         assert t1.description == desc
         assert t1.notes == 'Skip Notes'
         assert t1.account_id == 1
@@ -2937,7 +2937,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert t1.planned_budget_id == 1
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 1
-        assert float(t1.budget_transactions[0].amount) == Decimal('0.0')
+        assert t1.budget_transactions[0].amount == Decimal('0.0')
         rec1 = testdb.query(TxnReconcile).get(3)
         assert rec1.txn_id == 8
         assert rec1.ofx_fitid is None

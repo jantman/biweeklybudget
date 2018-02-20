@@ -58,7 +58,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == Decimal('9482.29')
+        assert standing.current_balance == Decimal('9482.29')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -88,7 +88,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == Decimal('9482.29')
+        assert standing.current_balance == Decimal('9482.29')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -118,7 +118,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == Decimal('9260.07')
+        assert standing.current_balance == Decimal('9260.07')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -142,7 +142,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == Decimal('9371.18')
+        assert standing.current_balance == Decimal('9371.18')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -166,7 +166,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == Decimal('9593.40')
+        assert standing.current_balance == Decimal('9593.40')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'

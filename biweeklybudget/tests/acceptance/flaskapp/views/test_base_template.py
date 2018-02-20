@@ -233,7 +233,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
 
     def test_1_confirm_db(self, testdb):
         b = testdb.query(Budget).get(4)
-        assert float(b.current_balance) == Decimal('123456.78')
+        assert b.current_balance == Decimal('123456.78')
 
     def test_2_confirm_pp(self, testdb):
         acct_bal = NotificationsController.budget_account_sum(testdb)

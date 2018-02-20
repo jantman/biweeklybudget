@@ -141,7 +141,7 @@ class TestParamsFromOfxparserTransaction(object):
             account=Mock(spec_set=Account, negate_ofx_amounts=True),
             amount=Decimal(123.45)
         )
-        assert float(ot.account_amount) == Decimal('-123.45')
+        assert ot.account_amount == Decimal('-123.45')
 
     @patch('%s.RECONCILE_BEGIN_DATE' % pbm, date(2017, 3, 17))
     def test_unreconciled(self):

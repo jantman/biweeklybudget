@@ -404,7 +404,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item1'
         assert i.notes == 'P1Item1Notes'
-        assert float(i.unit_cost) == Decimal('11.11')
+        assert i.unit_cost == Decimal('11.11')
         assert i.quantity == 1
         assert i.url is None
         assert i.is_active is True
@@ -413,7 +413,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item2'
         assert i.notes == 'P1Item2Notes'
-        assert float(i.unit_cost) == Decimal('22.22')
+        assert i.unit_cost == Decimal('22.22')
         assert i.quantity == 3
         assert i.url == 'http://item2.p1.com'
         assert i.is_active is True
@@ -422,7 +422,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item3'
         assert i.notes == 'P1Item3Notes'
-        assert float(i.unit_cost) == Decimal('1234.56')
+        assert i.unit_cost == Decimal('1234.56')
         assert i.quantity == 2
         assert i.url == 'http://item3.p1.com'
         assert i.is_active is False
@@ -638,7 +638,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item1'
         assert i.notes == 'P1Item1Notes'
-        assert float(i.unit_cost) == Decimal('11.11')
+        assert i.unit_cost == Decimal('11.11')
         assert i.quantity == 1
         assert i.url is None
         assert i.is_active is True
@@ -647,7 +647,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item2'
         assert i.notes == 'P1Item2Notes'
-        assert float(i.unit_cost) == Decimal('22.22')
+        assert i.unit_cost == Decimal('22.22')
         assert i.quantity == 3
         assert i.url == 'http://item2.p1.com'
         assert i.is_active is True
@@ -656,7 +656,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item3Edited'
         assert i.notes == 'Foo'
-        assert float(i.unit_cost) == Decimal('2.22')
+        assert i.unit_cost == Decimal('2.22')
         assert i.quantity == 3
         assert i.url == 'http://item3.p1.com/edited'
         assert i.is_active is True
@@ -772,7 +772,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item1'
         assert i.notes == 'P1Item1Notes'
-        assert float(i.unit_cost) == Decimal('11.11')
+        assert i.unit_cost == Decimal('11.11')
         assert i.quantity == 1
         assert i.url is None
         assert i.is_active is True
@@ -781,7 +781,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item2'
         assert i.notes == 'P1Item2Notes'
-        assert float(i.unit_cost) == Decimal('22.22')
+        assert i.unit_cost == Decimal('22.22')
         assert i.quantity == 3
         assert i.url == 'http://item2.p1.com'
         assert i.is_active is True
@@ -790,7 +790,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'P1Item3Edited'
         assert i.notes == 'Foo'
-        assert float(i.unit_cost) == Decimal('2.22')
+        assert i.unit_cost == Decimal('2.22')
         assert i.quantity == 3
         assert i.url == 'http://item3.p1.com/edited'
         assert i.is_active is True
@@ -799,7 +799,7 @@ class TestOneProjectView(AcceptanceHelper):
         assert i.project_id == 1
         assert i.name == 'NewItem4'
         assert i.notes == 'FourNotes'
-        assert float(i.unit_cost) == Decimal('12.34')
+        assert i.unit_cost == Decimal('12.34')
         assert i.quantity == 5
         assert i.url == 'http://item4.com'
         assert i.is_active is False
