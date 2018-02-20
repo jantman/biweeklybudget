@@ -102,13 +102,13 @@ class SampleDataLoader(object):
                 name='Periodic1',
                 is_periodic=True,
                 description='P1desc',
-                starting_balance=100
+                starting_balance=Decimal(100)
             ),
             'Periodic2': Budget(
                 name='Periodic2',
                 is_periodic=True,
                 description='P2desc',
-                starting_balance=234
+                starting_balance=Decimal(234)
             ),
             'Periodic3 Inactive': Budget(
                 name='Periodic3 Inactive',
@@ -346,7 +346,7 @@ class SampleDataLoader(object):
                     fitid='BankOne.1.%d' % x,
                     trans_type='Debit',
                     date_posted=(self.dt - timedelta(days=6, hours=x)),
-                    amount=amt,
+                    amount=Decimal(amt),
                     name='Generated Trans %d' % x
             ))
         return self._add_account(acct, statements, transactions)
@@ -531,7 +531,7 @@ class SampleDataLoader(object):
             ofxgetter_config_json='',
             vault_creds_path='/foo/bar',
             acct_type=AcctType.Credit,
-            credit_limit=5500,
+            credit_limit=Decimal(5500),
             is_active=True,
             apr=Decimal('0.1000'),
             interest_class_name='AdbCompoundedDaily',
@@ -738,8 +738,14 @@ class SampleDataLoader(object):
                     level_before=(i * 10) + veh_num,
                     level_after=(100 - (i * 10) - veh_num),
                     fill_location='fill_loc %s %d' % (veh_str, i),
-                    cost_per_gallon=(2.0 + (i * 0.1) + (veh_num * 0.01)),
-                    total_cost=((2.0 + (i * 0.1) + (veh_num * 0.01)) * (1 + i)),
+                    cost_per_gallon=(
+                        Decimal('2.0') + (i * Decimal('0.1')) +
+                        (veh_num * Decimal('0.01'))
+                    ),
+                    total_cost=(
+                        (Decimal('2.0') + (i * Decimal('0.1')) +
+                        (veh_num * Decimal('0.01'))) * (1 + i)
+                    ),
                     gallons=(i * 10) + veh_num,
                     reported_mpg=(20 + i) + (veh_num * 0.1),
                     notes='notes %s %d' % (veh_str, i)

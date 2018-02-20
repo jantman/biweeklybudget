@@ -174,7 +174,7 @@ class Account(Base, ModelAsDict):
     )
 
     def __repr__(self):
-        return "<Account(id=%d, name='%s')>" % (
+        return "<Account(id=%s, name='%s')>" % (
             self.id, self.name
         )
 
