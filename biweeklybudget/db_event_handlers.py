@@ -38,10 +38,12 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 """
 
 import logging
+from decimal import Decimal
 from sqlalchemy import event, inspect
 
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.budget_transaction import BudgetTransaction
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
@@ -163,6 +165,48 @@ def handle_new_or_deleted_budget_transaction(session):
     )
 
 
+def verify_budget_transaction_sums(session):
+    """
+    ``before_flush`` event handler
+    (:py:meth:`sqlalchemy.orm.events.SessionEvents.before_flush`)
+    on the DB session, to verify that the :py:attr:`~.Transaction.actual_amount`
+    on any changed :py:class:`~.Transaction` matches the sums of all
+    :py:class:`~.BudgetTransaction instances associated with it.
+
+    :param session: current database session
+    :type session: sqlalchemy.orm.session.Session
+    """
+    # handle NEW
+    for obj in session.new:
+        if not isinstance(obj, Transaction):
+            continue
+        bt_sum = Decimal('0.0')
+        for bt in obj.budget_transactions:
+            bt_sum += bt.amount
+        if bt_sum != obj.actual_amount:
+            raise RuntimeError(
+                'ERROR: actual_amount of new Transaction %s (%s) is not equal '
+                'to sum (%s) of all associated BudgetTransactions (%s)' % (
+                    obj, obj.actual_amount, bt_sum, obj.budget_transactions
+                )
+            )
+    # handle UPDATED
+    for obj in session.dirty:
+        if not isinstance(obj, Transaction):
+            continue
+        bt_sum = Decimal('0.0')
+        for bt in obj.budget_transactions:
+            bt_sum += bt.amount
+        if bt_sum != obj.actual_amount:
+            raise RuntimeError(
+                'ERROR: actual_amount of updated Transaction %s (%s) is not '
+                'equal to sum (%s) of all associated BudgetTransactions (%s)'
+                '' % (
+                    obj, obj.actual_amount, bt_sum, obj.budget_transactions
+                )
+            )
+
+
 def handle_before_flush(session, flush_context, instances):
     """
     Hook into ``before_flush``
@@ -181,6 +225,7 @@ def handle_before_flush(session, flush_context, instances):
     """
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
+    verify_budget_transaction_sums(session)
     logger.debug('handle_before_flush done')
 
 
