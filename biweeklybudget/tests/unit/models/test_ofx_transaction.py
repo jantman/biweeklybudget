@@ -132,14 +132,14 @@ class TestParamsFromOfxparserTransaction(object):
     def test_account_amount(self):
         ot = OFXTransaction(
             account=Mock(spec_set=Account, negate_ofx_amounts=False),
-            amount=Decimal(123.45)
+            amount=Decimal('123.45')
         )
         assert ot.account_amount == Decimal('123.45')
 
     def test_account_amount_negated(self):
         ot = OFXTransaction(
             account=Mock(spec_set=Account, negate_ofx_amounts=True),
-            amount=Decimal(123.45)
+            amount=Decimal('123.45')
         )
         assert ot.account_amount == Decimal('-123.45')
 

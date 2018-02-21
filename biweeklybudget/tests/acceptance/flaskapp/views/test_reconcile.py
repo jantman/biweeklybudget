@@ -277,23 +277,21 @@ class ReconcileHelper(AcceptanceHelper):
         # income - matches OFX1
         t1 = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=Decimal('-100.00'),
+            budget_amounts={ibudget: Decimal('-100.00')},
             budgeted_amount=Decimal('-100.00'),
             description='income',
             account=acct1,
             planned_budget=ibudget
         )
         testdb.add(t1)
-        t1.set_budget_amounts({ibudget: Decimal('-100.00')})
         # one transaction - matches OFX2
         t2 = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=Decimal('250.00'),
+            budget_amounts={e2budget: Decimal('250.00')},
             description='trans1',
             account=acct1
         )
         testdb.add(t2)
-        t2.set_budget_amounts({e2budget: Decimal('250.00')})
         # another transaction - matches OFX3
         st1 = ScheduledTransaction(
             amount=Decimal('500.0'),
@@ -305,7 +303,7 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(st1)
         t3 = Transaction(
             date=date(2017, 4, 11),
-            actual_amount=Decimal('600.0'),
+            budget_amounts={e1budget: Decimal('600.00')},
             budgeted_amount=Decimal('500.0'),
             description='trans2',
             account=acct2,
@@ -313,16 +311,14 @@ class ReconcileHelper(AcceptanceHelper):
             scheduled_trans=st1
         )
         testdb.add(t3)
-        t3.set_budget_amounts({e1budget: Decimal('600.00')})
         # non-matched transaction
         t4 = Transaction(
             date=date(2017, 4, 14),
-            actual_amount=Decimal('10.00'),
+            budget_amounts={e2budget: Decimal('10.00')},
             description='trans3',
             account=acct2
         )
         testdb.add(t4)
-        t4.set_budget_amounts({e2budget: Decimal('10.00')})
         # matched ScheduledTransaction
         st2 = ScheduledTransaction(
             amount=Decimal('10.0'),
@@ -335,20 +331,18 @@ class ReconcileHelper(AcceptanceHelper):
         # pair that matches OFXT6 and OFXT7
         t5 = Transaction(
             date=date(2017, 4, 16),
-            actual_amount=Decimal('25.00'),
+            budget_amounts={e2budget: Decimal('25.00')},
             description='trans4',
             account=acct2
         )
         testdb.add(t5)
-        t5.set_budget_amounts({e2budget: Decimal('25.00')})
         t6 = Transaction(
             date=date(2017, 4, 17),
-            actual_amount=Decimal('25.00'),
+            budget_amounts={e2budget: Decimal('25.00')},
             description='trans5',
             account=acct2
         )
         testdb.add(t6)
-        t6.set_budget_amounts({e2budget: Decimal('25.00')})
         testdb.flush()
         testdb.commit()
 
@@ -468,12 +462,11 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(o)
         t = Transaction(
             date=date(2017, 4, 16),
-            actual_amount=Decimal('600.00'),
+            budget_amounts={e2budget: Decimal('600.00')},
             description='trans6',
             account=acct2
         )
         testdb.add(t)
-        t.set_budget_amounts({e2budget: Decimal('600.00')})
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         testdb.flush()
         testdb.commit()
@@ -1525,14 +1518,13 @@ class TestOFXMakeTrans(AcceptanceHelper):
         # income - matches OFX1
         t = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=Decimal('-123.45'),
+            budget_amounts={ibudget: Decimal('-123.45')},
             budgeted_amount=Decimal('-123.45'),
             description='income',
             account=acct1,
             planned_budget=ibudget
         )
         testdb.add(t)
-        t.set_budget_amounts({ibudget: Decimal('-123.45')})
         testdb.flush()
         testdb.commit()
 

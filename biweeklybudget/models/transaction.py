@@ -206,6 +206,7 @@ class Transaction(Base, ModelAsDict):
         :type budget_amounts: dict
         """
         assert isinstance(budget_amounts, type({}))
+        assert len(budget_amounts) > 0
         logger.debug(
             'Setting budget amounts on %s to: %s', self, budget_amounts
         )
@@ -229,7 +230,6 @@ class Transaction(Base, ModelAsDict):
                     budget_amounts[btrans.budget], btrans, self
                 )
                 btrans.amount = budget_amounts[btrans.budget]
-                sess.add(btrans)
         # finally, add any new ones that didn't exist before
         btrans = {bt.budget: bt for bt in self.budget_transactions}
         for budg in budget_amounts.keys():

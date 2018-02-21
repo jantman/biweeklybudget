@@ -315,7 +315,6 @@ class TransactionFormHandler(FormHandlerView):
         budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        trans.actual_amount = Decimal(data['amount'])
         trans.account_id = int(data['account'])
         trans.notes = data['notes'].strip()
         # @TODO this only supports a single budget per transaction

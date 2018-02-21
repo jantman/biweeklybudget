@@ -350,11 +350,10 @@ class FuelLogFormHandler(FormHandlerView):
         )
         trans.date = dt
         trans.actual_amount = total
-        trans.account_id = int(data['account'])
         trans.notes = data['notes'].strip()
+        trans.set_budget_amounts({budg: total})
         logger.info('Creating new Transaction for FuelFill: %s', trans.as_dict)
         db_session.add(trans)
-        trans.set_budget_amounts({budg: total})
         db_session.commit()
         return {
             'success_message': 'Successfully saved FuelFill %d and '

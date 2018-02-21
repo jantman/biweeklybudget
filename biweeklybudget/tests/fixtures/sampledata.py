@@ -216,7 +216,7 @@ class SampleDataLoader(object):
         res = [
             Transaction(
                 date=(self.dt + timedelta(days=4)).date(),
-                actual_amount=Decimal('111.13'),
+                budget_amounts={self.budgets['Periodic1']: Decimal('111.13')},
                 budgeted_amount=Decimal('111.11'),
                 description='T1foo',
                 notes='notesT1',
@@ -226,7 +226,7 @@ class SampleDataLoader(object):
             ),
             Transaction(
                 date=self.dt.date(),
-                actual_amount=Decimal('-333.33'),
+                budget_amounts={self.budgets['Standing1']: Decimal('-333.33')},
                 budgeted_amount=Decimal('-333.33'),
                 description='T2',
                 notes='notesT2',
@@ -236,7 +236,7 @@ class SampleDataLoader(object):
             ),
             Transaction(
                 date=(self.dt - timedelta(days=2)).date(),
-                actual_amount=Decimal('222.22'),
+                budget_amounts={self.budgets['Periodic2']: Decimal('222.22')},
                 description='T3',
                 notes='notesT3',
                 account=self.accounts['CreditOne']['account']
@@ -244,9 +244,6 @@ class SampleDataLoader(object):
         ]
         for x in res:
             self.db.add(x)
-        res[0].set_budget_amounts({self.budgets['Periodic1']: Decimal('111.13')})
-        res[1].set_budget_amounts({self.budgets['Standing1']: Decimal('-333.33')})
-        res[2].set_budget_amounts({self.budgets['Periodic2']: Decimal('222.22')})
         return res
 
     def _add_account(self, acct, statements, transactions):
@@ -743,8 +740,10 @@ class SampleDataLoader(object):
                         (veh_num * Decimal('0.01'))
                     ),
                     total_cost=(
-                        (Decimal('2.0') + (i * Decimal('0.1')) +
-                        (veh_num * Decimal('0.01'))) * (1 + i)
+                        (
+                            Decimal('2.0') + (i * Decimal('0.1')) +
+                            (veh_num * Decimal('0.01'))
+                        ) * (1 + i)
                     ),
                     gallons=(i * 10) + veh_num,
                     reported_mpg=(20 + i) + (veh_num * 0.1),

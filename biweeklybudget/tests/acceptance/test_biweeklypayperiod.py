@@ -248,7 +248,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         testdb.add(st_daynum)
         t_daynum = Transaction(
-            actual_amount=Decimal('111.33'),
+            budget_amounts={budg: Decimal('111.33')},
             budgeted_amount=Decimal('111.11'),
             date=date(2017, 4, 9),
             description='Trans_ST_day_9',
@@ -257,7 +257,6 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             scheduled_trans=st_daynum,
         )
         testdb.add(t_daynum)
-        t_daynum.set_budget_amounts({budg: Decimal('111.33')})
         testdb.add(TxnReconcile(
             note='foo',
             transaction=t_daynum
@@ -279,7 +278,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         testdb.add(st_pp3)
         t_pp3A = Transaction(
-            actual_amount=Decimal('333.33'),
+            budget_amounts={budg: Decimal('333.33')},
             budgeted_amount=Decimal('333.33'),
             date=date(2017, 4, 14),
             description='Trans_ST_pp_3_A',
@@ -288,9 +287,8 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             scheduled_trans=st_pp3,
         )
         testdb.add(t_pp3A)
-        t_pp3A.set_budget_amounts({budg: Decimal('333.33')})
         t_pp3B = Transaction(
-            actual_amount=Decimal('333.33'),
+            budget_amounts={budg: Decimal('333.33')},
             budgeted_amount=Decimal('333.33'),
             date=date(2017, 4, 15),
             description='Trans_ST_pp_3_B',
@@ -299,7 +297,6 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             scheduled_trans=st_pp3
         )
         testdb.add(t_pp3B)
-        t_pp3B.set_budget_amounts({budg: Decimal('333.33')})
         st_date = ScheduledTransaction(
             amount=Decimal('444.44'),
             description='ST_date',
@@ -309,7 +306,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         testdb.add(st_date)
         t_date = Transaction(
-            actual_amount=Decimal('444.44'),
+            budget_amounts={budg: Decimal('444.44')},
             budgeted_amount=Decimal('444.44'),
             date=date(2017, 4, 12),
             description='Trans_ST_date',
@@ -318,23 +315,20 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             scheduled_trans=st_date
         )
         testdb.add(t_date)
-        t_date.set_budget_amounts({budg: Decimal('444.44')})
         t_foo = Transaction(
-            actual_amount=Decimal('555.55'),
+            budget_amounts={budg: Decimal('555.55')},
             date=date(2017, 4, 8),
             description='Trans_foo',
             account=acct
         )
         testdb.add(t_foo)
-        t_foo.set_budget_amounts({budg: Decimal('555.55')})
         t_bar = Transaction(
-            actual_amount=Decimal('666.66'),
+            budget_amounts={budg: Decimal('666.66')},
             date=date(2017, 4, 16),
             description='Trans_bar',
             account=acct
         )
         testdb.add(t_bar)
-        t_bar.set_budget_amounts({budg: Decimal('666.66')})
         testdb.flush()
         testdb.commit()
 
@@ -553,13 +547,12 @@ class TestSums(AcceptanceHelper):
         # Budget 3 Income Transaction
         t1 = Transaction(
             date=date(2017, 4, 7),
-            actual_amount=Decimal('100.00'),
+            budget_amounts={budgets[3]: Decimal('100.00')},
             budgeted_amount=Decimal('100.00'),
             description='B3 Income',
             account=acct
         )
         testdb.add(t1)
-        t1.set_budget_amounts({budgets[3]: Decimal('100.00')})
         # Budget 3 Income ST
         testdb.add(ScheduledTransaction(
             amount=Decimal('99.00'),
@@ -578,22 +571,20 @@ class TestSums(AcceptanceHelper):
         ))
         t2 = Transaction(
             date=date(2017, 4, 11),
-            actual_amount=Decimal('250.00'),
+            budget_amounts={budgets[4]: Decimal('250.00')},
             description='B4 T no budgeted',
             account=acct
         )
         testdb.add(t2)
-        t2.set_budget_amounts({budgets[4]: Decimal('250.00')})
         t3 = Transaction(
             date=date(2017, 4, 12),
-            actual_amount=Decimal('600.00'),
+            budget_amounts={budgets[4]: Decimal('600.00')},
             budgeted_amount=Decimal('500.00'),
             description='B4 T budgeted',
             account=acct,
             planned_budget=budgets[4]
         )
         testdb.add(t3)
-        t3.set_budget_amounts({budgets[4]: Decimal('600.00')})
         # Budget 5 budgeted greater than allocated (100)
         testdb.add(ScheduledTransaction(
             amount=Decimal('2.00'),
@@ -605,13 +596,12 @@ class TestSums(AcceptanceHelper):
         t4 = Transaction(
             date=date(2017, 4, 13),
             description='B5 T',
-            actual_amount=Decimal('3.00'),
+            budget_amounts={budgets[5]: Decimal('3.00')},
             budgeted_amount=Decimal('1.00'),
             account=acct,
             planned_budget=budgets[5]
         )
         testdb.add(t4)
-        t4.set_budget_amounts({budgets[5]: Decimal('3.00')})
         testdb.flush()
         testdb.commit()
 
@@ -690,13 +680,12 @@ class TestSums(AcceptanceHelper):
         t = Transaction(
             date=date(2017, 4, 13),
             description='B6 T',
-            actual_amount=Decimal('2032.0'),
+            budget_amounts={budget: Decimal('2032.0')},
             budgeted_amount=Decimal('32.0'),
             account=acct,
             planned_budget=budget
         )
         testdb.add(t)
-        t.set_budget_amounts({budget: Decimal('2032.0')})
         testdb.flush()
         testdb.commit()
         pp = BiweeklyPayPeriod.period_for_date(

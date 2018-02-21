@@ -303,21 +303,19 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         testdb.add(o)
         t = Transaction(
             date=tdate,
-            actual_amount=Decimal('600.00'),
+            budget_amounts={budget: Decimal('600.00')},
             description='trans6',
             account=acct
         )
         testdb.add(t)
-        t.set_budget_amounts({budget: Decimal('600.00')})
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
         t2 = Transaction(
             date=tdate,
-            actual_amount=Decimal('34000.00'),
+            budget_amounts={budget: Decimal('34000.00')},
             description='transFoo',
             account=acct
         )
         testdb.add(t2)
-        t2.set_budget_amounts({budget: Decimal('34000.00')})
         testdb.flush()
         testdb.commit()
 

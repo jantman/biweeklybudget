@@ -93,7 +93,7 @@ class TestDoBudgetTransfer(object):
         assert mock_t.mock_calls == [
             call(
                 date=pp.start_date,
-                actual_amount=Decimal('123.45'),
+                budget_amounts={budg1: Decimal('123.45')},
                 budgeted_amount=Decimal('123.45'),
                 description=desc,
                 account=acct,
@@ -101,18 +101,12 @@ class TestDoBudgetTransfer(object):
             ),
             call(
                 date=pp.start_date,
-                actual_amount=Decimal('-123.45'),
+                budget_amounts={standing: Decimal('-123.45')},
                 budgeted_amount=Decimal('-123.45'),
                 description=desc,
                 account=acct,
                 notes='foo'
             )
-        ]
-        assert t1.mock_calls == [
-            call.set_budget_amounts({budg1: Decimal('123.45')})
-        ]
-        assert t2.mock_calls == [
-            call.set_budget_amounts({standing: Decimal('-123.45')})
         ]
         assert mock_tr.mock_calls == [
             call(transaction=t1, note=desc),

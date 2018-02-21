@@ -36,7 +36,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from babel.numbers import get_currency_symbol
-from decimal import Decimal
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.notifications import NotificationsController

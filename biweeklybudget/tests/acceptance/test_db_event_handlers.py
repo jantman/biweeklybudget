@@ -67,7 +67,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_1_add_trans_periodic_budget(self, testdb):
         """add a transaction against a periodic budget"""
         t = Transaction(
-            actual_amount=Decimal('222.22'),
+            budget_amounts={testdb.query(Budget).get(2): Decimal('222.22')},
             budgeted_amount=Decimal('123.45'),
             description='T4',
             notes='notesT4',
@@ -75,7 +75,6 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(2)
         )
         testdb.add(t)
-        t.set_budget_amounts({testdb.query(Budget).get(2): Decimal('222.22')})
         testdb.flush()
         testdb.commit()
 
@@ -97,7 +96,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_3_add_trans_standing_budget(self, testdb):
         """add a transaction against a standing budget"""
         t = Transaction(
-            actual_amount=Decimal('222.22'),
+            budget_amounts={testdb.query(Budget).get(5): Decimal('222.22')},
             budgeted_amount=Decimal('123.45'),
             description='T5',
             notes='notesT5',
@@ -105,7 +104,6 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
             planned_budget=testdb.query(Budget).get(5)
         )
         testdb.add(t)
-        t.set_budget_amounts({testdb.query(Budget).get(5): Decimal('222.22')})
         testdb.flush()
         testdb.commit()
 
@@ -128,7 +126,6 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
         budg = testdb.query(Budget).get(5)
-        t.actual_amount = Decimal('111.11')
         t.set_budget_amounts({budg: Decimal('111.11')})
         testdb.add(t)
         testdb.flush()
@@ -152,7 +149,6 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_7_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
-        t.actual_amount = Decimal('-111.11')
         t.set_budget_amounts({testdb.query(Budget).get(5): Decimal('-111.11')})
         testdb.add(t)
         testdb.flush()

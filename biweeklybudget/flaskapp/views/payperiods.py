@@ -249,7 +249,7 @@ class SchedToTransFormHandler(FormHandlerView):
         d = datetime.strptime(data['date'], '%Y-%m-%d').date()
         t = Transaction(
             date=d,
-            actual_amount=Decimal(data['amount']),
+            budget_amounts={st.budget: Decimal(data['amount'])},
             budgeted_amount=st.amount,
             description=data['description'],
             notes=data['notes'],
@@ -257,7 +257,6 @@ class SchedToTransFormHandler(FormHandlerView):
             scheduled_trans=st
         )
         db_session.add(t)
-        t.set_budget_amounts({st.budget: Decimal(data['amount'])})
         db_session.commit()
         logger.info('Created Transaction %d for ScheduledTransaction %d',
                     t.id, st.id)
@@ -312,7 +311,7 @@ class SkipSchedTransFormHandler(FormHandlerView):
         )
         t = Transaction(
             date=d,
-            actual_amount=0.0,
+            budget_amounts={st.budget: Decimal('0.0')},
             budgeted_amount=0.0,
             description=desc,
             notes=data['notes'],
@@ -320,7 +319,6 @@ class SkipSchedTransFormHandler(FormHandlerView):
             scheduled_trans=st
         )
         db_session.add(t)
-        t.set_budget_amounts({st.budget: Decimal('0.0')})
         db_session.add(TxnReconcile(
             transaction=t,
             note=desc
