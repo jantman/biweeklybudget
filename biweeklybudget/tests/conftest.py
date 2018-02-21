@@ -47,6 +47,9 @@ from time import time
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
+from biweeklybudget.tests.selenium_helpers import (
+    set_browser_for_fullpage_screenshot
+)
 
 try:
     from pytest_flask.fixtures import LiveServer
@@ -64,6 +67,7 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
+import pytest_selenium.pytest_selenium
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -199,6 +203,29 @@ def selenium(selenium):
     # from http://stackoverflow.com/a/17536547/211734
     selenium.set_page_load_timeout(30)
     return selenium
+
+
+def _gather_screenshot(item, report, driver, summary, extra):
+    """
+    Redefine pytest-selenium's _gather_screenshot so that we can get full-page
+    screenshots. This implementation is copied from pytest-selenium 1.11.4,
+    but calls :py:fund:`~.selenium_helpers.set_browser_for_fullpage_screenshot`
+    before calling ``driver.get_screenshot_as_base64()``.
+    """
+    try:
+        set_browser_for_fullpage_screenshot(driver)
+        screenshot = driver.get_screenshot_as_base64()
+    except Exception as e:
+        summary.append('WARNING: Failed to gather screenshot: {0}'.format(e))
+        return
+    pytest_html = item.config.pluginmanager.getplugin('html')
+    if pytest_html is not None:
+        # add screenshot to the html report
+        extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
+
+
+# redefine _gather_screenshot to use our implementation
+pytest_selenium.pytest_selenium._gather_screenshot = _gather_screenshot
 
 
 @pytest.fixture
