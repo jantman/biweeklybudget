@@ -240,4 +240,4 @@ class Transaction(Base, ModelAsDict):
                     amount=budget_amounts[budg]
                 )
                 logger.debug('Adding %s to %s', bt, self)
-                sess.add(bt)
+                # implicit sess.add() via cascade
