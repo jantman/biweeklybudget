@@ -708,7 +708,6 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.planned_budget_id == 2
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 2
         assert t1.budget_transactions[0].amount == Decimal('123.45')
@@ -725,7 +724,6 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
-        assert t2.budget_id == 5
         assert len(t2.budget_transactions) == 1
         assert t2.budget_transactions[0].budget_id == 5
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
@@ -872,7 +870,6 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.planned_budget_id == 5
         assert len(t1.budget_transactions) == 1
         assert t1.budget_transactions[0].budget_id == 5
         assert t1.budget_transactions[0].amount == Decimal('123.45')
@@ -889,7 +886,6 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
-        assert t2.budget_id == 2
         assert len(t2.budget_transactions) == 1
         assert t2.budget_transactions[0].budget_id == 2
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
