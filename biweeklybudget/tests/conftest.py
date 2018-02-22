@@ -43,6 +43,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
 import json
 from time import time
+from tempfile import mkstemp
 
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
@@ -62,6 +63,9 @@ if connstr is None:
               'budgettest?charset=utf8mb4'
     os.environ['DB_CONNSTRING'] = connstr
 biweeklybudget.settings.DB_CONNSTRING = connstr
+
+tempfd, LIVESERVER_LOG_PATH = mkstemp('testflask')
+os.close(tempfd)
 
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
@@ -172,6 +176,7 @@ def testflask():
         s.bind(('', 0))
         port = s.getsockname()[1]
         s.close()
+        os.environ['BIWEEKLYBUDGET_LOG_FILE'] = LIVESERVER_LOG_PATH
         from biweeklybudget.flaskapp.app import app  # noqa
         server = LiveServer(app, port)
         server.start()
@@ -274,11 +279,49 @@ def pytest_terminal_summary(terminalreporter):
 # incremental-testing-test-steps
 
 
+@pytest.mark.hookwrapper
 def pytest_runtest_makereport(item, call):
     if "incremental" in item.keywords:
         if call.excinfo is not None:
             parent = item.parent
             parent._previousfailed = item
+    outcome = yield
+    if (
+        hasattr(item.session, 'liveserver_log') and
+        item.nodeid in item.session.liveserver_log
+    ):
+        report = outcome.get_result()
+        extra = getattr(report, 'extra', [])
+        pos = item.session.liveserver_log[item.nodeid]
+        pytest_html = item.config.pluginmanager.getplugin('html')
+        if pytest_html is not None:
+            fh = open(LIVESERVER_LOG_PATH, 'r')
+            fh.seek(pos['start'])
+            if 'end' in pos:
+                log = fh.read(pos['end'] - pos['start'])
+            else:
+                log = fh.read()
+            extra.append(pytest_html.extras.text(log, 'LiveServer'))
+            msg = 'NOTE: testflask LiveServer logging captured via ' \
+                  'pytest-html to: %s %s' % (LIVESERVER_LOG_PATH, pos)
+            for item in list(report.sections):
+                if item[0] == 'testflask':
+                    report.sections.remove(item)
+            report.sections.append(('testflask', msg))
+            report.extra = extra
+        else:
+            report.sections.append((
+                'testflask',
+                'ERROR - pytest-html not present, cannot save server log!\n'
+            ))
+
+
+def getfilesize(fpath):
+    f = open(fpath, 'r')
+    f.seek(0, 2)
+    val = f.tell()
+    f.close()
+    return val
 
 
 def pytest_runtest_setup(item):
@@ -286,6 +329,21 @@ def pytest_runtest_setup(item):
         previousfailed = getattr(item.parent, "_previousfailed", None)
         if previousfailed is not None:
             pytest.xfail("previous test failed (%s)" % previousfailed.name)
+    if 'testflask' in item.fixturenames:
+        if not hasattr(item.session, 'liveserver_log'):
+            setattr(item.session, 'liveserver_log', {})
+        item.session.liveserver_log[item.nodeid] = {
+            'start': getfilesize(LIVESERVER_LOG_PATH)
+        }
+
+
+def pytest_runtest_teardown(item):
+    if (
+        hasattr(item.session, 'liveserver_log') and
+        item.nodeid in item.session.liveserver_log
+    ):
+        item.session.liveserver_log[item.nodeid][
+            'end'] = getfilesize(LIVESERVER_LOG_PATH)
 
 
 """

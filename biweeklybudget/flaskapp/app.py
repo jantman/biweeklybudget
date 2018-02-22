@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import os
 
 from flask import Flask
 
@@ -47,6 +48,13 @@ format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
          "%(name)s.%(funcName)s() ] %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=format)
 logger = logging.getLogger()
+
+if 'BIWEEKLYBUDGET_LOG_FILE' in os.environ:
+    # mainly for acceptance tests
+    fhandler = logging.FileHandler(os.environ['BIWEEKLYBUDGET_LOG_FILE'])
+    fhandler.setLevel(logging.DEBUG)
+    fhandler.setFormatter(logging.Formatter(fmt=format))
+    logger.addHandler(fhandler)
 
 fix_werkzeug_logger()
 
