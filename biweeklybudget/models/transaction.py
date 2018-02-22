@@ -66,6 +66,9 @@ class Transaction(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
+    #: Class properties to include in :py:attr:`~.as_dict` result.
+    _dict_properties = ['actual_amount']
+
     #: Primary Key
     id = Column(Integer, primary_key=True)
 

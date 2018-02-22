@@ -52,6 +52,9 @@ Base = declarative_base(metadata=MetaData(naming_convention=convention))
 
 class ModelAsDict(object):
 
+    #: Class properties to include in :py:attr:`~.as_dict` result.
+    _dict_properties = []
+
     @property
     def as_dict(self):
         """
@@ -64,4 +67,6 @@ class ModelAsDict(object):
         for k, v in vars(self).items():
             if not k.startswith('_'):
                 d[k] = v
+        for k in self._dict_properties:
+            d[k] = getattr(self, k)
         return d
