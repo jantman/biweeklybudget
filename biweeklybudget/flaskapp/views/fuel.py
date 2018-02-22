@@ -343,15 +343,16 @@ class FuelLogFormHandler(FormHandlerView):
                 'fill_id': fill.id,
                 'calculated_mpg': fill.calculated_mpg
             }
-        trans = Transaction()
         budg = db_session.query(Budget).get(int(data['budget']))
-        trans.description = '%s - FuelFill #%d (%s)' % (
-            data['fill_location'].strip(), fill.id, veh_name
+        trans = Transaction(
+            description='%s - FuelFill #%d (%s)' % (
+                data['fill_location'].strip(), fill.id, veh_name
+            ),
+            date=dt,
+            notes=data['notes'].strip(),
+            budget_amounts={budg: total},
+            account_id=int(data['account'])
         )
-        trans.date = dt
-        trans.actual_amount = total
-        trans.notes = data['notes'].strip()
-        trans.set_budget_amounts({budg: total})
         logger.info('Creating new Transaction for FuelFill: %s', trans.as_dict)
         db_session.add(trans)
         db_session.commit()

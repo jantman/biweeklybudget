@@ -180,15 +180,6 @@ class TransactionsAjax(SearchableAjaxView):
                     lambda i: "{} ({})".format(i.name, i.id)
                 ),
                 (
-                    'budget',
-                    'budget_transactions[0].budget.name',
-                    lambda i: "{} {}({})".format(
-                        i.name,
-                        '(income) ' if i.is_income else '',
-                        i.id
-                    )
-                ),
-                (
                     'scheduled',
                     'scheduled_trans_id'
                 ),
@@ -205,7 +196,13 @@ class TransactionsAjax(SearchableAjaxView):
         table.add_data(
             acct_id=lambda o: o.account_id,
             budget_id=lambda o: o.budget_transactions[0].budget_id,
-            id=lambda o: o.id
+            id=lambda o: o.id,
+            budget=lambda o: "{} {}({})".format(
+                o.budget_transactions[0].budget.name,
+                '(income) '
+                if o.budget_transactions[0].budget.is_income else '',
+                o.budget_transactions[0].budget_id
+            )
         )
         if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
