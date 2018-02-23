@@ -317,7 +317,7 @@ class BiweeklyPayPeriod(object):
     @property
     def _data(self):
         """
-        Return the object-local data cache dict. Built it if not already
+        Return the object-local data cache dict. Build it if not already
         present.
 
         :return: object-local data cache

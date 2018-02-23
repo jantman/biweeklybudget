@@ -254,6 +254,7 @@ class SchedToTransFormHandler(FormHandlerView):
             description=data['description'],
             notes=data['notes'],
             account=st.account,
+            planned_budget=st.budget,
             scheduled_trans=st
         )
         db_session.add(t)
@@ -261,7 +262,7 @@ class SchedToTransFormHandler(FormHandlerView):
         logger.info('Created Transaction %d for ScheduledTransaction %d',
                     t.id, st.id)
         return 'Successfully created Transaction %d ' \
-               '%s for ScheduledTransaction %d.' % (t.id, st.id)
+               'for ScheduledTransaction %d.' % (t.id, st.id)
 
 
 class SkipSchedTransFormHandler(FormHandlerView):

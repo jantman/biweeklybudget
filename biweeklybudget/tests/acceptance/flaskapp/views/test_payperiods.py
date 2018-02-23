@@ -1798,7 +1798,7 @@ class TestMakeTransModal(AcceptanceHelper):
             'schedtotrans_frm_notes').get_attribute(
             'value') == ''
 
-    def test_05_edit_modal(self, base_url, selenium, testdb):
+    def test_05_modal_schedtrans_to_trans(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         self.get(
             selenium,
