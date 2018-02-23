@@ -57,6 +57,12 @@ try:
 except ImportError:
     pass
 
+try:
+    import pytest_selenium.pytest_selenium
+    HAVE_PYTEST_SELENIUM = True
+except ImportError:
+    HAVE_PYTEST_SELENIUM = False
+
 connstr = os.environ.get('DB_CONNSTRING', None)
 if connstr is None:
     connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
@@ -71,7 +77,6 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
-import pytest_selenium.pytest_selenium
 
 engine = create_engine(
     connstr, convert_unicode=True, echo=False,
@@ -230,7 +235,8 @@ def _gather_screenshot(item, report, driver, summary, extra):
 
 
 # redefine _gather_screenshot to use our implementation
-pytest_selenium.pytest_selenium._gather_screenshot = _gather_screenshot
+if HAVE_PYTEST_SELENIUM:
+    pytest_selenium.pytest_selenium._gather_screenshot = _gather_screenshot
 
 
 @pytest.fixture
@@ -329,7 +335,7 @@ def pytest_runtest_setup(item):
         previousfailed = getattr(item.parent, "_previousfailed", None)
         if previousfailed is not None:
             pytest.xfail("previous test failed (%s)" % previousfailed.name)
-    if 'testflask' in item.fixturenames:
+    if hasattr(item, 'fixturenames') and 'testflask' in item.fixturenames:
         if not hasattr(item.session, 'liveserver_log'):
             setattr(item.session, 'liveserver_log', {})
         item.session.liveserver_log[item.nodeid] = {
