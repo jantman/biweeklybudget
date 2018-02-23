@@ -136,7 +136,7 @@ def load_premigration_sql(uri):
     logger.info('Pre-migration DB state loaded into %s', engine.url.database)
 
 
-@pytest.mark.alembicVerify
+@pytest.mark.migrations
 def test_upgrade_and_downgrade(uri_left, alembic_config_left):
     """Test all migrations up and down.
 
@@ -158,7 +158,7 @@ def test_upgrade_and_downgrade(uri_left, alembic_config_left):
         current = get_current_revision(alembic_config_left, engine, script)
 
 
-@pytest.mark.alembicVerify
+@pytest.mark.migrations
 def test_model_and_migration_schemas_are_the_same(
         uri_left, uri_right, alembic_config_left
     ):

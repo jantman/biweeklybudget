@@ -98,9 +98,10 @@ end with a trailing slash.
 Alembic Migration Verification
 ++++++++++++++++++++++++++++++
 
-There is an ``alembicVerify`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
+There is an ``migrations`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
 tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
 in order, and also tests that the latest (head) migration revision matches the current state of the models.
+The environment also runs manually-curated acceptance tests for any migrations that involve data manipulation.
 
 This tox environment is configured via environment variables. Please note that it requires *two* test databases.
 
