@@ -1706,8 +1706,6 @@ class TestMakeTransModal(AcceptanceHelper):
             account=testdb.query(Account).get(3)
         )
         testdb.add(t3)
-        testdb.flush()
-        testdb.commit()
 
     def test_02_transaction_table(self, base_url, selenium, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
