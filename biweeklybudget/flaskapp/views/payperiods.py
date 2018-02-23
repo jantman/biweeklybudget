@@ -317,7 +317,8 @@ class SkipSchedTransFormHandler(FormHandlerView):
             description=desc,
             notes=data['notes'],
             account=st.account,
-            scheduled_trans=st
+            scheduled_trans=st,
+            planned_budget=st.budget
         )
         db_session.add(t)
         db_session.add(TxnReconcile(

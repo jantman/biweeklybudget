@@ -2268,9 +2268,9 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
         assert t2.planned_budget_id == 5
-        assert len(t1.budget_transactions) == 1
-        assert t1.budget_transactions[0].budget_id == 5
-        assert t1.budget_transactions[0].amount == Decimal('-123.45')
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 5
+        assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(4)
         assert rec2.txn_id == 9
         assert rec2.ofx_fitid is None
