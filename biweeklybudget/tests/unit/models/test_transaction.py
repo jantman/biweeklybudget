@@ -152,15 +152,14 @@ class TestSetBudgetAmounts(object):
             assert len(t.budget_transactions) == 3
             for bt in t.budget_transactions:
                 assert isinstance(bt, BudgetTransaction)
-            assert t.budget_transactions[0].transaction == t
-            assert t.budget_transactions[0].budget == b1
-            assert t.budget_transactions[0].amount == Decimal('50.00')
-            assert t.budget_transactions[1].transaction == t
-            assert t.budget_transactions[1].budget == b2
-            assert t.budget_transactions[1].amount == Decimal('10.00')
-            assert t.budget_transactions[2].transaction == t
-            assert t.budget_transactions[2].budget == b3
-            assert t.budget_transactions[2].amount == Decimal('40.00')
+                assert bt.transaction == t
+            assert {
+                bt.budget: bt.amount for bt in t.budget_transactions
+            } == {
+                b1: Decimal('50.00'),
+                b2: Decimal('10.00'),
+                b3: Decimal('40.00')
+            }
         assert mock_sess.mock_calls == []
 
     def test_sync(self):
