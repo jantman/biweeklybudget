@@ -133,9 +133,7 @@ class TestSetBudgetAmounts(object):
             assert t.budget_transactions[0].transaction == t
             assert t.budget_transactions[0].budget == b1
             assert t.budget_transactions[0].amount == Decimal('10.00')
-        assert mock_sess.mock_calls == [
-            call.add(t.budget_transactions[0])
-        ]
+        assert mock_sess.mock_calls == []
 
     def test_add_three(self):
         mock_sess = Mock()
@@ -163,11 +161,7 @@ class TestSetBudgetAmounts(object):
             assert t.budget_transactions[2].transaction == t
             assert t.budget_transactions[2].budget == b3
             assert t.budget_transactions[2].amount == Decimal('40.00')
-        assert mock_sess.mock_calls == [
-            call.add(t.budget_transactions[0]),
-            call.add(t.budget_transactions[1]),
-            call.add(t.budget_transactions[2])
-        ]
+        assert mock_sess.mock_calls == []
 
     def test_sync(self):
         mock_sess = Mock()
@@ -204,6 +198,5 @@ class TestSetBudgetAmounts(object):
         assert t.budget_transactions[2].transaction == t
         assert t.budget_transactions[2].amount == Decimal('60.00')
         assert isinstance(t.budget_transactions[2], BudgetTransaction)
-        assert len(mock_sess.mock_calls) == 2
+        assert len(mock_sess.mock_calls) == 1
         assert mock_sess.mock_calls[0][0] == 'delete'
-        assert mock_sess.mock_calls[1] == call.add(t.budget_transactions[2])

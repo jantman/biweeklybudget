@@ -97,7 +97,8 @@ class TestDoBudgetTransfer(object):
                 budgeted_amount=Decimal('123.45'),
                 description=desc,
                 account=acct,
-                notes='foo'
+                notes='foo',
+                planned_budget=budg1
             ),
             call(
                 date=pp.start_date,
@@ -105,7 +106,8 @@ class TestDoBudgetTransfer(object):
                 budgeted_amount=Decimal('-123.45'),
                 description=desc,
                 account=acct,
-                notes='foo'
+                notes='foo',
+                planned_budget=standing
             )
         ]
         assert mock_tr.mock_calls == [

@@ -66,7 +66,7 @@ class Transaction(Base, ModelAsDict):
         {'mysql_engine': 'InnoDB'}
     )
 
-    #: Class properties to include in :py:attr:`~.as_dict` result.
+    #: Class properties to include in :py:attr:`~.ModelAsDict.as_dict` result.
     _dict_properties = ['actual_amount']
 
     #: Primary Key
