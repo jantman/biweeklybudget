@@ -66,7 +66,7 @@ $(document).ready(function() {
                 }
             },
             {
-                data: "budget",
+                data: "DT_RowData.budget",
                 "render": function(data, type, row) {
                     return $("<div>").append($("<a/>").attr("href", "/budgets/" + row.DT_RowData.budget_id).text(data)).html();
                 }

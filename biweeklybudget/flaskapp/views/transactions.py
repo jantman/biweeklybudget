@@ -264,7 +264,10 @@ class TransactionFormHandler(FormHandlerView):
                     'New transactions cannot use an inactive budget.'
                 )
                 have_errors = True
-            elif not budg.is_active and txn.budget_id != budg.id:
+            elif (
+                not budg.is_active and
+                txn.budget_transactions[0].budget_id != budg.id
+            ):
                 errors['budget'].append(
                     'Existing transactions cannot be changed to use an '
                     'inactive budget.'

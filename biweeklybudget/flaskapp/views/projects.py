@@ -58,8 +58,8 @@ class ProjectsView(MethodView):
     """
 
     def get(self):
-        total_active = 0.0
-        remain_active = 0.0
+        total_active = Decimal('0.0')
+        remain_active = Decimal('0.0')
         for p in db_session.query(Project).filter(
                 Project.is_active.__eq__(True)
         ).all():

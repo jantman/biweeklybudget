@@ -126,6 +126,7 @@ class TransUnreconciledAjax(MethodView):
             d = t.as_dict
             d['account_name'] = t.account.name
             d['budget_name'] = t.budget_transactions[0].budget.name
+            d['budget_id'] = t.budget_transactions[0].budget_id
             res.append(d)
         return jsonify(res)
 

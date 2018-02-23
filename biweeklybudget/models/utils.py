@@ -77,7 +77,8 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
         budgeted_amount=amount,
         description=desc,
         account=account,
-        notes=notes
+        notes=notes,
+        planned_budget=from_budget
     )
     db_sess.add(t1)
     t2 = Transaction(
@@ -86,7 +87,8 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
         budgeted_amount=(-1 * amount),
         description=desc,
         account=account,
-        notes=notes
+        notes=notes,
+        planned_budget=to_budget
     )
     db_sess.add(t2)
     t1.transfer = t2

@@ -157,4 +157,4 @@ class BoMItem(Base, ModelAsDict):
         :return: total line cost
         :rtype: decimal.Decimal
         """
-        return (self.quantity * 1.0) * self.unit_cost
+        return (self.quantity * Decimal(1.0)) * self.unit_cost

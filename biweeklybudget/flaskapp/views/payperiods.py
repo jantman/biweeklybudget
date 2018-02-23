@@ -312,7 +312,7 @@ class SkipSchedTransFormHandler(FormHandlerView):
         t = Transaction(
             date=d,
             budget_amounts={st.budget: Decimal('0.0')},
-            budgeted_amount=0.0,
+            budgeted_amount=Decimal('0.0'),
             description=desc,
             notes=data['notes'],
             account=st.account,

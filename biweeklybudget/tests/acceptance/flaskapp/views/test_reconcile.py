@@ -824,7 +824,7 @@ class TestTransactionEditModal(ReconcileHelper):
         assert t.date == date(2017, 4, 10)
         assert t.actual_amount == Decimal('-100.00')
         assert t.account_id == 1
-        assert t.planned_budget_id is None
+        assert t.planned_budget_id == 1
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 1
         assert t.budget_transactions[0].amount == Decimal('-100.00')
