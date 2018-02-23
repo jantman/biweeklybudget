@@ -12,9 +12,7 @@ addons:
       - google-chrome-stable
 
 before_install:
-  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest;'
-  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest27;'
-  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest36;'
+  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE budgettest; CREATE DATABASE budgettest27; CREATE DATABASE budgettest36; CREATE DATABASE alembicLeft; CREATE DATABASE alembicRight;'
 
 env:
   global:
@@ -37,6 +35,8 @@ matrix:
       env: TOXENV=acceptance27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest27?charset=utf8mb4'
     - python: "3.6"
       env: TOXENV=acceptance36 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
+    - python: "3.6"
+      env: TOXENV=alembicVerify MYSQL_USER='root' MYSQL_HOST='127.0.0.1' MYSQL_DBNAME_LEFT='alembicLeft' MYSQL_DBNAME_RIGHT='alembicRight'
     - python: "3.6"
       env: TOXENV=docs
 

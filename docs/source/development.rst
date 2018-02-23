@@ -95,6 +95,22 @@ so they should never be run against a real database. This hook is controlled via
 tests will not start a Flask server, but will instead use the specified URL. The URL must not
 end with a trailing slash.
 
+Alembic Migration Verification
+++++++++++++++++++++++++++++++
+
+There is an ``alembicVerify`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
+tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
+in order, and also tests that the latest (head) migration revision matches the current state of the models.
+
+This tox environment is configured via environment variables. Please note that it requires *two* test databases.
+
+* **MYSQL_HOST** - MySQL DB hostname/IP. Defaults to ``127.0.0.1``
+* **MYSQL_PORT** - MySQL DB Port. Defaults to ``3306``.
+* **MYSQL_USER** - MySQL DB username. Defaults to ``root``.
+* **MYSQL_PASS** - MySQL DB password. Defaults to no password.
+* **MYSQL_DBNAME_LEFT** - MySQL Database name for the first ("left") test database.
+* **MYSQL_DBNAME_RIGHT** - MySQL Database name for the second ("right") test database.
+
 .. _development.alembic:
 
 Alembic DB Migrations
