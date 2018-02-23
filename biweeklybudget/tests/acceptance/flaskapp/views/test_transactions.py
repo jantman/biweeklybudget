@@ -472,14 +472,14 @@ class TestTransModal(AcceptanceHelper):
         assert t.actual_amount == Decimal('-123.45')
         assert t.budgeted_amount == Decimal('-333.33')
         assert t.account_id == 4
-        assert t.planned_budget_id == 5
+        assert t.planned_budget_id == 4
         assert t.scheduled_trans_id == 3
         assert t.notes == 'notesT2edited'
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 5
         assert t.budget_transactions[0].amount == Decimal('-123.45')
-        assert testdb.query(Budget).get(4).current_balance == Decimal('1074.35')
-        assert testdb.query(Budget).get(5).current_balance == Decimal('9482.29')
+        assert testdb.query(Budget).get(4).current_balance == Decimal('950.90')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9605.74')
 
     def test_10_cant_edit_reconciled_verify_db(self, testdb):
         t = testdb.query(Transaction).get(1)
@@ -638,8 +638,8 @@ class TestTransModal(AcceptanceHelper):
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
-            ['Standing1 (4)', '$1,074.35'],
-            ['Standing2 (5)', '$9,482.29']
+            ['Standing1 (4)', '$950.90'],
+            ['Standing2 (5)', '$9,605.74']
         ]
 
     def test_32_modal_add(self, base_url, selenium):
@@ -705,13 +705,13 @@ class TestTransModal(AcceptanceHelper):
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
-            ['Standing1 (4)', '$1,074.35'],
-            ['Standing2 (5)', '$9,136.62']
+            ['Standing1 (4)', '$950.90'],
+            ['Standing2 (5)', '$9,260.07']
         ]
 
     def test_40_simple_modal_verify_db(self, testdb):
-        assert testdb.query(Budget).get(4).current_balance == Decimal('1074.35')
-        assert testdb.query(Budget).get(5).current_balance == Decimal('9136.62')
+        assert testdb.query(Budget).get(4).current_balance == Decimal('950.90')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9260.07')
 
     def test_41_modal_edit_change_between_standing(self, base_url, selenium):
         """
@@ -759,11 +759,8 @@ class TestTransModal(AcceptanceHelper):
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 4
         assert t.budget_transactions[0].amount == Decimal('345.67')
-        # NOTE: possible rounding issue in these next two...
-        assert testdb.query(Budget).get(
-            4
-        ).current_balance == Decimal('728.6799')
-        assert testdb.query(Budget).get(5).current_balance == Decimal('9027.96')
+        assert testdb.query(Budget).get(4).current_balance == Decimal('605.23')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9605.74')
 
 
 @pytest.mark.acceptance
