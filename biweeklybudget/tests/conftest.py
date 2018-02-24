@@ -88,19 +88,19 @@ class_refresh_db_durations = []
 
 def get_db_engine():
     global _DB_ENGINE
-    if _DB_ENGINE is not None:
-        return _DB_ENGINE
-    connstr = os.environ.get('DB_CONNSTRING', None)
-    if connstr is None:
-        connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
-                  'budgettest?charset=utf8mb4'
-        os.environ['DB_CONNSTRING'] = connstr
-    biweeklybudget.settings.DB_CONNSTRING = connstr
-    engine = create_engine(
-        connstr, convert_unicode=True, echo=False,
-        connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
-        pool_size=10, pool_timeout=120
-    )
+    if _DB_ENGINE is None:
+        connstr = os.environ.get('DB_CONNSTRING', None)
+        if connstr is None:
+            connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
+                      'budgettest?charset=utf8mb4'
+            os.environ['DB_CONNSTRING'] = connstr
+        biweeklybudget.settings.DB_CONNSTRING = connstr
+        _DB_ENGINE = create_engine(
+            connstr, convert_unicode=True, echo=False,
+            connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
+            pool_size=10, pool_timeout=120
+        )
+    return _DB_ENGINE
 
 
 @pytest.fixture

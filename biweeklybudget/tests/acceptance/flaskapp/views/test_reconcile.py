@@ -53,7 +53,7 @@ from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import *
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump
-from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.conftest import get_db_engine
 
 dnow = dtnow()
 
@@ -213,7 +213,7 @@ class ReconcileHelper(AcceptanceHelper):
 
     def test_00_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -1457,7 +1457,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
 
     def test_00_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(

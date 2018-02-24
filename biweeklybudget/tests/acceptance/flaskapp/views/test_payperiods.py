@@ -49,7 +49,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.settings import PAY_PERIOD_START_DATE
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models import *
-from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.conftest import get_db_engine
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump
 
 dt = dtnow()
@@ -216,7 +216,7 @@ class TestPayPeriodsIndex(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(
@@ -544,7 +544,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
 
     def test_0_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_1_add_account(self, testdb):
         a = Account(
