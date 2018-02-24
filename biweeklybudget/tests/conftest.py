@@ -63,13 +63,6 @@ try:
 except ImportError:
     HAVE_PYTEST_SELENIUM = False
 
-connstr = os.environ.get('DB_CONNSTRING', None)
-if connstr is None:
-    connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
-              'budgettest?charset=utf8mb4'
-    os.environ['DB_CONNSTRING'] = connstr
-biweeklybudget.settings.DB_CONNSTRING = connstr
-
 tempfd, LIVESERVER_LOG_PATH = mkstemp('testflask')
 os.close(tempfd)
 
@@ -81,11 +74,7 @@ from biweeklybudget.tests.migrations.alembic_helpers import (
     uri_for_db, empty_db_by_uri  # noqa
 )
 
-engine = create_engine(
-    connstr, convert_unicode=True, echo=False,
-    connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
-    pool_size=10, pool_timeout=120
-)
+_DB_ENGINE = None
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +84,23 @@ selenium_log.setLevel(logging.INFO)
 selenium_log.propagate = True
 
 class_refresh_db_durations = []
+
+
+def get_db_engine():
+    global _DB_ENGINE
+    if _DB_ENGINE is not None:
+        return _DB_ENGINE
+    connstr = os.environ.get('DB_CONNSTRING', None)
+    if connstr is None:
+        connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
+                  'budgettest?charset=utf8mb4'
+        os.environ['DB_CONNSTRING'] = connstr
+    biweeklybudget.settings.DB_CONNSTRING = connstr
+    engine = create_engine(
+        connstr, convert_unicode=True, echo=False,
+        connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
+        pool_size=10, pool_timeout=120
+    )
 
 
 @pytest.fixture
@@ -134,11 +140,11 @@ def refreshdb(dump_file_path):
     """
     if 'NO_REFRESH_DB' not in os.environ:
         # setup the connection
-        conn = engine.connect()
+        conn = get_db_engine().connect()
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(get_db_engine())
+        biweeklybudget.models.base.Base.metadata.create_all(get_db_engine())
         # load the sample data
         data_sess = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=conn)
@@ -152,8 +158,8 @@ def refreshdb(dump_file_path):
     else:
         logger.info('Skipping session-scoped DB refresh')
     # write the dump files
-    do_mysqldump(dump_file_path, engine)
-    do_mysqldump(dump_file_path, engine, with_data=False)
+    do_mysqldump(dump_file_path, get_db_engine())
+    do_mysqldump(dump_file_path, get_db_engine(), with_data=False)
     yield
 
 
@@ -174,7 +180,7 @@ def class_refresh_db(dump_file_path):
         return
     logger.info('Refreshing DB (class-scoped)')
     s = time()
-    restore_mysqldump(dump_file_path, engine)
+    restore_mysqldump(dump_file_path, get_db_engine())
     class_refresh_db_durations.append(time() - s)
 
 
@@ -184,7 +190,7 @@ def testdb():
     DB fixture to be used in tests
     """
     # setup the connection
-    conn = engine.connect()
+    conn = get_db_engine().connect()
     sess = sessionmaker(autocommit=False, bind=conn)()
     init_event_listeners(sess)
     # yield the session
