@@ -35,7 +35,7 @@ matrix:
     - python: "3.6"
       env: TOXENV=acceptance36 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
     - python: "3.6"
-      env: TOXENV=migrations MYSQL_USER='root' MYSQL_HOST='127.0.0.1' MYSQL_DBNAME_LEFT='alembicLeft' MYSQL_DBNAME_RIGHT='alembicRight'
+      env: TOXENV=migrations MYSQL_USER='root' MYSQL_HOST='127.0.0.1' MYSQL_DBNAME_LEFT='alembicLeft' MYSQL_DBNAME_RIGHT='alembicRight' DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/alembicLeft?charset=utf8mb4'
     - python: "3.6"
       env: TOXENV=docs
 
