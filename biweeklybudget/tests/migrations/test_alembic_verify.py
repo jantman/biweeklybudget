@@ -35,13 +35,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import os
 import pytest
 import logging
 import json
 
 from alembic import command
-from sqlalchemy import create_engine
 from sqlalchemydiff import compare
 from sqlalchemydiff.util import prepare_schema_from_models
 
@@ -52,88 +50,9 @@ from alembicverify.util import (
 )
 from biweeklybudget.models.base import Base
 
+import biweeklybudget.tests.migrations.alembic_helpers as ah
+
 logger = logging.getLogger(__name__)
-
-
-def uri_for_db(dbname):
-    dbpass = ''
-    if 'MYSQL_PASS' in os.environ:
-        dbpass = ':%s' % os.environ['MYSQL_PASS']
-    return '{scheme}://{user}{passwd}@{host}:{port}/{dbname}' \
-           '?charset=utf8mb4'.format(
-               scheme='mysql+pymysql',
-               user=os.environ.get('MYSQL_USER', 'root'),
-               passwd=dbpass,
-               host=os.environ.get('MYSQL_HOST', '127.0.0.1'),
-               port=os.environ.get('MYSQL_PORT', '3306'),
-               dbname=dbname
-           )
-
-
-def empty_db_by_uri(uri):
-    logger.info('Emptying database: %s', uri)
-    engine = create_engine(uri)
-    tables = [r[0] for r in engine.execute('SHOW TABLES;')]
-    if len(tables) == 0:
-        logger.info('Database already empty.')
-        return
-    logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 0')
-    engine.execute('SET FOREIGN_KEY_CHECKS = 0')
-    sql = 'DROP TABLE %s;' % ', '.join(tables)
-    logger.debug('Executing SQL: %s', sql)
-    engine.execute(sql)
-    logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 1')
-    engine.execute('SET FOREIGN_KEY_CHECKS = 1')
-    engine.dispose()
-    logger.info('DB emptied.')
-
-
-@pytest.fixture
-def alembic_root():
-    return os.path.join(
-        os.environ['TOXINIDIR'], 'biweeklybudget', 'alembic'
-    )
-
-
-@pytest.fixture
-def uri_left():
-    uri = uri_for_db(os.environ['MYSQL_DBNAME_LEFT'])
-    empty_db_by_uri(uri)
-    return uri
-
-
-@pytest.fixture
-def uri_right():
-    uri = uri_for_db(os.environ['MYSQL_DBNAME_RIGHT'])
-    empty_db_by_uri(uri)
-    return uri
-
-
-def load_premigration_sql(uri):
-    """
-    Given a database URI, load the initial state SQL when Alembic was added
-    to the project.
-    """
-    sqlpath = os.path.abspath(os.path.join(
-        os.environ['TOXINIDIR'], 'biweeklybudget', 'tests', 'fixtures',
-        'premigration_db_state.sql'
-    ))
-    logger.debug('Reading pre-migration DB state SQL from %s', sqlpath)
-    sql = []
-    with open(sqlpath, 'r') as fh:
-        for line in fh.readlines():
-            line = line.strip()
-            if line != '':
-                sql.append(line)
-    engine = create_engine(uri)
-    logger.info(
-        'Loading SQL from pre-migration DB state into %s', engine.url.database
-    )
-    for s in sql:
-        logger.debug('Executing SQL: %s', s)
-        engine.execute(s)
-    engine.dispose()
-    logger.info('Pre-migration DB state loaded into %s', engine.url.database)
 
 
 @pytest.mark.migrations
@@ -143,7 +62,7 @@ def test_upgrade_and_downgrade(uri_left, alembic_config_left):
     Tests that we can apply all migrations from a brand new empty
     database, and also that we can remove them all.
     """
-    load_premigration_sql(uri_left)
+    ah.load_premigration_sql(uri_left)
     engine, script = prepare_schema_from_migrations(
         uri_left, alembic_config_left
     )
@@ -165,7 +84,7 @@ def test_model_and_migration_schemas_are_the_same(
     """Compares the database schema obtained with all migrations against the
     one we get out of the models.
     """
-    load_premigration_sql(uri_left)
+    ah.load_premigration_sql(uri_left)
     prepare_schema_from_migrations(uri_left, alembic_config_left)
     prepare_schema_from_models(uri_right, Base)
 

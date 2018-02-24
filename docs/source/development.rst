@@ -95,12 +95,13 @@ so they should never be run against a real database. This hook is controlled via
 tests will not start a Flask server, but will instead use the specified URL. The URL must not
 end with a trailing slash.
 
-Alembic Migration Verification
-++++++++++++++++++++++++++++++
+Database Migration Tests
+++++++++++++++++++++++++
 
-There is an ``migrations`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
+There is a ``migrations`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
 tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
 in order, and also tests that the latest (head) migration revision matches the current state of the models.
+
 The environment also runs manually-curated acceptance tests for any migrations that involve data manipulation.
 
 This tox environment is configured via environment variables. Please note that it requires *two* test databases.
