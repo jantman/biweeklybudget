@@ -16,7 +16,6 @@ before_install:
 
 env:
   global:
-    - DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - SETTINGS_MODULE=biweeklybudget.tests.fixtures.test_settings
     - secure: "unGeawllwXvQdk1vT3kX09yrOh6as3K+4tOurIAlFA8K3osEAurs35fDMptFb4XYl/1eK05UAYzhvtMmdbjflxAfZCuwGH457LSOkm2/YcuaLI7tMzeu0tWSuOMco6nJyZCvsL1Bx2tyuQqI43uzHp5HcgQBSuVwb+wdfKR5m21oQTrWfVr11hZ6YiYzKLlyEQ3l5mXbbTPbrNPZF+MBR5u1qjn6QNcQgMk4e+1QvMXqjF/OIJfV7f2TzmsHmJvGIT9AR5ia9UKeR3pXoFScHUZVdlJBieAPYhS+cmq5s0N015xWwi8jhafenmA8jFSsw1aM4poot4dZzn42L+ItL5weyZZNkpCUIfkvwEKHfBgU8T/Pc7oQDd9U3aA/oO1M0M2Hc56AA1ic0iH9MLq2CUIAghUcXt2RkmgUmOv93HJJGQACdYEwIumWl7OWrlE8/mi56JoKgCPyWYUp4vTCcTH3fHmky4UVhVuO1l4hxotUl2xYsJ1Ugg50U2/ZBRKQ3lcpLXd+Oe12EC30KfhJ6rfO+LQDaIL1sFwfiSTsSf4LtljKiRGp4eLfLBQ5O8KhOIBQZoiP1iFHZWFWUjDIR9UZUib39A1lprcHVlCku9bD1PbMf51cET6UCsf1m7B7Qaq7sEMsGY71fFGq1UUwcursi8PNJmvmbKh+SvHjNVE="
     - secure: "sUpWjFDwysYIkjFyIg7XanJwlZV/y9+XvoAfWa0Q14zj1L+I2/t714P3RnB9+z8Ur7Y3ZP5gzVo0kIBeq+9yXJMd1noUUxAKYQ+KoLvN3ojyBG7Ezf/oMv7OIeqKq7GXaZUND54/lrN4FCS8YXTzgjiyA0GiCsB6Qfo51KJscObK4UOcKP6dJVnovEXPlvqWj8mnSfVZ7rKMIDNqP9O2cPQ/QLxQjCILT3461zZaklg6+xek/8npvzEaOrgHd6AiERB7je1nGBsnkvJq28kBEoCjeCVJuP2BW1a/ToutixnxO2YjJSjyAFsh5JOlb3l/Pu2KqSzXPv807cbqK5SNyAXD9GEroVOf66yZXraMnVu19H1BAi7hgMhOyPMj49tXtQr51lu4cUtwlBc3NBun0fYatd0ZdDD9rLZ+DWGmkOMzZQW7b9T5+dwFM79LzdqZqpOXcSdYC/vbXkwc2MXu04dO2e2RLgK7O4HUpgbi69Oe9AzXsU5vXwxGEGDiPaovIBaSYhxi/pgwJgsjB+HNQeuiRfYrCr9gbS75zg03GfRD75AXlCzm2S17u0VMqVXSELhUiCd3YnwCbP5ZR/nJahpW/c8Kca2Z7bfRECEctkIrpWg2oSDX5TQryD6nVMfzgYdnw6RErJN4vC0Ykk1ltiVwGEyKJPKpOifXVABt0Vo="
@@ -24,13 +23,13 @@ env:
 matrix:
   include:
     - python: "2.7"
-      env: TOXENV=py27
+      env: TOXENV=py27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.4"
-      env: TOXENV=py34
+      env: TOXENV=py34 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.5"
-      env: TOXENV=py35
+      env: TOXENV=py35 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.6"
-      env: TOXENV=py36
+      env: TOXENV=py36 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "2.7"
       env: TOXENV=acceptance27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest27?charset=utf8mb4'
     - python: "3.6"
