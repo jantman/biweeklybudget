@@ -29,6 +29,7 @@ Unreleased Changes
 * Fix bug found where simultaneously editing the Amount and Budget of an existing Transaction against a Standing Budget would result in incorrect changes to the balances of the Budgets.
 * Add a new ``migrations`` tox environment that automatically tests all database migrations (forward and reverse) and also validates that the database schema created from the migrations matches the one created from the models.
 * Add support for writing tests of data manipulation during database migrations, and write tests for the migration in for Issue 105, above.
+* Add support for ``BIWEEKLYBUDGET_LOG_FILE`` environment variable to cause Flask application logs to go to a file *in addition to* STDOUT.
 
 0.7.1 (2018-01-10)
 ------------------
