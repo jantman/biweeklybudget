@@ -108,14 +108,16 @@ class TestSetBudgetAmounts(object):
                     b2: Decimal('90.00')
                 }
             )
-            assert isinstance(t.budget_transactions[0], BudgetTransaction)
-            assert t.budget_transactions[0].transaction == t
-            assert t.budget_transactions[0].budget == b1
-            assert t.budget_transactions[0].amount == Decimal('10.00')
-            assert isinstance(t.budget_transactions[1], BudgetTransaction)
-            assert t.budget_transactions[1].transaction == t
-            assert t.budget_transactions[1].budget == b2
-            assert t.budget_transactions[1].amount == Decimal('90.00')
+            assert len(t.budget_transactions) == 2
+            for bt in t.budget_transactions:
+                assert isinstance(bt, BudgetTransaction)
+                assert bt.transaction == t
+            assert {
+                   bt.budget: bt.amount for bt in t.budget_transactions
+               } == {
+                   b1: Decimal('10.00'),
+                   b2: Decimal('90.00')
+               }
             mock_sess.reset_mock()
             with pytest.raises(AssertionError):
                 t.set_budget_amounts({})
@@ -180,22 +182,20 @@ class TestSetBudgetAmounts(object):
                 b1: Decimal('40.00'),
                 b3: Decimal('60.00')
             })
-        # NOTE: Since we don't have actual SQLAlchemy backing this, the
-        # deleted BudgetTransaction is never removed from the list...
+
         assert len(t.budget_transactions) == 3
-        assert isinstance(t.budget_transactions[0], BudgetTransaction)
-        assert t.budget_transactions[0].budget == b1
-        assert t.budget_transactions[0].transaction == t
-        assert t.budget_transactions[0].amount == Decimal('40.00')
-        # BEGIN to-be-deleted BudgetTransaction
-        assert t.budget_transactions[1].budget == b2
-        assert t.budget_transactions[1].transaction == t
-        assert t.budget_transactions[1].amount == Decimal('90.00')
-        assert isinstance(t.budget_transactions[1], BudgetTransaction)
-        # END to-be-deleted BudgetTransaction
-        assert t.budget_transactions[2].budget == b3
-        assert t.budget_transactions[2].transaction == t
-        assert t.budget_transactions[2].amount == Decimal('60.00')
-        assert isinstance(t.budget_transactions[2], BudgetTransaction)
+        for bt in t.budget_transactions:
+            assert isinstance(bt, BudgetTransaction)
+            assert bt.transaction == t
+        assert {
+            bt.budget: bt.amount for bt in t.budget_transactions
+        } == {
+            b1: Decimal('40.00'),
+            b2: Decimal('90.00'),
+            b3: Decimal('60.00')
+        }
+
         assert len(mock_sess.mock_calls) == 1
         assert mock_sess.mock_calls[0][0] == 'delete'
+        assert mock_sess.mock_calls[0][1][0].budget == b2
+        assert mock_sess.mock_calls[0][1][0].amount == Decimal('90.00')
