@@ -79,8 +79,7 @@ def test_upgrade_and_downgrade(uri_left, alembic_config_left):
 
 @pytest.mark.migrations
 def test_model_and_migration_schemas_are_the_same(
-        uri_left, uri_right, alembic_config_left
-    ):
+        uri_left, uri_right, alembic_config_left):
     """Compares the database schema obtained with all migrations against the
     one we get out of the models.
     """

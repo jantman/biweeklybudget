@@ -41,13 +41,13 @@ from sqlalchemy import create_engine
 from alembic.command import upgrade, downgrade
 from alembic.script import ScriptDirectory
 from alembic.environment import EnvironmentContext  # noqa
-from alembic.util import asbool
 
 from biweeklybudget.tests.migrations.alembic_helpers import (
     load_premigration_sql
 )
 
 logger = logging.getLogger(__name__)
+
 
 @pytest.mark.migrations
 class MigrationTest(object):
