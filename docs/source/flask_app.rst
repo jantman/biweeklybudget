@@ -56,3 +56,8 @@ Logging
 -------
 
 By default, the Flask application's logs go to STDOUT. The ``BIWEEKLYBUDGET_LOG_FILE`` environment variable can be set to the absolute path of a file, to cause Flask application logs to go to the file *in addition to* STDOUT.
+
+MySQL Connection Errors
+-----------------------
+
+See :ref:`Getting Started - MySQL Connection Errors <getting_started.mysql_connection_errors>` for some information on handling MySQL connection errors.

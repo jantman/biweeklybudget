@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from __future__ import with_statement
+import os
 from alembic import context
 from sqlalchemy import pool, create_engine
 from logging.config import fileConfig
@@ -92,7 +93,10 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = create_engine(DB_CONNSTRING, poolclass=pool.NullPool)
+    connectable = create_engine(
+        DB_CONNSTRING, poolclass=pool.NullPool,
+        pool_pre_ping=('SQL_POOL_PRE_PING' in os.environ)
+    )
 
     with connectable.connect() as connection:
         context.configure(
@@ -102,6 +106,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

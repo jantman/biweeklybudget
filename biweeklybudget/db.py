@@ -77,6 +77,9 @@ engine_args = {
 if settings.DB_CONNSTRING.startswith('mysql'):
     engine_args['connect_args'] = {'sql_mode': 'TRADITIONAL'}
 
+if 'SQL_POOL_PRE_PING' in os.environ:
+    engine_args['pool_pre_ping'] = True
+
 #: The database engine object; return value of
 #: :py:func:`sqlalchemy.create_engine`.
 engine = create_engine(settings.DB_CONNSTRING, **engine_args)

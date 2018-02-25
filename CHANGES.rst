@@ -30,6 +30,7 @@ Unreleased Changes
 * Add a new ``migrations`` tox environment that automatically tests all database migrations (forward and reverse) and also validates that the database schema created from the migrations matches the one created from the models.
 * Add support for writing tests of data manipulation during database migrations, and write tests for the migration in for Issue 105, above.
 * Add support for ``BIWEEKLYBUDGET_LOG_FILE`` environment variable to cause Flask application logs to go to a file *in addition to* STDOUT.
+* Add support for ``SQL_POOL_PRE_PING`` environment variable to enable SQLAlchemy ``pool_pre_ping`` feature (see `Disconnect Handling - Pessimistic <http://docs.sqlalchemy.org/en/latest/core/pooling.html#pool-disconnects-pessimistic>`_) for resource-constrained systems.
 
 0.7.1 (2018-01-10)
 ------------------

@@ -95,6 +95,11 @@ require specific formatting of their values; see the
 :py:mod:`settings module documentation <biweeklybudget.settings>` for a list
 of these variables and the required formats.
 
+There are also some additional environment variables available:
+
+* ``BIWEEKLYBUDGET_LOG_FILE`` - By default, the Flask application's logs go to STDOUT. The ``BIWEEKLYBUDGET_LOG_FILE`` environment variable can be set to the absolute path of a file, to cause Flask application logs to go to the file *in addition to* STDOUT.
+
+
 Running Locally
 ---------------
 
@@ -218,6 +223,13 @@ So using that, we could run biweeklybudget listening on port 8080 and using our 
     -p 8080:80 jantman/biweeklybudget:latest
 
 You may need to adjust those commands depending on your operating system, Docker networking mode, and MySQL server.
+
+.. _getting_started.mysql_connection_errors:
+
+MySQL Connection Errors
++++++++++++++++++++++++
+
+On resource-constrained systems or with MySQL servers tuned for minimal resource utilization, you may see the Flask application returning HTTP 500 errors after periods of inactivity, with the Flask application log reporting something like "Lost connection to MySQL server during query" and MySQL reporting "Aborted connection" errors. This is due to connections in the SQLAlchemy connection pool timing out, but the application not being aware of that. If this happens, you can set the ``SQL_POOL_PRE_PING`` environment variable (to any value). This will enable SQLAlchemy's ``pool_pre_ping`` feature (see `Disconnect Handling - Pessimistic <http://docs.sqlalchemy.org/en/latest/core/pooling.html#pool-disconnects-pessimistic>`_) which tests that connections are still working before executing queries with them.
 
 Settings Module Example
 +++++++++++++++++++++++
