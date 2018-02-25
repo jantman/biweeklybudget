@@ -45,6 +45,8 @@ import json
 from time import time
 from tempfile import mkstemp
 
+from retrying import retry
+
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
@@ -59,6 +61,8 @@ except ImportError:
 
 try:
     import pytest_selenium.pytest_selenium
+    from selenium.webdriver.support.event_firing_webdriver import \
+        EventFiringWebDriver
     HAVE_PYTEST_SELENIUM = True
 except ImportError:
     HAVE_PYTEST_SELENIUM = False
@@ -230,19 +234,66 @@ def base_url(testflask):
     return testflask.url()
 
 
-@pytest.fixture
-def selenium(selenium):
+def retry_if_conn_error(ex):
+    try:
+        return isinstance(ex, ConnectionError)
+    except NameError:
+        return isinstance(ex, IOError)
+
+
+@retry(
+    stop_max_attempt_number=3, wait_fixed=3000,
+    retry_on_exception=retry_if_conn_error
+)
+def get_driver_for_class(driver_class, driver_kwargs):
+    """
+    Wrapper around the selenium ``driver()`` fixture's
+    ``driver_class(**driver_kwargs)`` call that retries up to 3 times, 3
+    seconds apart, if a ConnectionError is raised.
+    """
+    return driver_class(**driver_kwargs)
+
+
+@pytest.yield_fixture
+def driver(request, driver_class, driver_kwargs):
+    """
+    Returns a WebDriver instance based on options and capabilities
+
+    This is copied from pytest-selenium 1.11.4, but modified to retry getting
+    the driver up to 3 times to cope with intermittent connection resets in
+    TravisCI. We ripped the original ``driver = driver_class(**driver_kwargs)``
+    out and replaced it with the ``get_driver_for_class()`` function, which
+    is wrapped in the retrying package's ``@retry`` decorator.
+    """
+    driver = get_driver_for_class(driver_class, driver_kwargs)
+
+    event_listener = request.config.getoption('event_listener')
+    if event_listener is not None:
+        # Import the specified event listener and wrap the driver instance
+        mod_name, class_name = event_listener.rsplit('.', 1)
+        mod = __import__(mod_name, fromlist=[class_name])
+        event_listener = getattr(mod, class_name)
+        if not isinstance(driver, EventFiringWebDriver):
+            driver = EventFiringWebDriver(driver, event_listener())
+
+    request.node._driver = driver
+    yield driver
+    driver.quit()
+
+
+@pytest.yield_fixture
+def selenium(driver):
     """
     Per pytest-selenium docs, use this to override the selenium fixture to
     provide global common setup.
     """
-    selenium.set_window_size(1920, 1080)
-    selenium.implicitly_wait(2)
+    driver.set_window_size(1920, 1080)
+    driver.implicitly_wait(2)
     # from http://stackoverflow.com/a/13853684/211734
-    selenium.set_script_timeout(30)
+    driver.set_script_timeout(30)
     # from http://stackoverflow.com/a/17536547/211734
-    selenium.set_page_load_timeout(30)
-    return selenium
+    driver.set_page_load_timeout(30)
+    yield driver
 
 
 def _gather_screenshot(item, report, driver, summary, extra):
