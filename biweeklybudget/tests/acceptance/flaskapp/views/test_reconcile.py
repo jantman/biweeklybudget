@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import datetime, date
 from pytz import UTC
+from decimal import Decimal
 import re
 import json
 from time import sleep
@@ -52,7 +53,7 @@ from biweeklybudget.utils import dtnow, fmt_currency
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import *
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump
-from biweeklybudget.tests.conftest import engine
+from biweeklybudget.tests.conftest import get_db_engine
 
 dnow = dtnow()
 
@@ -212,7 +213,7 @@ class ReconcileHelper(AcceptanceHelper):
 
     def test_00_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -226,7 +227,7 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(a)
         a.set_balance(
             overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=1.0,
+            ledger=Decimal('1.0'),
             ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
         )
         b = Account(
@@ -238,7 +239,7 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(b)
         b.set_balance(
             overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=1.0,
+            ledger=Decimal('1.0'),
             ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
         )
         testdb.flush()
@@ -249,20 +250,20 @@ class ReconcileHelper(AcceptanceHelper):
             name='1Income',
             is_periodic=True,
             description='1Income',
-            starting_balance=0.0,
+            starting_balance=Decimal('0.0'),
             is_income=True
         ))
         testdb.add(Budget(
             name='2Periodic',
             is_periodic=True,
             description='2Periodic',
-            starting_balance=500.00
+            starting_balance=Decimal('500.00')
         ))
         testdb.add(Budget(
             name='3Periodic',
             is_periodic=True,
             description='3Periodic',
-            starting_balance=0.00
+            starting_balance=Decimal('0.00')
         ))
         testdb.flush()
         testdb.commit()
@@ -274,51 +275,53 @@ class ReconcileHelper(AcceptanceHelper):
         e1budget = testdb.query(Budget).get(2)
         e2budget = testdb.query(Budget).get(3)
         # income - matches OFX1
-        testdb.add(Transaction(
+        t1 = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=-100.00,
-            budgeted_amount=-100.00,
+            budget_amounts={ibudget: Decimal('-100.00')},
+            budgeted_amount=Decimal('-100.00'),
             description='income',
             account=acct1,
-            budget=ibudget
-        ))
+            planned_budget=ibudget
+        )
+        testdb.add(t1)
         # one transaction - matches OFX2
-        testdb.add(Transaction(
+        t2 = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=250.00,
+            budget_amounts={e2budget: Decimal('250.00')},
             description='trans1',
-            account=acct1,
-            budget=e2budget
-        ))
+            account=acct1
+        )
+        testdb.add(t2)
         # another transaction - matches OFX3
         st1 = ScheduledTransaction(
-            amount=500.0,
+            amount=Decimal('500.0'),
             description='ST1',
             account=acct2,
             budget=e1budget,
             date=date(2017, 4, 10)
         )
         testdb.add(st1)
-        testdb.add(Transaction(
+        t3 = Transaction(
             date=date(2017, 4, 11),
-            actual_amount=600.0,
-            budgeted_amount=500.0,
+            budget_amounts={e1budget: Decimal('600.00')},
+            budgeted_amount=Decimal('500.0'),
             description='trans2',
             account=acct2,
-            budget=e1budget,
+            planned_budget=e1budget,
             scheduled_trans=st1
-        ))
+        )
+        testdb.add(t3)
         # non-matched transaction
-        testdb.add(Transaction(
+        t4 = Transaction(
             date=date(2017, 4, 14),
-            actual_amount=10.00,
+            budget_amounts={e2budget: Decimal('10.00')},
             description='trans3',
-            account=acct2,
-            budget=e2budget
-        ))
+            account=acct2
+        )
+        testdb.add(t4)
         # matched ScheduledTransaction
         st2 = ScheduledTransaction(
-            amount=10.0,
+            amount=Decimal('10.0'),
             description='ST2',
             account=acct1,
             budget=e2budget,
@@ -326,20 +329,20 @@ class ReconcileHelper(AcceptanceHelper):
         )
         testdb.add(st2)
         # pair that matches OFXT6 and OFXT7
-        testdb.add(Transaction(
+        t5 = Transaction(
             date=date(2017, 4, 16),
-            actual_amount=25.00,
+            budget_amounts={e2budget: Decimal('25.00')},
             description='trans4',
-            account=acct2,
-            budget=e2budget
-        ))
-        testdb.add(Transaction(
+            account=acct2
+        )
+        testdb.add(t5)
+        t6 = Transaction(
             date=date(2017, 4, 17),
-            actual_amount=25.00,
+            budget_amounts={e2budget: Decimal('25.00')},
             description='trans5',
-            account=acct2,
-            budget=e2budget
-        ))
+            account=acct2
+        )
+        testdb.add(t6)
         testdb.flush()
         testdb.commit()
 
@@ -378,7 +381,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFX1',
             trans_type='Deposit',
             date_posted=datetime(2017, 4, 10, 12, 3, 4, tzinfo=UTC),
-            amount=-100.0,
+            amount=Decimal('-100.0'),
             name='ofx1-income'
         ))
         # matches Transaction 2
@@ -388,7 +391,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFX2',
             trans_type='Debit',
             date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
-            amount=250.0,
+            amount=Decimal('250.0'),
             name='ofx2-trans1'
         ))
         # matches Transcation 3
@@ -398,7 +401,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFX3',
             trans_type='Purchase',
             date_posted=datetime(2017, 4, 9, 12, 3, 4, tzinfo=UTC),
-            amount=-600.0,
+            amount=Decimal('-600.0'),
             name='ofx3-trans2-st1'
         ))
         # non-matched - have Transaction 4 same amt but wrong acct
@@ -408,7 +411,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFXT4',
             trans_type='Purchase',
             date_posted=datetime(2017, 4, 14, 12, 3, 4, tzinfo=UTC),
-            amount=10.0,
+            amount=Decimal('10.0'),
             name='ofx4-st2'
         ))
         # matches ScheduledTransaction 2
@@ -418,7 +421,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFXT5',
             trans_type='Foo',
             date_posted=datetime(2017, 4, 16, 12, 3, 4, tzinfo=UTC),
-            amount=10.0,
+            amount=Decimal('10.0'),
             name='ofx5'
         ))
         # pair of matched transactions - Transaction 4 and 5
@@ -428,7 +431,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFXT6',
             trans_type='Foo',
             date_posted=datetime(2017, 4, 16, 12, 3, 4, tzinfo=UTC),
-            amount=-25.0,
+            amount=Decimal('-25.0'),
             name='ofx6'
         ))
         testdb.add(OFXTransaction(
@@ -437,7 +440,7 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFXT7',
             trans_type='Foo',
             date_posted=datetime(2017, 4, 17, 12, 3, 4, tzinfo=UTC),
-            amount=-25.0,
+            amount=Decimal('-25.0'),
             name='ofx7'
         ))
         testdb.flush()
@@ -453,16 +456,15 @@ class ReconcileHelper(AcceptanceHelper):
             fitid='OFX8',
             trans_type='Purchase',
             date_posted=datetime(2017, 4, 17, 12, 3, 4, tzinfo=UTC),
-            amount=-600.0,
+            amount=Decimal('-600.0'),
             name='ofx8-trans4'
         )
         testdb.add(o)
         t = Transaction(
             date=date(2017, 4, 16),
-            actual_amount=600.00,
+            budget_amounts={e2budget: Decimal('600.00')},
             description='trans6',
-            account=acct2,
-            budget=e2budget
+            account=acct2
         )
         testdb.add(t)
         testdb.add(TxnReconcile(transaction=t, ofx_trans=o))
@@ -544,7 +546,7 @@ class TestColumns(ReconcileHelper):
         expected_ofx = [
             ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -676,7 +678,7 @@ class TestAccountReconcileFalse(ReconcileHelper):
         expected_ofx = [
             ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -820,9 +822,12 @@ class TestTransactionEditModal(ReconcileHelper):
         assert t is not None
         assert t.description == 'income'
         assert t.date == date(2017, 4, 10)
-        assert float(t.actual_amount) == -100.00
+        assert t.actual_amount == Decimal('-100.00')
         assert t.account_id == 1
-        assert t.budget_id == 1
+        assert t.planned_budget_id == 1
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 1
+        assert t.budget_transactions[0].amount == Decimal('-100.00')
 
     def test_07_edit(self, base_url, selenium):
         self.baseurl = base_url
@@ -861,7 +866,7 @@ class TestTransactionEditModal(ReconcileHelper):
             txn_div(
                 1,
                 date(2017, 4, 10),
-                -123.45,
+                Decimal('-123.45'),
                 'BankOne', 1,
                 '1Income', 1,
                 'incomeedited'
@@ -938,7 +943,7 @@ class TestDragLimitations(ReconcileHelper):
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -1104,7 +1109,7 @@ class TestDragLimitations(ReconcileHelper):
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -1125,7 +1130,7 @@ class TestDragLimitations(ReconcileHelper):
         assert src.is_displayed() is True
         assert self.normalize_html(src.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
-            600.00,
+            Decimal('600.00'),
             'BankTwo', 2,
             'Purchase',
             'OFX3',
@@ -1452,7 +1457,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
 
     def test_00_clean_db(self, dump_file_path):
         # clean the database; empty schema
-        restore_mysqldump(dump_file_path, engine, with_data=False)
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
     def test_01_add_accounts(self, testdb):
         a = Account(
@@ -1466,7 +1471,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
         testdb.add(a)
         a.set_balance(
             overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=1.0,
+            ledger=Decimal('1.0'),
             ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
         )
         b = Account(
@@ -1478,7 +1483,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
         testdb.add(b)
         b.set_balance(
             overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=1.0,
+            ledger=Decimal('1.0'),
             ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
         )
         testdb.flush()
@@ -1489,20 +1494,20 @@ class TestOFXMakeTrans(AcceptanceHelper):
             name='1Income',
             is_periodic=True,
             description='1Income',
-            starting_balance=0.0,
+            starting_balance=Decimal('0.0'),
             is_income=True
         ))
         testdb.add(Budget(
             name='2Periodic',
             is_periodic=True,
             description='2Periodic',
-            starting_balance=500.00
+            starting_balance=Decimal('500.00')
         ))
         testdb.add(Budget(
             name='3Periodic',
             is_periodic=True,
             description='3Periodic',
-            starting_balance=0.00
+            starting_balance=Decimal('0.00')
         ))
         testdb.flush()
         testdb.commit()
@@ -1511,14 +1516,15 @@ class TestOFXMakeTrans(AcceptanceHelper):
         acct1 = testdb.query(Account).get(1)
         ibudget = testdb.query(Budget).get(1)
         # income - matches OFX1
-        testdb.add(Transaction(
+        t = Transaction(
             date=date(2017, 4, 10),
-            actual_amount=-123.45,
-            budgeted_amount=-123.45,
+            budget_amounts={ibudget: Decimal('-123.45')},
+            budgeted_amount=Decimal('-123.45'),
             description='income',
             account=acct1,
-            budget=ibudget
-        ))
+            planned_budget=ibudget
+        )
+        testdb.add(t)
         testdb.flush()
         testdb.commit()
 
@@ -1542,7 +1548,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
             fitid='OFX2',
             trans_type='Debit',
             date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
-            amount=251.23,
+            amount=Decimal('251.23'),
             name='ofx2-trans1'
         ))
         testdb.flush()
@@ -1626,7 +1632,7 @@ class TestOFXMakeTrans(AcceptanceHelper):
             txn_div(
                 1,
                 date(2017, 4, 10),
-                -123.45,
+                Decimal('-123.45'),
                 'BankOne', 1,
                 '1Income', 1,
                 'income'
@@ -1634,13 +1640,13 @@ class TestOFXMakeTrans(AcceptanceHelper):
             txn_div(
                 2,
                 date(2017, 4, 11),
-                -251.23,
+                Decimal('-251.23'),
                 'BankTwo', 2,
                 '2Periodic', 2,
                 'ofx2-trans1',
                 drop_div=ofx_div(
                     date(2017, 4, 11),
-                    -251.23,
+                    Decimal('-251.23'),
                     'BankTwo', 2,
                     'Debit',
                     'OFX2',
@@ -1680,10 +1686,12 @@ class TestOFXMakeTrans(AcceptanceHelper):
         assert res[1].id == 2
         assert res[1].account_id == 2
         assert res[1].date == date(2017, 4, 11)
-        assert float(res[1].actual_amount) == -251.23
+        assert res[1].actual_amount == Decimal('-251.23')
         assert res[1].description == 'ofx2-trans1'
-        assert res[1].budget_id == 2
         assert res[1].notes == 'created from OFXTransaction(2, OFX2)foo'
+        assert len(res[1].budget_transactions) == 1
+        assert res[1].budget_transactions[0].budget_id == 2
+        assert res[1].budget_transactions[0].amount == Decimal('-251.23')
 
 
 @pytest.mark.acceptance
@@ -1760,7 +1768,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         expected_ofx = [
             ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -1832,7 +1840,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
-            600.00,
+            Decimal('600.00'),
             'BankTwo', 2,
             'Purchase',
             'OFX3',
@@ -1861,7 +1869,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
-                600.00,
+                Decimal('600.00'),
                 'BankTwo', 2,
                 'Purchase',
                 'OFX3',
@@ -1888,7 +1896,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
-            600.00,
+            Decimal('600.00'),
             'BankTwo', 2,
             'Purchase',
             'OFX3',
@@ -1921,7 +1929,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
-            600.00,
+            Decimal('600.00'),
             'BankTwo', 2,
             'Purchase',
             'OFX3',

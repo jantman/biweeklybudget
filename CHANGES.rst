@@ -5,6 +5,31 @@ Unreleased Changes
 ------------------
 
 * Fix major logic error in Credit Card Payoff calculations; interest fees were ignored for the current month/statement, resulting in "Next Payment" values significantly lower than they should be. Fixed to use the last Interest Charge retrieved via OFX (or, if no interest charges present in OFX statements, prompt users to manually enter the last Interest Charge via a new modal that will create an OFXTransaction for it) as the interest amount on the first month/statement when calculating payoffs. This fix now returns Next Payment values that aren't identical to sample cards, but are significantly closer (within 1-2%).
+* `Issue #105 <https://github.com/jantman/biweeklybudget/issues/105>`_ - Major refactor to the Transaction database model. This is transparent to users, but causes massive database and code changes. This is the first step in supporting Transaction splits between multiple budgets:
+
+  * A new BudgetTransaction model has been added, which will support a one-to-many association between Transactions and Budgets. This model associates a Transaction with a Budget, and a currency amount counted against that Budget. This first step only supports a one-to-one relationship, but a forthcoming change will implement the one-to-many budget split for Transactions.
+  * The database migration for this creates BudgetTransactions for every current Transaction, migrating data to the new format.
+  * The ``budget_id`` attribute and ``budget`` relationship of the Transaction model has been removed, as that information is now in the related BudgetTransactions.
+  * A new ``planned_budget_id`` attribute (and ``planned_budget`` relationship) has been added to the Transaction model. For Transactions that were created from ScheduledTransactions, this attribute/relationship stores the original planned budget (distinct from the actual budget now stored in BudgetTransactions).
+  * The Transaction model now has a ``budget_transactions`` back-populated property, containing a list of all associated BudgetTransactions.
+  * The Transaction model now has a ``set_budget_amounts()`` method which takes a single dict mapping either integer Budget IDs or Budget objects, to the Decimal amount of the Transaction allocated to that Budget. While the underlying API supports an arbitrary number of budgets, the UI and codebase currently only supports one.
+  * The Transaction constructor now accepts a ``budget_amounts`` keyword argument that passes its value through to ``set_budget_amounts()``, for ease of creating Transactions in one call.
+  * ``Transaction.actual_amount`` is no longer an attribute stored in the database, but now a hybrid property (read-only) generated from the sum of amounts of all related BudgetTransactions.
+  * Add support to serialize property values of models, in addition to attributes.
+
+* Relatively major and sweeping code refactors to support the above.
+* Switch tests from using deprecated pytest-capturelog to using pytest built-in log capturing.
+* Miscellaneous fixes to unit and acceptance tests, and docs build.
+* Finish converting *all* code, including tests and sample data, from using floats to Decimals.
+
+  * For purposes of testing this, add a database event handler that throws an exception if any attributes that should be set to a Decimal, are set to a float.
+
+* Acceptance test fix so that pytest-selenium can take full page screenshots with Chromedriver.
+* `PR #180 <https://github.com/jantman/biweeklybudget/pull/180>`_ - Acceptance test fix so that the testflask LiveServer fixture captures server logs, and includes them in test HTML reports (this generates a temporary file per-test-run outside of pytest's control).
+* Fix bug found where simultaneously editing the Amount and Budget of an existing Transaction against a Standing Budget would result in incorrect changes to the balances of the Budgets.
+* Add a new ``migrations`` tox environment that automatically tests all database migrations (forward and reverse) and also validates that the database schema created from the migrations matches the one created from the models.
+* Add support for writing tests of data manipulation during database migrations, and write tests for the migration in for Issue 105, above.
+* Add support for ``BIWEEKLYBUDGET_LOG_FILE`` environment variable to cause Flask application logs to go to a file *in addition to* STDOUT.
 
 0.7.1 (2018-01-10)
 ------------------

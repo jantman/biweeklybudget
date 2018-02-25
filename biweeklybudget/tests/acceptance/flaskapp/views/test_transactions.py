@@ -292,12 +292,15 @@ class TestTransModalByURL(AcceptanceHelper):
         assert t is not None
         assert t.description == 'T3'
         assert t.date == (dtnow() - timedelta(days=2)).date()
-        assert float(t.actual_amount) == 222.22
+        assert t.actual_amount == Decimal('222.22')
         assert t.budgeted_amount is None
+        assert t.planned_budget_id is None
         assert t.account_id == 3
-        assert t.budget_id == 2
         assert t.scheduled_trans_id is None
         assert t.notes == 'notesT3'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 2
+        assert t.budget_transactions[0].amount == Decimal('222.22')
 
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
@@ -357,12 +360,15 @@ class TestTransModal(AcceptanceHelper):
         assert t is not None
         assert t.description == 'T2'
         assert t.date == dtnow().date()
-        assert float(t.actual_amount) == -333.33
-        assert float(t.budgeted_amount) == -333.33
+        assert t.actual_amount == Decimal('-333.33')
+        assert t.budgeted_amount == Decimal('-333.33')
+        assert t.planned_budget_id == 4
         assert t.account_id == 2
-        assert t.budget_id == 4
         assert t.scheduled_trans_id == 3
         assert t.notes == 'notesT2'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 4
+        assert t.budget_transactions[0].amount == Decimal('-333.33')
         assert testdb.query(Budget).get(4).current_balance == Decimal('1284.23')
         assert testdb.query(Budget).get(5).current_balance == Decimal('9482.29')
 
@@ -463,26 +469,32 @@ class TestTransModal(AcceptanceHelper):
         assert t is not None
         assert t.description == 'T2edited'
         assert t.date == (dtnow() - timedelta(days=3)).date()
-        assert float(t.actual_amount) == -123.45
-        assert float(t.budgeted_amount) == -333.33
+        assert t.actual_amount == Decimal('-123.45')
+        assert t.budgeted_amount == Decimal('-333.33')
         assert t.account_id == 4
-        assert t.budget_id == 5
+        assert t.planned_budget_id == 4
         assert t.scheduled_trans_id == 3
         assert t.notes == 'notesT2edited'
-        assert testdb.query(Budget).get(4).current_balance == Decimal('1074.35')
-        assert testdb.query(Budget).get(5).current_balance == Decimal('9482.29')
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 5
+        assert t.budget_transactions[0].amount == Decimal('-123.45')
+        assert testdb.query(Budget).get(4).current_balance == Decimal('950.90')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9605.74')
 
     def test_10_cant_edit_reconciled_verify_db(self, testdb):
         t = testdb.query(Transaction).get(1)
         assert t is not None
         assert t.description == 'T1foo'
         assert t.date == (dtnow() + timedelta(days=4)).date()
-        assert float(t.actual_amount) == 111.13
-        assert float(t.budgeted_amount) == 111.11
+        assert t.actual_amount == Decimal('111.13')
+        assert t.budgeted_amount == Decimal('111.11')
         assert t.account_id == 1
-        assert t.budget_id == 1
+        assert t.planned_budget_id == 1
         assert t.scheduled_trans_id == 1
         assert t.notes == 'notesT1'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 1
+        assert t.budget_transactions[0].amount == Decimal('111.13')
 
     def test_11_cant_edit_reconciled_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
@@ -611,20 +623,23 @@ class TestTransModal(AcceptanceHelper):
         assert t.description == 'NewTrans4'
         dnow = dtnow()
         assert t.date == date(year=dnow.year, month=dnow.month, day=15)
-        assert float(t.actual_amount) == 123.45
+        assert t.actual_amount == Decimal('123.45')
         assert t.budgeted_amount is None
         assert t.account_id == 1
-        assert t.budget_id == 2
+        assert t.planned_budget_id is None
         assert t.scheduled_trans_id is None
         assert t.notes == 'NewTransNotes'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 2
+        assert t.budget_transactions[0].amount == Decimal('123.45')
 
     def test_31_verify_index_budgets_table(self, base_url, selenium):
         self.get(selenium, base_url + '/')
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
-            ['Standing1 (4)', '$1,074.35'],
-            ['Standing2 (5)', '$9,482.29']
+            ['Standing1 (4)', '$950.90'],
+            ['Standing2 (5)', '$9,605.74']
         ]
 
     def test_32_modal_add(self, base_url, selenium):
@@ -675,21 +690,77 @@ class TestTransModal(AcceptanceHelper):
         assert t is not None
         assert t.description == 'NewTrans5'
         assert t.date == dtnow().date()
-        assert float(t.actual_amount) == 345.67
+        assert t.actual_amount == Decimal('345.67')
         assert t.budgeted_amount is None
         assert t.account_id == 1
-        assert t.budget_id == 5
+        assert t.planned_budget_id is None
         assert t.scheduled_trans_id is None
         assert t.notes == 'NewTransNotes'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 5
+        assert t.budget_transactions[0].amount == Decimal('345.67')
 
     def test_34_verify_index_budgets_table(self, base_url, selenium):
         self.get(selenium, base_url + '/')
         stable = selenium.find_element_by_id('table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
-            ['Standing1 (4)', '$1,074.35'],
-            ['Standing2 (5)', '$9,136.62']
+            ['Standing1 (4)', '$950.90'],
+            ['Standing2 (5)', '$9,260.07']
         ]
+
+    def test_40_simple_modal_verify_db(self, testdb):
+        assert testdb.query(Budget).get(4).current_balance == Decimal('950.90')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9260.07')
+
+    def test_41_modal_edit_change_between_standing(self, base_url, selenium):
+        """
+        test moving a transaction from one standing budget to another.
+        this is as much a test of biweeklybudget.db_event_handlers as the
+        transactions view.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="NewTrans5"]')
+        link.click()
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 5'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '5'
+        amt = body.find_element_by_id('trans_frm_amount')
+        assert amt.get_attribute('value') == '345.67'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '5'
+        budget_sel.select_by_value('4')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transaction 5 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+
+    def test_42_simple_modal_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(5)
+        assert t is not None
+        assert t.description == 'NewTrans5'
+        assert t.date == dtnow().date()
+        assert t.actual_amount == Decimal('345.67')
+        assert t.budgeted_amount is None
+        assert t.account_id == 1
+        assert t.planned_budget_id is None
+        assert t.scheduled_trans_id is None
+        assert t.notes == 'NewTransNotes'
+        assert len(t.budget_transactions) == 1
+        assert t.budget_transactions[0].budget_id == 4
+        assert t.budget_transactions[0].amount == Decimal('345.67')
+        assert testdb.query(Budget).get(4).current_balance == Decimal('605.23')
+        assert testdb.query(Budget).get(5).current_balance == Decimal('9605.74')
 
 
 @pytest.mark.acceptance

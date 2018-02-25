@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.budget_model import Budget
@@ -110,7 +111,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'Periodic1'
         assert b.is_periodic is True
         assert b.description == 'P1desc'
-        assert b.starting_balance == 100.00
+        assert b.starting_balance == Decimal('100.00')
         assert b.is_active is True
         assert b.is_income is False
         assert b.omit_from_graphs is False
@@ -193,7 +194,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'EditedPeriodic1'
         assert b.is_periodic is True
         assert b.description == 'EditedP1desc'
-        assert float(b.starting_balance) == 2345.6700
+        assert b.starting_balance == Decimal('2345.6700')
         assert b.is_active is False
         assert b.is_income is False
         assert b.omit_from_graphs is False
@@ -355,7 +356,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'Income'
         assert b.is_periodic is True
         assert b.description == 'IncomeDesc'
-        assert float(b.starting_balance) == 2345.67
+        assert b.starting_balance == Decimal('2345.67')
         assert b.is_active is True
         assert b.is_income is True
         assert b.omit_from_graphs is True
@@ -438,7 +439,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'EditedIncome'
         assert b.is_periodic is True
         assert b.description == 'IncomeDescedited'
-        assert float(b.starting_balance) == 123.45
+        assert b.starting_balance == Decimal('123.45')
         assert b.is_active is False
         assert b.is_income is True
         assert b.omit_from_graphs is False
@@ -521,7 +522,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'NewStanding'
         assert b.is_periodic is False
         assert b.description == 'Newly Added Standing'
-        assert float(b.current_balance) == 6789.12
+        assert b.current_balance == Decimal('6789.12')
         assert b.is_active is True
         assert b.is_income is False
         assert b.omit_from_graphs is False
@@ -579,7 +580,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert b.name == 'NewIncome'
         assert b.is_periodic is True
         assert b.description == 'Newly Added Income'
-        assert float(b.starting_balance) == 123.45
+        assert b.starting_balance == Decimal('123.45')
         assert b.is_active is True
         assert b.is_income is True
         assert b.omit_from_graphs is True
@@ -701,13 +702,15 @@ class TestBudgetTransfer(AcceptanceHelper):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
         t1 = testdb.query(Transaction).get(4)
         assert t1.date == dtnow().date()
-        assert float(t1.actual_amount) == 123.45
-        assert float(t1.budgeted_amount) == 123.45
+        assert t1.actual_amount == Decimal('123.45')
+        assert t1.budgeted_amount == Decimal('123.45')
         assert t1.description == desc
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.budget_id == 2
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 2
+        assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
         assert rec1.txn_id == 4
         assert rec1.ofx_fitid is None
@@ -715,13 +718,15 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(5)
         assert t2.date == dtnow().date()
-        assert float(t2.actual_amount) == -123.45
-        assert float(t2.budgeted_amount) == -123.45
+        assert t2.actual_amount == Decimal('-123.45')
+        assert t2.budgeted_amount == Decimal('-123.45')
         assert t2.description == desc
         assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
-        assert t2.budget_id == 5
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 5
+        assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
         assert rec2.txn_id == 5
         assert rec2.ofx_fitid is None
@@ -755,11 +760,11 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
-        assert float(pp.budget_sums[2]['allocated']) == 222.22
-        assert float(pp.budget_sums[2]['budget_amount']) == 234.0
-        assert "%.2f" % float(pp.budget_sums[2]['remaining']) == '11.78'
-        assert float(pp.budget_sums[2]['spent']) == 222.22
-        assert float(pp.budget_sums[2]['trans_total']) == 222.22
+        assert pp.budget_sums[2]['allocated'] == Decimal('222.22')
+        assert pp.budget_sums[2]['budget_amount'] == Decimal('234.0')
+        assert pp.budget_sums[2]['remaining'] == Decimal('11.78')
+        assert pp.budget_sums[2]['spent'] == Decimal('222.22')
+        assert pp.budget_sums[2]['trans_total'] == Decimal('222.22')
         link = selenium.find_element_by_id('btn_budget_txfr')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
@@ -851,22 +856,23 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         d = dtnow().date()
         pp = BiweeklyPayPeriod.period_for_date(d, testdb)
         print('Found period for %s: %s' % (d, pp))
-        assert float(pp.budget_sums[2]['allocated']) == 98.77
-        assert float(pp.budget_sums[2]['budget_amount']) == 234.0
-        # ugh, floating point issues...
-        assert "%.2f" % pp.budget_sums[2]['remaining'] == '135.23'
-        assert float(pp.budget_sums[2]['spent']) == 98.77
-        assert float(pp.budget_sums[2]['trans_total']) == 98.77
+        assert pp.budget_sums[2]['allocated'] == Decimal('98.77')
+        assert pp.budget_sums[2]['budget_amount'] == Decimal('234.0')
+        assert pp.budget_sums[2]['remaining'] == Decimal('135.23')
+        assert pp.budget_sums[2]['spent'] == Decimal('98.77')
+        assert pp.budget_sums[2]['trans_total'] == Decimal('98.77')
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
         t1 = testdb.query(Transaction).get(4)
         assert t1.date == dtnow().date()
-        assert float(t1.actual_amount) == 123.45
-        assert float(t1.budgeted_amount) == 123.45
+        assert t1.actual_amount == Decimal('123.45')
+        assert t1.budgeted_amount == Decimal('123.45')
         assert t1.description == desc
         assert t1.notes == 'Budget Transfer Notes'
         assert t1.account_id == 1
         assert t1.scheduled_trans_id is None
-        assert t1.budget_id == 5
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 5
+        assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
         assert rec1.txn_id == 4
         assert rec1.ofx_fitid is None
@@ -874,13 +880,15 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert rec1.note == desc
         t2 = testdb.query(Transaction).get(5)
         assert t2.date == dtnow().date()
-        assert float(t2.actual_amount) == -123.45
-        assert float(t2.budgeted_amount) == -123.45
+        assert t2.actual_amount == Decimal('-123.45')
+        assert t2.budgeted_amount == Decimal('-123.45')
         assert t2.description == desc
         assert t2.notes == 'Budget Transfer Notes'
         assert t2.account_id == 1
         assert t2.scheduled_trans_id is None
-        assert t2.budget_id == 2
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 2
+        assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
         assert rec2.txn_id == 5
         assert rec2.ofx_fitid is None

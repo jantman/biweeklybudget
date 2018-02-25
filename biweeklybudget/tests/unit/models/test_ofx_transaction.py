@@ -68,7 +68,7 @@ class TestParamsFromOfxparserTransaction(object):
         trans.payee = 'PayeeName'
         trans.type = 'TType'
         trans.date = datetime(2017, 3, 10, 14, 15, 16)
-        trans.amount = 123.45
+        trans.amount = Decimal('123.45')
         trans.id = 'ABC123'
         trans.memo = 'TMemo'
         self.trans = trans
@@ -84,7 +84,7 @@ class TestParamsFromOfxparserTransaction(object):
             'statement': self.stmt,
             'memo': 'TMemo',
             'name': 'PayeeName',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'trans_type': 'TType',
             'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
             'fitid': 'ABC123',
@@ -100,7 +100,7 @@ class TestParamsFromOfxparserTransaction(object):
             'account_id': self.acct_id,
             'statement': self.stmt,
             'name': 'PayeeNameTMemo',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'trans_type': 'TType',
             'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
             'fitid': 'ABC123',
@@ -120,7 +120,7 @@ class TestParamsFromOfxparserTransaction(object):
             'statement': self.stmt,
             'memo': 'TMemo',
             'name': 'PayeeName',
-            'amount': 123.45,
+            'amount': Decimal('123.45'),
             'trans_type': 'TType',
             'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
             'fitid': 'ABC123',
@@ -132,16 +132,16 @@ class TestParamsFromOfxparserTransaction(object):
     def test_account_amount(self):
         ot = OFXTransaction(
             account=Mock(spec_set=Account, negate_ofx_amounts=False),
-            amount=Decimal(123.45)
+            amount=Decimal('123.45')
         )
-        assert ot.account_amount == 123.45
+        assert ot.account_amount == Decimal('123.45')
 
     def test_account_amount_negated(self):
         ot = OFXTransaction(
             account=Mock(spec_set=Account, negate_ofx_amounts=True),
-            amount=Decimal(123.45)
+            amount=Decimal('123.45')
         )
-        assert float(ot.account_amount) == -123.45
+        assert ot.account_amount == Decimal('-123.45')
 
     @patch('%s.RECONCILE_BEGIN_DATE' % pbm, date(2017, 3, 17))
     def test_unreconciled(self):

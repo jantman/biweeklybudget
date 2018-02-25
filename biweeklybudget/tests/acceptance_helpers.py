@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from time import sleep
+from decimal import Decimal
 from selenium.common.exceptions import (
     StaleElementReferenceException, TimeoutException
 )
@@ -389,7 +390,7 @@ class AcceptanceHelper(object):
         """
         tmp_rows = []
         for row in rows:
-            row[1] = float(row[1].replace('$', ''))
+            row[1] = Decimal(row[1].replace('$', ''))
             tmp_rows.append(row)
         ret = []
         for row in sorted(tmp_rows, key=lambda x: (x[0], x[1])):

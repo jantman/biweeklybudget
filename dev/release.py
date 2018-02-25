@@ -86,9 +86,12 @@ class InitialChecks(BaseStep):
             fail('You must run this script from the release branch.')
         if not prompt_user(
             'Have you verified whether or not DB migrations are needed, and '
-            'if they are, ensure they’ve been created, tested and verified?'
+            'if acceptance tests have been written for any migrations that '
+            'manipulate data?'
         ):
-            fail('You must verify migrations first.')
+            fail('You must verify migrations first. For information on testing '
+                 'migrations that manipulate data, see '
+                 'biweeklybudget/tests/migrations/migration_test_helpers.py')
         if not prompt_user(
             'Have you confirmed that there are CHANGES.rst entries for all '
             'major changes?'

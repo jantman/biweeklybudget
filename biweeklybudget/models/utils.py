@@ -73,22 +73,22 @@ def do_budget_transfer(db_sess, txn_date, amount, account,
     logger.info(desc)
     t1 = Transaction(
         date=txn_date,
-        actual_amount=amount,
+        budget_amounts={from_budget: amount},
         budgeted_amount=amount,
         description=desc,
         account=account,
-        budget=from_budget,
-        notes=notes
+        notes=notes,
+        planned_budget=from_budget
     )
     db_sess.add(t1)
     t2 = Transaction(
         date=txn_date,
-        actual_amount=(-1 * amount),
+        budget_amounts={to_budget: (-1 * amount)},
         budgeted_amount=(-1 * amount),
         description=desc,
         account=account,
-        budget=to_budget,
-        notes=notes
+        notes=notes,
+        planned_budget=to_budget
     )
     db_sess.add(t2)
     t1.transfer = t2

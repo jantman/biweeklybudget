@@ -34,8 +34,10 @@ AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
+
 from datetime import datetime
 import logging
+from decimal import Decimal
 
 from flask.views import MethodView
 from flask import render_template, request, redirect
@@ -247,20 +249,20 @@ class SchedToTransFormHandler(FormHandlerView):
         d = datetime.strptime(data['date'], '%Y-%m-%d').date()
         t = Transaction(
             date=d,
-            actual_amount=float(data['amount']),
+            budget_amounts={st.budget: Decimal(data['amount'])},
             budgeted_amount=st.amount,
             description=data['description'],
             notes=data['notes'],
             account=st.account,
-            budget=st.budget,
+            planned_budget=st.budget,
             scheduled_trans=st
         )
         db_session.add(t)
         db_session.commit()
         logger.info('Created Transaction %d for ScheduledTransaction %d',
                     t.id, st.id)
-        return 'Successfully created Transaction %d for ' \
-               'ScheduledTransaction %d.' % (t.id, st.id)
+        return 'Successfully created Transaction %d ' \
+               'for ScheduledTransaction %d.' % (t.id, st.id)
 
 
 class SkipSchedTransFormHandler(FormHandlerView):
@@ -310,13 +312,13 @@ class SkipSchedTransFormHandler(FormHandlerView):
         )
         t = Transaction(
             date=d,
-            actual_amount=0.0,
-            budgeted_amount=0.0,
+            budget_amounts={st.budget: Decimal('0.0')},
+            budgeted_amount=Decimal('0.0'),
             description=desc,
             notes=data['notes'],
             account=st.account,
-            budget=st.budget,
-            scheduled_trans=st
+            scheduled_trans=st,
+            planned_budget=st.budget
         )
         db_session.add(t)
         db_session.add(TxnReconcile(
@@ -324,8 +326,8 @@ class SkipSchedTransFormHandler(FormHandlerView):
             note=desc
         ))
         db_session.commit()
-        logger.info('Created Transaction %d to skip ScheduledTransaction %d',
-                    t.id, st.id)
+        logger.info('Created Transaction %d to skip '
+                    'ScheduledTransaction %d', t.id, st.id)
         return 'Successfully created Transaction %d to skip ' \
                'ScheduledTransaction %d.' % (t.id, st.id)
 

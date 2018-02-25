@@ -44,6 +44,7 @@ from decimal import Decimal
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.utils import do_budget_transfer
@@ -185,10 +186,10 @@ class BudgetFormHandler(FormHandlerView):
         budget.description = data['description'].strip()
         if data['is_periodic'] == 'true':
             budget.is_periodic = True
-            budget.starting_balance = data['starting_balance']
+            budget.starting_balance = Decimal(data['starting_balance'])
         else:
             budget.is_periodic = False
-            budget.current_balance = data['current_balance']
+            budget.current_balance = Decimal(data['current_balance'])
         if data['is_active'] == 'true':
             budget.is_active = True
         else:
@@ -270,7 +271,7 @@ class BudgetTxfrFormHandler(FormHandlerView):
         """
         # get the data
         trans_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        amt = float(data['amount'])
+        amt = Decimal(data['amount'])
         acct = db_session.query(Account).get(int(data['account']))
         if acct is None:
             raise RuntimeError(
@@ -347,18 +348,21 @@ class BudgetSpendingChartView(MethodView):
         records = {}
         budgets_present = set()
         for t in db_session.query(Transaction).filter(
-            Transaction.budget.has(is_income=False),
+            Transaction.budget_transactions.any(
+                BudgetTransaction.budget.has(is_active=False)
+            ),
             Transaction.date.__le__(dt_now)
         ).all():
-            if t.budget_id not in budget_names:
+            if t.budget_transactions[0].budget_id not in budget_names:
                 continue
-            budgets_present.add(t.budget.name)
+            budg_name = t.budget_transactions[0].budget.name
+            budgets_present.add(budg_name)
             ds = t.date.strftime('%Y-%m')
             if ds not in records:
                 records[ds] = {'date': ds}
-            if t.budget.name not in records[ds]:
-                records[ds][t.budget.name] = Decimal('0')
-            records[ds][t.budget.name] += t.actual_amount
+            if budg_name not in records[ds]:
+                records[ds][budg_name] = Decimal('0')
+            records[ds][budg_name] += t.budget_transactions[0].amount
         result = [records[k] for k in sorted(records.keys())]
         res = {
             'data': result,

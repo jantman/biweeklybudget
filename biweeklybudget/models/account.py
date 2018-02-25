@@ -43,6 +43,7 @@ from datetime import timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
+from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
@@ -174,7 +175,7 @@ class Account(Base, ModelAsDict):
     )
 
     def __repr__(self):
-        return "<Account(id=%d, name='%s')>" % (
+        return "<Account(id=%s, name='%s')>" % (
             self.id, self.name
         )
 
@@ -302,9 +303,9 @@ class Account(Base, ModelAsDict):
         :return: sum of amounts of all unreconciled transactions
         :rtype: float
         """
-        total = 0.0
+        total = Decimal('0.0')
         for t in self.unreconciled:
-            total += float(t.actual_amount)
+            total += t.actual_amount
         return total
 
     @property

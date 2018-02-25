@@ -202,6 +202,13 @@ class ToxIt(object):
             mod = self._find_test_mod_for_module(module_name, True)
             logger.debug('Discovered acceptnace test module; env=%s mod=%s',
                      env, mod)
+        else:
+            env = script_name
+            mod = module_name
+            logger.debug(
+                'Directly-specified environment name; env=%s mod=%s',
+                env, mod
+            )
         # run it
         env_config = self.env_config[env]
         for cmd in env_config['commands']:
@@ -236,6 +243,8 @@ def parse_args(argv):
     p.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                    default=False,
                    help='verbose output')
+    p.add_argument('-e', '--env-name', dest='envname', action='store',
+                   type=str, default=None, help='tox environment name')
     p.add_argument('MODULE', type=str,
                    help='Module to run; can be either a code module or a '
                         'test module.')
@@ -249,5 +258,7 @@ if __name__ == "__main__":
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     script_name = sys.argv[0].split('/')[-1]
+    if args.envname is not None:
+        script_name = args.envname
     script = ToxIt()
     script.run_one_module(script_name, args.MODULE, args.EXPR)

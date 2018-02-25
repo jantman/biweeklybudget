@@ -4,6 +4,7 @@ import os
 import argparse
 import logging
 import atexit
+from decimal import Decimal
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -23,7 +24,7 @@ def main():
     atexit.register(cleanup_db)
     init_db()
     logger.debug('Database initialized')
-    print("DO STUFF HERE")
+    print("DO STUFF HERE; database session is 'db_session' global")
 
 if __name__ == "__main__":
     main()

@@ -35,12 +35,17 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 import sys
+from decimal import Decimal
 from datetime import date
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import null
 
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.budget_transaction import BudgetTransaction
+from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
+
+import pytest
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -78,3 +83,119 @@ class TestTransactionModel(object):
         assert str(expected1) == str(kall[1][0])
         assert binexp_to_dict(expected2) == binexp_to_dict(kall[1][1])
         assert str(expected3) == str(kall[1][2])
+
+
+class TestSetBudgetAmounts(object):
+
+    def test_none(self):
+        mock_sess = Mock()
+        with patch('%s.inspect' % pbm) as mock_inspect:
+            type(mock_inspect.return_value).session = mock_sess
+            t = Transaction()
+            with pytest.raises(AssertionError):
+                t.set_budget_amounts({})
+        assert mock_sess.mock_calls == []
+
+    def test_none_but_existing(self):
+        mock_sess = Mock()
+        with patch('%s.inspect' % pbm) as mock_inspect:
+            type(mock_inspect.return_value).session = mock_sess
+            b1 = Budget(name='my_budg')
+            b2 = Budget(name='my_budg2')
+            t = Transaction(
+                budget_amounts={
+                    b1: Decimal('10.00'),
+                    b2: Decimal('90.00')
+                }
+            )
+            assert len(t.budget_transactions) == 2
+            for bt in t.budget_transactions:
+                assert isinstance(bt, BudgetTransaction)
+                assert bt.transaction == t
+            assert {
+                   bt.budget: bt.amount for bt in t.budget_transactions
+               } == {
+                   b1: Decimal('10.00'),
+                   b2: Decimal('90.00')
+               }
+            mock_sess.reset_mock()
+            with pytest.raises(AssertionError):
+                t.set_budget_amounts({})
+        assert mock_sess.mock_calls == []
+
+    def test_add_one(self):
+        mock_sess = Mock()
+        with patch('%s.inspect' % pbm) as mock_inspect:
+            type(mock_inspect.return_value).session = mock_sess
+            b1 = Budget(name='my_budg')
+            t = Transaction(
+                budget_amounts={b1: Decimal('10.00')}
+            )
+            assert len(t.budget_transactions) == 1
+            assert t.budget_transactions[0].transaction == t
+            assert t.budget_transactions[0].budget == b1
+            assert t.budget_transactions[0].amount == Decimal('10.00')
+        assert mock_sess.mock_calls == []
+
+    def test_add_three(self):
+        mock_sess = Mock()
+        with patch('%s.inspect' % pbm) as mock_inspect:
+            type(mock_inspect.return_value).session = mock_sess
+            b1 = Budget(name='my_budg')
+            b2 = Budget(name='my_budg2')
+            b3 = Budget(name='my_budg3')
+            t = Transaction(
+                budget_amounts={
+                    b1: Decimal('50.00'),
+                    b2: Decimal('10.00'),
+                    b3: Decimal('40.00')
+                }
+            )
+            assert len(t.budget_transactions) == 3
+            for bt in t.budget_transactions:
+                assert isinstance(bt, BudgetTransaction)
+                assert bt.transaction == t
+            assert {
+                bt.budget: bt.amount for bt in t.budget_transactions
+            } == {
+                b1: Decimal('50.00'),
+                b2: Decimal('10.00'),
+                b3: Decimal('40.00')
+            }
+        assert mock_sess.mock_calls == []
+
+    def test_sync(self):
+        mock_sess = Mock()
+        with patch('%s.inspect' % pbm) as mock_inspect:
+            type(mock_inspect.return_value).session = mock_sess
+            b1 = Budget(name='my_budg')
+            b2 = Budget(name='my_budg2')
+            b3 = Budget(name='my_budg3')
+            t = Transaction(
+                budget_amounts={
+                    b1: Decimal('10.00'),
+                    b2: Decimal('90.00')
+                }
+            )
+            mock_sess.reset_mock()
+            t.set_budget_amounts({
+                b1: Decimal('40.00'),
+                b3: Decimal('60.00')
+            })
+
+        assert len(t.budget_transactions) == 3
+        for bt in t.budget_transactions:
+            assert isinstance(bt, BudgetTransaction)
+            assert bt.transaction == t
+        assert {
+            bt.budget: bt.amount for bt in t.budget_transactions
+        } == {
+            b1: Decimal('40.00'),
+            b2: Decimal('90.00'),
+            b3: Decimal('60.00')
+        }
+
+        assert len(mock_sess.mock_calls) == 1
+        assert mock_sess.mock_calls[0][0] == 'delete'
+        assert mock_sess.mock_calls[0][1][0].budget == b2
+        assert mock_sess.mock_calls[0][1][0].amount == Decimal('90.00')

@@ -43,33 +43,38 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
 import json
 from time import time
+from tempfile import mkstemp
 
 import biweeklybudget.settings
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
+from biweeklybudget.tests.selenium_helpers import (
+    set_browser_for_fullpage_screenshot
+)
 
 try:
     from pytest_flask.fixtures import LiveServer
 except ImportError:
     pass
 
-connstr = os.environ.get('DB_CONNSTRING', None)
-if connstr is None:
-    connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
-              'budgettest?charset=utf8mb4'
-    os.environ['DB_CONNSTRING'] = connstr
-biweeklybudget.settings.DB_CONNSTRING = connstr
+try:
+    import pytest_selenium.pytest_selenium
+    HAVE_PYTEST_SELENIUM = True
+except ImportError:
+    HAVE_PYTEST_SELENIUM = False
+
+tempfd, LIVESERVER_LOG_PATH = mkstemp('testflask')
+os.close(tempfd)
 
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
-
-engine = create_engine(
-    connstr, convert_unicode=True, echo=False,
-    connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
-    pool_size=10, pool_timeout=120
+from biweeklybudget.tests.migrations.alembic_helpers import (
+    uri_for_db, empty_db_by_uri  # noqa
 )
+
+_DB_ENGINE = None
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +84,44 @@ selenium_log.setLevel(logging.INFO)
 selenium_log.propagate = True
 
 class_refresh_db_durations = []
+
+
+def get_db_engine():
+    global _DB_ENGINE
+    if _DB_ENGINE is None:
+        connstr = os.environ.get('DB_CONNSTRING', None)
+        if connstr is None:
+            connstr = 'mysql+pymysql://budgetTester:jew8fu0ue@127.0.0.1:3306/' \
+                      'budgettest?charset=utf8mb4'
+            os.environ['DB_CONNSTRING'] = connstr
+        biweeklybudget.settings.DB_CONNSTRING = connstr
+        _DB_ENGINE = create_engine(
+            connstr, convert_unicode=True, echo=False,
+            connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
+            pool_size=10, pool_timeout=120
+        )
+    return _DB_ENGINE
+
+
+@pytest.fixture
+def alembic_root():
+    return os.path.join(
+        os.environ['TOXINIDIR'], 'biweeklybudget', 'alembic'
+    )
+
+
+@pytest.fixture
+def uri_left():
+    uri = uri_for_db(os.environ['MYSQL_DBNAME_LEFT'])
+    empty_db_by_uri(uri)
+    return uri
+
+
+@pytest.fixture
+def uri_right():
+    uri = uri_for_db(os.environ['MYSQL_DBNAME_RIGHT'])
+    empty_db_by_uri(uri)
+    return uri
 
 
 @pytest.fixture(scope='session')
@@ -97,11 +140,11 @@ def refreshdb(dump_file_path):
     """
     if 'NO_REFRESH_DB' not in os.environ:
         # setup the connection
-        conn = engine.connect()
+        conn = get_db_engine().connect()
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
-        biweeklybudget.models.base.Base.metadata.drop_all(engine)
-        biweeklybudget.models.base.Base.metadata.create_all(engine)
+        biweeklybudget.models.base.Base.metadata.drop_all(get_db_engine())
+        biweeklybudget.models.base.Base.metadata.create_all(get_db_engine())
         # load the sample data
         data_sess = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=conn)
@@ -115,8 +158,8 @@ def refreshdb(dump_file_path):
     else:
         logger.info('Skipping session-scoped DB refresh')
     # write the dump files
-    do_mysqldump(dump_file_path, engine)
-    do_mysqldump(dump_file_path, engine, with_data=False)
+    do_mysqldump(dump_file_path, get_db_engine())
+    do_mysqldump(dump_file_path, get_db_engine(), with_data=False)
     yield
 
 
@@ -137,7 +180,7 @@ def class_refresh_db(dump_file_path):
         return
     logger.info('Refreshing DB (class-scoped)')
     s = time()
-    restore_mysqldump(dump_file_path, engine)
+    restore_mysqldump(dump_file_path, get_db_engine())
     class_refresh_db_durations.append(time() - s)
 
 
@@ -147,7 +190,7 @@ def testdb():
     DB fixture to be used in tests
     """
     # setup the connection
-    conn = engine.connect()
+    conn = get_db_engine().connect()
     sess = sessionmaker(autocommit=False, bind=conn)()
     init_event_listeners(sess)
     # yield the session
@@ -168,6 +211,7 @@ def testflask():
         s.bind(('', 0))
         port = s.getsockname()[1]
         s.close()
+        os.environ['BIWEEKLYBUDGET_LOG_FILE'] = LIVESERVER_LOG_PATH
         from biweeklybudget.flaskapp.app import app  # noqa
         server = LiveServer(app, port)
         server.start()
@@ -199,6 +243,30 @@ def selenium(selenium):
     # from http://stackoverflow.com/a/17536547/211734
     selenium.set_page_load_timeout(30)
     return selenium
+
+
+def _gather_screenshot(item, report, driver, summary, extra):
+    """
+    Redefine pytest-selenium's _gather_screenshot so that we can get full-page
+    screenshots. This implementation is copied from pytest-selenium 1.11.4,
+    but calls :py:fund:`~.selenium_helpers.set_browser_for_fullpage_screenshot`
+    before calling ``driver.get_screenshot_as_base64()``.
+    """
+    try:
+        set_browser_for_fullpage_screenshot(driver)
+        screenshot = driver.get_screenshot_as_base64()
+    except Exception as e:
+        summary.append('WARNING: Failed to gather screenshot: {0}'.format(e))
+        return
+    pytest_html = item.config.pluginmanager.getplugin('html')
+    if pytest_html is not None:
+        # add screenshot to the html report
+        extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
+
+
+# redefine _gather_screenshot to use our implementation
+if HAVE_PYTEST_SELENIUM:
+    pytest_selenium.pytest_selenium._gather_screenshot = _gather_screenshot
 
 
 @pytest.fixture
@@ -247,11 +315,49 @@ def pytest_terminal_summary(terminalreporter):
 # incremental-testing-test-steps
 
 
+@pytest.mark.hookwrapper
 def pytest_runtest_makereport(item, call):
     if "incremental" in item.keywords:
         if call.excinfo is not None:
             parent = item.parent
             parent._previousfailed = item
+    outcome = yield
+    if (
+        hasattr(item.session, 'liveserver_log') and
+        item.nodeid in item.session.liveserver_log
+    ):
+        report = outcome.get_result()
+        extra = getattr(report, 'extra', [])
+        pos = item.session.liveserver_log[item.nodeid]
+        pytest_html = item.config.pluginmanager.getplugin('html')
+        if pytest_html is not None:
+            fh = open(LIVESERVER_LOG_PATH, 'r')
+            fh.seek(pos['start'])
+            if 'end' in pos:
+                log = fh.read(pos['end'] - pos['start'])
+            else:
+                log = fh.read()
+            extra.append(pytest_html.extras.text(log, 'LiveServer'))
+            msg = 'NOTE: testflask LiveServer logging captured via ' \
+                  'pytest-html to: %s %s' % (LIVESERVER_LOG_PATH, pos)
+            for item in list(report.sections):
+                if item[0] == 'testflask':
+                    report.sections.remove(item)
+            report.sections.append(('testflask', msg))
+            report.extra = extra
+        else:
+            report.sections.append((
+                'testflask',
+                'ERROR - pytest-html not present, cannot save server log!\n'
+            ))
+
+
+def getfilesize(fpath):
+    f = open(fpath, 'r')
+    f.seek(0, 2)
+    val = f.tell()
+    f.close()
+    return val
 
 
 def pytest_runtest_setup(item):
@@ -259,6 +365,21 @@ def pytest_runtest_setup(item):
         previousfailed = getattr(item.parent, "_previousfailed", None)
         if previousfailed is not None:
             pytest.xfail("previous test failed (%s)" % previousfailed.name)
+    if hasattr(item, 'fixturenames') and 'testflask' in item.fixturenames:
+        if not hasattr(item.session, 'liveserver_log'):
+            setattr(item.session, 'liveserver_log', {})
+        item.session.liveserver_log[item.nodeid] = {
+            'start': getfilesize(LIVESERVER_LOG_PATH)
+        }
+
+
+def pytest_runtest_teardown(item):
+    if (
+        hasattr(item.session, 'liveserver_log') and
+        item.nodeid in item.session.liveserver_log
+    ):
+        item.session.liveserver_log[item.nodeid][
+            'end'] = getfilesize(LIVESERVER_LOG_PATH)
 
 
 """

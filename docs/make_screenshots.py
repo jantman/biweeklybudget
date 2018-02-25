@@ -58,6 +58,9 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import biweeklybudget.settings
 from biweeklybudget.settings import PAY_PERIOD_START_DATE
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
+from biweeklybudget.tests.selenium_helpers import (
+    set_browser_for_fullpage_screenshot
+)
 from biweeklybudget.utils import dtnow
 from decimal import Decimal, ROUND_HALF_UP
 try:
@@ -316,16 +319,7 @@ class Screenshotter(object):
             sleep(1)
         # get_screenshot_as_png() -> binary data
         fpath = os.path.join(self.srcdir, '%s.png' % filename)
-        height = self.browser.execute_script(
-            "return Math.max(document.body.scrollHeight, "
-            "document.body.offsetHeight, document.documentElement."
-            "clientHeight, document.documentElement.scrollHeight, "
-            "document.documentElement.offsetHeight);"
-        )
-        height += 100
-        logger.info('Resizing browser to %d high', height)
-        logger.info('Screenshotting "%s" to %s', path, fpath)
-        self.browser.set_window_size(1920, height)
+        set_browser_for_fullpage_screenshot(self.browser, extra_height_px=100)
         self.browser.get_screenshot_as_file(fpath)
         self.browser.set_window_size(1920, 1080)
         self._resize_image(filename)

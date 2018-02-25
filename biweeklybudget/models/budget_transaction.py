@@ -35,16 +35,47 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.models.account_balance import AccountBalance
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.dbsetting import DBSetting
-from biweeklybudget.models.fuel import FuelFill, Vehicle
-from biweeklybudget.models.ofx_statement import OFXStatement
-from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.projects import Project, BoMItem
-from biweeklybudget.models.reconcile_rule import ReconcileRule
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
+from sqlalchemy import Column, Integer, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
+from biweeklybudget.models.base import Base, ModelAsDict
+
+
+class BudgetTransaction(Base, ModelAsDict):
+    """
+    Represents the portion (amount) of a Transaction that is allocated
+    against a specific budget. There will be one or more BudgetTransactions
+    associated with each :py:class:`~.Transaction`.
+    """
+
+    __tablename__ = 'budget_transactions'
+    __table_args__ = (
+        {'mysql_engine': 'InnoDB'}
+    )
+
+    #: Primary Key
+    id = Column(Integer, primary_key=True)
+
+    #: Amount of the transaction against this budget
+    amount = Column(Numeric(precision=10, scale=4), nullable=False)
+
+    #: ID of the Transaction this is part of
+    trans_id = Column(Integer, ForeignKey('transactions.id'))
+
+    #: Relationship - the :py:class:`~.Transaction` this is part of
+    transaction = relationship(
+        "Transaction", backref="budget_transactions", uselist=False
+    )
+
+    #: ID of the Budget this transaction is against
+    budget_id = Column(Integer, ForeignKey('budgets.id'))
+
+    #: Relationship - the :py:class:`~.Budget` this transaction is against
+    budget = relationship(
+        "Budget", backref="budget_transactions", uselist=False
+    )
+
+    def __repr__(self):
+        return "<BudgetTransaction(id=%s, transaction=%s, " \
+               "budget=%s, amount=%s)>" % (
+                   self.id, self.transaction, self.budget, self.amount
+               )

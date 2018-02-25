@@ -35,46 +35,62 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from sqlalchemy import Column, Integer, Numeric, Boolean, String
-from biweeklybudget.models.base import Base, ModelAsDict
+import pytest
+import logging
+import json
+
+from alembic import command
+from sqlalchemydiff import compare
+from sqlalchemydiff.util import prepare_schema_from_models
+
+from alembicverify.util import (
+    get_current_revision,
+    get_head_revision,
+    prepare_schema_from_migrations,
+)
+from biweeklybudget.models.base import Base
+
+import biweeklybudget.tests.migrations.alembic_helpers as ah
+
+logger = logging.getLogger(__name__)
 
 
-class Budget(Base, ModelAsDict):
+@pytest.mark.migrations
+def test_upgrade_and_downgrade(uri_left, alembic_config_left):
+    """Test all migrations up and down.
 
-    __tablename__ = 'budgets'
-    __table_args__ = (
-        {'mysql_engine': 'InnoDB'}
+    Tests that we can apply all migrations from a brand new empty
+    database, and also that we can remove them all.
+    """
+    ah.load_premigration_sql(uri_left)
+    engine, script = prepare_schema_from_migrations(
+        uri_left, alembic_config_left
     )
 
-    #: Primary Key
-    id = Column(Integer, primary_key=True)
+    head = get_head_revision(alembic_config_left, engine, script)
+    current = get_current_revision(alembic_config_left, engine, script)
 
-    #: Whether the budget is standing (long-running) or periodic (resets each
-    #: pay period or budget cycle)
-    is_periodic = Column(Boolean, default=True)
+    assert head == current
 
-    #: name of the budget
-    name = Column(String(50), unique=True, index=True)
+    while current is not None:
+        command.downgrade(alembic_config_left, '-1')
+        current = get_current_revision(alembic_config_left, engine, script)
 
-    #: description
-    description = Column(String(254))
 
-    #: starting balance for periodic budgets
-    starting_balance = Column(Numeric(precision=10, scale=4))
+@pytest.mark.migrations
+def test_model_and_migration_schemas_are_the_same(
+        uri_left, uri_right, alembic_config_left):
+    """Compares the database schema obtained with all migrations against the
+    one we get out of the models.
+    """
+    ah.load_premigration_sql(uri_left)
+    prepare_schema_from_migrations(uri_left, alembic_config_left)
+    prepare_schema_from_models(uri_right, Base)
 
-    #: current balance for standing budgets
-    current_balance = Column(Numeric(precision=10, scale=4))
+    result = compare(uri_left, uri_right, ignores=['alembic_version'])
 
-    #: whether active or historical
-    is_active = Column(Boolean, default=True)
-
-    #: whether this is an Income budget (True) or expense (False).
-    is_income = Column(Boolean, default=False)
-
-    #: whether or not to omit this budget from spending graphs
-    omit_from_graphs = Column(Boolean, default=False)
-
-    def __repr__(self):
-        return "<Budget(id=%s, name=%s)>" % (
-            self.id, self.name
+    assert result.is_match is True, \
+        'Differences (left is migrations, right is models):\n' \
+        '%s' % json.dumps(
+            result.errors, sort_keys=True, indent=4, separators=(',', ': ')
         )

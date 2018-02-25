@@ -58,7 +58,7 @@ function txnReconcileModalDiv(msg) {
     frm += '<tr><th>Budgeted Amount</th><td>' + fmt_currency(msg['transaction']['budgeted_amount']) + '</td></tr>\n';
     frm += '<tr><th>Description</th><td>' + msg['transaction']['description'] + '</td></tr>\n';
     frm += '<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>\n';
-    frm += '<tr><th>Budget</th><td><a href="/budgets/' + msg['transaction']['budget_id'] + '">' + msg['budget_name'] + ' (' + msg['transaction']['budget_id'] + ')</a></td></tr>\n';
+    frm += '<tr><th>Budget</th><td><a href="/budgets/' + msg['budget_id'] + '">' + msg['budget_name'] + ' (' + msg['budget_id'] + ')</a></td></tr>\n';
     frm += '<tr><th>Notes</th><td>' + msg['transaction']['notes'] + '</td></tr>\n';
     frm += '<tr><th>Scheduled?</th><td>';
     if (msg['transaction']['scheduled_trans_id'] !== null) {

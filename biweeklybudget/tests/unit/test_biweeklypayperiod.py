@@ -47,6 +47,7 @@ from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
 from biweeklybudget.utils import dtnow
 
@@ -592,19 +593,22 @@ class TestMakeBudgetSums(object):
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
-                    'budget_id': 1
+                    'budget_id': 1,
+                    'planned_budget_id': 1
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
-                    'budget_id': 2
+                    'budget_id': 2,
+                    'planned_budget_id': 2
                 },
                 {
                     'type': 'ScheduledTransaction',
                     'amount': Decimal('-1234.56'),
                     'budgeted_amount': Decimal('-1234.56'),
-                    'budget_id': 4
+                    'budget_id': 4,
+                    'planned_budget_id': 4
                 }
             ]
         }
@@ -694,19 +698,22 @@ class TestMakeBudgetSums(object):
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
-                    'budget_id': 1
+                    'budget_id': 1,
+                    'planned_budget_id': 1
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
-                    'budget_id': 2
+                    'budget_id': 2,
+                    'planned_budget_id': 2
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('-1234.56'),
                     'budgeted_amount': Decimal('-1234.56'),
-                    'budget_id': 4
+                    'budget_id': 4,
+                    'planned_budget_id': 4
                 }
             ]
         }
@@ -953,7 +960,7 @@ class TestDictForTrans(object):
         m_budget = Mock(name='bar')
         type(m_budget).name = 'bar'
         m = Mock(
-            spec_set=Transaction,
+            spec=Transaction,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -962,8 +969,16 @@ class TestDictForTrans(object):
             budgeted_amount=Decimal('120.00'),
             account_id=2,
             account=m_account,
-            budget_id=3,
-            budget=m_budget
+            planned_budget_id=3,
+            planned_budget=m_budget,
+            budget_transactions=[
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=3,
+                    budget=m_budget,
+                    amount=Decimal('123.45')
+                )
+            ]
         )
         type(m).reconcile = None
         assert self.cls._dict_for_trans(m) == {
@@ -979,7 +994,9 @@ class TestDictForTrans(object):
             'account_name': 'foo',
             'budget_id': 3,
             'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'planned_budget_id': 3,
+            'planned_budget_name': 'bar'
         }
 
     def test_reconciled(self):
@@ -988,7 +1005,7 @@ class TestDictForTrans(object):
         m_budget = Mock(name='bar')
         type(m_budget).name = 'bar'
         m = Mock(
-            spec_set=Transaction,
+            spec=Transaction,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -997,8 +1014,16 @@ class TestDictForTrans(object):
             budgeted_amount=Decimal('120.00'),
             account_id=2,
             account=m_account,
-            budget_id=3,
-            budget=m_budget
+            planned_budget_id=3,
+            planned_budget=m_budget,
+            budget_transactions=[
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=3,
+                    budget=m_budget,
+                    amount=Decimal('123.45')
+                )
+            ]
         )
         type(m).reconcile = Mock(id=2)
         assert self.cls._dict_for_trans(m) == {
@@ -1014,7 +1039,9 @@ class TestDictForTrans(object):
             'account_name': 'foo',
             'budget_id': 3,
             'budget_name': 'bar',
-            'reconcile_id': 2
+            'reconcile_id': 2,
+            'planned_budget_id': 3,
+            'planned_budget_name': 'bar'
         }
 
     def test_budgeted_amount_none(self):
@@ -1023,7 +1050,7 @@ class TestDictForTrans(object):
         m_budget = Mock(name='bar')
         type(m_budget).name = 'bar'
         m = Mock(
-            spec_set=Transaction,
+            spec=Transaction,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -1032,8 +1059,16 @@ class TestDictForTrans(object):
             budgeted_amount=None,
             account_id=2,
             account=m_account,
-            budget_id=3,
-            budget=m_budget
+            planned_budget_id=None,
+            planned_budget=None,
+            budget_transactions=[
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=3,
+                    budget=m_budget,
+                    amount=Decimal('123.45')
+                )
+            ]
         )
         type(m).reconcile = None
         assert self.cls._dict_for_trans(m) == {
@@ -1049,6 +1084,8 @@ class TestDictForTrans(object):
             'account_name': 'foo',
             'budget_id': 3,
             'budget_name': 'bar',
+            'planned_budget_id': None,
+            'planned_budget_name': None,
             'reconcile_id': None
         }
 

@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+from decimal import Decimal
 from sqlalchemy import (
     Column, Integer, String, ForeignKey, Numeric, Boolean, inspect, func
 )
@@ -86,8 +87,8 @@ class Project(Base, ModelAsDict):
             func.sum(BoMItem.line_cost)
         ).scalar()
         if cost is None:
-            return 0.0
-        return float(cost)
+            return Decimal('0.0')
+        return cost
 
     @property
     def remaining_cost(self):
@@ -106,8 +107,8 @@ class Project(Base, ModelAsDict):
             func.sum(BoMItem.line_cost)
         ).scalar()
         if cost is None:
-            return 0.0
-        return float(cost)
+            return Decimal('0.0')
+        return cost
 
 
 class BoMItem(Base, ModelAsDict):
@@ -156,4 +157,4 @@ class BoMItem(Base, ModelAsDict):
         :return: total line cost
         :rtype: decimal.Decimal
         """
-        return (self.quantity * 1.0) * self.unit_cost
+        return (self.quantity * Decimal(1.0)) * self.unit_cost

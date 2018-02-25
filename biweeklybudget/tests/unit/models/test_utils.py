@@ -93,21 +93,21 @@ class TestDoBudgetTransfer(object):
         assert mock_t.mock_calls == [
             call(
                 date=pp.start_date,
-                actual_amount=Decimal('123.45'),
+                budget_amounts={budg1: Decimal('123.45')},
                 budgeted_amount=Decimal('123.45'),
                 description=desc,
                 account=acct,
-                budget=budg1,
-                notes='foo'
+                notes='foo',
+                planned_budget=budg1
             ),
             call(
                 date=pp.start_date,
-                actual_amount=Decimal('-123.45'),
+                budget_amounts={standing: Decimal('-123.45')},
                 budgeted_amount=Decimal('-123.45'),
                 description=desc,
                 account=acct,
-                budget=standing,
-                notes='foo'
+                notes='foo',
+                planned_budget=standing
             )
         ]
         assert mock_tr.mock_calls == [

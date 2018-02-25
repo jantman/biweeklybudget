@@ -162,7 +162,8 @@ function reconcileDoUnreconcile(trans_id, acct_id, fitid) {
 
 /**
  * Generate a div for an individual Transaction, to display on the reconcile
- * view.
+ * view. Called from :js:func:`reconcileShowTransactions`,
+ * :js:func:`makeTransSaveCallback` and :js:func:`updateReconcileTrans`.
  *
  * @param {Object} trans - ajax JSON object representing one Transaction
  */

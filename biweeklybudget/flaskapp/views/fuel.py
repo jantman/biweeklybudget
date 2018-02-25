@@ -314,7 +314,7 @@ class FuelLogFormHandler(FormHandlerView):
         :return: message describing changes to DB (i.e. link to created record)
         :rtype: str
         """
-        total = float(data['total_cost'])
+        total = Decimal(data['total_cost'])
         dt = datetime.strptime(data['date'], '%Y-%m-%d').date()
         veh_name = db_session.query(Vehicle).get(int(data['vehicle'])).name
         fill = FuelFill()
@@ -325,10 +325,10 @@ class FuelLogFormHandler(FormHandlerView):
         fill.level_before = int(data['level_before'])
         fill.level_after = int(data['level_after'])
         fill.fill_location = data['fill_location'].strip()
-        fill.cost_per_gallon = float(data['cost_per_gallon'])
+        fill.cost_per_gallon = Decimal(data['cost_per_gallon'])
         fill.total_cost = total
-        fill.gallons = float(data['gallons'])
-        fill.reported_mpg = float(data['reported_mpg'])
+        fill.gallons = Decimal(data['gallons'])
+        fill.reported_mpg = Decimal(data['reported_mpg'])
         fill.notes = data['notes'].strip()
         logger.info('Creating new FuelFill: %s', fill.as_dict)
         db_session.add(fill)
@@ -343,23 +343,24 @@ class FuelLogFormHandler(FormHandlerView):
                 'fill_id': fill.id,
                 'calculated_mpg': fill.calculated_mpg
             }
-        trans = Transaction()
         budg = db_session.query(Budget).get(int(data['budget']))
-        trans.description = '%s - FuelFill #%d (%s)' % (
-            data['fill_location'].strip(), fill.id, veh_name
+        trans = Transaction(
+            description='%s - FuelFill #%d (%s)' % (
+                data['fill_location'].strip(), fill.id, veh_name
+            ),
+            date=dt,
+            notes=data['notes'].strip(),
+            budget_amounts={budg: total},
+            account_id=int(data['account'])
         )
-        trans.date = dt
-        trans.actual_amount = total
-        trans.account_id = int(data['account'])
-        trans.budget = budg
-        trans.notes = data['notes'].strip()
         logger.info('Creating new Transaction for FuelFill: %s', trans.as_dict)
         db_session.add(trans)
         db_session.commit()
         return {
-            'success_message': 'Successfully saved FuelFill %d '
-                               ' and Transaction %d in database.' % (
-                                  fill.id, trans.id),
+            'success_message': 'Successfully saved FuelFill %d and '
+                               ' Transaction %d in database.' % (
+                                   fill.id, trans.id
+                               ),
             'success': True,
             'trans_id': trans.id,
             'fill_id': fill.id,
@@ -396,7 +397,7 @@ class FuelMPGChartView(MethodView):
             if mpg.calculated_mpg is None:
                 data[ds][mpg.vehicle.name] = 0.0
             else:
-                data[ds][mpg.vehicle.name] = float(mpg.calculated_mpg)
+                data[ds][mpg.vehicle.name] = Decimal(mpg.calculated_mpg)
         resdata = []
         last = None
         for k in sorted(data.keys()):

@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
@@ -57,7 +58,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9482.29
+        assert standing.current_balance == Decimal('9482.29')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -65,14 +66,15 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_1_add_trans_periodic_budget(self, testdb):
         """add a transaction against a periodic budget"""
-        testdb.add(Transaction(
-            actual_amount=222.22,
-            budgeted_amount=123.45,
+        t = Transaction(
+            budget_amounts={testdb.query(Budget).get(2): Decimal('222.22')},
+            budgeted_amount=Decimal('123.45'),
             description='T4',
             notes='notesT4',
             account=testdb.query(Account).get(1),
-            budget=testdb.query(Budget).get(2)
-        ))
+            planned_budget=testdb.query(Budget).get(2)
+        )
+        testdb.add(t)
         testdb.flush()
         testdb.commit()
 
@@ -85,7 +87,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9482.29
+        assert standing.current_balance == Decimal('9482.29')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -93,14 +95,15 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_3_add_trans_standing_budget(self, testdb):
         """add a transaction against a standing budget"""
-        testdb.add(Transaction(
-            actual_amount=222.22,
-            budgeted_amount=123.45,
+        t = Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('222.22')},
+            budgeted_amount=Decimal('123.45'),
             description='T5',
             notes='notesT5',
             account=testdb.query(Account).get(1),
-            budget=testdb.query(Budget).get(5)
-        ))
+            planned_budget=testdb.query(Budget).get(5)
+        )
+        testdb.add(t)
         testdb.flush()
         testdb.commit()
 
@@ -113,7 +116,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9260.07
+        assert standing.current_balance == Decimal('9260.07')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -122,7 +125,8 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_5_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
-        t.actual_amount = 111.11
+        budg = testdb.query(Budget).get(5)
+        t.set_budget_amounts({budg: Decimal('111.11')})
         testdb.add(t)
         testdb.flush()
         testdb.commit()
@@ -136,7 +140,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9371.18
+        assert standing.current_balance == Decimal('9371.18')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
@@ -145,7 +149,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
     def test_7_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
         t = testdb.query(Transaction).get(5)
-        t.actual_amount = -111.11
+        t.set_budget_amounts({testdb.query(Budget).get(5): Decimal('-111.11')})
         testdb.add(t)
         testdb.flush()
         testdb.commit()
@@ -159,7 +163,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
-        assert float(standing.current_balance) == 9593.40
+        assert standing.current_balance == Decimal('9593.40')
         periodic = testdb.query(Budget).get(2)
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'

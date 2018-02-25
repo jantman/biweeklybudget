@@ -41,10 +41,12 @@ from flask import render_template, jsonify, request
 from datatables import DataTable
 from copy import copy
 from datetime import datetime
+from decimal import Decimal
 
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
@@ -138,7 +140,11 @@ class TransactionsAjax(SearchableAjaxView):
             qs = qs.filter(Transaction.account_id == acct_filter)
         budg_filter = args['columns'][4]['search']['value']
         if budg_filter != '' and budg_filter != 'None':
-            qs = qs.filter(Transaction.budget_id == budg_filter)
+            qs = qs.filter(
+                Transaction.budget_transactions.any(
+                    BudgetTransaction.budget_id.__eq__(budg_filter)
+                )
+            )
         # search
         if s != '' and s != 'FILTERHACK':
             if len(s) < 3:
@@ -174,15 +180,6 @@ class TransactionsAjax(SearchableAjaxView):
                     lambda i: "{} ({})".format(i.name, i.id)
                 ),
                 (
-                    'budget',
-                    'budget.name',
-                    lambda i: "{} {}({})".format(
-                        i.name,
-                        '(income) ' if i.is_income else '',
-                        i.id
-                    )
-                ),
-                (
                     'scheduled',
                     'scheduled_trans_id'
                 ),
@@ -198,8 +195,14 @@ class TransactionsAjax(SearchableAjaxView):
         )
         table.add_data(
             acct_id=lambda o: o.account_id,
-            budget_id=lambda o: o.budget_id,
-            id=lambda o: o.id
+            budget_id=lambda o: o.budget_transactions[0].budget_id,
+            id=lambda o: o.id,
+            budget=lambda o: "{} {}({})".format(
+                o.budget_transactions[0].budget.name,
+                '(income) '
+                if o.budget_transactions[0].budget.is_income else '',
+                o.budget_transactions[0].budget_id
+            )
         )
         if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
@@ -215,7 +218,9 @@ class OneTransactionAjax(MethodView):
         t = db_session.query(Transaction).get(trans_id)
         d = copy(t.as_dict)
         d['account_name'] = t.account.name
-        d['budget_name'] = t.budget.name
+        d['budget'] = t.budget_transactions[0].budget
+        d['budget_id'] = t.budget_transactions[0].budget_id
+        d['budget_name'] = t.budget_transactions[0].budget.name
         return jsonify(d)
 
 
@@ -259,7 +264,10 @@ class TransactionFormHandler(FormHandlerView):
                     'New transactions cannot use an inactive budget.'
                 )
                 have_errors = True
-            elif not budg.is_active and txn.budget_id != budg.id:
+            elif (
+                not budg.is_active and
+                txn.budget_transactions[0].budget_id != budg.id
+            ):
                 errors['budget'].append(
                     'Existing transactions cannot be changed to use an '
                     'inactive budget.'
@@ -307,16 +315,16 @@ class TransactionFormHandler(FormHandlerView):
         budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        trans.actual_amount = float(data['amount'])
         trans.account_id = int(data['account'])
-        trans.budget = budg
         trans.notes = data['notes'].strip()
+        # @TODO this only supports a single budget per transaction
+        trans.set_budget_amounts({budg: Decimal(data['amount'])})
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
         db_session.commit()
         return {
-            'success_message': 'Successfully saved Transaction %d '
-                               'in database.' % trans.id,
+            'success_message': 'Successfully saved Transaction %d  in database.'
+                               '' % trans.id,
             'success': True,
             'trans_id': trans.id
         }

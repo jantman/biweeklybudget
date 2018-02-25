@@ -48,5 +48,5 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table('projects')
     op.drop_table('bom_items')
+    op.drop_table('projects')

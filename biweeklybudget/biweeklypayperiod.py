@@ -317,7 +317,7 @@ class BiweeklyPayPeriod(object):
     @property
     def _data(self):
         """
-        Return the object-local data cache dict. Built it if not already
+        Return the object-local data cache dict. Build it if not already
         present.
 
         :return: object-local data cache
@@ -451,7 +451,12 @@ class BiweeklyPayPeriod(object):
                 res[t['budget_id']]['allocated'] += t['amount']
                 res[t['budget_id']]['spent'] += t['amount']
             else:
-                res[t['budget_id']]['allocated'] += t['budgeted_amount']
+                if t.get('planned_budget_id', None) is None:
+                    res[t['budget_id']]['allocated'] += t[
+                        'budgeted_amount']
+                else:
+                    res[t['planned_budget_id']]['allocated'] += t[
+                        'budgeted_amount']
                 res[t['budget_id']]['spent'] += t['amount']
         for b in res.keys():
             if res[b]['trans_total'] > res[b]['allocated']:
@@ -549,6 +554,10 @@ class BiweeklyPayPeriod(object):
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
+        * ``planned_budget_id`` (**int**) the id of the Budget the transaction
+          was planned against, if any. May be None.
+        * ``planned_budget_name`` (**str**) the name of the Budget the
+          transaction was planned against, if any. May be None.
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
@@ -587,6 +596,10 @@ class BiweeklyPayPeriod(object):
         * ``budget_name`` (**str**) the name of the Budget the transaction is
           against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
+        * ``planned_budget_id`` (**int**) the id of the Budget the transaction
+          was planned against, if any. May be None.
+        * ``planned_budget_name`` (**str**) the name of the Budget the
+          transaction was planned against, if any. May be None.
 
         :param t: transaction to describe
         :type t: Transaction
@@ -603,8 +616,10 @@ class BiweeklyPayPeriod(object):
             'amount': t.actual_amount,
             'account_id': t.account_id,
             'account_name': t.account.name,
-            'budget_id': t.budget_id,
-            'budget_name': t.budget.name
+            'budget_id': t.budget_transactions[0].budget_id,
+            'budget_name': t.budget_transactions[0].budget.name,
+            'planned_budget_id': t.planned_budget_id,
+            'planned_budget_name': None
         }
         if t.reconcile is None:
             res['reconcile_id'] = None
@@ -614,6 +629,8 @@ class BiweeklyPayPeriod(object):
             res['budgeted_amount'] = None
         else:
             res['budgeted_amount'] = t.budgeted_amount
+        if t.planned_budget is not None:
+            res['planned_budget_name'] = t.planned_budget.name
         return res
 
     def _dict_for_sched_trans(self, t):
