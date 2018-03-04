@@ -35,7 +35,8 @@ Unreleased Changes
 * `Issue #177 <https://github.com/jantman/biweeklybudget/issues/177>`_
 
   * Add SQL query timing support via ``SQL_QUERY_PROFILE`` environment variable.
-  * When running under ``flask rundev``, append the number of milliseconds taken to serve the request to the werkzeug request log.
+  * When running under ``flask rundev``, append the number of milliseconds taken to serve the request to the werkzeug access log.
+  * When running under Docker/Gunicorn, append the decimal number of seconds taken to serve the request to the Gunicorn access log.
 
 0.7.1 (2018-01-10)
 ------------------

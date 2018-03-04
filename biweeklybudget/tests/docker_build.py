@@ -740,6 +740,9 @@ class DockerImageBuilder(object):
         s += "export PYTHONUNBUFFERED=true\n"
         s += "/app/bin/python /app/bin/initdb -vv \n"
         s += "/app/bin/gunicorn -w 4 -b :80 --log-file=- --access-logfile=- " \
+             "--access-logformat " \
+             "'%(h)s %(l)s %(u)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" " \
+             "\"%(a)s\" [%(L)ss]' " \
              "biweeklybudget.flaskapp.app:app\n"
         logger.debug('Entrypoint script:\n%s', s)
         return s

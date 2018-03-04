@@ -149,6 +149,8 @@ Flask Application
 
 When running the application in development mode using ``flask rundev``, the werkzeug WSGI handler will append the time taken to serve each request to the request log, in the format ``[Nms]`` where ``N`` is an integer number of milliseconds.
 
+When running the application in Docker, the time taken to serve the request in decimal seconds will be appended to the end of the Gunicorn access logs, in the format ``[N.Ns]`` where ``N.N`` is the decimal number of seconds.
+
 Docker Image Build
 ------------------
 
