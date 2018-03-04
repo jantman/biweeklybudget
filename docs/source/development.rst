@@ -134,6 +134,16 @@ SQLAlchemy will be logged at INFO level.
 
 To get an interactive Python shell with the database initialized, use ``python -i bin/db_tester.py``.
 
+Performance Profiling and Logging
+---------------------------------
+
+Database
+++++++++
+
+If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by SQLAlchemy will be logged at INFO level.
+
+If you set the ``SQL_QUERY_PROFILE`` environment variable to "true", event handlers will be inserted into the SQLAlchemy subsystem that log (at DEBUG level) each query that's run and the time in seconds that the query took to execute. This will also result in logging each query as it is executed.
+
 Docker Image Build
 ------------------
 

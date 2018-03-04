@@ -32,6 +32,7 @@ Unreleased Changes
 * Add support for ``BIWEEKLYBUDGET_LOG_FILE`` environment variable to cause Flask application logs to go to a file *in addition to* STDOUT.
 * Add support for ``SQL_POOL_PRE_PING`` environment variable to enable SQLAlchemy ``pool_pre_ping`` feature (see `Disconnect Handling - Pessimistic <http://docs.sqlalchemy.org/en/latest/core/pooling.html#pool-disconnects-pessimistic>`_) for resource-constrained systems.
 * Modify acceptance tests to retry up to 3 times, 3 seconds apart, if a ConnectionError (or subclass thereof) is raised when constructing the Selenium driver instance. This is a workaround for intermittent ConnectionResetErrors in TravisCI.
+* Add SQL query timing support via ``SQL_QUERY_PROFILE`` environment variable.
 
 0.7.1 (2018-01-10)
 ------------------
