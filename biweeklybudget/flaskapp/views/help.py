@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+import re
 from flask.views import MethodView
 from flask import render_template, request
 from versionfinder import find_version
@@ -51,6 +52,8 @@ for lname in ['versionfinder', 'pip', 'git']:
     l.setLevel(logging.CRITICAL)
     l.propagate = True
 
+DBPASS_RE = re.compile(r':[^@:]+@')
+
 
 class HelpView(MethodView):
     """
@@ -58,13 +61,14 @@ class HelpView(MethodView):
     """
 
     def get(self):
+        connstr = DBPASS_RE.sub(':<redacted>@', DB_CONNSTRING)
         return render_template(
             'help.html',
             ver_info=find_version('biweeklybudget').long_str,
             version=VERSION,
             url=PROJECT_URL,
             ua_str=request.headers.get('User-Agent', 'unknown'),
-            db_uri=DB_CONNSTRING
+            db_uri=connstr
         )
 
 
