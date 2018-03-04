@@ -144,6 +144,11 @@ If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by SQLAl
 
 If you set the ``SQL_QUERY_PROFILE`` environment variable to "true", event handlers will be inserted into the SQLAlchemy subsystem that log (at DEBUG level) each query that's run and the time in seconds that the query took to execute. This will also result in logging each query as it is executed.
 
+Flask Application
++++++++++++++++++
+
+When running the application in development mode using ``flask rundev``, the werkzeug WSGI handler will append the time taken to serve each request to the request log, in the format ``[Nms]`` where ``N`` is an integer number of milliseconds.
+
 Docker Image Build
 ------------------
 

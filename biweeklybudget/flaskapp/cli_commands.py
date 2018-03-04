@@ -36,10 +36,32 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
-from werkzeug.serving import run_simple
+import time
+from werkzeug.serving import run_simple, WSGIRequestHandler
 from flask.cli import pass_script_info, DispatchingApp
 
 import click
+
+
+class CustomLoggingWSGIRequestHandler(WSGIRequestHandler):
+    """Extend werkzeug request handler to include processing time in logs"""
+
+    def handle(self):
+        self._time_started = time.time()
+        rv = super(CustomLoggingWSGIRequestHandler, self).handle()
+        return rv
+
+    def send_response(self, *args, **kw):
+        self._time_finished = time.time()
+        super(CustomLoggingWSGIRequestHandler, self).send_response(*args, **kw)
+
+    def log_request(self, code='-', size='-'):
+        duration = int((self._time_finished - self._time_started) * 1000)
+        self.log(
+            'info', '"{0}" {1} {2} [{3}ms]'.format(
+                self.requestline, code, size, duration
+            )
+        )
 
 
 def template_paths():
@@ -112,6 +134,8 @@ def rundev_command(info, host, port, eager_loading, with_threads):
         if debug is not None:
             print(' * Forcing debug mode %s' % (debug and 'on' or 'off'))
 
-    run_simple(host, port, app, use_reloader=reload,
-               use_debugger=debugger, threaded=with_threads,
-               extra_files=template_paths())
+    run_simple(
+        host, port, app, use_reloader=reload, use_debugger=debugger,
+        threaded=with_threads, extra_files=template_paths(),
+        request_handler=CustomLoggingWSGIRequestHandler
+    )
