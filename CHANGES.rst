@@ -38,7 +38,7 @@ Unreleased Changes
   * When running under ``flask rundev``, append the number of milliseconds taken to serve the request to the werkzeug access log.
   * When running under Docker/Gunicorn, append the decimal number of seconds taken to serve the request to the Gunicorn access log.
 
-* `Issue #184 <https://github.com/jantman/biweeklybudget/issues/184>`_ - Redact database password from ``/help`` view.
+* `Issue #184 <https://github.com/jantman/biweeklybudget/issues/184>`_ - Redact database password from ``/help`` view, and change ``/help`` view to show Version containing git commit hash for pre-release/development Docker builds.
 
 0.7.1 (2018-01-10)
 ------------------
