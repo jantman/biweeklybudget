@@ -134,6 +134,23 @@ SQLAlchemy will be logged at INFO level.
 
 To get an interactive Python shell with the database initialized, use ``python -i bin/db_tester.py``.
 
+Performance Profiling and Logging
+---------------------------------
+
+Database
+++++++++
+
+If you set the ``SQL_ECHO`` environment variable to "true", all SQL run by SQLAlchemy will be logged at INFO level.
+
+If you set the ``SQL_QUERY_PROFILE`` environment variable to "true", event handlers will be inserted into the SQLAlchemy subsystem that log (at DEBUG level) each query that's run and the time in seconds that the query took to execute. This will also result in logging each query as it is executed.
+
+Flask Application
++++++++++++++++++
+
+When running the application in development mode using ``flask rundev``, the werkzeug WSGI handler will append the time taken to serve each request to the request log, in the format ``[Nms]`` where ``N`` is an integer number of milliseconds.
+
+When running the application in Docker, the time taken to serve the request in decimal seconds will be appended to the end of the Gunicorn access logs, in the format ``[N.Ns]`` where ``N.N`` is the decimal number of seconds.
+
 Docker Image Build
 ------------------
 

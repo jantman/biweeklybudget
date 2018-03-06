@@ -114,7 +114,7 @@ RUN set -ex \
     && /app/bin/pip install {install} \
     && /app/bin/pip install gunicorn==19.7.1 \
     && apk del .build-deps \
-    && rm -Rf /root/.cache
+    && rm -Rf /root/.cache{versionfix}
 
 RUN install -g root -o root -m 755 /tmp/entrypoint.sh /app/bin/entrypoint.sh
 
@@ -518,7 +518,7 @@ class DockerImageBuilder(object):
         :return: MySQL container object
         :rtype: docker.models.containers.Container
         """
-        img = 'mariadb:5.5.56'
+        img = 'mariadb:10.3.5'
         kwargs = {
             'detach': True,
             'name': 'biweeklybudget-mariadb-%s' % int(time.time()),
@@ -719,12 +719,23 @@ class DockerImageBuilder(object):
         if self.build_ver is None:
             s_copy = 'COPY biweeklybudget.zip /tmp/biweeklybudget.zip'
             s_install = '/tmp/biweeklybudget.zip'
+            ver = self._gitinfo['sha'][:8]
+            if self._gitinfo['dirty']:
+                ver += '-dirty'
+            s_versionfix = "&& /bin/sed -i " \
+                           "\"s/^VERSION =.*/VERSION = '%s+git.%s'/\"" \
+                           " /app/lib/python3.6/site-packages/biweeklybudget" \
+                           "/version.py" % (
+                               VERSION, ver
+                           )
         else:
             s_copy = ''
             s_install = 'biweeklybudget==%s' % self.build_ver
+            s_versionfix = ''
         s = DOCKERFILE_TEMPLATE.format(
             copy=s_copy,
-            install=s_install
+            install=s_install,
+            versionfix=s_versionfix
         )
         logger.debug("Dockerfile:\n%s", s)
         return s
@@ -740,6 +751,9 @@ class DockerImageBuilder(object):
         s += "export PYTHONUNBUFFERED=true\n"
         s += "/app/bin/python /app/bin/initdb -vv \n"
         s += "/app/bin/gunicorn -w 4 -b :80 --log-file=- --access-logfile=- " \
+             "--access-logformat " \
+             "'%(h)s %(l)s %(u)s %(t)s \"%(r)s\" %(s)s %(b)s \"%(f)s\" " \
+             "\"%(a)s\" [%(L)ss]' " \
              "biweeklybudget.flaskapp.app:app\n"
         logger.debug('Entrypoint script:\n%s', s)
         return s

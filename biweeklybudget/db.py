@@ -164,7 +164,7 @@ def init_db():
             logger.debug('Alembic is at the correct head version (%s)',
                          curr_rev)
     logger.debug('Done initializing DB')
-    init_event_listeners(db_session)
+    init_event_listeners(db_session, engine)
 
 
 def cleanup_db():

@@ -38,6 +38,8 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 """
 
 import logging
+import time
+import os
 from decimal import Decimal
 from sqlalchemy import event, inspect
 
@@ -235,15 +237,51 @@ def handle_before_flush(session, flush_context, instances):
     logger.debug('handle_before_flush done')
 
 
-def init_event_listeners(db_session):
+def query_profile_before(conn, cursor, statement, parameters, context, _):  # noqa
+    """
+    Query profiling database event listener, to be added as listener on the
+    Engine's ``before_cursor_execute`` event.
+
+    For information, see:
+    http://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
+    """
+    conn.info.setdefault('query_start_time', []).append(time.time())
+    logger.debug(
+        "Start Query: %s; parameters: %s", statement.replace('\n', ' '),
+        parameters
+    )
+
+
+def query_profile_after(conn, cursor, statement, parameters, context, _):  # noqa
+    """
+    Query profiling database event listener, to be added as listener on the
+    Engine's ``after_cursor_execute`` event.
+
+    For information, see:
+    http://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
+    """
+    total = time.time() - conn.info['query_start_time'].pop(-1)
+    logger.debug(
+        "Query complete in %f seconds. Query: %s; parameters: %s", total,
+        statement.replace('\n', ' '), parameters
+    )
+
+
+def init_event_listeners(db_session, engine):
     """
     Initialize/register all SQLAlchemy event listeners.
 
     See http://docs.sqlalchemy.org/en/latest/orm/events.html
 
     :param db_session: the Database Session
-    :type db_session: sqlalchemy.orm.session.Session
+    :type db_session: sqlalchemy.orm.scoping.scoped_session
+    :param engine: top-level Database Engine instance
+    :type engine: sqlalchemy.engine.Engine
     """
+    if os.environ.get('SQL_QUERY_PROFILE', 'false') == 'true':
+        logger.debug('Enabling SQL query timing event handlers.')
+        event.listen(engine, 'before_cursor_execute', query_profile_before)
+        event.listen(engine, 'after_cursor_execute', query_profile_after)
     logger.debug('Setting up DB model event listeners')
     issue_105_helper(db_session)
     event.listen(

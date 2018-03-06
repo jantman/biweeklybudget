@@ -194,9 +194,10 @@ def testdb():
     DB fixture to be used in tests
     """
     # setup the connection
-    conn = get_db_engine().connect()
+    engine = get_db_engine()
+    conn = engine.connect()
     sess = sessionmaker(autocommit=False, bind=conn)()
-    init_event_listeners(sess)
+    init_event_listeners(sess, engine)
     # yield the session
     yield(sess)
     sess.close()
