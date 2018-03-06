@@ -322,6 +322,7 @@ nitpick_ignore = [
     ('py:class', 'enum.Enum'),
     ('py:class', 'Exception'),
     ('py:class', 'json.encoder.JSONEncoder'),
+    ('py:class', 'werkzeug.serving.WSGIRequestHandler'),
     ('js:func', 'null'),
     ('js:func', 'Object'),
     ('js:func', 'Object|null'),
