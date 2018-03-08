@@ -13,6 +13,30 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    
 
+.. js:function:: ignoreOfxTrans(acct_id, fitid)
+
+   Show the modal for reconciling an OFXTransaction without a matching
+   Transaction. Calls :js:func:`ignoreOfxTransDivForm` to generate the modal form
+   div content. Uses an inline function to handle the save action, which calls
+   :js:func:`reconcileOfxNoTrans` to perform the reconcile action.
+
+   :param number acct_id: the Account ID of the OFXTransaction
+   :param string fitid: the FitID of the OFXTransaction
+   
+
+   
+
+.. js:function:: ignoreOfxTransDivForm(acct_id, fitid)
+
+   Generate the modal form div content for the modal to reconcile a Transaction
+   without a matching OFXTransaction. Called by :js:func:`transNoOfx`.
+
+   :param number acct_id: the Account ID of the OFXTransaction
+   :param string fitid: the FitID of the OFXTransaction
+   
+
+   
+
 .. js:function:: makeTransFromOfx(acct_id, fitid)
 
    Link function to create a Transaction from a specified OFXTransaction,
@@ -61,6 +85,18 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    
 
+.. js:function:: reconcileDoUnreconcileNoTrans(acct_id, fitid)
+
+   Unreconcile a reconciled NoTrans OFXTransaction. This removes
+   ``acct_id + "%" + fitid`` from the ``ofxIgnored`` variable and regenerates
+   the OFXTransaction's div.
+
+   :param number acct_id: the Account ID of the OFXTransaction
+   :param string fitid: the FitID of the OFXTransaction
+   
+
+   
+
 .. js:function:: reconcileGetOFX()
 
    Show unreconciled OFX transactions in the proper div. Empty the div, then
@@ -101,6 +137,15 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 
    
 
+.. js:function:: reconcileOfxNoTrans(acct_id, fitid, note)
+
+   Reconcile an OFXTransaction without a matching Transaction. Called from
+   the Save button handler in :js:func:`ignoreOfxTrans`.
+
+   
+
+   
+
 .. js:function:: reconcileShowOFX(data)
 
    Ajax callback handler for :js:func:`reconcileGetOFX`. Display the
@@ -129,7 +174,8 @@ File: ``biweeklybudget/flaskapp/static/js/reconcile.js``
 .. js:function:: reconcileTransDiv(trans)
 
    Generate a div for an individual Transaction, to display on the reconcile
-   view.
+   view. Called from :js:func:`reconcileShowTransactions`,
+   :js:func:`makeTransSaveCallback` and :js:func:`updateReconcileTrans`.
 
    :param Object trans: ajax JSON object representing one Transaction
    
