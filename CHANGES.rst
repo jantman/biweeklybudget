@@ -40,6 +40,7 @@ Unreleased Changes
 
 * `Issue #184 <https://github.com/jantman/biweeklybudget/issues/184>`_ - Redact database password from ``/help`` view, and change ``/help`` view to show Version containing git commit hash for pre-release/development Docker builds.
 * `Issue #183 <https://github.com/jantman/biweeklybudget/issues/183>`_ - Add UI link to ignore reconciling an OFXTransaction if there will not be a matching Transaction.
+* Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
 
 0.7.1 (2018-01-10)
 ------------------
