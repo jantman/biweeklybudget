@@ -1356,7 +1356,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_07_success(self, base_url):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX3']}
+            json={'reconciled': {3: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': True,
@@ -1376,7 +1376,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_09_invalid_trans(self, base_url, testdb):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={32198: [2, 'OFX3']}
+            json={'reconciled': {32198: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': False,
@@ -1388,7 +1388,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_10_invalid_ofx(self, base_url, testdb):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX338ufd']}
+            json={'reconciled': {3: [2, 'OFX338ufd']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': False,
@@ -1401,7 +1401,7 @@ class TestReconcileBackend(ReconcileHelper):
         # already reconciled in test_07
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX3']}
+            json={'reconciled': {3: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         j = res.json()
         assert sorted(j.keys()) == ['error_message', 'success']
@@ -1424,7 +1424,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_12_reconcile_noOFX(self, base_url):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={4: 'Foo Bar Baz'}
+            json={'reconciled': {4: 'Foo Bar Baz'}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': True,
