@@ -44,6 +44,7 @@ Unreleased Changes
   * Add UI link to ignore reconciling an OFXTransaction if there will not be a matching Transaction.
   * Remove default values for the ``Account`` model's ``re_`` fields in preparation for actually using them.
   * Replace the ``Account`` model's ``re_fee`` field with separate ``re_late_fee`` and ``re_other_fee`` fields.
+  * Add UI support for specifying Interest Charge, Interest Paid, Payment, Late Fee, and Other Fee regexes on each account.
 
 * Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
 

@@ -273,7 +273,12 @@ class SampleDataLoader(object):
             ofx_cat_memo_to_name=True,
             ofxgetter_config_json='{"foo": "bar"}',
             vault_creds_path='secret/foo/bar/BankOne',
-            acct_type=AcctType.Bank
+            acct_type=AcctType.Bank,
+            re_interest_charge='^interest-charge',
+            re_interest_paid='^interest-paid',
+            re_payment='^(payment|thank you)',
+            re_late_fee='^re-late-fee',
+            re_other_fee='^re-other-fee'
         )
         statements = [
             OFXStatement(

@@ -40,6 +40,7 @@ from flask.views import MethodView
 from flask import render_template, jsonify
 from decimal import Decimal
 import json
+import re
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
@@ -50,6 +51,14 @@ from biweeklybudget.interest import (
 )
 
 logger = logging.getLogger(__name__)
+
+RE_FIELD_NAMES = [
+    're_interest_charge',
+    're_interest_paid',
+    're_payment',
+    're_late_fee',
+    're_other_fee'
+]
 
 
 class AccountsView(MethodView):
@@ -151,6 +160,13 @@ class AccountFormHandler(FormHandlerView):
             errors['min_payment_class_name'].append(
                 'Invalid minimum payment class name'
             )
+        for f in RE_FIELD_NAMES:
+            if data[f].strip() == '':
+                continue
+            try:
+                re.compile(data[f])
+            except Exception:
+                errors[f].append('Invalid regular expression.')
         if have_errors:
             return errors
         return None
@@ -219,6 +235,11 @@ class AccountFormHandler(FormHandlerView):
             account.is_active = True
         else:
             account.is_active = False
+        for f in RE_FIELD_NAMES:
+            data[f] = data[f].strip()
+            if data[f] == '':
+                data[f] = None
+            setattr(account, f, data[f])
         logger.info('%s: %s', action, account.as_dict)
         db_session.add(account)
         db_session.commit()
