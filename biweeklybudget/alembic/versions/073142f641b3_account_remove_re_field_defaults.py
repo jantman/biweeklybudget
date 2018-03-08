@@ -43,10 +43,7 @@ class Account(Base):
     re_payment = Column(String(254))
 
     #: regex for matching transactions as late fees
-    re_late_fee = Column(String(254))
-
-    #: regex for matching transactions as other fees
-    re_other_fee = Column(String(254))
+    re_fee = Column(String(254))
 
 
 def upgrade():
