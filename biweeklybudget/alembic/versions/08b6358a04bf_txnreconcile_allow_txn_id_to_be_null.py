@@ -6,7 +6,6 @@ Create Date: 2018-03-07 19:48:06.050926
 
 """
 from alembic import op
-import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
@@ -25,8 +24,11 @@ def upgrade():
 
 
 def downgrade():
+    conn = op.get_bind()
+    conn.execute("SET FOREIGN_KEY_CHECKS=0")
     op.alter_column(
         'txn_reconciles', 'txn_id',
         existing_type=mysql.INTEGER(display_width=11),
         nullable=False
     )
+    conn.execute("SET FOREIGN_KEY_CHECKS=1")
