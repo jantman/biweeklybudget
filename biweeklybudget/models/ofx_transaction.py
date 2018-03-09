@@ -247,6 +247,11 @@ class OFXTransaction(Base, ModelAsDict):
         }
         acct = self.account
         for fname in fields.values():
+            if (
+                fname == 'is_interest_charge' and
+                self.name == 'Interest Charged - MANUALLY ENTERED'
+            ):
+                continue
             setattr(self, fname, False)
         for acct_attr, self_attr in fields.items():
             if (
