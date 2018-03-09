@@ -40,7 +40,6 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 import logging
 import time
 import os
-import re
 from decimal import Decimal
 from sqlalchemy import event, inspect
 
@@ -248,7 +247,6 @@ def handle_account_re_change(session):
             for txn in stmt.ofx_trans:
                 txn.update_is_fields()
         logger.debug('Done with update_is_fields() for %s', obj)
-
 
 
 def validate_decimal_or_none(target, value, oldvalue, initiator):
