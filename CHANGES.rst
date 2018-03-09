@@ -47,6 +47,7 @@ Unreleased Changes
   * Add UI support for specifying Interest Charge, Interest Paid, Payment, Late Fee, and Other Fee regexes on each account.
   * Add DB event handler on new or changed OFXTransaction, to set ``is_*`` fields according to Account ``re_*`` fields.
   * Add DB event handler on change to Account model ``re_*`` fields, that triggers ``OFXTransaction.update_is_fields()`` to recalculate using the new regex.
+  * Change ``OFXTransaction.unreconciled`` to filter out OFXTransactions with any of the ``is_*`` set to True.
 
 * Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
 

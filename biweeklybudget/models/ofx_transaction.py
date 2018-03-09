@@ -213,7 +213,12 @@ class OFXTransaction(Base, ModelAsDict):
         return db.query(OFXTransaction).filter(
             OFXTransaction.reconcile.__eq__(null()),
             OFXTransaction.date_posted.__ge__(cutoff_date),
-            OFXTransaction.account.has(reconcile_trans=True)
+            OFXTransaction.account.has(reconcile_trans=True),
+            OFXTransaction.is_payment.__ne__(True),
+            OFXTransaction.is_late_fee.__ne__(True),
+            OFXTransaction.is_interest_charge.__ne__(True),
+            OFXTransaction.is_other_fee.__ne__(True),
+            OFXTransaction.is_interest_payment.__ne__(True)
         )
 
     @property
