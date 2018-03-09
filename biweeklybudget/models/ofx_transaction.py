@@ -45,6 +45,7 @@ from sqlalchemy.orm import relationship
 from pytz import UTC
 from datetime import datetime
 import logging
+import re
 from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
@@ -231,3 +232,35 @@ class OFXTransaction(Base, ModelAsDict):
         logger.debug('First statement for %s: %s',
                      self, res)
         return res
+
+    def update_is_fields(self):
+        """
+        Method to update all ``is_*`` fields on this instance, given the
+        ``re_*`` properties of :py:attr:`~.account`.
+        """
+        fields = {
+            're_interest_charge': 'is_interest_charge',
+            're_interest_paid': 'is_interest_payment',
+            're_payment': 'is_payment',
+            're_late_fee': 'is_late_fee',
+            're_other_fee': 'is_other_fee'
+        }
+        acct = self.account
+        for fname in fields.values():
+            setattr(self, fname, False)
+        for acct_attr, self_attr in fields.items():
+            if (
+                self_attr == 'is_interest_charge' and
+                self.name == 'Interest Charged - MANUALLY ENTERED'
+            ):
+                continue
+            r_str = getattr(acct, acct_attr)
+            if r_str is None:
+                continue
+            try:
+                if re.match(r_str, self.name, re.I):
+                    setattr(self, self_attr, True)
+            except Exception:
+                logger.error('Error performing regex comparison on %s using '
+                             'Account %s field %s (%s)', self, acct,
+                             acct_attr, r_str, exc_info=True)

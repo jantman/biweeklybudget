@@ -277,7 +277,7 @@ class SampleDataLoader(object):
             re_interest_charge='^interest-charge',
             re_interest_paid='^interest-paid',
             re_payment='^(payment|thank you)',
-            re_late_fee='^re-late-fee',
+            re_late_fee='^Late Fee',
             re_other_fee='^re-other-fee'
         )
         statements = [
@@ -416,7 +416,11 @@ class SampleDataLoader(object):
             prime_rate_margin=Decimal('0.0050'),
             negate_ofx_amounts=True,
             interest_class_name='AdbCompoundedDaily',
-            min_payment_class_name='MinPaymentAmEx'
+            min_payment_class_name='MinPaymentAmEx',
+            re_interest_charge='^INTEREST CHARGED TO',
+            re_payment='.*Online Payment, thank you.*',
+            re_late_fee='^Late Fee',
+            re_other_fee='^re-other-fee'
         )
         statements = [
             OFXStatement(

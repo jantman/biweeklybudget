@@ -40,6 +40,7 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 import logging
 import time
 import os
+import re
 from decimal import Decimal
 from sqlalchemy import event, inspect
 
@@ -174,6 +175,32 @@ def handle_new_or_deleted_budget_transaction(session):
     )
 
 
+def handle_ofx_transaction_new_or_change(session):
+    """
+    ``before_flush`` event handler
+    (:py:meth:`sqlalchemy.orm.events.SessionEvents.before_flush`)
+    on the DB session, to handle setting the ``is_*`` fields on new or changed
+    OFXTransaction instances according to its Account.
+
+    :param session: current database session
+    :type session: sqlalchemy.orm.session.Session
+    """
+    for obj in session.new:
+        if isinstance(obj, OFXTransaction):
+            try:
+                obj.update_is_fields()
+            except Exception:
+                logger.error('Error setting OFXTransaction is_ fields',
+                             exc_info=True)
+    for obj in session.dirty:
+        if isinstance(obj, OFXTransaction):
+            try:
+                obj.update_is_fields()
+            except Exception:
+                logger.error('Error setting OFXTransaction is_ fields',
+                             exc_info=True)
+
+
 def validate_decimal_or_none(target, value, oldvalue, initiator):
     if isinstance(value, Decimal) or value is None:
         return
@@ -234,6 +261,7 @@ def handle_before_flush(session, flush_context, instances):
     """
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
+    handle_ofx_transaction_new_or_change(session)
     logger.debug('handle_before_flush done')
 
 

@@ -178,7 +178,7 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_interest_charge == '^interest-charge'
         assert acct.re_interest_paid == '^interest-paid'
         assert acct.re_payment == '^(payment|thank you)'
-        assert acct.re_late_fee == '^re-late-fee'
+        assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
 
     def test_11_get_acct1_url(self, base_url, selenium):
@@ -235,7 +235,7 @@ class TestAccountModal(AcceptanceHelper):
         ).get_attribute('value') == '^(payment|thank you)'
         assert selenium.find_element_by_id(
             'account_frm_re_late_fee'
-        ).get_attribute('value') == '^re-late-fee'
+        ).get_attribute('value') == '^Late Fee'
         assert selenium.find_element_by_id(
             'account_frm_re_other_fee'
         ).get_attribute('value') == '^re-other-fee'
@@ -453,11 +453,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentAmEx'
         assert acct.is_active is True
-        assert acct.re_interest_charge is None
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
         assert acct.re_interest_paid is None
-        assert acct.re_payment is None
-        assert acct.re_late_fee is None
-        assert acct.re_other_fee is None
+        assert acct.re_payment == '.*Online Payment, thank you.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -555,11 +555,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentAmEx'
         assert acct.is_active is True
-        assert acct.re_interest_charge is None
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
         assert acct.re_interest_paid is None
-        assert acct.re_payment is None
-        assert acct.re_late_fee is None
-        assert acct.re_other_fee is None
+        assert acct.re_payment == '.*Online Payment, thank you.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
     def test_40_verify_db(self, testdb):
         acct = testdb.query(Account).get(4)

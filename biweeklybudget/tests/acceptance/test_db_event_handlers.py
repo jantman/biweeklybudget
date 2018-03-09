@@ -42,6 +42,8 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.ofx_transaction import OFXTransaction
+from biweeklybudget.models.ofx_statement import OFXStatement
 
 
 @pytest.mark.acceptance
@@ -168,3 +170,121 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         assert periodic.is_periodic is True
         assert periodic.name == 'Periodic2'
         assert periodic.current_balance is None
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+class TestIsFieldsSet(AcceptanceHelper):
+
+    def test_0_is_fields_set_by_ofxtxn_event_handler(self, testdb):
+        """
+        Test for
+        :py:func:`~.db_event_handlers.handle_ofx_transaction_new_or_change`
+        """
+        acct = testdb.query(Account).get(1)
+        acct.re_interest_paid = None
+        testdb.commit()
+        assert acct.re_interest_charge == '^interest-charge'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == '^(payment|thank you)'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
+        stmt = testdb.query(OFXStatement).get(1)
+        assert stmt.account_id == 1
+        assert stmt.filename == '/stmt/BankOne/0'
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.1',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='BankOne.9.1'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is False
+        assert txn.is_late_fee is False
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is False
+        assert txn.is_interest_payment is False
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.2',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='re-other-fee BankOne.9.2'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is False
+        assert txn.is_late_fee is False
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is True
+        assert txn.is_interest_payment is False
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.3',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='Late Fee BankOne.9.3'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is False
+        assert txn.is_late_fee is True
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is False
+        assert txn.is_interest_payment is False
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.4',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='payment BankOne.9.4'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is True
+        assert txn.is_late_fee is False
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is False
+        assert txn.is_interest_payment is False
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.5',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='Thank You BankOne.9.5'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is True
+        assert txn.is_late_fee is False
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is False
+        assert txn.is_interest_payment is False
+        txn = OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.9.6',
+            trans_type='Credit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('1234.56'),
+            name='interest-paid'
+        )
+        testdb.add(txn)
+        testdb.commit()
+        assert txn.is_payment is False
+        assert txn.is_late_fee is False
+        assert txn.is_interest_charge is False
+        assert txn.is_other_fee is False
+        assert txn.is_interest_payment is False
