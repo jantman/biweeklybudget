@@ -302,6 +302,7 @@ function reconcileHandleSubmit() {
                   data['success_message'] + '</div>'
                 );
                 reconciled = {};
+                ofxIgnored = {};
                 reconcileGetTransactions();
                 reconcileGetOFX();
             }
