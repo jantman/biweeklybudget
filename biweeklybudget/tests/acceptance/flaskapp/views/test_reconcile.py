@@ -241,7 +241,11 @@ class ReconcileHelper(AcceptanceHelper):
             ofx_cat_memo_to_name=True,
             ofxgetter_config_json='{"foo": "bar"}',
             vault_creds_path='secret/foo/bar/BankOne',
-            acct_type=AcctType.Bank
+            acct_type=AcctType.Bank,
+            re_interest_charge='^interest-charge',
+            re_payment='^(payment|thank you)',
+            re_late_fee='^Late Fee',
+            re_other_fee='^re-other-fee'
         )
         testdb.add(a)
         a.set_balance(
@@ -555,7 +559,73 @@ class TestColumns(ReconcileHelper):
         ]
         assert actual_trans == expected_trans
 
-    def test_07_ofxtrans(self, base_url, selenium):
+    def test_07_verify_unreconciled_ofxtrans(self, testdb):
+        assert len(OFXTransaction.unreconciled(testdb).all()) == 7
+
+    def test_08_add_ignored_ofxtrans(self, testdb):
+        """
+        add OFXTransactions that shouldn't be listed because of their is_ fields
+        """
+        acct = testdb.query(Account).get(1)
+        assert acct.re_interest_charge == '^interest-charge'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == '^(payment|thank you)'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
+        stmt = testdb.query(OFXStatement).get(1)
+        assert stmt.account_id == 1
+        assert stmt.filename == 'a1.ofx'
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.1',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='interest-charge BankOne.77.1'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.2',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='payment BankOne.77.2'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.3',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='thank you BankOne.77.3'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.4',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='Late Fee BankOne.77.4'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.5',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='re-other-fee BankOne.77.5'
+        ))
+        testdb.commit()
+
+    def test_09_verify_unreconciled_ofxtrans(self, testdb):
+        assert len(OFXTransaction.unreconciled(testdb).all()) == 7
+
+    def test_10_ofxtrans(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
