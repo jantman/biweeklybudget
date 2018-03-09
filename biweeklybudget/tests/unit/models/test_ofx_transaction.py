@@ -160,7 +160,22 @@ class TestParamsFromOfxparserTransaction(object):
         cutoff = datetime(2017, 3, 17, 0, 0, 0, tzinfo=UTC)
         expected2 = OFXTransaction.date_posted.__ge__(cutoff)
         expected3 = OFXTransaction.account.has(reconcile_trans=True)
-        assert len(kall[1]) == 3
+        assert len(kall[1]) == 8
         assert str(expected1) == str(kall[1][0])
         assert binexp_to_dict(expected2) == binexp_to_dict(kall[1][1])
         assert str(kall[1][2]) == str(expected3)
+        assert str(
+            OFXTransaction.is_payment.__ne__(True)
+        ) == str(kall[1][3])
+        assert str(
+            OFXTransaction.is_late_fee.__ne__(True)
+        ) == str(kall[1][4])
+        assert str(
+            OFXTransaction.is_interest_charge.__ne__(True)
+        ) == str(kall[1][5])
+        assert str(
+            OFXTransaction.is_other_fee.__ne__(True)
+        ) == str(kall[1][6])
+        assert str(
+            OFXTransaction.is_interest_payment.__ne__(True)
+        ) == str(kall[1][7])
