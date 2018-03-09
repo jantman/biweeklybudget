@@ -201,6 +201,56 @@ def handle_ofx_transaction_new_or_change(session):
                              exc_info=True)
 
 
+def handle_account_re_change(session):
+    """
+    Handler for change of one of:
+
+    * :py:attr:`~.Account.re_interest_paid`
+    * :py:attr:`~.Account.re_interest_charge`
+    * :py:attr:`~.Account.re_late_fee`
+    * :py:attr:`~.Account.re_other_fee`
+    * :py:attr:`~.Account.re_payment`
+
+    When one of these regexes is changed on an Account, we trigger a re-run
+    of :py:meth:`~.OFXTransaction.update_is_fields` on all OFXTransactions for
+    the account.
+
+    :param session: current database session
+    :type session: sqlalchemy.orm.session.Session
+    """
+    attrs = [
+        're_interest_paid',
+        're_interest_charge',
+        're_late_fee',
+        're_other_fee',
+        're_payment'
+    ]
+    for obj in session.dirty:
+        if not isinstance(obj, Account):
+            continue
+        changed = []
+        insp = inspect(obj)
+        for attr in attrs:
+            hx = getattr(insp.attrs, attr).history
+            if len(hx.added) > 0 and len(hx.deleted) > 0:
+                logger.debug(
+                    '%s %s changed from %s to %s',
+                    obj, attr, hx.deleted, hx.added
+                )
+                changed.append(attr)
+        if len(changed) < 1:
+            continue
+        logger.debug(
+            '%s has regex changes; triggering update_is_fields() on all child '
+            'OFXTransactions.', obj
+        )
+        for stmt in obj.all_statements:
+            for txn in stmt.ofx_trans:
+                txn.update_is_fields()
+        logger.debug('Done with update_is_fields() for %s', obj)
+
+
+
 def validate_decimal_or_none(target, value, oldvalue, initiator):
     if isinstance(value, Decimal) or value is None:
         return
@@ -262,6 +312,7 @@ def handle_before_flush(session, flush_context, instances):
     logger.debug('handle_before_flush handler')
     handle_new_or_deleted_budget_transaction(session)
     handle_ofx_transaction_new_or_change(session)
+    handle_account_re_change(session)
     logger.debug('handle_before_flush done')
 
 
