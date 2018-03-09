@@ -113,7 +113,7 @@ def clean_fitid(fitid):
 
 
 def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
-            trans_id=None):
+            trans_id=None, ignored_reason=None):
     """
     Return the HTML for an OFXTransaction div.
 
@@ -132,10 +132,16 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
     else:
         classes = 'reconcile reconcile-ofx ui-draggable ui-draggable-handle'
         _id = 'ofx-%s-%s' % (acct_id, cfitid)
+    if ignored_reason is not None:
+        classes += ' ui-draggable-disabled'
     s = '<div class="%s" id="%s" data-acct-id="%s" ' \
         'data-amt="%s" data-fitid="%s" style="">' % (
             classes, _id, acct_id, amt, fitid
         )
+    if ignored_reason is not None:
+        s += '<div class="row" id="ofx-%s-%s-noTrans" style=""><div ' \
+             'class="col-lg-12"><p><strong>No Trans:</strong> %s</p></div>' \
+             '</div>' % (acct_id, fitid, ignored_reason)
     s += '<div class="row">'
     s += '<div class="col-lg-3">%s</div>' % dt_posted.strftime('%Y-%m-%d')
     s += '<div class="col-lg-3">%s</div>' % fmt_currency(amt)
@@ -152,11 +158,24 @@ def ofx_div(dt_posted, amt, acct_name, acct_id, trans_type, fitid, name,
     )
     s += ': %s' % name
     s += '</div>'
-    if trans_id is None:
-        s += '<div style="float: right;" class="make-trans-link"><a ' \
-             'href="javascript:makeTransFromOfx(%d, \'%s\')" ' \
-             'title="Create Transaction from this OFX">(make trans)</a>' \
-             '</div>' % (acct_id, fitid)
+    if trans_id is None and ignored_reason is None:
+        s += '<div style="float: right;" class="make-trans-link">'
+        s += '<a href="javascript:makeTransFromOfx(%d, \'%s\')" ' \
+             'title="Create Transaction from this OFX">(make trans)</a>' % (
+                 acct_id, fitid
+             )
+        s += '<a href="javascript:ignoreOfxTrans(%d, \'%s\')" ' \
+             'title="Ignore this OFX Transaction">(ignore)</a>' % (
+                 acct_id, fitid
+             )
+        s += '</div>'
+    elif ignored_reason is not None:
+        s += '<div style="float: right;" class="make-trans-link">'
+        s += '<a href="javascript:reconcileDoUnreconcileNoTrans(%s, \'%s\')">' \
+             'Unignore</a>' % (
+                 acct_id, fitid
+             )
+        s += '</div>'
     s += '</div>'
     s += '</div></div>'
     if trans_id is not None:
@@ -222,7 +241,11 @@ class ReconcileHelper(AcceptanceHelper):
             ofx_cat_memo_to_name=True,
             ofxgetter_config_json='{"foo": "bar"}',
             vault_creds_path='secret/foo/bar/BankOne',
-            acct_type=AcctType.Bank
+            acct_type=AcctType.Bank,
+            re_interest_charge='^interest-charge',
+            re_payment='^(payment|thank you)',
+            re_late_fee='^Late Fee',
+            re_other_fee='^re-other-fee'
         )
         testdb.add(a)
         a.set_balance(
@@ -536,7 +559,73 @@ class TestColumns(ReconcileHelper):
         ]
         assert actual_trans == expected_trans
 
-    def test_07_ofxtrans(self, base_url, selenium):
+    def test_07_verify_unreconciled_ofxtrans(self, testdb):
+        assert len(OFXTransaction.unreconciled(testdb).all()) == 7
+
+    def test_08_add_ignored_ofxtrans(self, testdb):
+        """
+        add OFXTransactions that shouldn't be listed because of their is_ fields
+        """
+        acct = testdb.query(Account).get(1)
+        assert acct.re_interest_charge == '^interest-charge'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == '^(payment|thank you)'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
+        stmt = testdb.query(OFXStatement).get(1)
+        assert stmt.account_id == 1
+        assert stmt.filename == 'a1.ofx'
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.1',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='interest-charge BankOne.77.1'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.2',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='payment BankOne.77.2'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.3',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='thank you BankOne.77.3'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.4',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='Late Fee BankOne.77.4'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct,
+            statement=stmt,
+            fitid='BankOne.77.5',
+            trans_type='Debit',
+            date_posted=stmt.ledger_bal_as_of,
+            amount=Decimal('-20.00'),
+            name='re-other-fee BankOne.77.5'
+        ))
+        testdb.commit()
+
+    def test_09_verify_unreconciled_ofxtrans(self, testdb):
+        assert len(OFXTransaction.unreconciled(testdb).all()) == 7
+
+    def test_10_ofxtrans(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
@@ -1337,7 +1426,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_07_success(self, base_url):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX3']}
+            json={'reconciled': {3: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': True,
@@ -1357,7 +1446,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_09_invalid_trans(self, base_url, testdb):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={32198: [2, 'OFX3']}
+            json={'reconciled': {32198: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': False,
@@ -1369,7 +1458,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_10_invalid_ofx(self, base_url, testdb):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX338ufd']}
+            json={'reconciled': {3: [2, 'OFX338ufd']}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': False,
@@ -1382,7 +1471,7 @@ class TestReconcileBackend(ReconcileHelper):
         # already reconciled in test_07
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={3: [2, 'OFX3']}
+            json={'reconciled': {3: [2, 'OFX3']}, 'ofxIgnored': {}}
         )
         j = res.json()
         assert sorted(j.keys()) == ['error_message', 'success']
@@ -1405,7 +1494,7 @@ class TestReconcileBackend(ReconcileHelper):
     def test_12_reconcile_noOFX(self, base_url):
         res = requests.post(
             base_url + '/ajax/reconcile',
-            json={4: 'Foo Bar Baz'}
+            json={'reconciled': {4: 'Foo Bar Baz'}, 'ofxIgnored': {}}
         )
         assert res.json() == {
             'success': True,
@@ -1436,7 +1525,7 @@ class TestReconcileBackend(ReconcileHelper):
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 @pytest.mark.incremental
-class TestOFXMakeTrans(AcceptanceHelper):
+class TestOFXMakeTransAndIgnore(AcceptanceHelper):
 
     def get_reconciled(self, driver):
         """
@@ -1557,6 +1646,9 @@ class TestOFXMakeTrans(AcceptanceHelper):
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
         assert len(res) == 0
+        stmts = testdb.query(OFXStatement).all()
+        assert len(stmts) == 1
+        assert max([s.id for s in stmts]) == 1
 
     def test_07_verify_db_transaction(self, testdb):
         res = testdb.query(Transaction).all()
@@ -1692,6 +1784,263 @@ class TestOFXMakeTrans(AcceptanceHelper):
         assert len(res[1].budget_transactions) == 1
         assert res[1].budget_transactions[0].budget_id == 2
         assert res[1].budget_transactions[0].amount == Decimal('-251.23')
+
+    def test_30_add_ofx(self, testdb):
+        acct2 = testdb.query(Account).get(2)
+        stmt1 = testdb.query(OFXStatement).get(1)
+        testdb.add(OFXTransaction(
+            account=acct2,
+            statement=stmt1,
+            fitid='OFX30',
+            trans_type='Debit',
+            date_posted=datetime(2017, 4, 11, 12, 3, 4, tzinfo=UTC),
+            amount=Decimal('251.23'),
+            name='ofx2-trans30'
+        ))
+        testdb.add(OFXTransaction(
+            account=acct2,
+            statement=stmt1,
+            fitid='OFX31',
+            trans_type='Debit',
+            date_posted=datetime(2017, 4, 10, 12, 3, 4, tzinfo=UTC),
+            amount=Decimal('192.86'),
+            name='ofx2-trans31'
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_31_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert res[0].id == 1
+        assert res[0].txn_id == 2
+        assert res[0].ofx_account_id == 2
+        assert res[0].ofx_fitid == 'OFX2'
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 1
+        assert max([r.id for r in res]) == 1
+
+    def test_32_verify_columns(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 10),
+                Decimal('-192.86'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX31',
+                'ofx2-trans31'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+
+    def test_33_ignore_ofx(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
+        link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
+        link.click()
+        # test the modal population
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Ignore OFXTransaction (2, "OFX31")'
+        assert body.find_element_by_id(
+            'trans_frm_acct_id').get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'trans_frm_fitid').get_attribute('value') == 'OFX31'
+        notes = selenium.find_element_by_id('trans_frm_note')
+        assert notes.get_attribute(
+            'value') == ''
+        notes.send_keys('My Note')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        sleep(1)
+        # check that modal was hidden
+        modal, title, body = self.get_modal_parts(selenium, wait=False)
+        self.assert_modal_hidden(modal, title, body)
+        # check that the JS variable has been updated
+        res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
+        assert json.loads(res.strip()) == {'2%OFX31': 'My Note'}
+        # check that the OFX div has been updated
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 10),
+                Decimal('-192.86'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX31',
+                'ofx2-trans31',
+                ignored_reason='My Note'
+            ),
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+        # check that the OFX div is no longer draggable
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
+        assert 'ui-draggable-disabled' in ofxdiv.get_attribute('class')
+        # wait for submit button to be visible and clickable, and click it
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.invisibility_of_element_located((By.ID, 'modalDiv'))
+        )
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'reconcile-submit'))
+        )
+        selenium.find_element_by_id('reconcile-submit').click()
+        sleep(1)
+        self.wait_for_jquery_done(selenium)
+        msg = selenium.find_element_by_id('reconcile-msg')
+        assert msg.text == 'Successfully reconciled 1 transactions'
+        assert 'alert-success' in msg.get_attribute('class')
+
+    def test_34_verify_db(self, testdb):
+        res = testdb.query(TxnReconcile).all()
+        assert len(res) == 2
+        assert max([r.id for r in res]) == 2
+        vals = {r.id: r for r in res}
+        tr = vals[2]
+        assert tr.txn_id is None
+        assert tr.ofx_account_id == 2
+        assert tr.ofx_fitid == 'OFX31'
+        assert tr.note == 'My Note'
+
+    def test_35_verify_columns(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+
+    def test_36_ignore_and_unignore_ofx(self, base_url, selenium):
+        self.get(selenium, base_url + '/reconcile')
+        # check that the OFX div has been updated
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+        # ignore
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
+        link.click()
+        # test the modal population
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Ignore OFXTransaction (2, "OFX30")'
+        assert body.find_element_by_id(
+            'trans_frm_acct_id').get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'trans_frm_fitid').get_attribute('value') == 'OFX30'
+        notes = selenium.find_element_by_id('trans_frm_note')
+        assert notes.get_attribute(
+            'value') == ''
+        notes.send_keys('My Note')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        sleep(1)
+        # check that modal was hidden
+        modal, title, body = self.get_modal_parts(selenium, wait=False)
+        self.assert_modal_hidden(modal, title, body)
+        # check that the JS variable has been updated
+        res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
+        assert json.loads(res.strip()) == {'2%OFX30': 'My Note'}
+        # check that the OFX div has been updated
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30',
+                ignored_reason='My Note'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+        # check that the OFX div is no longer draggable
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        assert 'ui-draggable-disabled' in ofxdiv.get_attribute('class')
+        # ok, now Unignore
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        link = ofxdiv.find_element_by_xpath('//a[text()="Unignore"]')
+        link.click()
+        # and test that everything was reverted...
+        res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
+        assert json.loads(res.strip()) == {}
+        # check that the OFX div has been updated
+        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        actual_ofx = [
+            self.normalize_html(x.get_attribute('outerHTML'))
+            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+        ]
+        expected_ofx = [
+            ofx_div(
+                date(2017, 4, 11),
+                Decimal('-251.23'),
+                'BankTwo', 2,
+                'Debit',
+                'OFX30',
+                'ofx2-trans30'
+            )
+        ]
+        assert expected_ofx == actual_ofx
+        # check that the OFX div is no longer draggable
+        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        assert 'ui-draggable-disabled' not in ofxdiv.get_attribute('class')
 
 
 @pytest.mark.acceptance

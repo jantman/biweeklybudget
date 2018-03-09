@@ -84,6 +84,11 @@ function accountModalDivForm() {
         )
         .addCheckbox('account_frm_negate_ofx', 'negate_ofx_amounts', 'Negate OFX Amounts', false)
         .addCheckbox('account_frm_reconcile_trans', 'reconcile_trans', 'Reconcile Transactions?', true)
+        .addText('account_frm_re_interest_charge', 're_interest_charge', 'Interest Charge Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as interest charges (and not reconciled).'})
+        .addText('account_frm_re_interest_paid', 're_interest_paid', 'Interest Paid Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as interest payments (and not reconciled).'})
+        .addText('account_frm_re_payment', 're_payment', 'Payment Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as payments (and not reconciled).'})
+        .addText('account_frm_re_late_fee', 're_late_fee', 'Late Fee Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as late fees (and not reconciled).'})
+        .addText('account_frm_re_other_fee', 're_other_fee', 'Other Fee Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as other fees (and not reconciled).'})
         .addCurrency('account_frm_credit_limit', 'credit_limit', 'Credit Limit')
         .addText('account_frm_apr', 'apr', 'APR', { helpBlock: 'If you know the margin added to the Prime Rate for this card, use the Margin field instead.'})
         .addText('account_frm_margin', 'prime_rate_margin', 'Margin', { helpBlock: 'If known, the margin added to the US Prime Rate to determine the APR.'})
@@ -153,6 +158,11 @@ function accountModalDivFillAndShow(msg) {
         $('#account_frm_reconcile_trans').prop('checked', false);
     }
     $('#account_frm_vault_creds_path').val(msg['vault_creds_path']);
+    if(msg['re_interest_charge'] != null) { $('#account_frm_re_interest_charge').val(msg['re_interest_charge']); }
+    if(msg['re_interest_paid'] != null) { $('#account_frm_re_interest_paid').val(msg['re_interest_paid']); }
+    if(msg['re_payment'] != null) { $('#account_frm_re_payment').val(msg['re_payment']); }
+    if(msg['re_late_fee'] != null) { $('#account_frm_re_late_fee').val(msg['re_late_fee']); }
+    if(msg['re_other_fee'] != null) { $('#account_frm_re_other_fee').val(msg['re_other_fee']); }
     $("#modalDiv").modal('show');
 }
 

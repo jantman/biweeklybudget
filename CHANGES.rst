@@ -39,6 +39,18 @@ Unreleased Changes
   * When running under Docker/Gunicorn, append the decimal number of seconds taken to serve the request to the Gunicorn access log.
 
 * `Issue #184 <https://github.com/jantman/biweeklybudget/issues/184>`_ - Redact database password from ``/help`` view, and change ``/help`` view to show Version containing git commit hash for pre-release/development Docker builds.
+* `Issue #183 <https://github.com/jantman/biweeklybudget/issues/183>`_
+
+  * Add UI link to ignore reconciling an OFXTransaction if there will not be a matching Transaction.
+  * Remove default values for the ``Account`` model's ``re_`` fields in preparation for actually using them.
+  * Replace the ``Account`` model's ``re_fee`` field with separate ``re_late_fee`` and ``re_other_fee`` fields.
+  * Add UI support for specifying Interest Charge, Interest Paid, Payment, Late Fee, and Other Fee regexes on each account.
+  * Add DB event handler on new or changed OFXTransaction, to set ``is_*`` fields according to Account ``re_*`` fields.
+  * Add DB event handler on change to Account model ``re_*`` fields, that triggers ``OFXTransaction.update_is_fields()`` to recalculate using the new regex.
+  * Change ``OFXTransaction.unreconciled`` to filter out OFXTransactions with any of the ``is_*`` set to True.
+
+* Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
+
 
 0.7.1 (2018-01-10)
 ------------------

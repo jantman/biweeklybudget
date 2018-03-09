@@ -140,16 +140,31 @@ class ReconcileAjax(MethodView):
         """
         Handle POST ``/ajax/reconcile``
 
+        Request is a JSON dict with two keys, "reconciled" and "ofxIgnored".
+        "reconciled" value is a dict of integer transaction ID keys, to
+        values which are either a string reason why the Transaction is being
+        reconciled as "No OFX" or a 2-item list of OFXTransaction acct_id
+        and fitid.
+        "ofxIgnored" is a dict with string keys which are strings identifying
+        an OFXTransaction in the form "<ACCT_ID>%<FITID>", and values are a
+        string reason why the OFXTransaction is being reconciled without a
+        matching Transaction.
+
         Response is a JSON dict. Keys are ``success`` (boolean) and either
         ``error_message`` (string) or ``success_message`` (string).
 
         :return: JSON response
         """
         raw = request.get_json()
-        data = {int(x): raw[x] for x in raw}
+        data = {
+            'reconciled': {
+                int(x): raw['reconciled'][x] for x in raw['reconciled']
+            },
+            'ofxIgnored': raw.get('ofxIgnored', {})
+        }
         logger.debug('POST /ajax/reconcile: %s', data)
         rec_count = 0
-        for trans_id in sorted(data.keys()):
+        for trans_id in sorted(data['reconciled'].keys()):
             trans = db_session.query(Transaction).get(trans_id)
             if trans is None:
                 logger.error('Invalid transaction ID: %s', trans_id)
@@ -157,19 +172,22 @@ class ReconcileAjax(MethodView):
                     'success': False,
                     'error_message': 'Invalid Transaction ID: %s' % trans_id
                 }), 400
-            if not isinstance(data[trans_id], type([])):
+            if not isinstance(data['reconciled'][trans_id], type([])):
                 # it's a string; reconcile without OFX
                 db_session.add(TxnReconcile(
                     txn_id=trans_id,
-                    note=data[trans_id]
+                    note=data['reconciled'][trans_id]
                 ))
                 logger.info(
-                    'Reconcile %s as NoOFX; note=%s', trans, data[trans_id]
+                    'Reconcile %s as NoOFX; note=%s',
+                    trans, data['reconciled'][trans_id]
                 )
                 rec_count += 1
                 continue
             # else reconcile with OFX
-            ofx_key = (data[trans_id][0], data[trans_id][1])
+            ofx_key = (
+                data['reconciled'][trans_id][0], data['reconciled'][trans_id][1]
+            )
             ofx = db_session.query(OFXTransaction).get(ofx_key)
             if ofx is None:
                 logger.error('Invalid OFXTransaction: %s', ofx_key)
@@ -181,10 +199,24 @@ class ReconcileAjax(MethodView):
                 }), 400
             db_session.add(TxnReconcile(
                 txn_id=trans_id,
-                ofx_account_id=data[trans_id][0],
-                ofx_fitid=data[trans_id][1]
+                ofx_account_id=data['reconciled'][trans_id][0],
+                ofx_fitid=data['reconciled'][trans_id][1]
             ))
             logger.info('Reconcile %s with %s', trans, ofx)
+            rec_count += 1
+        # handle OFXTransactions to reconcile with no Transaction
+        for ofxkey in sorted(data['ofxIgnored'].keys()):
+            note = data['ofxIgnored'][ofxkey]
+            acct_id, fitid = ofxkey.split('%', 1)
+            db_session.add(TxnReconcile(
+                ofx_account_id=acct_id,
+                ofx_fitid=fitid,
+                note=note
+            ))
+            logger.info(
+                'Reconcile OFXTransaction (%s, %s) as NoTransaction; note=%s',
+                acct_id, fitid, note
+            )
             rec_count += 1
         try:
             db_session.flush()

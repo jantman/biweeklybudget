@@ -273,7 +273,12 @@ class SampleDataLoader(object):
             ofx_cat_memo_to_name=True,
             ofxgetter_config_json='{"foo": "bar"}',
             vault_creds_path='secret/foo/bar/BankOne',
-            acct_type=AcctType.Bank
+            acct_type=AcctType.Bank,
+            re_interest_charge='^interest-charge',
+            re_interest_paid='^interest-paid',
+            re_payment='^(payment|thank you)',
+            re_late_fee='^Late Fee',
+            re_other_fee='^re-other-fee'
         )
         statements = [
             OFXStatement(
@@ -411,7 +416,11 @@ class SampleDataLoader(object):
             prime_rate_margin=Decimal('0.0050'),
             negate_ofx_amounts=True,
             interest_class_name='AdbCompoundedDaily',
-            min_payment_class_name='MinPaymentAmEx'
+            min_payment_class_name='MinPaymentAmEx',
+            re_interest_charge='^INTEREST CHARGED TO',
+            re_payment='.*Online Payment, thank you.*',
+            re_late_fee='^Late Fee',
+            re_other_fee='^re-other-fee'
         )
         statements = [
             OFXStatement(

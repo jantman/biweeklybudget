@@ -91,13 +91,16 @@ class OfxTransAjax(MethodView):
     def get(self, acct_id, fitid):
         txn = db_session.query(OFXTransaction).get((acct_id, fitid))
         stmt = txn.statement.as_dict
+        aname = db_session.query(Account).get(acct_id).name
         res = {
-            'acct_name': db_session.query(Account).get(acct_id).name,
+            'acct_name': aname,
             'acct_id': txn.account_id,
             'txn': txn.as_dict,
             'stmt': stmt,
             'account_amount': txn.account_amount
         }
+        res['txn']['account_name'] = aname
+        res['txn']['account_amount'] = txn.account_amount
         return jsonify(res)
 
 

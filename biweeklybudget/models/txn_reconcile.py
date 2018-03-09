@@ -54,7 +54,7 @@ class TxnReconcile(Base, ModelAsDict):
     id = Column(Integer, primary_key=True)
 
     #: Transaction ID
-    txn_id = Column(Integer, ForeignKey('transactions.id'), nullable=False)
+    txn_id = Column(Integer, ForeignKey('transactions.id'))
 
     #: Relationship - :py:class:`~.Transaction`
     transaction = relationship(

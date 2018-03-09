@@ -175,6 +175,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge == '^interest-charge'
+        assert acct.re_interest_paid == '^interest-paid'
+        assert acct.re_payment == '^(payment|thank you)'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
     def test_11_get_acct1_url(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/1')
@@ -218,6 +223,23 @@ class TestAccountModal(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
+        # BEGIN REs
+        assert selenium.find_element_by_id(
+            'account_frm_re_interest_charge'
+        ).get_attribute('value') == '^interest-charge'
+        assert selenium.find_element_by_id(
+            'account_frm_re_interest_paid'
+        ).get_attribute('value') == '^interest-paid'
+        assert selenium.find_element_by_id(
+            'account_frm_re_payment'
+        ).get_attribute('value') == '^(payment|thank you)'
+        assert selenium.find_element_by_id(
+            'account_frm_re_late_fee'
+        ).get_attribute('value') == '^Late Fee'
+        assert selenium.find_element_by_id(
+            'account_frm_re_other_fee'
+        ).get_attribute('value') == '^re-other-fee'
+        # END REs
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_12_edit_acct1(self, base_url, selenium):
@@ -272,6 +294,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_21_get_acct2_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -317,6 +344,23 @@ class TestAccountModal(AcceptanceHelper):
         assert selenium.find_element_by_id(
             'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
+        # BEGIN REs
+        assert selenium.find_element_by_id(
+            'account_frm_re_interest_charge'
+        ).get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'account_frm_re_interest_paid'
+        ).get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'account_frm_re_payment'
+        ).get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'account_frm_re_late_fee'
+        ).get_attribute('value') == ''
+        assert selenium.find_element_by_id(
+            'account_frm_re_other_fee'
+        ).get_attribute('value') == ''
+        # END REs
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_22_edit_acct2(self, base_url, selenium):
@@ -344,6 +388,20 @@ class TestAccountModal(AcceptanceHelper):
         selenium.find_element_by_id('account_frm_negate_ofx').click()
         selenium.find_element_by_id('account_frm_reconcile_trans').click()
         selenium.find_element_by_id('account_frm_active').click()
+        # BEGIN REs
+        selenium.find_element_by_id(
+            'account_frm_re_interest_charge'
+        ).send_keys('my-re-ic$')
+        selenium.find_element_by_id(
+            'account_frm_re_interest_paid'
+        ).send_keys('my-re-ip$')
+        selenium.find_element_by_id(
+            'account_frm_re_payment'
+        ).send_keys('my-re-p$')
+        selenium.find_element_by_id(
+            'account_frm_re_late_fee'
+        ).send_keys('my-re-lf$')
+        # END REs
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -372,6 +430,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is False
+        assert acct.re_interest_charge == 'my-re-ic$'
+        assert acct.re_interest_paid == 'my-re-ip$'
+        assert acct.re_payment == 'my-re-p$'
+        assert acct.re_late_fee == 'my-re-lf$'
+        assert acct.re_other_fee is None
 
     def test_30_verify_db(self, testdb):
         acct = testdb.query(Account).get(3)
@@ -390,6 +453,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentAmEx'
         assert acct.is_active is True
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == '.*Online Payment, thank you.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -487,6 +555,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentAmEx'
         assert acct.is_active is True
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == '.*Online Payment, thank you.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
     def test_40_verify_db(self, testdb):
         acct = testdb.query(Account).get(4)
@@ -505,6 +578,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentDiscover'
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_41_get_acct4_url(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/4')
@@ -628,6 +706,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentCiti'
         assert acct.is_active is False
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_50_verify_db(self, testdb):
         acct = testdb.query(Account).get(5)
@@ -646,6 +729,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_51_get_acct5_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -729,6 +817,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_60_verify_db(self, testdb):
         max_id = max([
@@ -815,6 +908,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_70_verify_db(self, testdb):
         max_id = max([
@@ -927,6 +1025,11 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name == 'AdbCompoundedDaily'
         assert acct.min_payment_class_name == 'MinPaymentCiti'
         assert acct.is_active is False
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
 
     def test_80_verify_db(self, testdb):
         max_id = max([
@@ -1014,3 +1117,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None

@@ -245,7 +245,10 @@ function reconcileOfxDiv(trans) {
   div += '</div>';
   div += '<div class="row"><div class="col-lg-12">';
   div += '<div style="float: left;"><a href="javascript:ofxTransModal(' + trans['account_id'] + ', \'' + trans['fitid'] + '\', false)">' + trans['fitid'] + '</a>: ' + trans['name'] + '</div>';
-  div += '<div style="float: right;" class="make-trans-link"><a href="javascript:makeTransFromOfx(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')" title="Create Transaction from this OFX">(make trans)</a></div>';
+  div += '<div style="float: right;" class="make-trans-link">';
+  div += '<a href="javascript:makeTransFromOfx(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')" title="Create Transaction from this OFX">(make trans)</a>';
+  div += '<a href="javascript:ignoreOfxTrans(' + trans['account_id'] + ', \'' + trans['fitid'] + '\')" title="Ignore this OFX Transaction">(ignore)</a>';
+  div += '</div>';
   div += '</div></div>';
   div += '</div>\n';
   return div;
@@ -268,7 +271,7 @@ function clean_fitid(fitid) {
  */
 function reconcileHandleSubmit() {
   $('body').find('#reconcile-msg').remove();
-  if (jQuery.isEmptyObject(reconciled)) {
+  if (jQuery.isEmptyObject(reconciled) && jQuery.isEmptyObject(ofxIgnored)) {
     var container = $('#notifications-row').find('.col-lg-12');
     var newdiv = $(
       '<div class="alert alert-warning" id="reconcile-msg">' +
@@ -281,7 +284,7 @@ function reconcileHandleSubmit() {
   $.ajax({
         type: "POST",
         url: '/ajax/reconcile',
-        data: JSON.stringify(reconciled),
+        data: JSON.stringify({ reconciled: reconciled, ofxIgnored: ofxIgnored }),
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function(data) {
@@ -480,6 +483,98 @@ function reconcileDoUnreconcileNoOfx(trans_id) {
   // remove the dropped OFX
   $('#trans-' + trans_id).find('.reconcile-drop-target').empty();
   $('#trans-' + trans_id).find('a:contains("(no OFX)")').show();
+}
+
+/**
+ * Show the modal for reconciling an OFXTransaction without a matching
+ * Transaction. Calls :js:func:`ignoreOfxTransDivForm` to generate the modal form
+ * div content. Uses an inline function to handle the save action, which calls
+ * :js:func:`reconcileOfxNoTrans` to perform the reconcile action.
+ *
+ * @param {number} acct_id - the Account ID of the OFXTransaction
+ * @param {string} fitid - the FitID of the OFXTransaction
+ */
+function ignoreOfxTrans(acct_id, fitid) {
+    console.log("ignoreOfxTrans(" + acct_id + ", '" + fitid + "')");
+    $('#modalBody').empty();
+    $('#modalBody').append(ignoreOfxTransDivForm(acct_id, fitid));
+    $('#modalLabel').text('Ignore OFXTransaction (' + acct_id + ', "' + fitid + '")');
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
+        var note = $('#trans_frm_note').val().trim();
+        if (note == "") {
+            $('#trans_frm_note').parent().append('<p class="text-danger formfeedback">Note cannot be empty.</p>');
+            $('#trans_frm_note').parent().addClass('has-error');
+            return;
+        } else {
+            reconcileOfxNoTrans(acct_id, fitid, note);
+            $("#modalDiv").modal('hide');
+        }
+    }).show();
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Generate the modal form div content for the modal to reconcile a Transaction
+ * without a matching OFXTransaction. Called by :js:func:`transNoOfx`.
+ *
+ * @param {number} acct_id - the Account ID of the OFXTransaction
+ * @param {string} fitid - the FitID of the OFXTransaction
+ */
+function ignoreOfxTransDivForm(acct_id, fitid) {
+    return new FormBuilder('transForm')
+        .addP('Mark OFXTransaction as reconciled with no Transaction (i.e. OFXTransaction that we don\'t care about and won\t have a Transaction for).')
+        .addHidden('trans_frm_acct_id', 'acct_id', acct_id)
+        .addHidden('trans_frm_fitid', 'fitid', fitid)
+        .addText('trans_frm_note', 'note', 'Note')
+        .render();
+}
+
+/**
+ * Reconcile an OFXTransaction without a matching Transaction. Called from
+ * the Save button handler in :js:func:`ignoreOfxTrans`.
+ */
+function reconcileOfxNoTrans(acct_id, fitid, note) {
+  var target = $('#ofx-' + acct_id + '-' + clean_fitid(fitid));
+  var newdiv = $('<div class="row" id="ofx-' + acct_id + '-' + clean_fitid(fitid) + '-noTrans" style="" />').html('<div class="col-lg-12"><p><strong>No Trans:</strong> ' + note + '</p></div>');
+  var makeTransLink = $(target).find('.make-trans-link');
+  $(makeTransLink).html('<a href="javascript:reconcileDoUnreconcileNoTrans(' + acct_id + ', \'' + fitid + '\')">Unignore</a>');
+  $(newdiv).prependTo(target);
+  $(target).draggable('disable');
+  ofxIgnored[acct_id + "%" + fitid] = note;
+}
+
+/**
+ * Unreconcile a reconciled NoTrans OFXTransaction. This removes
+ * ``acct_id + "%" + fitid`` from the ``ofxIgnored`` variable and regenerates
+ * the OFXTransaction's div.
+ *
+ * @param {number} acct_id - the Account ID of the OFXTransaction
+ * @param {string} fitid - the FitID of the OFXTransaction
+ */
+function reconcileDoUnreconcileNoTrans(acct_id, fitid) {
+  // remove from the reconciled object
+  delete ofxIgnored[acct_id + "%" + fitid];
+  // remove the "No Trans:" div
+  $('#ofx-' + acct_id + '-' + clean_fitid(fitid) + '-noTrans').remove();
+  // restore the draggability
+  var target = $('#ofx-' + acct_id + '-' + clean_fitid(fitid));
+  $.ajax({
+      type: "GET",
+      url: "/ajax/ofx/" + acct_id + "/" + encodeURIComponent(fitid),
+      success: function (data) {
+          var newdiv = $(reconcileOfxDiv(data['txn']));
+          $(target).replaceWith(newdiv);
+          $(newdiv).draggable({
+              cursor: 'move',
+              // start: dragStart,
+              // containment: '#content-row',
+              revert: 'invalid',
+              helper: 'clone'
+          });
+      }
+  });
 }
 
 $(document).ready(function() {

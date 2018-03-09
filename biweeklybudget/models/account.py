@@ -151,28 +151,19 @@ class Account(Base, ModelAsDict):
     )
 
     #: regex for matching transactions as interest charges
-    re_interest_charge = Column(
-        String(254),
-        default='^(interest charge|purchase finance charge)'
-    )
+    re_interest_charge = Column(String(254))
 
     #: regex for matching transactions as interest paid
-    re_interest_paid = Column(
-        String(254),
-        default='^interest paid'
-    )
+    re_interest_paid = Column(String(254))
 
     #: regex for matching transactions as payments
-    re_payment = Column(
-        String(254),
-        default='^(online payment|internet payment|online pymt|payment)'
-    )
+    re_payment = Column(String(254))
 
-    #: regex for matching transactions as fees
-    re_fee = Column(
-        String(254),
-        default='^(late fee|past due fee)'
-    )
+    #: regex for matching transactions as late fees
+    re_late_fee = Column(String(254))
+
+    #: regex for matching transactions as other fees
+    re_other_fee = Column(String(254))
 
     def __repr__(self):
         return "<Account(id=%s, name='%s')>" % (
