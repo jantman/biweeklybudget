@@ -231,7 +231,7 @@ def handle_account_re_change(session):
         insp = inspect(obj)
         for attr in attrs:
             hx = getattr(insp.attrs, attr).history
-            if hx is None:
+            if hx is None or hx.added is None or hx.deleted is None:
                 continue
             if len(hx.added) > 0 and len(hx.deleted) > 0:
                 logger.debug(
