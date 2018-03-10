@@ -349,7 +349,7 @@ class BudgetSpendingChartView(MethodView):
         budgets_present = set()
         for t in db_session.query(Transaction).filter(
             Transaction.budget_transactions.any(
-                BudgetTransaction.budget.has(is_active=False)
+                BudgetTransaction.budget.has(is_active=True)
             ),
             Transaction.date.__le__(dt_now)
         ).all():

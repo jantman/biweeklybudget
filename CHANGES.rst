@@ -50,7 +50,7 @@ Unreleased Changes
   * Change ``OFXTransaction.unreconciled`` to filter out OFXTransactions with any of the ``is_*`` set to True.
 
 * Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
-
+* Fix bug in ``/budgets`` view where "Spending By Budget, Per Calendar Month" chart was showing only inactive budgets instead of only active budgets.
 
 0.7.1 (2018-01-10)
 ------------------
