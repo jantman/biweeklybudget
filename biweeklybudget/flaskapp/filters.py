@@ -210,8 +210,8 @@ def budget_cell_filter(d):
     for those budgets.
     """
     if len(d) == 1:
-        k = list(d.keys())[0]
-        return '<a href="/budgets/%d">%s</a>' % (k, d[k]['name'])
+        foo = list(d.keys())[0]
+        return '<a href="/budgets/%d">%s</a>' % (foo, d[foo]['name'])
     items = [
         '<a href="/budgets/%d">%s</a> (%s)' % (
             k, d[k]['name'], dollars_filter(d[k]['amount'])
