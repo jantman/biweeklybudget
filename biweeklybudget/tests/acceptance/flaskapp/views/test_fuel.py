@@ -410,8 +410,8 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 3
-        assert max(trans_ids) == 3
+        assert len(trans_ids) == 4
+        assert max(trans_ids) == 4
 
     def test_11_fuel_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
@@ -584,8 +584,8 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 3
-        assert max(trans_ids) == 3
+        assert len(trans_ids) == 4
+        assert max(trans_ids) == 4
 
     def test_14_fuel_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
@@ -648,7 +648,7 @@ class TestModals(AcceptanceHelper):
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved FuelFill 8 ' \
-                                 'and Transaction 4 in database.'
+                                 'and Transaction 5 in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
@@ -686,9 +686,9 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 4
-        assert max(trans_ids) == 4
-        trans = testdb.query(Transaction).get(4)
+        assert len(trans_ids) == 5
+        assert max(trans_ids) == 5
+        trans = testdb.query(Transaction).get(5)
         assert trans.date == (dtnow() - timedelta(days=2)).date()
         assert trans.actual_amount == Decimal('14.82')
         assert trans.budgeted_amount is None

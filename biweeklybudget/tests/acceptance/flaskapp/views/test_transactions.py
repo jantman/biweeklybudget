@@ -117,6 +117,16 @@ class TestTransactionsDefault(AcceptanceHelper):
                 '',
                 '',
                 ''
+            ],
+            [
+                (self.dt - timedelta(days=35)).date().strftime('%Y-%m-%d'),
+                '$322.32',
+                'T4split',
+                'CreditOne (3)',
+                'Periodic2 (2)',
+                '',
+                '',
+                ''
             ]
         ]
         linkcols = [
@@ -172,7 +182,8 @@ class TestTransactionsDefault(AcceptanceHelper):
         p1trans = [
             'T1foo',
             'T2',
-            'T3'
+            'T3',
+            'T4split'
         ]
         self.get(selenium, self.baseurl + '/transactions')
         table = self.retry_stale(
@@ -225,7 +236,8 @@ class TestTransactionsDefault(AcceptanceHelper):
         p1trans = [
             'T1foo',
             'T2',
-            'T3'
+            'T3',
+            'T4split'
         ]
         self.get(selenium, self.baseurl + '/transactions')
         table = self.retry_stale(
@@ -245,7 +257,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
-        assert trans == ['T3']
+        assert trans == ['T3', 'T4split']
         # select Standing1 (4)
         budg_filter.select_by_value('4')
         table = self.retry_stale(
@@ -592,7 +604,7 @@ class TestTransModal(AcceptanceHelper):
         amt.clear()
         amt.send_keys('123.45')
         desc = body.find_element_by_id('trans_frm_description')
-        desc.send_keys('NewTrans4')
+        desc.send_keys('NewTrans5')
         acct_sel = Select(body.find_element_by_id('trans_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
@@ -607,7 +619,7 @@ class TestTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 4 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 5 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -615,12 +627,12 @@ class TestTransModal(AcceptanceHelper):
         # test that new trans was added to the table
         table = selenium.find_element_by_id('table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'NewTrans4' in texts
+        assert 'NewTrans5' in texts
 
     def test_23_modal_add_verify_db(self, testdb):
-        t = testdb.query(Transaction).get(4)
+        t = testdb.query(Transaction).get(5)
         assert t is not None
-        assert t.description == 'NewTrans4'
+        assert t.description == 'NewTrans5'
         dnow = dtnow()
         assert t.date == date(year=dnow.year, month=dnow.month, day=15)
         assert t.actual_amount == Decimal('123.45')
@@ -660,7 +672,7 @@ class TestTransModal(AcceptanceHelper):
         amt.clear()
         amt.send_keys('345.67')
         desc = body.find_element_by_id('trans_frm_description')
-        desc.send_keys('NewTrans5')
+        desc.send_keys('NewTrans6')
         acct_sel = Select(body.find_element_by_id('trans_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
@@ -675,7 +687,7 @@ class TestTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 5 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 6 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -683,12 +695,12 @@ class TestTransModal(AcceptanceHelper):
         # test that new trans was added to the table
         table = selenium.find_element_by_id('table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'NewTrans5' in texts
+        assert 'NewTrans6' in texts
 
     def test_33_verify_db(self, testdb):
-        t = testdb.query(Transaction).get(5)
+        t = testdb.query(Transaction).get(6)
         assert t is not None
-        assert t.description == 'NewTrans5'
+        assert t.description == 'NewTrans6'
         assert t.date == dtnow().date()
         assert t.actual_amount == Decimal('345.67')
         assert t.budgeted_amount is None
@@ -721,13 +733,13 @@ class TestTransModal(AcceptanceHelper):
         """
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="NewTrans5"]')
+        link = selenium.find_element_by_xpath('//a[text()="NewTrans6"]')
         link.click()
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Transaction 5'
+        assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
-            'trans_frm_id').get_attribute('value') == '5'
+            'trans_frm_id').get_attribute('value') == '6'
         amt = body.find_element_by_id('trans_frm_amount')
         assert amt.get_attribute('value') == '345.67'
         budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
@@ -740,15 +752,15 @@ class TestTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 5 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 6 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
 
     def test_42_simple_modal_verify_db(self, testdb):
-        t = testdb.query(Transaction).get(5)
+        t = testdb.query(Transaction).get(6)
         assert t is not None
-        assert t.description == 'NewTrans5'
+        assert t.description == 'NewTrans6'
         assert t.date == dtnow().date()
         assert t.actual_amount == Decimal('345.67')
         assert t.budgeted_amount is None

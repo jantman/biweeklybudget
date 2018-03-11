@@ -118,7 +118,7 @@ class TestAccountsMainPage(AcceptanceHelper):
         assert self.tbody2textlist(table) == [
             [
                 'CreditOne', '-$952.06 (13 hours ago)', '$2,000.00',
-                '$1,047.94', '$222.22', '$825.72'
+                '$1,047.94', '$544.54', '$503.40'
             ],
             [
                 'CreditTwo', '-$5,498.65 (a day ago)', '$5,500.00', '$1.35',

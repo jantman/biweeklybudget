@@ -595,7 +595,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 3
+        assert max_t == 4
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -684,7 +684,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transactions 4 and 5' \
+        assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -700,7 +700,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
     def test_3_verify_db(self, testdb):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
-        t1 = testdb.query(Transaction).get(4)
+        t1 = testdb.query(Transaction).get(5)
         assert t1.date == dtnow().date()
         assert t1.actual_amount == Decimal('123.45')
         assert t1.budgeted_amount == Decimal('123.45')
@@ -712,11 +712,11 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 2
         assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
-        assert rec1.txn_id == 4
+        assert rec1.txn_id == 5
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
-        t2 = testdb.query(Transaction).get(5)
+        t2 = testdb.query(Transaction).get(6)
         assert t2.date == dtnow().date()
         assert t2.actual_amount == Decimal('-123.45')
         assert t2.budgeted_amount == Decimal('-123.45')
@@ -728,7 +728,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.budget_transactions[0].budget_id == 5
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
-        assert rec2.txn_id == 5
+        assert rec2.txn_id == 6
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc
@@ -743,7 +743,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 3
+        assert max_t == 4
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -838,7 +838,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transactions 4 and 5' \
+        assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -862,7 +862,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert pp.budget_sums[2]['spent'] == Decimal('98.77')
         assert pp.budget_sums[2]['trans_total'] == Decimal('98.77')
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
-        t1 = testdb.query(Transaction).get(4)
+        t1 = testdb.query(Transaction).get(5)
         assert t1.date == dtnow().date()
         assert t1.actual_amount == Decimal('123.45')
         assert t1.budgeted_amount == Decimal('123.45')
@@ -874,11 +874,11 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 5
         assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
-        assert rec1.txn_id == 4
+        assert rec1.txn_id == 5
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
-        t2 = testdb.query(Transaction).get(5)
+        t2 = testdb.query(Transaction).get(6)
         assert t2.date == dtnow().date()
         assert t2.actual_amount == Decimal('-123.45')
         assert t2.budgeted_amount == Decimal('-123.45')
@@ -890,7 +890,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t2.budget_transactions[0].budget_id == 2
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
-        assert rec2.txn_id == 5
+        assert rec2.txn_id == 6
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc

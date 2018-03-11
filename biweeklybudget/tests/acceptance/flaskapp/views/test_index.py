@@ -121,7 +121,7 @@ class TestIndexAccounts(AcceptanceHelper):
             'Account', 'Balance', 'Available', 'Avail - Unrec'
         ]
         assert self.tbody2textlist(table) == [
-            ['CreditOne', '-$952.06 (13 hours ago)', '$1,047.94', '$825.72'],
+            ['CreditOne', '-$952.06 (13 hours ago)', '$1,047.94', '$503.40'],
             ['CreditTwo', '-$5,498.65 (a day ago)', '$1.35', '$1.35']
         ]
         links = []

@@ -343,149 +343,149 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         assert pp.start_date == date(2017, 4, 7)
         all_trans = pp.transactions_list
+        from pprint import pprint
+        pprint(all_trans)
         assert all_trans == [
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('222.22'),
-                'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('222.22')}
-                },
+                'amount': Decimal('222.2200'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('222.2200'), 'name': 'Periodic1'}
+                },
                 'date': None,
                 'description': 'ST_pp_1',
                 'id': 8,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction',
-                'reconcile_id': None
+                'type': 'ScheduledTransaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
-                'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
-                },
+                'amount': Decimal('333.3300'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
+                },
                 'date': None,
                 'description': 'ST_pp_3',
                 'id': 9,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction',
-                'reconcile_id': None
+                'type': 'ScheduledTransaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('555.55'),
-                'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('555.55')}
-                },
+                'amount': Decimal('555.5500'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('555.5500'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 8),
                 'description': 'Trans_foo',
-                'id': 8,
+                'id': 9,
+                'planned_budget_id': None,
+                'planned_budget_name': None,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': None,
-                'planned_budget_name': None
+                'type': 'Transaction'
             },
-            # ST7 (ST_day_9)
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('111.33'),
+                'amount': Decimal('111.3300'),
+                'budgeted_amount': Decimal('111.1100'),
                 'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('111.33')}
+                    1: {'amount': Decimal('111.3300'), 'name': 'Periodic1'}
                 },
-                'budgeted_amount': Decimal('111.11'),
                 'date': date(2017, 4, 9),
                 'description': 'Trans_ST_day_9',
-                'id': 4,
+                'id': 5,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': 2,
                 'sched_trans_id': 7,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': 2,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
-            # ST10 (ST_date)
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('444.44'),
+                'amount': Decimal('444.4400'),
+                'budgeted_amount': Decimal('444.4400'),
                 'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('444.44')}
+                    1: {'amount': Decimal('444.4400'), 'name': 'Periodic1'}
                 },
-                'budgeted_amount': Decimal('444.44'),
                 'date': date(2017, 4, 12),
                 'description': 'Trans_ST_date',
-                'id': 7,
+                'id': 8,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 10,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
+                'amount': Decimal('333.3300'),
+                'budgeted_amount': Decimal('333.3300'),
                 'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
                 },
-                'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 14),
                 'description': 'Trans_ST_pp_3_A',
-                'id': 5,
+                'id': 6,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
+                'amount': Decimal('333.3300'),
+                'budgeted_amount': Decimal('333.3300'),
                 'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
                 },
-                'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 15),
                 'description': 'Trans_ST_pp_3_B',
-                'id': 6,
+                'id': 7,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('766.66'),
-                'budgets': {
-                    1: {'name': 'Periodic1', 'amount': Decimal('666.66')},
-                    2: {'name': 'Periodic2', 'amount': Decimal('100.00')}
-                },
+                'amount': Decimal('766.6600'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('666.6600'), 'name': 'Periodic1'},
+                    2: {'amount': Decimal('100.0000'), 'name': 'Periodic2'}
+                },
                 'date': date(2017, 4, 16),
                 'description': 'Trans_bar',
-                'id': 9,
+                'id': 10,
+                'planned_budget_id': None,
+                'planned_budget_name': None,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': None,
-                'planned_budget_name': None
+                'type': 'Transaction'
             }
         ]
 
