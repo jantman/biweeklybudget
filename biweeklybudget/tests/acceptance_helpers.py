@@ -39,7 +39,7 @@ import logging
 from time import sleep
 from decimal import Decimal
 from selenium.common.exceptions import (
-    StaleElementReferenceException, TimeoutException
+    StaleElementReferenceException, TimeoutException, WebDriverException
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -397,3 +397,26 @@ class AcceptanceHelper(object):
             row[1] = fmt_currency(row[1])
             ret.append(row)
         return ret
+
+    def try_click(self, driver, elem):  # noqa
+        """
+        Wrapper for recent Chrome Headless
+        "Other element would receive the click" errors. Attempts to retry the
+        click after a short wait if it throws that error.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem: element to click
+        :type elem: selenium.webdriver.remote.webelement.WebElement
+        """
+        max_tries = 4
+        for i in range(0, max_tries):
+            try:
+                elem.click()
+                return
+            except WebDriverException as ex:
+                if 'Other element would receive the click' not in str(ex):
+                    raise
+                if i == max_tries - 1:
+                    raise
+                sleep(1.0)
