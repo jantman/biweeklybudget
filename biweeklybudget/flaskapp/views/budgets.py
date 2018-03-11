@@ -353,16 +353,17 @@ class BudgetSpendingChartView(MethodView):
             ),
             Transaction.date.__le__(dt_now)
         ).all():
-            if t.budget_transactions[0].budget_id not in budget_names:
-                continue
-            budg_name = t.budget_transactions[0].budget.name
-            budgets_present.add(budg_name)
-            ds = t.date.strftime('%Y-%m')
-            if ds not in records:
-                records[ds] = {'date': ds}
-            if budg_name not in records[ds]:
-                records[ds][budg_name] = Decimal('0')
-            records[ds][budg_name] += t.budget_transactions[0].amount
+            for bt in t.budget_transactions:
+                if bt.budget_id not in budget_names:
+                    continue
+                budg_name = bt.budget.name
+                budgets_present.add(budg_name)
+                ds = t.date.strftime('%Y-%m')
+                if ds not in records:
+                    records[ds] = {'date': ds}
+                if budg_name not in records[ds]:
+                    records[ds][budg_name] = Decimal('0')
+                records[ds][budg_name] += bt.amount
         result = [records[k] for k in sorted(records.keys())]
         res = {
             'data': result,
