@@ -581,33 +581,44 @@ class TestMakeBudgetSums(object):
                     'type': 'ScheduledTransaction',
                     'amount': Decimal('11.11'),
                     'budgeted_amount': None,
-                    'budget_id': 1
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('11.11')}
+                    }
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': None,
-                    'budget_id': 1
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('20.00')},
+                        2: {'name': 'foo', 'amount': Decimal('2.22')}
+                    }
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
-                    'budget_id': 1,
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('22.22')}
+                    },
                     'planned_budget_id': 1
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
-                    'budget_id': 2,
+                    'budgets': {
+                        2: {'name': 'foo', 'amount': Decimal('33.33')}
+                    },
                     'planned_budget_id': 2
                 },
                 {
                     'type': 'ScheduledTransaction',
                     'amount': Decimal('-1234.56'),
                     'budgeted_amount': Decimal('-1234.56'),
-                    'budget_id': 4,
+                    'budgets': {
+                        4: {'name': 'foo', 'amount': Decimal('-1234.56')}
+                    },
                     'planned_budget_id': 4
                 }
             ]
@@ -636,19 +647,19 @@ class TestMakeBudgetSums(object):
         assert res == {
             1: {
                 'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('53.53'),
-                'spent': Decimal('44.44'),
-                'trans_total': Decimal('55.55'),
+                'allocated': Decimal('51.31'),
+                'spent': Decimal('42.22'),
+                'trans_total': Decimal('53.33'),
                 'is_income': False,
-                'remaining': Decimal('67.90')
+                'remaining': Decimal('70.12')
             },
             2: {
                 'budget_amount': Decimal('456.78'),
-                'allocated': Decimal('33.33'),
-                'spent': Decimal('33.33'),
-                'trans_total': Decimal('33.33'),
+                'allocated': Decimal('35.55'),
+                'spent': Decimal('35.55'),
+                'trans_total': Decimal('35.55'),
                 'is_income': False,
-                'remaining': Decimal('423.45')
+                'remaining': Decimal('421.23')
             },
             3: {
                 'budget_amount': Decimal('789.10'),
@@ -686,33 +697,43 @@ class TestMakeBudgetSums(object):
                     'type': 'ScheduledTransaction',
                     'amount': Decimal('11.11'),
                     'budgeted_amount': None,
-                    'budget_id': 1
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('11.11')}
+                    }
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': None,
-                    'budget_id': 1
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('22.22')}
+                    }
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
-                    'budget_id': 1,
+                    'budgets': {
+                        1: {'name': 'foo', 'amount': Decimal('22.22')}
+                    },
                     'planned_budget_id': 1
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
-                    'budget_id': 2,
+                    'budgets': {
+                        2: {'name': 'foo', 'amount': Decimal('33.33')}
+                    },
                     'planned_budget_id': 2
                 },
                 {
                     'type': 'Transaction',
                     'amount': Decimal('-1234.56'),
                     'budgeted_amount': Decimal('-1234.56'),
-                    'budget_id': 4,
+                    'budgets': {
+                        4: {'name': 'foo', 'amount': Decimal('-1234.56')}
+                    },
                     'planned_budget_id': 4
                 }
             ]
@@ -992,11 +1013,76 @@ class TestDictForTrans(object):
             'budgeted_amount': Decimal('120.00'),
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
             'reconcile_id': None,
             'planned_budget_id': 3,
-            'planned_budget_name': 'bar'
+            'planned_budget_name': 'bar',
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
+        }
+
+    def test_budget_split(self):
+        m_account = Mock(name='foo')
+        type(m_account).name = 'foo'
+        m_budget = Mock(name='bar')
+        type(m_budget).name = 'bar'
+        m_budget2 = Mock(name='foo')
+        type(m_budget2).name = 'foo'
+        m_budget3 = Mock(name='baz')
+        type(m_budget3).name = 'baz'
+        m = Mock(
+            spec=Transaction,
+            id=123,
+            date=date(year=2017, month=7, day=15),
+            scheduled_trans_id=567,
+            description='desc',
+            actual_amount=Decimal('123.45'),
+            budgeted_amount=Decimal('120.00'),
+            account_id=2,
+            account=m_account,
+            planned_budget_id=3,
+            planned_budget=m_budget,
+            budget_transactions=[
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=1,
+                    budget=m_budget,
+                    amount=Decimal('53.00')
+                ),
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=2,
+                    budget=m_budget2,
+                    amount=Decimal('20.45')
+                ),
+                Mock(
+                    spec_set=BudgetTransaction,
+                    budget_id=3,
+                    budget=m_budget3,
+                    amount=Decimal('50.00')
+                )
+            ]
+        )
+        type(m).reconcile = None
+        assert self.cls._dict_for_trans(m) == {
+            'type': 'Transaction',
+            'id': 123,
+            'date': date(year=2017, month=7, day=15),
+            'sched_type': None,
+            'sched_trans_id': 567,
+            'description': 'desc',
+            'amount': Decimal('123.45'),
+            'budgeted_amount': Decimal('120.00'),
+            'account_id': 2,
+            'account_name': 'foo',
+            'reconcile_id': None,
+            'planned_budget_id': 3,
+            'planned_budget_name': 'bar',
+            'budgets': {
+                1: {'name': 'bar', 'amount': Decimal('53.00')},
+                2: {'name': 'foo', 'amount': Decimal('20.45')},
+                3: {'name': 'baz', 'amount': Decimal('50.00')}
+            }
         }
 
     def test_reconciled(self):
@@ -1037,11 +1123,12 @@ class TestDictForTrans(object):
             'budgeted_amount': Decimal('120.00'),
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
             'reconcile_id': 2,
             'planned_budget_id': 3,
-            'planned_budget_name': 'bar'
+            'planned_budget_name': 'bar',
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
     def test_budgeted_amount_none(self):
@@ -1082,11 +1169,12 @@ class TestDictForTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
             'planned_budget_id': None,
             'planned_budget_name': None,
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
 
@@ -1124,9 +1212,10 @@ class TestDictForSchedTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
     def test_per_period(self):
@@ -1142,9 +1231,10 @@ class TestDictForSchedTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
     def test_day_of_month_single_month(self):
@@ -1161,9 +1251,10 @@ class TestDictForSchedTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
     def test_day_of_month_cross_month_before(self):
@@ -1181,9 +1272,10 @@ class TestDictForSchedTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }
 
     def test_day_of_month_cross_month_after(self):
@@ -1201,7 +1293,8 @@ class TestDictForSchedTrans(object):
             'budgeted_amount': None,
             'account_id': 2,
             'account_name': 'foo',
-            'budget_id': 3,
-            'budget_name': 'bar',
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
         }

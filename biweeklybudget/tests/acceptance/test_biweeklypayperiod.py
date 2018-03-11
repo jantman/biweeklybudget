@@ -239,6 +239,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
     def test_2_add_data(self, testdb):
         acct = testdb.query(Account).get(1)
         budg = testdb.query(Budget).get(1)
+        budg2 = testdb.query(Budget).get(2)
         st_daynum = ScheduledTransaction(
             amount=Decimal('111.11'),
             description='ST_day_9',
@@ -323,7 +324,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         testdb.add(t_foo)
         t_bar = Transaction(
-            budget_amounts={budg: Decimal('666.66')},
+            budget_amounts={
+                budg: Decimal('666.66'),
+                budg2: Decimal('100.00')
+            },
             date=date(2017, 4, 16),
             description='Trans_bar',
             account=acct
@@ -344,8 +348,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('222.22'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('222.22')}
+                },
                 'budgeted_amount': None,
                 'date': None,
                 'description': 'ST_pp_1',
@@ -359,8 +364,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
+                },
                 'budgeted_amount': None,
                 'date': None,
                 'description': 'ST_pp_3',
@@ -374,8 +380,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('555.55'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('555.55')}
+                },
                 'budgeted_amount': None,
                 'date': date(2017, 4, 8),
                 'description': 'Trans_foo',
@@ -392,8 +399,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('111.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('111.33')}
+                },
                 'budgeted_amount': Decimal('111.11'),
                 'date': date(2017, 4, 9),
                 'description': 'Trans_ST_day_9',
@@ -410,8 +418,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('444.44'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('444.44')}
+                },
                 'budgeted_amount': Decimal('444.44'),
                 'date': date(2017, 4, 12),
                 'description': 'Trans_ST_date',
@@ -427,8 +436,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
+                },
                 'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 14),
                 'description': 'Trans_ST_pp_3_A',
@@ -444,8 +454,9 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'account_id': 1,
                 'account_name': 'BankOne',
                 'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('333.33')}
+                },
                 'budgeted_amount': Decimal('333.33'),
                 'date': date(2017, 4, 15),
                 'description': 'Trans_ST_pp_3_B',
@@ -460,9 +471,11 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('666.66'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'amount': Decimal('766.66'),
+                'budgets': {
+                    1: {'name': 'Periodic1', 'amount': Decimal('666.66')},
+                    2: {'name': 'Periodic2', 'amount': Decimal('100.00')}
+                },
                 'budgeted_amount': None,
                 'date': date(2017, 4, 16),
                 'description': 'Trans_bar',
@@ -547,7 +560,10 @@ class TestSums(AcceptanceHelper):
         # Budget 3 Income Transaction
         t1 = Transaction(
             date=date(2017, 4, 7),
-            budget_amounts={budgets[3]: Decimal('100.00')},
+            budget_amounts={
+                budgets[3]: Decimal('100.00'),
+                budgets[4]: Decimal('50.00')
+            },
             budgeted_amount=Decimal('100.00'),
             description='B3 Income',
             account=acct
@@ -630,10 +646,10 @@ class TestSums(AcceptanceHelper):
             4: {
                 'budget_amount': Decimal('500.00'),
                 'allocated': Decimal('1000.0'),
-                'spent': Decimal('850.0'),
-                'trans_total': Decimal('1100.0'),
+                'spent': Decimal('900.0'),
+                'trans_total': Decimal('1150.0'),
                 'is_income': False,
-                'remaining': Decimal('-600.0')
+                'remaining': Decimal('-650.0')
             },
             5: {
                 'budget_amount': Decimal('100.0'),
@@ -652,9 +668,9 @@ class TestSums(AcceptanceHelper):
         )
         assert pp._data['overall_sums'] == {
             'allocated': Decimal('1100.0'),
-            'spent': Decimal('853.0'),
+            'spent': Decimal('903.0'),
             'income': Decimal('322.45'),
-            'remaining': Decimal('-530.55')
+            'remaining': Decimal('-580.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
@@ -711,10 +727,10 @@ class TestSums(AcceptanceHelper):
             4: {
                 'budget_amount': Decimal('500.00'),
                 'allocated': Decimal('1000.0'),
-                'spent': Decimal('850.0'),
-                'trans_total': Decimal('1100.0'),
+                'spent': Decimal('900.0'),
+                'trans_total': Decimal('1150.0'),
                 'is_income': False,
-                'remaining': Decimal('-600.0')
+                'remaining': Decimal('-650.0')
             },
             5: {
                 'budget_amount': Decimal('100.0'),
@@ -727,9 +743,9 @@ class TestSums(AcceptanceHelper):
         }
         assert pp._data['overall_sums'] == {
             'allocated': Decimal('1100.0'),
-            'spent': Decimal('2885.0'),
+            'spent': Decimal('2935.0'),
             'income': Decimal('322.45'),
-            'remaining': Decimal('-2562.55')
+            'remaining': Decimal('-2612.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
