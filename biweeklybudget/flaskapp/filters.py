@@ -200,3 +200,21 @@ def monthsyears(num):
     if num < 12:
         return '%f months' % num
     return '%.1f years' % (num / 12.0)
+
+
+@app.template_filter('budgetCell')
+def budget_cell_filter(d):
+    """
+    Given a dictionary of budget IDs to names and amounts like that returned by
+    :py:meth:`~.BiweeklyPayPeriod._dict_for_trans`, return the ``<td>`` content
+    for those budgets.
+    """
+    if len(d) == 1:
+        k = list(d.keys())[0]
+        return '<a href="/budgets/%d">%s</a>' % (k, d[k]['name'])
+    items = [
+        '<a href="/budgets/%d">%s</a> (%s)' % (
+            k, d[k]['name'], dollars_filter(d[k]['amount'])
+        ) for k in sorted(d.keys(), key=lambda x: d[x]['amount'], reverse=True)
+    ]
+    return '<br />'.join(items)

@@ -187,7 +187,7 @@
                                             <td><em>(sched)</em> <a href="javascript:schedModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a></td>
                                             {% endif %}
                                             <td><a href="/accounts/{{ t['account_id'] }}">{{ t['account_name'] }}</a></td>
-                                            <td><a href="/budgets/{{ t['budget_id'] }}">{{ t['budget_name'] }}</a></td>
+                                            <td>{{ t['budgets']|budgetCell|safe }}</td>
                                             {% if t['type'] == 'Transaction' %}
                                                 {% if t['sched_trans_id'] != None %}
                                             <td><em>(from <a href="javascript:schedModal({{ t['sched_trans_id'] }}, null);">{{ t['sched_trans_id'] }}</a>)</em></td>

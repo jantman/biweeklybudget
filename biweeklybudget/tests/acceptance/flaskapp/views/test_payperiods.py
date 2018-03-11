@@ -627,7 +627,10 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         testdb.add(t2)
         t3 = Transaction(
             date=(ppdate + timedelta(days=3)),
-            budget_amounts={e1budget: Decimal('600.00')},
+            budget_amounts={
+                e1budget: Decimal('600.00'),
+                e2budget: Decimal('20.00')
+            },
             budgeted_amount=Decimal('500.00'),
             description='prev trans 2',
             account=acct,
@@ -745,9 +748,9 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         periods = self.pay_periods(testdb)
         assert periods['prev'].overall_sums == {
             'allocated': Decimal('750.0'),
-            'spent': Decimal('850.0'),
+            'spent': Decimal('870.0'),
             'income': Decimal('1000.0'),
-            'remaining': Decimal('150.0')
+            'remaining': Decimal('130.0')
         }
         assert periods['curr'].overall_sums == {
             'allocated': Decimal('2350.0'),
@@ -790,7 +793,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             '%s' % pp.next.next.next.start_date.strftime('%Y-%m-%d')
         ]
         assert self.tbody2textlist(table) == [[
-            '$150.00',
+            '$130.00',
             '-$1,050.00',
             '$12.00',
             '$798.00',
@@ -904,7 +907,10 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.add(t3)
         t4 = Transaction(
             date=ppdate,
-            budget_amounts={e2budget: Decimal('222.22')},
+            budget_amounts={
+                e1budget: Decimal('10.00'),
+                e2budget: Decimal('222.22')
+            },
             description='T3',
             notes='notesT3',
             account=testdb.query(Account).get(3)
@@ -924,9 +930,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$345.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$421.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$355.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,924.57'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -945,9 +951,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
@@ -1032,10 +1038,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ],
             [
                 ppdate.strftime('%Y-%m-%d'),
-                '$222.22',
+                '$232.22',
                 '<a href="javascript:transModal(7, null);">T3 (7)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
-                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="/budgets/2">Periodic2</a> ($222.22)<br>'
+                '<a href="/budgets/1">Periodic1</a> ($10.00)',
                 '&nbsp;',
                 '&nbsp;'
             ],
@@ -1386,9 +1393,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$511.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$445.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,834.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$521.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$455.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,824.57'
 
     def test_23_issue152_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1408,9 +1415,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
@@ -1588,9 +1595,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$711.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$645.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,634.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$721.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$655.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,624.57'
 
     def test_41_issue161_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1610,9 +1617,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
