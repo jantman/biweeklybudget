@@ -513,8 +513,7 @@ class TestOneProjectView(AcceptanceHelper):
         editlink = selenium.find_element_by_xpath(
             '//a[@onclick="bomItemModal(3)"]'
         )
-        editlink.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit BoM Item 3'
         id = body.find_element_by_id('bom_frm_id')
@@ -539,8 +538,7 @@ class TestOneProjectView(AcceptanceHelper):
         editlink = selenium.find_element_by_xpath(
             '//a[@onclick="bomItemModal(3)"]'
         )
-        editlink.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit BoM Item 3'
         id = body.find_element_by_id('bom_frm_id')
@@ -664,8 +662,7 @@ class TestOneProjectView(AcceptanceHelper):
     def test_06_add_item(self, base_url, selenium):
         self.get(selenium, base_url + '/projects/1')
         editlink = selenium.find_element_by_id('btn_add_item')
-        editlink.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New BoM Item'
         id = body.find_element_by_id('bom_frm_id')

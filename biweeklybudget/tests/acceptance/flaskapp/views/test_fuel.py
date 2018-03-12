@@ -272,8 +272,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
         self.wait_until_clickable(selenium, '//a[text()="Veh1"]', by='xpath')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 1'
         assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
@@ -288,8 +287,7 @@ class TestModals(AcceptanceHelper):
         self.wait_until_clickable(
             selenium, '//a[text()="Veh3Inactive"]', by='xpath'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 3'
         assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
@@ -350,8 +348,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
         self.wait_until_clickable(selenium, 'btn-add-vehicle')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Vehicle'
         name = selenium.find_element_by_id('vehicle_frm_name')
@@ -417,8 +414,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
@@ -488,8 +484,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
@@ -591,8 +586,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))

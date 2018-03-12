@@ -1002,8 +1002,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
 
@@ -1115,8 +1114,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_xpath('//a[text()="T1foo (6)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
@@ -1167,8 +1165,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_xpath('//a[text()="T1foo (6)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
@@ -1229,8 +1226,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         link = selenium.find_element_by_xpath(
             '//a[text()="ST7 per_period (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 7'
         assert body.find_element_by_id(
@@ -1262,8 +1258,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         link = selenium.find_element_by_xpath(
             '//a[text()="ST7 per_period (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         desc = body.find_element_by_id('sched_frm_description')
         desc.send_keys('edited')
@@ -1306,8 +1301,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         dt_text = body.find_element_by_id('trans_frm_date')
         dt_text.clear()
@@ -1443,8 +1437,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         dt_text = body.find_element_by_id('trans_frm_date')
         dt_text.clear()
@@ -1547,8 +1540,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         link = selenium.find_element_by_xpath(
             '//a[text()="issue152regression3 (10)"]'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 10'
         assert body.find_element_by_id(
@@ -1782,8 +1774,7 @@ class TestMakeTransModal(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Scheduled Transaction 7 to Transaction'
         assert body.find_element_by_id(
@@ -1815,8 +1806,7 @@ class TestMakeTransModal(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         body.find_element_by_id('schedtotrans_frm_date').clear()
         body.find_element_by_id('schedtotrans_frm_date').send_keys(
@@ -2168,8 +2158,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2487,8 +2476,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2504,8 +2492,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             date(2017, 6, 23).strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2520,8 +2507,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             date(2017, 8, 18).strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2823,8 +2809,7 @@ class TestSkipScheduled(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:skipSchedTransModal(8, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Skip Scheduled Transaction 8 in period %s' \
             % pp.start_date.strftime('%Y-%m-%d')

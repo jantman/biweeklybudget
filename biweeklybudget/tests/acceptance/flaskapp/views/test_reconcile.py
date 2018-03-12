@@ -922,8 +922,7 @@ class TestTransactionEditModal(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         link = selenium.find_element_by_xpath('//a[text()="Trans 1"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
         assert body.find_element_by_id(
@@ -1659,9 +1658,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX2')
         link = ofxdiv.find_element_by_xpath('//a[text()="(make trans)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Transaction for OFX (2, OFX2)'
         assert body.find_element_by_id(
@@ -1851,9 +1849,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
         link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX31")'
         assert body.find_element_by_id(
@@ -1970,9 +1967,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         # ignore
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
         link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX30")'
         assert body.find_element_by_id(
@@ -2286,8 +2282,9 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         )
         assert self.get_reconciled(selenium) == {}
         # reconcile as noOFX
-        trans.find_element_by_link_text('(no OFX)').click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(
+            selenium, trans.find_element_by_link_text('(no OFX)')
+        )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Reconcile Transaction 3 Without OFX'
         assert body.find_element_by_id(

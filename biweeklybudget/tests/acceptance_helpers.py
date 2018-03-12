@@ -435,3 +435,32 @@ class AcceptanceHelper(object):
                 if i == max_tries - 1:
                     raise
                 sleep(1.0)
+
+    def try_click_and_get_modal(self, driver, elem_to_click, wait=True):
+        """
+        Combination of :py:meth:`~.try_click` and :py:meth:`~.get_modal_parts`
+        to work around both the "Other element would receive the click" error
+        and TimeoutExceptions waiting for the modal to be shown.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem_to_click: element to click
+        :type elem_to_click: selenium.webdriver.remote.webelement.WebElement
+        :param wait: whether or not to wait for presence of modalLabel
+        :type wait: bool
+        :return: 3-tuple of (modalDiv WebElement, modalLabel WebElement,
+          modalBody WebElement)
+        :rtype: tuple
+        """
+        max_tries = 4
+        for i in range(0, max_tries):
+            try:
+                self.try_click(driver, elem_to_click)
+                return self.get_modal_parts(driver, wait=wait)
+            except (WebDriverException, TimeoutException):
+                if i == max_tries - 1:
+                    raise
+                logger.error('ERROR: Unable to click link and get modal. '
+                             'Trying again in 1s', exc_info=True)
+                sleep(1.0)
+        return None, None, None

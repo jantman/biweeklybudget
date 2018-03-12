@@ -388,8 +388,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T2"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
         assert body.find_element_by_id(
@@ -437,8 +436,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T2"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
         assert body.find_element_by_id(
@@ -512,8 +510,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
         assert body.find_element_by_id(
@@ -561,8 +558,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
         assert body.find_element_by_id(
@@ -584,8 +580,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_id('btn_add_trans')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
         date_input = body.find_element_by_id('trans_frm_date')
@@ -660,8 +655,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_id('btn_add_trans')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
         date_input = body.find_element_by_id('trans_frm_date')
@@ -734,8 +728,7 @@ class TestTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath('//a[text()="NewTrans6"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
@@ -794,8 +787,7 @@ class TestTransReconciledModal(AcceptanceHelper):
         self.get(selenium, base_url + '/transactions')
         link = selenium.find_element_by_xpath(
             '//a[@href="javascript:txnReconcileModal(1)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
         dl = body.find_element_by_tag_name('dl')

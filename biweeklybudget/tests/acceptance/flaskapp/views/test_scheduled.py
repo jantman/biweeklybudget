@@ -269,8 +269,7 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_xpath('//a[text()="ST3"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 3'
         assert body.find_element_by_id(
@@ -471,8 +470,7 @@ class TestSchedTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
@@ -538,8 +536,7 @@ class TestSchedTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
@@ -594,8 +591,7 @@ class TestSchedTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
@@ -650,8 +646,7 @@ class TestSchedTransModal(AcceptanceHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/scheduled')
         link = selenium.find_element_by_id('btn_add_sched')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Scheduled Transaction'
         desc = body.find_element_by_id('sched_frm_description')
