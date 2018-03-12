@@ -1512,8 +1512,9 @@ class TestReconcileBackend(ReconcileHelper):
         res = testdb.query(TxnReconcile).all()
         txn_id = res[-1].txn_id
         self.get(selenium, base_url + '/transactions')
-        selenium.find_element_by_link_text('Yes (%s)' % txn_id).click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(
+            selenium, selenium.find_element_by_link_text('Yes (%s)' % txn_id)
+        )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile %s' % txn_id
         assert 'Foo Bar Baz' in body.text

@@ -303,8 +303,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_21_get_acct2_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="BankTwoStale"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 2'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
@@ -366,8 +365,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_22_edit_acct2(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="BankTwoStale"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 2'
         selenium.find_element_by_id('account_frm_name').send_keys('Edited')
@@ -462,8 +460,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="CreditOne"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 3'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
@@ -520,8 +517,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_32_edit_acct3(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="CreditOne"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 3'
         selenium.find_element_by_id('account_frm_name').send_keys('Edited')
@@ -738,8 +734,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_51_get_acct5_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="InvestmentOne"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 5'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
@@ -784,8 +779,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_52_edit_acct5(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_xpath('//a[text()="InvestmentOne"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 5'
         selenium.find_element_by_id('account_frm_name').send_keys('Edited')
@@ -832,8 +826,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_61_modal_add_bank(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_id('btn_add_acct_bank')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
@@ -923,8 +916,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_71_modal_add_credit(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_id('btn_add_acct_credit')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
@@ -1040,8 +1032,7 @@ class TestAccountModal(AcceptanceHelper):
     def test_81_modal_add_bank(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
         link = selenium.find_element_by_id('btn_add_acct_invest')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
         assert selenium.find_element_by_id('account_frm_id').get_attribute(
