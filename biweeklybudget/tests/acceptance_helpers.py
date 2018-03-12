@@ -307,7 +307,11 @@ class AcceptanceHelper(object):
             except TimeoutException:
                 if count > 4:
                     raise
-                print('selenium.get(%s) timed out; trying again', url)
+                print(
+                    'TimeoutException waiting for modal to be shown; '
+                    'try again in 1 second.'
+                )
+                sleep(1)
             except Exception:
                 raise
         return None, None, None
