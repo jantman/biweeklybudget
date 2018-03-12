@@ -343,8 +343,6 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         assert pp.start_date == date(2017, 4, 7)
         all_trans = pp.transactions_list
-        from pprint import pprint
-        pprint(all_trans)
         assert all_trans == [
             {
                 'account_id': 1,
