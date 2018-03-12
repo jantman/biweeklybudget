@@ -309,7 +309,7 @@ class AcceptanceHelper(object):
                     raise
                 print(
                     'TimeoutException waiting for modal to be shown; '
-                    'try again in 1 second.'
+                    'try again in 3 seconds.'
                 )
                 sleep(3)
             except Exception:
