@@ -294,12 +294,23 @@ class AcceptanceHelper(object):
           modalBody WebElement)
         :rtype: tuple
         """
-        if wait:
-            self.wait_for_modal_shown(selenium)
-        modal = selenium.find_element_by_id('modalDiv')
-        title = selenium.find_element_by_id('modalLabel')
-        body = selenium.find_element_by_id('modalBody')
-        return modal, title, body
+        count = 0
+        while True:
+            count += 1
+            try:
+                if wait:
+                    self.wait_for_modal_shown(selenium)
+                modal = selenium.find_element_by_id('modalDiv')
+                title = selenium.find_element_by_id('modalLabel')
+                body = selenium.find_element_by_id('modalBody')
+                return modal, title, body
+            except TimeoutException:
+                if count > 4:
+                    raise
+                print('selenium.get(%s) timed out; trying again', url)
+            except Exception:
+                raise
+        return None, None, None
 
     def assert_modal_displayed(self, modal, title, body):
         """
