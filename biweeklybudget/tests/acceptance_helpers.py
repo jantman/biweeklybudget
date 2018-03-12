@@ -305,13 +305,13 @@ class AcceptanceHelper(object):
                 body = selenium.find_element_by_id('modalBody')
                 return modal, title, body
             except TimeoutException:
-                if count > 4:
+                if count > 6:
                     raise
                 print(
                     'TimeoutException waiting for modal to be shown; '
                     'try again in 1 second.'
                 )
-                sleep(1)
+                sleep(3)
             except Exception:
                 raise
         return None, None, None
