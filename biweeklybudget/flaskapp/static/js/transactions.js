@@ -68,7 +68,27 @@ $(document).ready(function() {
             {
                 data: "DT_RowData.budget",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "/budgets/" + row.DT_RowData.budget_id).text(data)).html();
+                    if(row.DT_RowData.budgets.length == 1) {
+                        var budg = row.DT_RowData.budgets[0];
+                        var txt = budg['name'];
+                        if(budg['is_income'] === true) { txt = txt + ' (income)'; }
+                        txt = txt + ' (' + budg['id'] + ')';
+                        return $("<div>").append($("<a/>").attr("href", "/budgets/" + budg['id']).text(txt)).html();
+                    } else {
+                        var div = $("<div>");
+                        for (index = 0; index < row.DT_RowData.budgets.length; ++index) {
+                            var budg = row.DT_RowData.budgets[index];
+                            console.log(budg);
+                            console.log(index);
+                            var txt = budg['name'];
+                            if(budg['is_income'] === true) { txt = txt + ' (income)'; }
+                            txt = txt + ' (' + budg['id'] + ')';
+                            txt = txt + ' (' + fmt_currency(budg['amount']) + ')';
+                            div.append($("<a/>").attr("href", "/budgets/" + budg['id']).text(txt));
+                            if(index < row.DT_RowData.budgets.length - 1) { div.append($('<br />')); }
+                        }
+                        return div.html();
+                    }
                 }
             },
             {

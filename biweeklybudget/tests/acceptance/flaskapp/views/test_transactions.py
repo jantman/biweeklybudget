@@ -123,7 +123,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 '$322.32',
                 'T4split',
                 'CreditOne (3)',
-                'Periodic2 (2)',
+                'Periodic2 (2) ($222.22)\nPeriodic1 (1) ($100.10)',
                 '',
                 '',
                 ''
@@ -139,6 +139,7 @@ class TestTransactionsDefault(AcceptanceHelper):
             ]
             for c in elems
         ]
+        assert len(linkcols) == 4
         assert linkcols[0] == [
             '<a href="javascript:transModal(1, mytable)">T1foo</a>',
             '<a href="/accounts/1">BankOne (1)</a>',
@@ -157,6 +158,14 @@ class TestTransactionsDefault(AcceptanceHelper):
             '<a href="javascript:transModal(3, mytable)">T3</a>',
             '<a href="/accounts/3">CreditOne (3)</a>',
             '<a href="/budgets/2">Periodic2 (2)</a>',
+            '&nbsp;',
+            '&nbsp;'
+        ]
+        assert linkcols[3] == [
+            '<a href="javascript:transModal(4, mytable)">T4split</a>',
+            '<a href="/accounts/3">CreditOne (3)</a>',
+            '<a href="/budgets/2">Periodic2 (2) ($222.22)</a><br>'
+            '<a href="/budgets/1">Periodic1 (1) ($100.10)</a>',
             '&nbsp;',
             '&nbsp;'
         ]
