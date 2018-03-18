@@ -38,6 +38,13 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import os
 
+# workaround for https://github.com/jantman/versionfinder/issues/5
+# caused by versionfinder import in ``views/help.py``
+try:
+    import pip
+except (ImportError, KeyError):
+    pass
+
 from flask import Flask
 
 from biweeklybudget.db import init_db, cleanup_db
