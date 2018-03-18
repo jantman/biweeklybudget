@@ -65,7 +65,7 @@ class HelpView(MethodView):
         if 'git' in VERSION:
             ver = VERSION
         else:
-            ver = find_version('biweeklybudget').version
+            ver = find_version('biweeklybudget').long_str
         return render_template(
             'help.html',
             ver_info=ver,
