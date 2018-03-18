@@ -41,7 +41,7 @@ import os
 # workaround for https://github.com/jantman/versionfinder/issues/5
 # caused by versionfinder import in ``views/help.py``
 try:
-    import pip
+    import pip  # noqa
 except (ImportError, KeyError):
     pass
 
