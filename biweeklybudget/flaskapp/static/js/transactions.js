@@ -67,6 +67,7 @@ $(document).ready(function() {
             },
             {
                 data: "DT_RowData.budget",
+                orderable: false,  // split-budget transactions breaks sorting
                 "render": function(data, type, row) {
                     if(row.DT_RowData.budgets.length == 1) {
                         var budg = row.DT_RowData.budgets[0];
