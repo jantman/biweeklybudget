@@ -79,8 +79,6 @@ $(document).ready(function() {
                         var div = $("<div>");
                         for (index = 0; index < row.DT_RowData.budgets.length; ++index) {
                             var budg = row.DT_RowData.budgets[index];
-                            console.log(budg);
-                            console.log(index);
                             var txt = budg['name'];
                             if(budg['is_income'] === true) { txt = txt + ' (income)'; }
                             txt = txt + ' (' + budg['id'] + ')';
