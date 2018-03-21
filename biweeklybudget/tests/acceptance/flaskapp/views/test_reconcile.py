@@ -81,9 +81,19 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     s += '</span></div>'
     s += '<div class="col-lg-3"><strong>Budget:</strong> '
     s += '<span style="white-space: nowrap;">'
-    s += '<a href="/budgets/%s">%s (%s)</a>' % (
-        budget_id, budget_name, budget_id
-    )
+    if isinstance(budget_name, type([])) and budget_id is None:
+        b1 = budget_name[0]
+        b2 = budget_name[1]
+        s += '<a href="/budgets/%s">%s (%s) (%s)</a><br>' % (
+            b1[1], b1[0], b1[1], b1[2]
+        )
+        s += '<a href="/budgets/%s">%s (%s) (%s)</a>' % (
+            b2[1], b2[0], b2[1], b2[2]
+        )
+    else:
+        s += '<a href="/budgets/%s">%s (%s)</a>' % (
+            budget_id, budget_name, budget_id
+        )
     s += '</span></div>'
     s += '</div>'
     s += '<div class="row"><div class="col-lg-12">'
@@ -326,7 +336,10 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(st1)
         t3 = Transaction(
             date=date(2017, 4, 11),
-            budget_amounts={e1budget: Decimal('600.00')},
+            budget_amounts={
+                e1budget: Decimal('590.00'),
+                e2budget: Decimal('10.00')
+            },
             budgeted_amount=Decimal('500.0'),
             description='trans2',
             account=acct2,
@@ -529,7 +542,11 @@ class TestColumns(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -727,7 +744,11 @@ class TestAccountReconcileFalse(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -972,7 +993,11 @@ class TestTransactionEditModal(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -1027,7 +1052,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -1193,7 +1222,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -1232,7 +1265,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
@@ -2074,7 +2111,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -2180,7 +2221,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2211,7 +2256,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -2236,7 +2285,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2269,7 +2322,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2311,7 +2368,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=noofx_div
         )
@@ -2325,7 +2386,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         assert self.get_reconciled(selenium) == {}

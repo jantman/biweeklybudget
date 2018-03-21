@@ -168,11 +168,22 @@ function reconcileDoUnreconcile(trans_id, acct_id, fitid) {
  * @param {Object} trans - ajax JSON object representing one Transaction
  */
 function reconcileTransDiv(trans) {
-  var div = '<div class="row">'
+  var div = '<div class="row">';
   div += '<div class="col-lg-3">' + trans['date']['str'] + '</div>';
   div += '<div class="col-lg-3">' + fmt_currency(trans['actual_amount']) + '</div>';
   div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
-  div += '<div class="col-lg-3"><strong>Budget:</strong> <span style="white-space: nowrap;"><a href="/budgets/' + trans['budget_id'] + '">' + trans['budget_name'] + ' (' + trans['budget_id'] + ')</a></span></div>';
+  div += '<div class="col-lg-3"><strong>Budget:</strong> <span style="white-space: nowrap;">';
+  for (index = 0; index < trans['budgets'].length; ++index) {
+    var budg = trans['budgets'][index];
+    var txt = budg['name'];
+    txt = txt + ' (' + budg['id'] + ')';
+    if (trans['budgets'].length > 1) {
+      txt = txt + ' (' + fmt_currency(budg['amount']) + ')';
+    }
+    div += '<a href="/budgets/' + budg['id'] + '">' + txt + '</a>';
+    if(index < trans['budgets'].length - 1) { div += '<br>'; }
+  }
+  div += '</span></div>';
   div += '</div>';
   div += '<div class="row"><div class="col-lg-12">';
   div += '<div style="float: left;"><a href="javascript:transModal(' + trans['id'] + ', function () { updateReconcileTrans(' + trans['id'] + ') })">Trans ' + trans['id'] + '</a>: ' + trans['description'] + '</div>';
