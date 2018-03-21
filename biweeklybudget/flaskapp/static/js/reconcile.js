@@ -173,7 +173,7 @@ function reconcileTransDiv(trans) {
   div += '<div class="col-lg-3">' + fmt_currency(trans['actual_amount']) + '</div>';
   div += '<div class="col-lg-3"><strong>Acct:</strong> <span style="white-space: nowrap;"><a href="/accounts/' + trans['account_id'] + '">' + trans['account_name'] + ' (' + trans['account_id'] + ')</a></span></div>';
   div += '<div class="col-lg-3"><strong>Budget:</strong> <span style="white-space: nowrap;">';
-  for (index = 0; index < trans['budgets'].length; ++index) {
+  for (var index = 0; index < trans['budgets'].length; ++index) {
     var budg = trans['budgets'][index];
     var txt = budg['name'];
     txt = txt + ' (' + budg['id'] + ')';

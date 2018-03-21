@@ -58,7 +58,18 @@ function txnReconcileModalDiv(msg) {
     frm += '<tr><th>Budgeted Amount</th><td>' + fmt_currency(msg['transaction']['budgeted_amount']) + '</td></tr>\n';
     frm += '<tr><th>Description</th><td>' + msg['transaction']['description'] + '</td></tr>\n';
     frm += '<tr><th>Account</th><td><a href="/accounts/' + msg['acct_id'] + '">' + msg['acct_name'] + ' (' + msg['acct_id'] + ')</a></td></tr>\n';
-    frm += '<tr><th>Budget</th><td><a href="/budgets/' + msg['budget_id'] + '">' + msg['budget_name'] + ' (' + msg['budget_id'] + ')</a></td></tr>\n';
+    frm += '<tr><th>Budget</th><td>';
+    for (var index = 0; index < msg['transaction']['budgets'].length; ++index) {
+      var budg = msg['transaction']['budgets'][index];
+      var txt = budg['name'];
+      txt = txt + ' (' + budg['id'] + ')';
+      if (msg['transaction']['budgets'].length > 1) {
+        txt = txt + ' (' + fmt_currency(budg['amount']) + ')';
+      }
+      frm += '<a href="/budgets/' + budg['id'] + '">' + txt + '</a>';
+      if(index < msg['transaction']['budgets'].length - 1) { frm += '<br>'; }
+    }
+    frm += '</td></tr>\n';
     frm += '<tr><th>Notes</th><td>' + msg['transaction']['notes'] + '</td></tr>\n';
     frm += '<tr><th>Scheduled?</th><td>';
     if (msg['transaction']['scheduled_trans_id'] !== null) {

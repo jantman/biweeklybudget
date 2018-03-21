@@ -856,3 +856,80 @@ class TestTransReconciledModal(AcceptanceHelper):
         ofx_elems = self.tbody2elemlist(ofx_tbl)
         assert ofx_elems[1][1].get_attribute('innerHTML') == '<a href=' \
             '"/accounts/1">BankOne (1)</a>'
+
+    def test_2_split_trans(self, testdb):
+        b1 = testdb.query(Budget).get(1)  # Periodic1
+        b2 = testdb.query(Budget).get(2)  # Periodic2
+        t = testdb.query(Transaction).get(1)
+        t.set_budget_amounts({
+            b1: Decimal('110.02'),
+            b2: Decimal('1.11')
+        })
+        testdb.commit()
+
+    def test_3_split_trans_modal(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_xpath(
+            '//a[@href="javascript:txnReconcileModal(1)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Transaction Reconcile 1'
+        dl = body.find_element_by_tag_name('dl')
+        assert dl.get_attribute('innerHTML') == '\n' \
+            '<dt>Date Reconciled</dt><dd>2017-04-10 08:09:11 UTC</dd>\n' \
+            '<dt>Note</dt><dd>reconcile notes</dd>\n' \
+            '<dt>Rule</dt><dd>null</dd>\n'
+        trans_tbl = body.find_element_by_id('txnReconcileModal-trans')
+        trans_texts = self.tbody2textlist(trans_tbl)
+        assert trans_texts == [
+            ['Transaction'],
+            [
+                'Date',
+                (dtnow() + timedelta(days=4)).strftime('%Y-%m-%d')
+            ],
+            ['Amount', '$111.13'],
+            ['Budgeted Amount', '$111.11'],
+            ['Description', 'T1foo'],
+            ['Account', 'BankOne (1)'],
+            ['Budget', 'Periodic1 (1) ($110.02)\nPeriodic2 (2) ($1.11)'],
+            ['Notes', 'notesT1'],
+            ['Scheduled?', 'Yes (1)']
+        ]
+        trans_elems = self.tbody2elemlist(trans_tbl)
+        assert trans_elems[5][1].get_attribute('innerHTML') == '<a href=' \
+            '"/accounts/1">BankOne (1)</a>'
+        assert trans_elems[6][1].get_attribute('innerHTML') == '<a href=' \
+            '"/budgets/1">Periodic1 (1) ($110.02)</a><br><a href=' \
+            '"/budgets/2">Periodic2 (2) ($1.11)</a>'
+        assert trans_elems[8][1].get_attribute('innerHTML') == '<a href=' \
+            '"/scheduled/1">Yes (1)</a>'
+        ofx_tbl = body.find_element_by_id('txnReconcileModal-ofx')
+        ofx_texts = self.tbody2textlist(ofx_tbl)
+        assert ofx_texts == [
+            ['OFX Transaction'],
+            ['Account', 'BankOne (1)'],
+            ['FITID', 'BankOne.0.1'],
+            ['Date Posted', (dtnow() - timedelta(days=6)).strftime('%Y-%m-%d')],
+            ['Amount', '-$20.00'],
+            ['Name', 'Late Fee'],
+            ['Memo', ''],
+            ['Type', 'Debit'],
+            ['Description', ''],
+            ['Notes', ''],
+            ['Checknum', ''],
+            ['MCC', ''],
+            ['SIC', ''],
+            ['OFX Statement'],
+            ['ID', '1'],
+            ['Date', (dtnow() - timedelta(hours=46)).strftime('%Y-%m-%d')],
+            ['Filename', '/stmt/BankOne/0'],
+            [
+                'File mtime',
+                (dtnow() - timedelta(hours=46)).strftime('%Y-%m-%d')
+            ],
+            ['Ledger Balance', '$12,345.67']
+        ]
+        ofx_elems = self.tbody2elemlist(ofx_tbl)
+        assert ofx_elems[1][1].get_attribute('innerHTML') == '<a href=' \
+            '"/accounts/1">BankOne (1)</a>'

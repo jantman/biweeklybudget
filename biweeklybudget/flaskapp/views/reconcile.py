@@ -81,9 +81,7 @@ class TxnReconcileAjax(MethodView):
 
         res = {
             'reconcile': rec.as_dict,
-            'transaction': rec.transaction.as_dict,
-            'budget_name': rec.transaction.budget_transactions[0].budget.name,
-            'budget_id': rec.transaction.budget_transactions[0].budget_id,
+            'transaction': rec.transaction.as_dict
         }
         res['transaction']['budgets'] = [
             {
