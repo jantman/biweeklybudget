@@ -256,6 +256,7 @@ class TransactionFormHandler(FormHandlerView):
         :return: None if no errors, or hash of field name to errors for that
           field
         """
+        logger.info('/forms/transaction POST data: %s', data)
         have_errors = False
         errors = {k: [] for k in data.keys()}
         txn = None
