@@ -46,9 +46,17 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * @param {string} form_id - The ID of the form itself.
  * @param {string} post_url - Relative URL to post form data to.
  * @param {Object} dataTableObj - passed on to ``handleFormSubmitted()``
+ * @param {Object} serialize_func - If set (i.e. not ``undefined``), this is
+ *   a function used serialize the form in place of :js:func:`serializeForm`.
+ *   This function will be passed the ID of the form (``form_id``) and should
+ *   return an Object suitable for passing to ``JSON.stringify()``.
  */
-function handleForm(container_id, form_id, post_url, dataTableObj) {
-    var data = serializeForm(form_id);
+function handleForm(container_id, form_id, post_url, dataTableObj, serialize_func) {
+    if (serialize_func === undefined) {
+        var data = serializeForm(form_id);
+    } else {
+        var data = serialize_func(form_id);
+    }
     $('.formfeedback').remove();
     $('.has-error').each(function(index) { $(this).removeClass('has-error'); });
     $.ajax({
