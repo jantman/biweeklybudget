@@ -54,7 +54,9 @@ function handleForm(container_id, form_id, post_url, dataTableObj) {
     $.ajax({
         type: "POST",
         url: post_url,
-        data: data,
+        data: JSON.stringify(data),
+        dataType: "json",
+        contentType: "application/json",
         success: function(data) {
             handleFormSubmitted(data, container_id, form_id, dataTableObj);
         },
