@@ -38,8 +38,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 from datetime import timedelta, date, datetime
 from pytz import UTC
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from decimal import Decimal
+import requests
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -933,3 +935,362 @@ class TestTransReconciledModal(AcceptanceHelper):
         ofx_elems = self.tbody2elemlist(ofx_tbl)
         assert ofx_elems[1][1].get_attribute('innerHTML') == '<a href=' \
             '"/accounts/1">BankOne (1)</a>'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestTransModalBudgetSplits(AcceptanceHelper):
+
+    def test_01_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(4)
+        assert t is not None
+        assert t.description == 'T4split'
+        assert t.date == (dtnow() - timedelta(days=35)).date()
+        assert t.actual_amount == Decimal('322.32')
+        assert t.budgeted_amount is None
+        assert t.planned_budget_id is None
+        assert t.account_id == 3
+        assert t.scheduled_trans_id is None
+        assert t.notes == 'notesT4split'
+        assert len(t.budget_transactions) == 2
+        assert t.budget_transactions[0].budget_id == 2
+        assert t.budget_transactions[0].amount == Decimal('222.22')
+        assert t.budget_transactions[1].budget_id == 1
+        assert t.budget_transactions[1].amount == Decimal('100.10')
+
+    def test_02_resave_transaction(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'id': '4',
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {
+                    '2': '222.22',
+                    '1': '100.10'
+                }
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': True,
+            'success_message': 'Successfully saved Transaction 4  in database.',
+            'trans_id': 4
+        }
+
+    def test_03_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(4)
+        assert t is not None
+        assert t.description == 'T4split'
+        assert t.date == (dtnow() - timedelta(days=35)).date()
+        assert t.actual_amount == Decimal('322.32')
+        assert t.budgeted_amount is None
+        assert t.planned_budget_id is None
+        assert t.account_id == 3
+        assert t.scheduled_trans_id is None
+        assert t.notes == 'notesT4split'
+        assert len(t.budget_transactions) == 2
+        assert t.budget_transactions[0].budget_id == 2
+        assert t.budget_transactions[0].amount == Decimal('222.22')
+        assert t.budget_transactions[1].budget_id == 1
+        assert t.budget_transactions[1].amount == Decimal('100.10')
+
+    def test_10_backend_validation_amounts(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'id': '4',
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {
+                    '2': '422.32'
+                }
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': False,
+            'errors': {
+                'account': [],
+                'amount': [],
+                'budgets': [
+                    'Sum of all budget amounts (422.32) must equal '
+                    'Transaction amount (322.32).'
+                ],
+                'date': [],
+                'description': [],
+                'id': [],
+                'notes': []
+            }
+        }
+
+    def test_11_backend_validation_amounts(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'id': '4',
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {
+                    '1': '222.32',
+                    '2': '200.12'
+                }
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': False,
+            'errors': {
+                'account': [],
+                'amount': [],
+                'budgets': [
+                    'Sum of all budget amounts (422.44) must equal '
+                    'Transaction amount (322.32).'
+                ],
+                'date': [],
+                'description': [],
+                'id': [],
+                'notes': []
+            }
+        }
+
+    def test_12_backend_validation_no_budgets(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'id': '4',
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {}
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': False,
+            'errors': {
+                'account': [],
+                'amount': [],
+                'budgets': [
+                    'Transactions must have a budget.'
+                ],
+                'date': [],
+                'description': [],
+                'id': [],
+                'notes': []
+            }
+        }
+
+    def test_13_backend_validation_invalid_budget_id(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {'99': '322.32'}
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': False,
+            'errors': {
+                'account': [],
+                'amount': [],
+                'budgets': [
+                    'Budget ID 99 is invalid.'
+                ],
+                'date': [],
+                'description': [],
+                'notes': []
+            }
+        }
+
+    def test_14_backend_validation_inactive_budget(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': (dtnow() - timedelta(days=35)).strftime('%Y-%m-%d'),
+                'amount': '322.32',
+                'description': 'T4split',
+                'notes': 'notesT4split',
+                'account': '3',
+                'budgets': {'3': '322.32'}
+            }
+        )
+        assert res.status_code == 200
+        assert res.json() == {
+            'success': False,
+            'errors': {
+                'account': [],
+                'amount': [],
+                'budgets': [
+                    'New transactions cannot use an inactive budget '
+                    '(Periodic3 Inactive).'
+                ],
+                'date': [],
+                'description': [],
+                'notes': []
+            }
+        }
+
+    def validation_count_increased(self, driver, previous):
+        c = driver.execute_script('return validation_count;')
+        return c > previous
+
+    def assert_budget_split_has_error(self, driver, msg):
+        # get validate count
+        c = driver.execute_script('return validation_count;')
+        # change focus
+        driver.find_element_by_id('trans_frm_description').click()
+        # wait for validate count to increase
+        try:
+            WebDriverWait(driver, 5).until(
+                lambda x: self.validation_count_increased(driver, c)
+            )
+        except TimeoutException:
+            pass
+        assert driver.find_element_by_id('budget-split-feedback').text == msg
+        assert driver.find_element_by_id(
+            'modalSaveButton').is_enabled() is False
+
+    def assert_budget_split_does_not_have_error(self, driver):
+        # get validate count
+        c = driver.execute_script('return validation_count;')
+        # change focus
+        driver.find_element_by_id('trans_frm_description').click()
+        # wait for validate count to increase
+        try:
+            WebDriverWait(driver, 5).until(
+                lambda x: self.validation_count_increased(driver, c)
+            )
+        except TimeoutException:
+            pass
+        assert driver.find_element_by_id('budget-split-feedback').text == ''
+        assert driver.find_element_by_id('modalSaveButton').is_enabled()
+
+    def test_20_modal_frontend_validation(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_id('btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Transaction'
+        # set an amount
+        amt = body.find_element_by_id('trans_frm_amount')
+        amt.clear()
+        amt.send_keys('200.22')
+        # assert budget split items are hidden and checkbox is unchecked
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed()
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed() is False
+        # check the budget split checkbox
+        selenium.find_element_by_id('trans_frm_is_split').click()
+        # assert budget split items are shown and checkbox is checked
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed()
+        # there should be two split budget input groups
+        assert len(
+            selenium.find_elements_by_class_name('budget_split_row')
+        ) == 2
+        self.assert_budget_split_does_not_have_error(selenium)
+        # Select 2 different budgets and valid amounts
+        Select(
+            body.find_element_by_id('trans_frm_budget_0')).select_by_value('1')
+        tmp = body.find_element_by_id('trans_frm_budget_amount_0')
+        tmp.clear()
+        tmp.send_keys('100')
+        Select(
+            body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
+        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp.clear()
+        tmp.send_keys('100.22')
+        self.assert_budget_split_does_not_have_error(selenium)
+        # change one amount
+        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp.clear()
+        tmp.send_keys('100.00')
+        self.assert_budget_split_has_error(
+            selenium,
+            'Error: Sum of budget allocations (200.0000) must equal '
+            'transaction amount (200.2200).'
+        )
+        # fix the amount
+        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp.clear()
+        tmp.send_keys('100.22')
+        self.assert_budget_split_does_not_have_error(selenium)
+        # change one budget to the same as the other
+        Select(
+            body.find_element_by_id('trans_frm_budget_1')).select_by_value('1')
+        self.assert_budget_split_has_error(
+            selenium,
+            'Error: A given budget may only be specified once.'
+        )
+        # fix the budget
+        Select(
+            body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
+        self.assert_budget_split_does_not_have_error(selenium)
+        # click "Add Budget" link
+        self.try_click(
+            selenium, selenium.find_element_by_id('trans_frm_add_budget_link')
+        )
+        # there should be three split budget input groups
+        assert len(
+            selenium.find_elements_by_class_name('budget_split_row')
+        ) == 3
+        # decrease an amount in one of the previous groups
+        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp.clear()
+        tmp.send_keys('50.11')
+        self.assert_budget_split_has_error(
+            selenium,
+            'Error: Sum of budget allocations (150.1100) must equal '
+            'transaction amount (200.2200).'
+        )
+        # add difference to amount in the third budget group
+        tmp = body.find_element_by_id('trans_frm_budget_amount_2')
+        tmp.clear()
+        tmp.send_keys('50.11')
+        self.assert_budget_split_does_not_have_error(selenium)
+        # select budget in third group, same as second
+        Select(
+            body.find_element_by_id('trans_frm_budget_2')).select_by_value('2')
+        self.assert_budget_split_has_error(
+            selenium,
+            'Error: A given budget may only be specified once.'
+        )
+        # change budget in third group to a unique one
+        Select(
+            body.find_element_by_id('trans_frm_budget_2')).select_by_value('4')
+        self.assert_budget_split_does_not_have_error(selenium)
+        # uncheck the Budget Split checkbox
+        selenium.find_element_by_id('trans_frm_is_split').click()
+        # assert budget split items are hidden and checkbox is unchecked
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed()
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed() is False
