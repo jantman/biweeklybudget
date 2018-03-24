@@ -1312,7 +1312,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert t.budget_transactions[1].budget_id == 1
         assert t.budget_transactions[1].amount == Decimal('100.10')
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 4
 
     def test_31_split_2_modal_populate(self, base_url, selenium):
@@ -1487,7 +1487,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             4: Decimal('75')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
 
     def test_33_change_split_trans(self, base_url, selenium, testdb):
@@ -1625,7 +1625,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             4: Decimal('75')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
 
     def test_34_existing_trans_to_split(self, base_url, selenium, testdb):
@@ -1643,7 +1643,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             2: Decimal('222.22')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
@@ -1721,7 +1721,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             4: Decimal('122.20')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
 
     def test_36_existing_split_trans_to_not(self, base_url, selenium, testdb):
@@ -1740,7 +1740,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             4: Decimal('122.20')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
@@ -1808,5 +1808,5 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             2: Decimal('222.22')
         }
         assert max([
-            t.id for t in testdb.query(Transaction).all()
+            tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
