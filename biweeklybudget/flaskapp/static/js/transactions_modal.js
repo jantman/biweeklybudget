@@ -88,7 +88,7 @@ function transModalDivFillAndShow(msg) {
       $('#trans_frm_transfer_p').show();
     }
     if(msg['budgets'].length == 1) {
-        $('#trans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
+        $('#trans_frm_budget option[value=' + msg['budgets'][0]['id'] + ']').prop('selected', 'selected').change();
     } else {
         $('#trans_frm_is_split').prop('checked', true);
         $('#trans_frm_budget_group').hide();
