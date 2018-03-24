@@ -1489,14 +1489,14 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' not in x.get_attribute('class')
-        budg_grp = body.find_element_by_id('trans_frm_budget_group')
-        assert 'has-error' in budg_grp.get_attribute('class')
+        budg_grp = body.find_element_by_id('budgets-error-div-container')
         p_elems = budg_grp.find_elements_by_tag_name('p')
         assert len(p_elems) == 1
         assert 'text-danger' in p_elems[0].get_attribute('class')
         assert p_elems[0].get_attribute(
             'innerHTML'
-        ) == 'New transactions cannot use an inactive budget.'
+        ) == 'New transactions cannot use an inactive budget ' \
+             '(Periodic3 Inactive).'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_load_complete(selenium)

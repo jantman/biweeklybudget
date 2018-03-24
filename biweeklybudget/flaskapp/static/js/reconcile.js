@@ -354,12 +354,21 @@ function makeTransFromOfx(acct_id, fitid) {
     $('#modalSaveButton').off();
     $('#modalSaveButton').click(
         function() {
-            handleForm(
-                'modalBody', 'transForm', '/forms/transaction',
-                function(data) {
-                    makeTransSaveCallback(data, acct_id, fitid);
-                }
-            );
+            var valid = validateTransModalSplits();
+            if (valid == null) {
+                $('#modalSaveButton').prop('disabled', false);
+                $('#budget-split-feedback').html('');
+                handleForm(
+                    'modalBody', 'transForm', '/forms/transaction',
+                    function(data) {
+                        makeTransSaveCallback(data, acct_id, fitid);
+                    },
+                    transModalFormSerialize
+                );
+            } else {
+                $('#budget-split-feedback').html('<p class="text-danger">' + valid + '</p>');
+                $('#modalSaveButton').prop('disabled', true);
+            }
         }
     ).show();
     $('#trans_frm_date_input_group').datepicker({
