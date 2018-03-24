@@ -223,9 +223,6 @@ class OneTransactionAjax(MethodView):
         t = db_session.query(Transaction).get(trans_id)
         d = copy(t.as_dict)
         d['account_name'] = t.account.name
-        d['budget'] = t.budget_transactions[0].budget
-        d['budget_id'] = t.budget_transactions[0].budget_id
-        d['budget_name'] = t.budget_transactions[0].budget.name
         d['budgets'] = [
             {
                 'name': bt.budget.name,

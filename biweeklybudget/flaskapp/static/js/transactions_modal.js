@@ -79,7 +79,6 @@ function transModalDivFillAndShow(msg) {
     $('#trans_frm_date').val(msg['date']['str']);
     $('#trans_frm_amount').val(msg['actual_amount']);
     $('#trans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
-    $('#trans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
     $('#trans_frm_notes').val(msg['notes']);
     if(msg['transfer_id'] !== null) {
       $('#trans_frm_transfer_p').html(
@@ -87,6 +86,19 @@ function transModalDivFillAndShow(msg) {
         msg['transfer_id'] + ', mytable)">Transaction ' + msg['transfer_id'] + '</a>.'
       );
       $('#trans_frm_transfer_p').show();
+    }
+    if(msg['budgets'].length == 1) {
+        $('#trans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
+    } else {
+        $('#trans_frm_is_split').prop('checked', true);
+        $('#trans_frm_budget_group').hide();
+        $('#trans_frm_split_budget_container').show();
+        for(var i = 0; i < msg['budgets'].length; i++) {
+            if(i > 1) { $('#trans_frm_budget_splits_div').append(transModalBudgetSplitRowHtml(i)); }
+            var budg = msg['budgets'][i];
+            $('#trans_frm_budget_' + i + ' option[value=' + budg['id'] + ']').prop('selected', 'selected').change();
+            $('#trans_frm_budget_amount_' + i).val(budg['amount']);
+        }
     }
     $("#modalDiv").modal('show');
 }
@@ -153,7 +165,9 @@ function transModalFormSerialize(form_id) {
     if($('#trans_frm_is_split').prop('checked')) {
         for (rownum = 0; rownum < num_rows; rownum++) {
             var bid = $('#trans_frm_budget_' + rownum).find(':selected').val();
-            data['budgets'][bid] = $('#trans_frm_budget_amount_' + rownum).val();
+            if(bid != 'None') {
+                data['budgets'][bid] = $('#trans_frm_budget_amount_' + rownum).val();
+            }
         }
     } else {
         data['budgets'][data['budget']] = data['amount'];
