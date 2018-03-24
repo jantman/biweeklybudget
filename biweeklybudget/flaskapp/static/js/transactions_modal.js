@@ -190,6 +190,8 @@ function transModalHandleSplit() {
         // split
         $('#trans_frm_budget_group').hide();
         $('#trans_frm_split_budget_container').show();
+        var oldid = $('#trans_frm_budget').find(':selected').val();
+        if(oldid != 'None') { $('#trans_frm_budget_0 option[value=' + oldid + ']').prop('selected', 'selected').change(); }
     } else {
         // not split
         $('#trans_frm_split_budget_container').hide();
@@ -231,6 +233,7 @@ function validateTransModalSplits() {
 function transModalAddSplitBudget() {
     var next_row_num = $('.budget_split_row').length;
     $('#trans_frm_budget_splits_div').append(transModalBudgetSplitRowHtml(next_row_num));
+    transModalSplitBudgetChanged(next_row_num);
 }
 
 /**
@@ -260,7 +263,7 @@ function transModalBudgetSplitRowHtml(row_num) {
     var html = '<div style="clear: both;" class="budget_split_row">';
     // budget select
     html += '<div class="form-group" id="trans_frm_budget_group_' + row_num + '" style="float: left; width: 75%;">';
-    html += '<select id="trans_frm_budget_' + row_num + '" name="budget_' + row_num + '" class="form-control" onblur="budgetSplitBlur()">';
+    html += '<select id="trans_frm_budget_' + row_num + '" name="budget_' + row_num + '" class="form-control" onblur="budgetSplitBlur()" onchange="transModalSplitBudgetChanged(' + row_num + ')">';
     html += '<option value="None"></option>';
     Object.keys(budget_names_to_id).forEach(function (key) {
         html += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>'
@@ -277,4 +280,25 @@ function transModalBudgetSplitRowHtml(row_num) {
     // close overall div
     html += '</div>'; // .budget_split_row
     return html;
+}
+
+/**
+ * Called when a budget split dropdown is changed. If its amount box is empty,
+ * set it to the transaction amount minus the sum of all other budget splits.
+ *
+ * @param {Integer} row_num - the budget split row number
+ */
+function transModalSplitBudgetChanged(row_num) {
+    if($('#trans_frm_budget_amount_' + row_num).val() != '') { return null; }
+    var amt = parseFloat($('#trans_frm_amount').val());
+    var total = 0.0;
+    for (var rownum = 0; rownum < $('.budget_split_row').length; rownum++) {
+        if($('#trans_frm_budget_amount_' + rownum).val() != '') {
+            total = total + parseFloat($('#trans_frm_budget_amount_' + rownum).val());
+        }
+    }
+    var remainder = amt - total;
+    if(remainder > 0) {
+        $('#trans_frm_budget_amount_' + row_num).val(remainder.toFixed(2));
+    }
 }

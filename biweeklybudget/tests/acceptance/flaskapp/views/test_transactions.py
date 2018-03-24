@@ -1435,9 +1435,14 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         tmp.send_keys('100.00')
         Select(
             body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
+        # the next value should be populated automatically
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_1').get_attribute('value') == '275.00'
         tmp = body.find_element_by_id('trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('200')
+        # change focus
+        body.find_element_by_id('trans_frm_budget_amount_0').send_keys('')
         # add a row
         self.try_click(
             selenium, selenium.find_element_by_id('trans_frm_add_budget_link')
@@ -1446,12 +1451,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert len(
             selenium.find_elements_by_class_name('budget_split_row')
         ) == 3
+        # the amount should be populated automatically
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_2').get_attribute('value') == '75.00'
         # fill in the third row
         Select(
             body.find_element_by_id('trans_frm_budget_2')).select_by_value('4')
-        tmp = body.find_element_by_id('trans_frm_budget_amount_2')
-        tmp.clear()
-        tmp.send_keys('75.0')
         self.assert_budget_split_does_not_have_error(selenium)
         notes = selenium.find_element_by_id('trans_frm_notes')
         notes.send_keys('NewSplitTransNotes')
@@ -1680,17 +1685,23 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert len(
             selenium.find_elements_by_class_name('budget_split_row')
         ) == 2
-        # Ok, now edit it...
-        Select(body.find_element_by_id(
-            'trans_frm_budget_0')).select_by_value('2')
+        # Verify that initial budget was set
+        assert Select(
+            body.find_element_by_id('trans_frm_budget_0')
+        ).first_selected_option.get_attribute('value') == '2'
+        # Verify that amount has been set
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
+        # Set the amount
         budget_amt = body.find_element_by_id('trans_frm_budget_amount_0')
         budget_amt.clear()
         budget_amt.send_keys('100.02')
+        # select the second budget
         Select(body.find_element_by_id(
             'trans_frm_budget_1')).select_by_value('4')
-        budget_amt = body.find_element_by_id('trans_frm_budget_amount_1')
-        budget_amt.clear()
-        budget_amt.send_keys('122.20')
+        # Verify that second amount is set
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_1').get_attribute('value') == '122.20'
         self.assert_budget_split_does_not_have_error(selenium)
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
