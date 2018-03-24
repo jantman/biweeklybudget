@@ -51,6 +51,7 @@ Unreleased Changes
 
 * Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
 * Fix bug in ``/budgets`` view where "Spending By Budget, Per Calendar Month" chart was showing only inactive budgets instead of only active budgets.
+* `Issue #178 <https://github.com/jantman/biweeklybudget/issues/178>`_ - UI support for splitting Transactions between multiple Budgets.
 
 0.7.1 (2018-01-10)
 ------------------
