@@ -272,7 +272,6 @@ def driver(request, driver_class, driver_kwargs):
         kwargs['desired_capabilities']['loggingPrefs'] = {
             'browser': 'ALL'
         }
-        logger.error('Chrome WebDriver - driver_kwargs=%s', kwargs)
     driver = get_driver_for_class(driver_class, kwargs)
 
     event_listener = request.config.getoption('event_listener')
