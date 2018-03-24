@@ -195,22 +195,13 @@ class AccountFormHandler(FormHandlerView):
         account.name = data['name'].strip()
         account.description = self.fix_string(data['description'])
         account.acct_type = getattr(AcctType, data['acct_type'])
-        if data['ofx_cat_memo_to_name'] == 'true':
-            account.ofx_cat_memo_to_name = True
-        else:
-            account.ofx_cat_memo_to_name = False
+        account.ofx_cat_memo_to_name = data['ofx_cat_memo_to_name']
         account.vault_creds_path = self.fix_string(data['vault_creds_path'])
         account.ofxgetter_config_json = self.fix_string(
             data['ofxgetter_config_json']
         )
-        if data['negate_ofx_amounts'] == 'true':
-            account.negate_ofx_amounts = True
-        else:
-            account.negate_ofx_amounts = False
-        if data['reconcile_trans'] == 'true':
-            account.reconcile_trans = True
-        else:
-            account.reconcile_trans = False
+        account.negate_ofx_amounts = data['negate_ofx_amounts']
+        account.reconcile_trans = data['reconcile_trans']
         if account.acct_type == AcctType.Credit:
             if data['credit_limit'].strip() != '':
                 account.credit_limit = Decimal(data['credit_limit'])
@@ -231,10 +222,7 @@ class AccountFormHandler(FormHandlerView):
                 account.prime_rate_margin = None
             account.interest_class_name = data['interest_class_name']
             account.min_payment_class_name = data['min_payment_class_name']
-        if data['is_active'] == 'true':
-            account.is_active = True
-        else:
-            account.is_active = False
+        account.is_active = data['is_active']
         for f in RE_FIELD_NAMES:
             data[f] = data[f].strip()
             if data[f] == '':

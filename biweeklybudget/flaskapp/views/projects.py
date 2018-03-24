@@ -400,10 +400,7 @@ class BoMItemFormHandler(FormHandlerView):
         item.quantity = int(data['quantity'].strip())
         item.unit_cost = Decimal(data['unit_cost'].strip())
         item.url = data['url'].strip()
-        if data['is_active'] == 'true':
-            item.is_active = True
-        else:
-            item.is_active = False
+        item.is_active = data['is_active']
         logger.info('%s: %s', action, item.as_dict)
         db_session.add(item)
         db_session.commit()
