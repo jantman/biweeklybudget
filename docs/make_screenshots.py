@@ -118,6 +118,26 @@ class Screenshotter(object):
             'preshot_func': '_index_preshot'
         },
         {
+            'path': '/transactions',
+            'filename': 'transactions',
+            'title': 'Transactions View',
+            'description': 'Shows all manually-entered transactions.'
+        },
+        {
+            'path': '/transactions/2',
+            'filename': 'transaction2',
+            'title': 'Transaction Detail',
+            'description': 'Transaction detail modal to view and edit a '
+                           'transaction.'
+        },
+        {
+            'path': '/transactions/4',
+            'filename': 'transaction4',
+            'title': 'Transactions with Budget Splits',
+            'description': 'A single Transaction can be split across '
+                           'multiple budgets.'
+        },
+        {
             'path': '/accounts/credit-payoff',
             'filename': 'credit-payoff',
             'title': 'Credit Card Payoff Calculations',
@@ -181,19 +201,6 @@ class Screenshotter(object):
             'description': 'Budget detail modal to view and edit a budget.',
             'postshot_func': '_balance_postshot',
             'preshot_func': '_sleep_2'
-        },
-        {
-            'path': '/transactions',
-            'filename': 'transactions',
-            'title': 'Transactions View',
-            'description': 'Shows all manually-entered transactions.'
-        },
-        {
-            'path': '/transactions/2',
-            'filename': 'transaction2',
-            'title': 'Transaction Detail',
-            'description': 'Transaction detail modal to view and edit a '
-                           'transaction.'
         },
         {
             'path': '/accounts',
