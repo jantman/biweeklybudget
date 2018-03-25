@@ -40,19 +40,12 @@ This is mostly based on http://flask.pocoo.org/docs/0.12/patterns/sqlalchemy/
 import logging
 import time
 import os
-from decimal import Decimal
 from sqlalchemy import event, inspect
 
 from biweeklybudget.models.account import Account
-from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.fuel import FuelFill
-from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.projects import BoMItem
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
@@ -251,48 +244,6 @@ def handle_account_re_change(session):
         logger.debug('Done with update_is_fields() for %s', obj)
 
 
-def validate_decimal_or_none(target, value, oldvalue, initiator):
-    if isinstance(value, Decimal) or value is None:
-        return
-    raise ValueError(
-        'ERROR in %s on field %s of %s: value set to %s (from %s) but '
-        'new value is a %s; can only be Decimal or None.' % (
-            initiator.op.name, initiator.key, target, value, oldvalue,
-            type(value).__name__
-        )
-    )
-
-
-def issue_105_helper(session):
-    """
-    TEMPORARY helper for issue #105.
-
-    :param session: current database session
-    :type session: sqlalchemy.orm.session.Session
-    """
-    decimal_fields = [
-        Account.credit_limit,
-        Account.apr,
-        Account.prime_rate_margin,
-        AccountBalance.ledger,
-        AccountBalance.avail,
-        Budget.starting_balance,
-        Budget.current_balance,
-        BudgetTransaction.amount,
-        FuelFill.cost_per_gallon,
-        FuelFill.total_cost,
-        OFXStatement.ledger_bal,
-        OFXStatement.avail_bal,
-        OFXTransaction.amount,
-        BoMItem.unit_cost,
-        ScheduledTransaction.amount,
-        Transaction.actual_amount,
-        Transaction.budgeted_amount
-    ]
-    for fld in decimal_fields:
-        event.listen(fld, 'set', validate_decimal_or_none)
-
-
 def handle_before_flush(session, flush_context, instances):
     """
     Hook into ``before_flush``
@@ -362,7 +313,6 @@ def init_event_listeners(db_session, engine):
         event.listen(engine, 'before_cursor_execute', query_profile_before)
         event.listen(engine, 'after_cursor_execute', query_profile_after)
     logger.debug('Setting up DB model event listeners')
-    issue_105_helper(db_session)
     event.listen(
         BudgetTransaction.amount,
         'set',

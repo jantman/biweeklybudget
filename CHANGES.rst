@@ -21,9 +21,6 @@ Unreleased Changes
 * Switch tests from using deprecated pytest-capturelog to using pytest built-in log capturing.
 * Miscellaneous fixes to unit and acceptance tests, and docs build.
 * Finish converting *all* code, including tests and sample data, from using floats to Decimals.
-
-  * For purposes of testing this, add a database event handler that throws an exception if any attributes that should be set to a Decimal, are set to a float.
-
 * Acceptance test fix so that pytest-selenium can take full page screenshots with Chromedriver.
 * `PR #180 <https://github.com/jantman/biweeklybudget/pull/180>`_ - Acceptance test fix so that the testflask LiveServer fixture captures server logs, and includes them in test HTML reports (this generates a temporary file per-test-run outside of pytest's control).
 * Fix bug found where simultaneously editing the Amount and Budget of an existing Transaction against a Standing Budget would result in incorrect changes to the balances of the Budgets.
