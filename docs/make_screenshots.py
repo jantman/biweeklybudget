@@ -40,12 +40,6 @@ import sys
 import os
 import re
 from collections import defaultdict
-
-index_head = """Screenshots
-===========
-
-"""
-
 import os
 import glob
 import socket
@@ -72,6 +66,11 @@ from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 from PIL import Image
+
+index_head = """Screenshots
+===========
+
+"""
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
          "%(name)s.%(funcName)s() ] %(message)s"
@@ -350,18 +349,26 @@ class Screenshotter(object):
             assert veh is not None
             for i in range(3, 33):
                 last_odo += 200 + randrange(-50, 50)
-                cpg = 2.0 + (randrange(-100, 100) / 100)
-                gals = 10.0 + (randrange(-300, 300) / 100)
+                cpg = Decimal('2.0') + Decimal(randrange(-100, 100) / 100)
+                gals = Decimal('10.0') + Decimal(randrange(-300, 300) / 100)
                 fill = FuelFill(
                     date=(dtnow() + timedelta(days=i)).date(),
-                    cost_per_gallon=cpg,
+                    cost_per_gallon=Decimal(
+                        cpg.quantize(Decimal('.001'), rounding=ROUND_HALF_UP)
+                    ),
                     fill_location='foo',
-                    gallons=gals,
+                    gallons=Decimal(
+                        gals.quantize(Decimal('.001'), rounding=ROUND_HALF_UP)
+                    ),
                     level_before=choice([0, 10, 20, 30, 40]),
                     level_after=100,
                     odometer_miles=last_odo,
                     reported_miles=last_odo,
-                    total_cost=cpg * gals,
+                    total_cost=Decimal(
+                        (cpg * gals).quantize(
+                            Decimal('.001'), rounding=ROUND_HALF_UP
+                        )
+                    ),
                     vehicle=veh
                 )
                 data_sess.add(fill)
@@ -454,10 +461,10 @@ class Screenshotter(object):
         )
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
         data_sess.add(Budget(
-            name='Budget3', is_periodic=True, starting_balance=0
+            name='Budget3', is_periodic=True, starting_balance=Decimal('0')
         ))
         data_sess.add(Budget(
-            name='Budget4', is_periodic=True, starting_balance=0
+            name='Budget4', is_periodic=True, starting_balance=Decimal('0')
         ))
         data_sess.flush()
         data_sess.commit()
@@ -483,10 +490,11 @@ class Screenshotter(object):
                 data_sess.add(Transaction(
                     account_id=1,
                     budgeted_amount=amt,
-                    actual_amount=amt,
-                    budget=choice(budgets),
                     date=pp.start_date + timedelta(days=1),
-                    description='Transaction %d.%d' % (i, count)
+                    description='Transaction %d.%d' % (i, count),
+                    budget_amounts={
+                        choice(budgets): amt
+                    }
                 ))
                 data_sess.flush()
                 data_sess.commit()
@@ -536,10 +544,11 @@ class Screenshotter(object):
             data_sess.add(Transaction(
                 account_id=1,
                 budgeted_amount=amt,
-                actual_amount=amt,
-                budget=choice(budgets),
                 date=pp.start_date + timedelta(days=randrange(0, 12)),
-                description='Transaction %d' % count
+                description='Transaction %d' % count,
+                budget_amounts={
+                    choice(budgets): amt
+                }
             ))
             data_sess.flush()
             data_sess.commit()
@@ -577,13 +586,13 @@ class Screenshotter(object):
         )
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), data_sess).previous
         data_sess.add(Budget(
-            name='Budget3', is_periodic=True, starting_balance=0
+            name='Budget3', is_periodic=True, starting_balance=Decimal('0')
         ))
         data_sess.add(Budget(
-            name='Budget4', is_periodic=True, starting_balance=0
+            name='Budget4', is_periodic=True, starting_balance=Decimal('0')
         ))
         data_sess.add(Budget(
-            name='Budget5', is_periodic=True, starting_balance=250
+            name='Budget5', is_periodic=True, starting_balance=Decimal('250')
         ))
         data_sess.flush()
         data_sess.commit()
