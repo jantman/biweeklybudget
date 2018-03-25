@@ -12,7 +12,7 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
 
    
 
-.. js:function:: FormBuilder.addCheckbox(id, name, label, checked)
+.. js:function:: FormBuilder.addCheckbox(id, name, label, checked, options)
 
    Add a checkbox to the form.
 
@@ -20,6 +20,8 @@ File: ``biweeklybudget/flaskapp/static/js/formBuilder.js``
    :param String name: The name of the form element
    :param String label: The label text for the form element
    :param Boolean checked: Whether to default to checked or not
+   :param Object options: 
+   :param String options.inputHtml: extra HTML string to include in the actual ``input`` element *(optional; defaults to null)*
    :returns: **FormBuilder** -- this
    
 
