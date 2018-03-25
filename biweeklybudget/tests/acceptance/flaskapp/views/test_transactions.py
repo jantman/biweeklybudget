@@ -953,11 +953,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert t.account_id == 3
         assert t.scheduled_trans_id is None
         assert t.notes == 'notesT4split'
-        assert len(t.budget_transactions) == 2
-        assert t.budget_transactions[0].budget_id == 2
-        assert t.budget_transactions[0].amount == Decimal('222.22')
-        assert t.budget_transactions[1].budget_id == 1
-        assert t.budget_transactions[1].amount == Decimal('100.10')
+        assert {bt.budget_id: bt.amount for bt in t.budget_transactions} == {
+            1: Decimal('100.10'),
+            2: Decimal('222.22')
+        }
 
     def test_02_resave_transaction(self, base_url):
         res = requests.post(
@@ -1306,11 +1305,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert t.account_id == 3
         assert t.scheduled_trans_id is None
         assert t.notes == 'notesT4split'
-        assert len(t.budget_transactions) == 2
-        assert t.budget_transactions[0].budget_id == 2
-        assert t.budget_transactions[0].amount == Decimal('222.22')
-        assert t.budget_transactions[1].budget_id == 1
-        assert t.budget_transactions[1].amount == Decimal('100.10')
+        assert {bt.budget_id: bt.amount for bt in t.budget_transactions} == {
+            1: Decimal('100.10'),
+            2: Decimal('222.22')
+        }
         assert max([
             tx.id for tx in testdb.query(Transaction).all()
         ]) == 4
