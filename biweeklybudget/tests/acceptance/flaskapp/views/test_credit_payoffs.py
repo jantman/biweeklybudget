@@ -146,8 +146,7 @@ class TestCreditPayoffsNoInterest(AcceptanceHelper):
             '//a[text()="manually input the interest charge from your '
             'last statement"]'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Manual Interest Charge for Account 4'
         frm_id = selenium.find_element_by_id('payoff_acct_frm_id')

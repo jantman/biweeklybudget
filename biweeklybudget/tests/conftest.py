@@ -63,6 +63,7 @@ try:
     import pytest_selenium.pytest_selenium
     from selenium.webdriver.support.event_firing_webdriver import \
         EventFiringWebDriver
+    from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWD
     HAVE_PYTEST_SELENIUM = True
 except ImportError:
     HAVE_PYTEST_SELENIUM = False
@@ -266,7 +267,12 @@ def driver(request, driver_class, driver_kwargs):
     out and replaced it with the ``get_driver_for_class()`` function, which
     is wrapped in the retrying package's ``@retry`` decorator.
     """
-    driver = get_driver_for_class(driver_class, driver_kwargs)
+    kwargs = driver_kwargs
+    if driver_class == ChromeWD:
+        kwargs['desired_capabilities']['loggingPrefs'] = {
+            'browser': 'ALL'
+        }
+    driver = get_driver_for_class(driver_class, kwargs)
 
     event_listener = request.config.getoption('event_listener')
     if event_listener is not None:

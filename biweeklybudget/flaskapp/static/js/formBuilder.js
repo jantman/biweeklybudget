@@ -310,13 +310,18 @@ FormBuilder.prototype.addRadioInline = function(name, label, options) {
  * @param {String} name - The name of the form element
  * @param {String} label - The label text for the form element
  * @param {Boolean} checked - Whether to default to checked or not
+ * @param {Object} options
+ * @param {String} options.inputHtml - extra HTML string to include in the
+ *  actual ``input`` element *(optional; defaults to null)*
  * @return {FormBuilder} this
  */
-FormBuilder.prototype.addCheckbox = function(id, name, label, checked) {
+FormBuilder.prototype.addCheckbox = function(id, name, label, checked, options) {
+    if(options === undefined) { options = {}; }
     this.html += '<div class="form-group" id="' + id + '_group">' +
         '<label class="checkbox-inline control-label" for="' + id + '">' +
         '<input type="checkbox" id="' + id + '" name="' + name + '"';
     if (checked === true) { this.html += ' checked'; }
+    if ('inputHtml' in options) { this.html += ' ' + options.inputHtml; }
     this.html += '> ' + label + '</label></div>\n';
     return this;
 };

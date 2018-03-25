@@ -39,7 +39,7 @@ import logging
 from time import sleep
 from decimal import Decimal
 from selenium.common.exceptions import (
-    StaleElementReferenceException, TimeoutException
+    StaleElementReferenceException, TimeoutException, WebDriverException
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -294,12 +294,27 @@ class AcceptanceHelper(object):
           modalBody WebElement)
         :rtype: tuple
         """
-        if wait:
-            self.wait_for_modal_shown(selenium)
-        modal = selenium.find_element_by_id('modalDiv')
-        title = selenium.find_element_by_id('modalLabel')
-        body = selenium.find_element_by_id('modalBody')
-        return modal, title, body
+        count = 0
+        while True:
+            count += 1
+            try:
+                if wait:
+                    self.wait_for_modal_shown(selenium)
+                modal = selenium.find_element_by_id('modalDiv')
+                title = selenium.find_element_by_id('modalLabel')
+                body = selenium.find_element_by_id('modalBody')
+                return modal, title, body
+            except TimeoutException:
+                if count > 6:
+                    raise
+                print(
+                    'TimeoutException waiting for modal to be shown; '
+                    'try again in 3 seconds.'
+                )
+                sleep(3)
+            except Exception:
+                raise
+        return None, None, None
 
     def assert_modal_displayed(self, modal, title, body):
         """
@@ -397,3 +412,55 @@ class AcceptanceHelper(object):
             row[1] = fmt_currency(row[1])
             ret.append(row)
         return ret
+
+    def try_click(self, driver, elem):  # noqa
+        """
+        Wrapper for recent Chrome Headless
+        "Other element would receive the click" errors. Attempts to retry the
+        click after a short wait if it throws that error.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem: element to click
+        :type elem: selenium.webdriver.remote.webelement.WebElement
+        """
+        max_tries = 4
+        for i in range(0, max_tries):
+            try:
+                elem.click()
+                return
+            except WebDriverException as ex:
+                if 'Other element would receive the click' not in str(ex):
+                    raise
+                if i == max_tries - 1:
+                    raise
+                sleep(1.0)
+
+    def try_click_and_get_modal(self, driver, elem_to_click, wait=True):
+        """
+        Combination of :py:meth:`~.try_click` and :py:meth:`~.get_modal_parts`
+        to work around both the "Other element would receive the click" error
+        and TimeoutExceptions waiting for the modal to be shown.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param elem_to_click: element to click
+        :type elem_to_click: selenium.webdriver.remote.webelement.WebElement
+        :param wait: whether or not to wait for presence of modalLabel
+        :type wait: bool
+        :return: 3-tuple of (modalDiv WebElement, modalLabel WebElement,
+          modalBody WebElement)
+        :rtype: tuple
+        """
+        max_tries = 4
+        for i in range(0, max_tries):
+            try:
+                self.try_click(driver, elem_to_click)
+                return self.get_modal_parts(driver, wait=wait)
+            except (WebDriverException, TimeoutException):
+                if i == max_tries - 1:
+                    raise
+                logger.error('ERROR: Unable to click link and get modal. '
+                             'Trying again in 1s', exc_info=True)
+                sleep(1.0)
+        return None, None, None

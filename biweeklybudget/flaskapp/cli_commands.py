@@ -58,9 +58,8 @@ class CustomLoggingWSGIRequestHandler(WSGIRequestHandler):
     def log_request(self, code='-', size='-'):
         duration = int((self._time_finished - self._time_started) * 1000)
         self.log(
-            'info', '"{0}" {1} {2} [{3}ms]'.format(
-                self.requestline, code, size, duration
-            )
+            'info', '"%s" %s %s [%sms]',
+            self.requestline, code, size, duration
         )
 
 

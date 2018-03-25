@@ -119,8 +119,7 @@ class TestBudgetModals(AcceptanceHelper):
     def test_01_budget_modal_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -149,8 +148,7 @@ class TestBudgetModals(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         name = selenium.find_element_by_id('budget_frm_name')
         name.clear()
@@ -202,8 +200,7 @@ class TestBudgetModals(AcceptanceHelper):
     def test_10_populate_edit_periodic_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 2'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -233,8 +230,7 @@ class TestBudgetModals(AcceptanceHelper):
         link = selenium.find_element_by_xpath(
             '//a[text()="Periodic3 Inactive (3)"]'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 3'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -263,8 +259,7 @@ class TestBudgetModals(AcceptanceHelper):
     def test_12_populate_edit_standing_1_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 4'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -292,8 +287,7 @@ class TestBudgetModals(AcceptanceHelper):
     def test_13_populate_edit_standing_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 5'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -323,8 +317,7 @@ class TestBudgetModals(AcceptanceHelper):
         link = selenium.find_element_by_xpath(
             '//a[text()="Standing3 Inactive (6)"]'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 6'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -364,8 +357,7 @@ class TestBudgetModals(AcceptanceHelper):
     def test_21_populate_income_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 7'
         assert selenium.find_element_by_id('budget_frm_name').get_attribute(
@@ -393,8 +385,7 @@ class TestBudgetModals(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         name = selenium.find_element_by_id('budget_frm_name')
         name.clear()
@@ -476,8 +467,7 @@ class TestBudgetModals(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         name = selenium.find_element_by_id('budget_frm_name')
         name.clear()
@@ -531,8 +521,7 @@ class TestBudgetModals(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         link = selenium.find_element_by_id('btn_add_budget')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         name = selenium.find_element_by_id('budget_frm_name')
         name.clear()
@@ -595,7 +584,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 3
+        assert max_t == 4
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -612,8 +601,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
         link = selenium.find_element_by_id('btn_budget_txfr')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -684,7 +672,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transactions 4 and 5' \
+        assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -700,7 +688,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
     def test_3_verify_db(self, testdb):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
-        t1 = testdb.query(Transaction).get(4)
+        t1 = testdb.query(Transaction).get(5)
         assert t1.date == dtnow().date()
         assert t1.actual_amount == Decimal('123.45')
         assert t1.budgeted_amount == Decimal('123.45')
@@ -712,11 +700,11 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 2
         assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
-        assert rec1.txn_id == 4
+        assert rec1.txn_id == 5
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
-        t2 = testdb.query(Transaction).get(5)
+        t2 = testdb.query(Transaction).get(6)
         assert t2.date == dtnow().date()
         assert t2.actual_amount == Decimal('-123.45')
         assert t2.budgeted_amount == Decimal('-123.45')
@@ -728,7 +716,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.budget_transactions[0].budget_id == 5
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
-        assert rec2.txn_id == 5
+        assert rec2.txn_id == 6
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc
@@ -743,7 +731,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 3
+        assert max_t == 4
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -766,8 +754,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert pp.budget_sums[2]['spent'] == Decimal('222.22')
         assert pp.budget_sums[2]['trans_total'] == Decimal('222.22')
         link = selenium.find_element_by_id('btn_budget_txfr')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -838,7 +825,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transactions 4 and 5' \
+        assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -862,7 +849,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert pp.budget_sums[2]['spent'] == Decimal('98.77')
         assert pp.budget_sums[2]['trans_total'] == Decimal('98.77')
         desc = 'Budget Transfer - 123.45 from Standing2 (5) to Periodic2 (2)'
-        t1 = testdb.query(Transaction).get(4)
+        t1 = testdb.query(Transaction).get(5)
         assert t1.date == dtnow().date()
         assert t1.actual_amount == Decimal('123.45')
         assert t1.budgeted_amount == Decimal('123.45')
@@ -874,11 +861,11 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 5
         assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(2)
-        assert rec1.txn_id == 4
+        assert rec1.txn_id == 5
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
-        t2 = testdb.query(Transaction).get(5)
+        t2 = testdb.query(Transaction).get(6)
         assert t2.date == dtnow().date()
         assert t2.actual_amount == Decimal('-123.45')
         assert t2.budgeted_amount == Decimal('-123.45')
@@ -890,7 +877,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert t2.budget_transactions[0].budget_id == 2
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(3)
-        assert rec2.txn_id == 5
+        assert rec2.txn_id == 6
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc

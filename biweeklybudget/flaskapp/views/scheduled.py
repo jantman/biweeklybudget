@@ -269,10 +269,7 @@ class SchedTransFormHandler(FormHandlerView):
         trans.account_id = int(data['account'])
         trans.budget_id = int(data['budget'])
         trans.notes = data['notes'].strip()
-        if data['is_active'] == 'true':
-            trans.is_active = True
-        else:
-            trans.is_active = False
+        trans.is_active = data['is_active']
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
         db_session.commit()

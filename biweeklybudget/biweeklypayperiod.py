@@ -428,36 +428,67 @@ class BiweeklyPayPeriod(object):
                 'is_income': b.is_income
             }
         for t in self.transactions_list:
-            if t['budget_id'] not in res:
-                # Issue #161 - inactive budget, but transaction for it in this
-                # period. Add it if it's a periodic budget.
-                b = self._db.query(Budget).get(t['budget_id'])
-                if not b.is_periodic:
-                    continue
-                res[b.id] = {
-                    'budget_amount': b.starting_balance,
-                    'allocated': Decimal('0.0'),
-                    'spent': Decimal('0.0'),
-                    'trans_total': Decimal('0.0'),
-                    'is_income': b.is_income
-                }
+            # if a ScheduledTransaction, update some values and then continue
             if t['type'] == 'ScheduledTransaction':
-                res[t['budget_id']]['allocated'] += t['amount']
-                res[t['budget_id']]['trans_total'] += t['amount']
+                for budg_id, budg_data in t['budgets'].items():
+                    if budg_id not in res:
+                        # Issue #161 - inactive budget, but transaction for it
+                        # in this period. Add it if it's a periodic budget.
+                        b = self._db.query(Budget).get(budg_id)
+                        if not b.is_periodic:
+                            continue
+                        res[b.id] = {
+                            'budget_amount': b.starting_balance,
+                            'allocated': Decimal('0.0'),
+                            'spent': Decimal('0.0'),
+                            'trans_total': Decimal('0.0'),
+                            'is_income': b.is_income
+                        }
+                    res[budg_id]['allocated'] += budg_data['amount']
+                    res[budg_id]['trans_total'] += budg_data['amount']
                 continue
-            # t['type'] == 'Transaction'
-            res[t['budget_id']]['trans_total'] += t['amount']
-            if t['budgeted_amount'] is None:
-                res[t['budget_id']]['allocated'] += t['amount']
-                res[t['budget_id']]['spent'] += t['amount']
-            else:
+            # NOT a ScheduledTransaction; must be an actual Transaction
+            for budg_id, budg_data in t['budgets'].items():
+                if budg_id not in res:
+                    # Issue #161 - inactive budget, but transaction for it
+                    # in this period. Add it if it's a periodic budget.
+                    b = self._db.query(Budget).get(budg_id)
+                    if not b.is_periodic:
+                        continue
+                    res[b.id] = {
+                        'budget_amount': b.starting_balance,
+                        'allocated': Decimal('0.0'),
+                        'spent': Decimal('0.0'),
+                        'trans_total': Decimal('0.0'),
+                        'is_income': b.is_income
+                    }
+                # update the budget's transactions total and spent amount
+                res[budg_id]['trans_total'] += budg_data['amount']
+                res[budg_id]['spent'] += budg_data['amount']
+                if t['budgeted_amount'] is None:
+                    res[budg_id]['allocated'] += budg_data['amount']
+            if t['budgeted_amount'] is not None:
+                # has a budgeted amount. It _shouldn't_ be possible to have a
+                # budgeted_amount without a planned_budget_id, but if that
+                # happens, allocate to the first budget.
                 if t.get('planned_budget_id', None) is None:
-                    res[t['budget_id']]['allocated'] += t[
-                        'budgeted_amount']
+                    bid = list(t['budgets'].keys())[0]
                 else:
-                    res[t['planned_budget_id']]['allocated'] += t[
-                        'budgeted_amount']
-                res[t['budget_id']]['spent'] += t['amount']
+                    bid = t['planned_budget_id']
+                if bid not in res:
+                    # Issue #161 - inactive budget, but transaction for it
+                    # in this period. Add it if it's a periodic budget.
+                    b = self._db.query(Budget).get(bid)
+                    if not b.is_periodic:
+                        continue
+                    res[bid] = {
+                        'budget_amount': b.starting_balance,
+                        'allocated': Decimal('0.0'),
+                        'spent': Decimal('0.0'),
+                        'trans_total': Decimal('0.0'),
+                        'is_income': b.is_income
+                    }
+                res[bid]['allocated'] += t['budgeted_amount']
         for b in res.keys():
             if res[b]['trans_total'] > res[b]['allocated']:
                 res[b]['remaining'] = res[
@@ -549,10 +580,9 @@ class BiweeklyPayPeriod(object):
           against.
         * ``account_name`` (**str**) the name of the Account the transaction is
           against.
-        * ``budget_id`` (**int**) the id of the Budget the transaction is
-          against.
-        * ``budget_name`` (**str**) the name of the Budget the transaction is
-          against.
+        * ``budgets`` (**dict**) dict of information on the Budgets this
+          Transaction is against. Keys are budget IDs (**int**), values are
+          dicts with keys "amount" (**Decimal**) and "name" (**string**).
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
         * ``planned_budget_id`` (**int**) the id of the Budget the transaction
           was planned against, if any. May be None.
@@ -591,15 +621,14 @@ class BiweeklyPayPeriod(object):
           against.
         * ``account_name`` (**str**) the name of the Account the transaction is
           against.
-        * ``budget_id`` (**int**) the id of the Budget the transaction is
-          against.
-        * ``budget_name`` (**str**) the name of the Budget the transaction is
-          against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
         * ``planned_budget_id`` (**int**) the id of the Budget the transaction
           was planned against, if any. May be None.
         * ``planned_budget_name`` (**str**) the name of the Budget the
           transaction was planned against, if any. May be None.
+        * ``budgets`` (**dict**) dict of information on the Budgets this
+          Transaction is against. Keys are budget IDs (**int**), values are
+          dicts with keys "amount" (**Decimal**) and "name" (**string**).
 
         :param t: transaction to describe
         :type t: Transaction
@@ -616,10 +645,14 @@ class BiweeklyPayPeriod(object):
             'amount': t.actual_amount,
             'account_id': t.account_id,
             'account_name': t.account.name,
-            'budget_id': t.budget_transactions[0].budget_id,
-            'budget_name': t.budget_transactions[0].budget.name,
             'planned_budget_id': t.planned_budget_id,
-            'planned_budget_name': None
+            'planned_budget_name': None,
+            'budgets': {
+                bt.budget_id: {
+                    'amount': bt.amount,
+                    'name': bt.budget.name
+                } for bt in t.budget_transactions
+            }
         }
         if t.reconcile is None:
             res['reconcile_id'] = None
@@ -654,11 +687,10 @@ class BiweeklyPayPeriod(object):
           against.
         * ``account_name`` (**str**) the name of the Account the transaction is
           against.
-        * ``budget_id`` (**int**) the id of the Budget the transaction is
-          against.
-        * ``budget_name`` (**str**) the name of the Budget the transaction is
-          against.
         * ``reconcile_id`` (**int**) the ID of the TxnReconcile, or None
+        * ``budgets`` (**dict**) dict of information on the Budgets this
+          Transaction is against. Keys are budget IDs (**int**), values are
+          dicts with keys "amount" (**Decimal**) and "name" (**string**).
 
         :param t: ScheduledTransaction to describe
         :type t: ScheduledTransaction
@@ -675,9 +707,13 @@ class BiweeklyPayPeriod(object):
             'budgeted_amount': None,
             'account_id': t.account_id,
             'account_name': t.account.name,
-            'budget_id': t.budget_id,
-            'budget_name': t.budget.name,
-            'reconcile_id': None
+            'reconcile_id': None,
+            'budgets': {
+                t.budget_id: {
+                    'name': t.budget.name,
+                    'amount': t.amount
+                }
+            }
         }
         if t.schedule_type == 'date':
             res['date'] = t.date

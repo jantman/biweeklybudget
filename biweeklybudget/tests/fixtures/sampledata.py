@@ -240,6 +240,16 @@ class SampleDataLoader(object):
                 description='T3',
                 notes='notesT3',
                 account=self.accounts['CreditOne']['account']
+            ),
+            Transaction(
+                date=(self.dt - timedelta(days=35)).date(),
+                budget_amounts={
+                    self.budgets['Periodic2']: Decimal('222.22'),
+                    self.budgets['Periodic1']: Decimal('100.10')
+                },
+                description='T4split',
+                notes='notesT4split',
+                account=self.accounts['CreditOne']['account']
             )
         ]
         for x in res:

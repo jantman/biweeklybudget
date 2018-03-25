@@ -272,8 +272,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
         self.wait_until_clickable(selenium, '//a[text()="Veh1"]', by='xpath')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 1'
         assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
@@ -288,8 +287,7 @@ class TestModals(AcceptanceHelper):
         self.wait_until_clickable(
             selenium, '//a[text()="Veh3Inactive"]', by='xpath'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 3'
         assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
@@ -350,8 +348,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-vehicle')
         self.wait_until_clickable(selenium, 'btn-add-vehicle')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Vehicle'
         name = selenium.find_element_by_id('vehicle_frm_name')
@@ -410,15 +407,14 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 3
-        assert max(trans_ids) == 3
+        assert len(trans_ids) == 4
+        assert max(trans_ids) == 4
 
     def test_11_fuel_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
@@ -488,8 +484,7 @@ class TestModals(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
@@ -584,15 +579,14 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 3
-        assert max(trans_ids) == 3
+        assert len(trans_ids) == 4
+        assert max(trans_ids) == 4
 
     def test_14_fuel_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
         link = selenium.find_element_by_id('btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
         veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
@@ -648,7 +642,7 @@ class TestModals(AcceptanceHelper):
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved FuelFill 8 ' \
-                                 'and Transaction 4 in database.'
+                                 'and Transaction 5 in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
@@ -686,9 +680,9 @@ class TestModals(AcceptanceHelper):
         trans_ids = [
             x.id for x in testdb.query(Transaction).all()
         ]
-        assert len(trans_ids) == 4
-        assert max(trans_ids) == 4
-        trans = testdb.query(Transaction).get(4)
+        assert len(trans_ids) == 5
+        assert max(trans_ids) == 5
+        trans = testdb.query(Transaction).get(5)
         assert trans.date == (dtnow() - timedelta(days=2)).date()
         assert trans.actual_amount == Decimal('14.82')
         assert trans.budgeted_amount is None

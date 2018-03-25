@@ -195,14 +195,19 @@ class TransactionsAjax(SearchableAjaxView):
         )
         table.add_data(
             acct_id=lambda o: o.account_id,
-            budget_id=lambda o: o.budget_transactions[0].budget_id,
-            id=lambda o: o.id,
-            budget=lambda o: "{} {}({})".format(
-                o.budget_transactions[0].budget.name,
-                '(income) '
-                if o.budget_transactions[0].budget.is_income else '',
-                o.budget_transactions[0].budget_id
-            )
+            budgets=lambda o: [
+                {
+                    'name': bt.budget.name,
+                    'id': bt.budget_id,
+                    'amount': bt.amount,
+                    'is_income': bt.budget.is_income
+                }
+                for bt in sorted(
+                    o.budget_transactions, key=lambda x: x.amount,
+                    reverse=True
+                )
+            ],
+            id=lambda o: o.id
         )
         if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
@@ -218,9 +223,18 @@ class OneTransactionAjax(MethodView):
         t = db_session.query(Transaction).get(trans_id)
         d = copy(t.as_dict)
         d['account_name'] = t.account.name
-        d['budget'] = t.budget_transactions[0].budget
-        d['budget_id'] = t.budget_transactions[0].budget_id
-        d['budget_name'] = t.budget_transactions[0].budget.name
+        d['budgets'] = [
+            {
+                'name': bt.budget.name,
+                'id': bt.budget_id,
+                'amount': bt.amount,
+                'is_income': bt.budget.is_income
+            }
+            for bt in sorted(
+                t.budget_transactions, key=lambda x: x.amount,
+                reverse=True
+            )
+        ]
         return jsonify(d)
 
 
@@ -248,29 +262,47 @@ class TransactionFormHandler(FormHandlerView):
         if data.get('description', '').strip() == '':
             errors['description'].append('Description cannot be empty')
             have_errors = True
-        if float(data['amount']) == 0:
+        if Decimal(data['amount']) == Decimal('0'):
             errors['amount'].append('Amount cannot be zero')
             have_errors = True
         if data['account'] == 'None':
             errors['account'].append('Transactions must have an account')
             have_errors = True
-        if data['budget'] == 'None':
-            errors['budget'].append('Transactions must have a budget')
+        if len(data['budgets']) < 1:
+            errors['budgets'].append('Transactions must have a budget.')
             have_errors = True
         else:
-            budg = db_session.query(Budget).get(int(data['budget']))
-            if not budg.is_active and txn is None:
-                errors['budget'].append(
-                    'New transactions cannot use an inactive budget.'
-                )
-                have_errors = True
-            elif (
-                not budg.is_active and
-                txn.budget_transactions[0].budget_id != budg.id
-            ):
-                errors['budget'].append(
-                    'Existing transactions cannot be changed to use an '
-                    'inactive budget.'
+            budgets_total = Decimal('0.0')
+            for bid, budg_amt in data['budgets'].items():
+                budg = db_session.query(Budget).get(int(bid))
+                budgets_total += Decimal(budg_amt)
+                if budg is None:
+                    errors['budgets'].append(
+                        'Budget ID %s is invalid.' % bid
+                    )
+                    have_errors = True
+                    continue
+                if not budg.is_active and txn is None:
+                    errors['budgets'].append(
+                        'New transactions cannot use an inactive budget '
+                        '(%s).' % budg.name
+                    )
+                    have_errors = True
+                elif (
+                    not budg.is_active and
+                    budg.id not in [
+                        x.budget_id for x in txn.budget_transactions
+                    ]
+                ):
+                    errors['budgets'].append(
+                        'Existing transactions cannot be changed to use an '
+                        'inactive budget (%s).' % budg.name
+                    )
+                    have_errors = True
+            if budgets_total != Decimal(data['amount']):
+                errors['budgets'].append(
+                    'Sum of all budget amounts (%s) must equal Transaction '
+                    'amount (%s).' % (budgets_total, Decimal(data['amount']))
                 )
                 have_errors = True
         if data['date'].strip() == '':
@@ -312,13 +344,15 @@ class TransactionFormHandler(FormHandlerView):
         else:
             trans = Transaction()
             action = 'creating new Transaction'
-        budg = db_session.query(Budget).get(int(data['budget']))
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.account_id = int(data['account'])
         trans.notes = data['notes'].strip()
-        # @TODO this only supports a single budget per transaction
-        trans.set_budget_amounts({budg: Decimal(data['amount'])})
+        budg_amts = {}
+        for bid, budg_amt in data['budgets'].items():
+            budg = db_session.query(Budget).get(int(bid))
+            budg_amts[budg] = Decimal(budg_amt)
+        trans.set_budget_amounts(budg_amts)
         logger.info('%s: %s', action, trans.as_dict)
         db_session.add(trans)
         db_session.commit()

@@ -239,6 +239,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
     def test_2_add_data(self, testdb):
         acct = testdb.query(Account).get(1)
         budg = testdb.query(Budget).get(1)
+        budg2 = testdb.query(Budget).get(2)
         st_daynum = ScheduledTransaction(
             amount=Decimal('111.11'),
             description='ST_day_9',
@@ -323,7 +324,10 @@ class TestTransFromSchedTrans(AcceptanceHelper):
         )
         testdb.add(t_foo)
         t_bar = Transaction(
-            budget_amounts={budg: Decimal('666.66')},
+            budget_amounts={
+                budg: Decimal('666.66'),
+                budg2: Decimal('100.00')
+            },
             date=date(2017, 4, 16),
             description='Trans_bar',
             account=acct
@@ -343,136 +347,143 @@ class TestTransFromSchedTrans(AcceptanceHelper):
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('222.22'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'amount': Decimal('222.2200'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('222.2200'), 'name': 'Periodic1'}
+                },
                 'date': None,
                 'description': 'ST_pp_1',
                 'id': 8,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction',
-                'reconcile_id': None
+                'type': 'ScheduledTransaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'amount': Decimal('333.3300'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
+                },
                 'date': None,
                 'description': 'ST_pp_3',
                 'id': 9,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
-                'type': 'ScheduledTransaction',
-                'reconcile_id': None
+                'type': 'ScheduledTransaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('555.55'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'amount': Decimal('555.5500'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('555.5500'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 8),
                 'description': 'Trans_foo',
-                'id': 8,
+                'id': 9,
+                'planned_budget_id': None,
+                'planned_budget_name': None,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': None,
-                'planned_budget_name': None
+                'type': 'Transaction'
             },
-            # ST7 (ST_day_9)
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('111.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
-                'budgeted_amount': Decimal('111.11'),
+                'amount': Decimal('111.3300'),
+                'budgeted_amount': Decimal('111.1100'),
+                'budgets': {
+                    1: {'amount': Decimal('111.3300'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 9),
                 'description': 'Trans_ST_day_9',
-                'id': 4,
+                'id': 5,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': 2,
                 'sched_trans_id': 7,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': 2,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
-            # ST10 (ST_date)
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('444.44'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
-                'budgeted_amount': Decimal('444.44'),
+                'amount': Decimal('444.4400'),
+                'budgeted_amount': Decimal('444.4400'),
+                'budgets': {
+                    1: {'amount': Decimal('444.4400'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 12),
                 'description': 'Trans_ST_date',
-                'id': 7,
+                'id': 8,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 10,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
-                'budgeted_amount': Decimal('333.33'),
+                'amount': Decimal('333.3300'),
+                'budgeted_amount': Decimal('333.3300'),
+                'budgets': {
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 14),
                 'description': 'Trans_ST_pp_3_A',
-                'id': 5,
+                'id': 6,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('333.33'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
-                'budgeted_amount': Decimal('333.33'),
+                'amount': Decimal('333.3300'),
+                'budgeted_amount': Decimal('333.3300'),
+                'budgets': {
+                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
+                },
                 'date': date(2017, 4, 15),
                 'description': 'Trans_ST_pp_3_B',
-                'id': 6,
+                'id': 7,
+                'planned_budget_id': 1,
+                'planned_budget_name': 'Periodic1',
+                'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1'
+                'type': 'Transaction'
             },
             {
                 'account_id': 1,
                 'account_name': 'BankOne',
-                'amount': Decimal('666.66'),
-                'budget_id': 1,
-                'budget_name': 'Periodic1',
+                'amount': Decimal('766.6600'),
                 'budgeted_amount': None,
+                'budgets': {
+                    1: {'amount': Decimal('666.6600'), 'name': 'Periodic1'},
+                    2: {'amount': Decimal('100.0000'), 'name': 'Periodic2'}
+                },
                 'date': date(2017, 4, 16),
                 'description': 'Trans_bar',
-                'id': 9,
+                'id': 10,
+                'planned_budget_id': None,
+                'planned_budget_name': None,
+                'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
-                'type': 'Transaction',
-                'reconcile_id': None,
-                'planned_budget_id': None,
-                'planned_budget_name': None
+                'type': 'Transaction'
             }
         ]
 
@@ -547,7 +558,10 @@ class TestSums(AcceptanceHelper):
         # Budget 3 Income Transaction
         t1 = Transaction(
             date=date(2017, 4, 7),
-            budget_amounts={budgets[3]: Decimal('100.00')},
+            budget_amounts={
+                budgets[3]: Decimal('100.00'),
+                budgets[4]: Decimal('50.00')
+            },
             budgeted_amount=Decimal('100.00'),
             description='B3 Income',
             account=acct
@@ -630,10 +644,10 @@ class TestSums(AcceptanceHelper):
             4: {
                 'budget_amount': Decimal('500.00'),
                 'allocated': Decimal('1000.0'),
-                'spent': Decimal('850.0'),
-                'trans_total': Decimal('1100.0'),
+                'spent': Decimal('900.0'),
+                'trans_total': Decimal('1150.0'),
                 'is_income': False,
-                'remaining': Decimal('-600.0')
+                'remaining': Decimal('-650.0')
             },
             5: {
                 'budget_amount': Decimal('100.0'),
@@ -652,9 +666,9 @@ class TestSums(AcceptanceHelper):
         )
         assert pp._data['overall_sums'] == {
             'allocated': Decimal('1100.0'),
-            'spent': Decimal('853.0'),
+            'spent': Decimal('903.0'),
             'income': Decimal('322.45'),
-            'remaining': Decimal('-530.55')
+            'remaining': Decimal('-580.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
@@ -711,10 +725,10 @@ class TestSums(AcceptanceHelper):
             4: {
                 'budget_amount': Decimal('500.00'),
                 'allocated': Decimal('1000.0'),
-                'spent': Decimal('850.0'),
-                'trans_total': Decimal('1100.0'),
+                'spent': Decimal('900.0'),
+                'trans_total': Decimal('1150.0'),
                 'is_income': False,
-                'remaining': Decimal('-600.0')
+                'remaining': Decimal('-650.0')
             },
             5: {
                 'budget_amount': Decimal('100.0'),
@@ -727,9 +741,9 @@ class TestSums(AcceptanceHelper):
         }
         assert pp._data['overall_sums'] == {
             'allocated': Decimal('1100.0'),
-            'spent': Decimal('2885.0'),
+            'spent': Decimal('2935.0'),
             'income': Decimal('322.45'),
-            'remaining': Decimal('-2562.55')
+            'remaining': Decimal('-2612.55')
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))

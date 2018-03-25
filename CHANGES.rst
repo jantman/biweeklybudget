@@ -51,6 +51,13 @@ Unreleased Changes
 
 * Upgrade chromedriver in TravisCI builds from 2.33 to 2.36, to fix failing acceptance tests caused by Ubuntu upgrade from Chrome 64 to 65.
 * Fix bug in ``/budgets`` view where "Spending By Budget, Per Calendar Month" chart was showing only inactive budgets instead of only active budgets.
+* `Issue #178 <https://github.com/jantman/biweeklybudget/issues/178>`_ - UI support for splitting Transactions between multiple Budgets.
+* Have frontend forms submit as JSON POST instead of urlencoded.
+* Properly capture Chrome console logs during acceptance tests.
+* Bump ``versionfinder`` requirement version to 0.1.3 to work with pip 9.0.2.
+* On help view, show long version string if we have it.
+* `Issue #177 <https://github.com/jantman/biweeklybudget/issues/177>`_ - Fix bug in ``flask rundev`` logging.
+* Many workarounds for flaky acceptance tests, including some for the selenium/Chrome "Element is not clickable at point... Other element would receive the click" error.
 
 0.7.1 (2018-01-10)
 ------------------

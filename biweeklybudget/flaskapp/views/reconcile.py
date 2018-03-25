@@ -81,10 +81,20 @@ class TxnReconcileAjax(MethodView):
 
         res = {
             'reconcile': rec.as_dict,
-            'transaction': rec.transaction.as_dict,
-            'budget_name': rec.transaction.budget_transactions[0].budget.name,
-            'budget_id': rec.transaction.budget_transactions[0].budget_id
+            'transaction': rec.transaction.as_dict
         }
+        res['transaction']['budgets'] = [
+            {
+                'name': bt.budget.name,
+                'id': bt.budget_id,
+                'amount': bt.amount,
+                'is_income': bt.budget.is_income
+            }
+            for bt in sorted(
+                rec.transaction.budget_transactions,
+                key=lambda x: x.amount, reverse=True
+            )
+        ]
         if rec.ofx_trans is not None:
             res['ofx_trans'] = rec.ofx_trans.as_dict
             res['ofx_stmt'] = rec.ofx_trans.statement.as_dict
@@ -124,9 +134,19 @@ class TransUnreconciledAjax(MethodView):
         for t in Transaction.unreconciled(
                 db_session).order_by(Transaction.date).all():
             d = t.as_dict
+            d['budgets'] = [
+                {
+                    'name': bt.budget.name,
+                    'id': bt.budget_id,
+                    'amount': bt.amount,
+                    'is_income': bt.budget.is_income
+                }
+                for bt in sorted(
+                    t.budget_transactions, key=lambda x: x.amount,
+                    reverse=True
+                )
+            ]
             d['account_name'] = t.account.name
-            d['budget_name'] = t.budget_transactions[0].budget.name
-            d['budget_id'] = t.budget_transactions[0].budget_id
             res.append(d)
         return jsonify(res)
 

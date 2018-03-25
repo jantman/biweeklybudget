@@ -627,7 +627,10 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         testdb.add(t2)
         t3 = Transaction(
             date=(ppdate + timedelta(days=3)),
-            budget_amounts={e1budget: Decimal('600.00')},
+            budget_amounts={
+                e1budget: Decimal('600.00'),
+                e2budget: Decimal('20.00')
+            },
             budgeted_amount=Decimal('500.00'),
             description='prev trans 2',
             account=acct,
@@ -745,9 +748,9 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
         periods = self.pay_periods(testdb)
         assert periods['prev'].overall_sums == {
             'allocated': Decimal('750.0'),
-            'spent': Decimal('850.0'),
+            'spent': Decimal('870.0'),
             'income': Decimal('1000.0'),
-            'remaining': Decimal('150.0')
+            'remaining': Decimal('130.0')
         }
         assert periods['curr'].overall_sums == {
             'allocated': Decimal('2350.0'),
@@ -790,7 +793,7 @@ class TestPayPeriodOtherPeriodInfo(AcceptanceHelper):
             '%s' % pp.next.next.next.start_date.strftime('%Y-%m-%d')
         ]
         assert self.tbody2textlist(table) == [[
-            '$150.00',
+            '$130.00',
             '-$1,050.00',
             '$12.00',
             '$798.00',
@@ -830,7 +833,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         # delete existing transactions
         for tr in testdb.query(TxnReconcile).all():
             testdb.delete(tr)
-        for idx in [1, 2, 3]:
+        for idx in [1, 2, 3, 4]:
             t = testdb.query(Transaction).get(idx)
             testdb.delete(t)
         testdb.flush()
@@ -904,7 +907,10 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         testdb.add(t3)
         t4 = Transaction(
             date=ppdate,
-            budget_amounts={e2budget: Decimal('222.22')},
+            budget_amounts={
+                e1budget: Decimal('10.00'),
+                e2budget: Decimal('222.22')
+            },
             description='T3',
             notes='notesT3',
             account=testdb.query(Account).get(3)
@@ -924,9 +930,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$345.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$421.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$355.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,924.57'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -945,9 +951,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
@@ -996,8 +1002,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
 
@@ -1032,17 +1037,18 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ],
             [
                 ppdate.strftime('%Y-%m-%d'),
-                '$222.22',
-                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '$232.22',
+                '<a href="javascript:transModal(8, null);">T3 (8)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
-                '<a href="/budgets/2">Periodic2</a>',
+                '<a href="/budgets/2">Periodic2</a> ($222.22)<br>'
+                '<a href="/budgets/1">Periodic1</a> ($10.00)',
                 '&nbsp;',
                 '&nbsp;'
             ],
             [
                 (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
                 '-$333.33',
-                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="javascript:transModal(7, null);">T2 (7)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
                 '<a href="/budgets/4">Standing1</a>',
                 '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
@@ -1066,7 +1072,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
                 '$111.13',
-                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="javascript:transModal(6, null);">T1foo (6)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
@@ -1090,8 +1096,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
+                '<a href="javascript:transModal(5, null);">Txn From ST7'
+                ' (5)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
@@ -1107,13 +1113,12 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_element_by_xpath('//a[text()="T1foo (5)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        link = selenium.find_element_by_xpath('//a[text()="T1foo (6)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Transaction 5'
+        assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
-            'trans_frm_id').get_attribute('value') == '5'
+            'trans_frm_id').get_attribute('value') == '6'
         assert body.find_element_by_id(
             'trans_frm_date').get_attribute('value') == (
             pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d')
@@ -1159,13 +1164,12 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_element_by_xpath('//a[text()="T1foo (5)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        link = selenium.find_element_by_xpath('//a[text()="T1foo (6)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Transaction 5'
+        assert title.text == 'Edit Transaction 6'
         assert body.find_element_by_id(
-            'trans_frm_id').get_attribute('value') == '5'
+            'trans_frm_id').get_attribute('value') == '6'
         desc = body.find_element_by_id('trans_frm_description')
         desc.send_keys('edited')
         # submit the form
@@ -1175,7 +1179,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 5 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 6 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -1183,11 +1187,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('trans-table')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'T1fooedited (5)' in texts
+        assert 'T1fooedited (6)' in texts
 
     def test_10_transaction_modal_verify_db(self, testdb):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        t = testdb.query(Transaction).get(5)
+        t = testdb.query(Transaction).get(6)
         assert t is not None
         assert t.description == 'T1fooedited'
         assert t.date == (pp.start_date + timedelta(days=6))
@@ -1222,8 +1226,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         link = selenium.find_element_by_xpath(
             '//a[text()="ST7 per_period (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 7'
         assert body.find_element_by_id(
@@ -1255,8 +1258,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         link = selenium.find_element_by_xpath(
             '//a[text()="ST7 per_period (7)"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         desc = body.find_element_by_id('sched_frm_description')
         desc.send_keys('edited')
@@ -1299,8 +1301,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         dt_text = body.find_element_by_id('trans_frm_date')
         dt_text.clear()
@@ -1352,7 +1353,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 8 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 9 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -1360,11 +1361,11 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('trans-table')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'issue152regression1 (8)' in texts
+        assert 'issue152regression1 (9)' in texts
 
     def test_21_issue152_verify_db(self, testdb):
         """verify the transaction we added"""
-        t1 = testdb.query(Transaction).get(8)
+        t1 = testdb.query(Transaction).get(9)
         assert t1.date == (dtnow() - timedelta(days=2)).date()
         assert t1.actual_amount == Decimal('100.00')
         assert t1.budgeted_amount is None
@@ -1386,9 +1387,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$511.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$445.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,834.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$521.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$455.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,824.57'
 
     def test_23_issue152_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1408,9 +1409,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
@@ -1436,8 +1437,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         btn = selenium.find_element_by_id('btn-add-txn')
-        btn.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, btn)
         self.assert_modal_displayed(modal, title, body)
         dt_text = body.find_element_by_id('trans_frm_date')
         dt_text.clear()
@@ -1489,14 +1489,14 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' not in x.get_attribute('class')
-        budg_grp = body.find_element_by_id('trans_frm_budget_group')
-        assert 'has-error' in budg_grp.get_attribute('class')
+        budg_grp = body.find_element_by_id('budgets-error-div-container')
         p_elems = budg_grp.find_elements_by_tag_name('p')
         assert len(p_elems) == 1
         assert 'text-danger' in p_elems[0].get_attribute('class')
         assert p_elems[0].get_attribute(
             'innerHTML'
-        ) == 'New transactions cannot use an inactive budget.'
+        ) == 'New transactions cannot use an inactive budget ' \
+             '(Periodic3 Inactive).'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_load_complete(selenium)
@@ -1518,7 +1518,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         testdb.add(trans)
         testdb.commit()
-        t1 = testdb.query(Transaction).get(9)
+        t1 = testdb.query(Transaction).get(10)
         assert t1.date == (dtnow() - timedelta(days=1)).date()
         assert t1.actual_amount == Decimal('200.00')
         assert t1.budgeted_amount is None
@@ -1538,14 +1538,13 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_xpath(
-            '//a[text()="issue152regression3 (9)"]'
+            '//a[text()="issue152regression3 (10)"]'
         )
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Transaction 9'
+        assert title.text == 'Edit Transaction 10'
         assert body.find_element_by_id(
-            'trans_frm_id').get_attribute('value') == '9'
+            'trans_frm_id').get_attribute('value') == '10'
         desc = body.find_element_by_id('trans_frm_description')
         desc.send_keys('-edited')
         # submit the form
@@ -1555,7 +1554,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transaction 9 ' \
+        assert x.text.strip() == 'Successfully saved Transaction 10 ' \
                                  'in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -1563,10 +1562,10 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         # test that updated budget was removed from the page
         table = selenium.find_element_by_id('trans-table')
         texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'issue152regression3-edited (9)' in texts
+        assert 'issue152regression3-edited (10)' in texts
 
     def test_32_issue152_verify_db(self, testdb):
-        t1 = testdb.query(Transaction).get(9)
+        t1 = testdb.query(Transaction).get(10)
         assert t1.date == (dtnow() - timedelta(days=1)).date()
         assert t1.actual_amount == Decimal('200.00')
         assert t1.budgeted_amount is None
@@ -1588,9 +1587,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         )
         assert selenium.find_element_by_id(
             'amt-income').text == '$2,345.67'
-        assert selenium.find_element_by_id('amt-allocated').text == '$711.10'
-        assert selenium.find_element_by_id('amt-spent').text == '$645.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,634.57'
+        assert selenium.find_element_by_id('amt-allocated').text == '$721.10'
+        assert selenium.find_element_by_id('amt-spent').text == '$655.35'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,624.57'
 
     def test_41_issue161_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1610,9 +1609,9 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             [
                 '<a href="/budgets/1">Periodic1</a>',
                 '$100.00',
-                '$155.55',
-                '$123.13',
-                '<span class="text-danger">-$56.46</span>'
+                '$165.55',
+                '$133.13',
+                '<span class="text-danger">-$66.46</span>'
             ],
             [
                 '<a href="/budgets/2">Periodic2</a>',
@@ -1775,8 +1774,7 @@ class TestMakeTransModal(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Scheduled Transaction 7 to Transaction'
         assert body.find_element_by_id(
@@ -1808,8 +1806,7 @@ class TestMakeTransModal(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         body.find_element_by_id('schedtotrans_frm_date').clear()
         body.find_element_by_id('schedtotrans_frm_date').send_keys(
@@ -1829,7 +1826,7 @@ class TestMakeTransModal(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully created Transaction 6 for ' \
+        assert x.text.strip() == 'Successfully created Transaction 7 for ' \
                                  'ScheduledTransaction 7.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -1839,7 +1836,7 @@ class TestMakeTransModal(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         # sort order changes when we make this active
         assert texts[0][2] == '(sched) ST7 per_period (7)'
-        assert texts[1][2] == 'ST7 per_period Trans (6)'
+        assert texts[1][2] == 'ST7 per_period Trans (7)'
 
     def test_06_verify_db(self, testdb):
         t = testdb.query(ScheduledTransaction).get(7)
@@ -1854,7 +1851,7 @@ class TestMakeTransModal(AcceptanceHelper):
         assert t.notes is None
         assert t.is_active is True
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        t = testdb.query(Transaction).get(6)
+        t = testdb.query(Transaction).get(7)
         assert t is not None
         assert t.description == 'ST7 per_period Trans'
         assert t.date == (pp.start_date + timedelta(days=2))
@@ -1886,7 +1883,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         # delete existing transactions
         for tr in testdb.query(TxnReconcile).all():
             testdb.delete(tr)
-        for idx in [1, 2, 3]:
+        for idx in [1, 2, 3, 4]:
             t = testdb.query(Transaction).get(idx)
             testdb.delete(t)
         testdb.flush()
@@ -2077,7 +2074,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 ppdate.strftime('%Y-%m-%d'),
                 '$222.22',
-                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="javascript:transModal(8, null);">T3 (8)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
                 '&nbsp;',
@@ -2086,7 +2083,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
                 '-$333.33',
-                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="javascript:transModal(7, null);">T2 (7)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
                 '<a href="/budgets/4">Standing1</a>',
                 '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
@@ -2110,7 +2107,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
                 '$111.13',
-                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="javascript:transModal(6, null);">T1foo (6)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
@@ -2134,8 +2131,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
+                '<a href="javascript:transModal(5, null);">Txn From ST7'
+                ' (5)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
@@ -2148,7 +2145,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 7
+        assert max_t == 8
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -2161,8 +2158,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2233,7 +2229,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully saved Transactions 8 and 9' \
+        assert x.text.strip() == 'Successfully saved Transactions 9 and 10' \
                                  ' in database.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -2242,7 +2238,7 @@ class TestBudgetTransfer(AcceptanceHelper):
 
     def test_10_verify_db(self, testdb):
         desc = 'Budget Transfer - 123.45 from Periodic2 (2) to Standing2 (5)'
-        t1 = testdb.query(Transaction).get(8)
+        t1 = testdb.query(Transaction).get(9)
         assert t1.date == dtnow().date()
         assert t1.actual_amount == Decimal('123.45')
         assert t1.budgeted_amount == Decimal('123.45')
@@ -2255,11 +2251,11 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 2
         assert t1.budget_transactions[0].amount == Decimal('123.45')
         rec1 = testdb.query(TxnReconcile).get(3)
-        assert rec1.txn_id == 8
+        assert rec1.txn_id == 9
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
-        t2 = testdb.query(Transaction).get(9)
+        t2 = testdb.query(Transaction).get(10)
         assert t2.date == dtnow().date()
         assert t2.actual_amount == Decimal('-123.45')
         assert t2.budgeted_amount == Decimal('-123.45')
@@ -2272,7 +2268,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert t2.budget_transactions[0].budget_id == 5
         assert t2.budget_transactions[0].amount == Decimal('-123.45')
         rec2 = testdb.query(TxnReconcile).get(4)
-        assert rec2.txn_id == 9
+        assert rec2.txn_id == 10
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc
@@ -2382,7 +2378,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 ppdate.strftime('%Y-%m-%d'),
                 '$222.22',
-                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="javascript:transModal(8, null);">T3 (8)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
                 '&nbsp;',
@@ -2391,7 +2387,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
                 '-$333.33',
-                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="javascript:transModal(7, null);">T2 (7)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
                 '<a href="/budgets/4">Standing1</a>',
                 '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
@@ -2415,7 +2411,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
                 '$111.13',
-                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="javascript:transModal(6, null);">T1foo (6)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
@@ -2439,8 +2435,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
+                '<a href="javascript:transModal(5, null);">Txn From ST7'
+                ' (5)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
@@ -2450,9 +2446,9 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 dtnow().date().strftime('%Y-%m-%d'),
                 '$123.45',
-                '<a href="javascript:transModal(8, null);">'
+                '<a href="javascript:transModal(9, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
-                'Standing2 (5) (8)</a>',
+                'Standing2 (5) (9)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
                 '&nbsp;',
@@ -2461,9 +2457,9 @@ class TestBudgetTransfer(AcceptanceHelper):
             [
                 dtnow().date().strftime('%Y-%m-%d'),
                 '-$123.45',
-                '<a href="javascript:transModal(9, null);">'
+                '<a href="javascript:transModal(10, null);">'
                 'Budget Transfer - 123.45 from Periodic2 (2) to '
-                'Standing2 (5) (9)</a>',
+                'Standing2 (5) (10)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/5">Standing2</a>',
                 '&nbsp;',
@@ -2480,8 +2476,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2497,8 +2492,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             date(2017, 6, 23).strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2513,8 +2507,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             date(2017, 8, 18).strftime('%Y-%m-%d')
         )
         link = selenium.find_element_by_id('btn-budg-txfr-periodic')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
         assert body.find_element_by_id(
@@ -2538,7 +2531,7 @@ class TestSkipScheduled(AcceptanceHelper):
         # delete existing transactions
         for tr in testdb.query(TxnReconcile).all():
             testdb.delete(tr)
-        for idx in [1, 2, 3]:
+        for idx in [1, 2, 3, 4]:
             t = testdb.query(Transaction).get(idx)
             testdb.delete(t)
         testdb.flush()
@@ -2729,7 +2722,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 ppdate.strftime('%Y-%m-%d'),
                 '$222.22',
-                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="javascript:transModal(8, null);">T3 (8)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
                 '&nbsp;',
@@ -2738,7 +2731,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
                 '-$333.33',
-                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="javascript:transModal(7, null);">T2 (7)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
                 '<a href="/budgets/4">Standing1</a>',
                 '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
@@ -2762,7 +2755,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
                 '$111.13',
-                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="javascript:transModal(6, null);">T1foo (6)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
@@ -2786,8 +2779,8 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
+                '<a href="javascript:transModal(5, null);">Txn From ST7'
+                ' (5)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'
@@ -2800,7 +2793,7 @@ class TestSkipScheduled(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 7
+        assert max_t == 8
         max_r = max([
             t.id for t in testdb.query(TxnReconcile).all()
         ])
@@ -2816,8 +2809,7 @@ class TestSkipScheduled(AcceptanceHelper):
         link = selenium.find_elements_by_xpath(
             '//a[@href="javascript:skipSchedTransModal(8, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Skip Scheduled Transaction 8 in period %s' \
             % pp.start_date.strftime('%Y-%m-%d')
@@ -2870,7 +2862,7 @@ class TestSkipScheduled(AcceptanceHelper):
         _, _, body = self.get_modal_parts(selenium)
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
-        assert x.text.strip() == 'Successfully created Transaction 8 to' \
+        assert x.text.strip() == 'Successfully created Transaction 9 to' \
                                  ' skip ScheduledTransaction 8.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
@@ -2881,7 +2873,7 @@ class TestSkipScheduled(AcceptanceHelper):
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
         desc = 'Skip ScheduledTransaction 8 in period %s' % \
                pp.start_date.strftime('%Y-%m-%d')
-        t1 = testdb.query(Transaction).get(8)
+        t1 = testdb.query(Transaction).get(9)
         assert t1.date == pp.start_date
         assert t1.actual_amount == Decimal('0.0')
         assert t1.budgeted_amount == Decimal('0.0')
@@ -2894,7 +2886,7 @@ class TestSkipScheduled(AcceptanceHelper):
         assert t1.budget_transactions[0].budget_id == 1
         assert t1.budget_transactions[0].amount == Decimal('0.0')
         rec1 = testdb.query(TxnReconcile).get(3)
-        assert rec1.txn_id == 8
+        assert rec1.txn_id == 9
         assert rec1.ofx_fitid is None
         assert rec1.ofx_account_id is None
         assert rec1.note == desc
@@ -3000,7 +2992,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 ppdate.strftime('%Y-%m-%d'),
                 '$222.22',
-                '<a href="javascript:transModal(7, null);">T3 (7)</a>',
+                '<a href="javascript:transModal(8, null);">T3 (8)</a>',
                 '<a href="/accounts/3">CreditOne</a>',
                 '<a href="/budgets/2">Periodic2</a>',
                 '&nbsp;',
@@ -3009,8 +3001,8 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 ppdate.strftime('%Y-%m-%d'),
                 '$0.00',
-                '<a href="javascript:transModal(8, null);">Skip '
-                'ScheduledTransaction 8 in period %s (8)</a>' % (
+                '<a href="javascript:transModal(9, null);">Skip '
+                'ScheduledTransaction 8 in period %s (9)</a>' % (
                     pp.start_date.strftime('%Y-%m-%d')
                 ),
                 '<a href="/accounts/1">BankOne</a>',
@@ -3022,7 +3014,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=2)).strftime('%Y-%m-%d'),
                 '-$333.33',
-                '<a href="javascript:transModal(6, null);">T2 (6)</a>',
+                '<a href="javascript:transModal(7, null);">T2 (7)</a>',
                 '<a href="/accounts/2">BankTwoStale</a>',
                 '<a href="/budgets/4">Standing1</a>',
                 '<em>(from <a href="javascript:schedModal(3, null);">3</a>)'
@@ -3032,7 +3024,7 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (ppdate + timedelta(days=6)).strftime('%Y-%m-%d'),
                 '$111.13',
-                '<a href="javascript:transModal(5, null);">T1foo (5)</a>',
+                '<a href="javascript:transModal(6, null);">T1foo (6)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(1, null);">1</a>)'
@@ -3056,8 +3048,8 @@ class TestSkipScheduled(AcceptanceHelper):
             [
                 (pp.start_date + timedelta(days=8)).strftime('%Y-%m-%d'),
                 '$12.00',
-                '<a href="javascript:transModal(4, null);">Txn From ST7'
-                ' (4)</a>',
+                '<a href="javascript:transModal(5, null);">Txn From ST7'
+                ' (5)</a>',
                 '<a href="/accounts/1">BankOne</a>',
                 '<a href="/budgets/1">Periodic1</a>',
                 '<em>(from <a href="javascript:schedModal(7, null);">7</a>)'

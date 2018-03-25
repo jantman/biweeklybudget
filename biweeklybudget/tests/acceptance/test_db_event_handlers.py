@@ -56,7 +56,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 3
+        assert max_t == 4
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
@@ -71,8 +71,8 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         t = Transaction(
             budget_amounts={testdb.query(Budget).get(2): Decimal('222.22')},
             budgeted_amount=Decimal('123.45'),
-            description='T4',
-            notes='notesT4',
+            description='T5',
+            notes='notesT5',
             account=testdb.query(Account).get(1),
             planned_budget=testdb.query(Budget).get(2)
         )
@@ -85,7 +85,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 4
+        assert max_t == 5
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
@@ -100,8 +100,8 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         t = Transaction(
             budget_amounts={testdb.query(Budget).get(5): Decimal('222.22')},
             budgeted_amount=Decimal('123.45'),
-            description='T5',
-            notes='notesT5',
+            description='T6',
+            notes='notesT6',
             account=testdb.query(Account).get(1),
             planned_budget=testdb.query(Budget).get(5)
         )
@@ -114,7 +114,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 5
+        assert max_t == 6
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
@@ -126,7 +126,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_5_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
-        t = testdb.query(Transaction).get(5)
+        t = testdb.query(Transaction).get(6)
         budg = testdb.query(Budget).get(5)
         t.set_budget_amounts({budg: Decimal('111.11')})
         testdb.add(t)
@@ -138,7 +138,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 5
+        assert max_t == 6
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'
@@ -150,7 +150,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
 
     def test_7_edit_trans_standing_budget(self, testdb):
         """edit a transaction against a standing budget"""
-        t = testdb.query(Transaction).get(5)
+        t = testdb.query(Transaction).get(6)
         t.set_budget_amounts({testdb.query(Budget).get(5): Decimal('-111.11')})
         testdb.add(t)
         testdb.flush()
@@ -161,7 +161,7 @@ class TestTransStandingBudgetBalanceUpdate(AcceptanceHelper):
         max_t = max([
             t.id for t in testdb.query(Transaction).all()
         ])
-        assert max_t == 5
+        assert max_t == 6
         standing = testdb.query(Budget).get(5)
         assert standing.is_periodic is False
         assert standing.name == 'Standing2'

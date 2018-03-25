@@ -3,7 +3,7 @@ jsdoc.forms
 
 File: ``biweeklybudget/flaskapp/static/js/forms.js``
 
-.. js:function:: handleForm(container_id, form_id, post_url, dataTableObj)
+.. js:function:: handleForm(container_id, form_id, post_url, dataTableObj, serialize_func)
 
    Generic function to handle form submission with server-side validation.
 
@@ -13,6 +13,7 @@ File: ``biweeklybudget/flaskapp/static/js/forms.js``
    :param string form_id: The ID of the form itself.
    :param string post_url: Relative URL to post form data to.
    :param Object dataTableObj: passed on to ``handleFormSubmitted()``
+   :param Object serialize_func: If set (i.e. not ``undefined``), this is a function used serialize the form in place of :js:func:`serializeForm`. This function will be passed the ID of the form (``form_id``) and should return an Object suitable for passing to ``JSON.stringify()``.
    
 
    

@@ -81,9 +81,19 @@ def txn_div(id, dt, amt, acct_name, acct_id,
     s += '</span></div>'
     s += '<div class="col-lg-3"><strong>Budget:</strong> '
     s += '<span style="white-space: nowrap;">'
-    s += '<a href="/budgets/%s">%s (%s)</a>' % (
-        budget_id, budget_name, budget_id
-    )
+    if isinstance(budget_name, type([])) and budget_id is None:
+        b1 = budget_name[0]
+        b2 = budget_name[1]
+        s += '<a href="/budgets/%s">%s (%s) (%s)</a><br>' % (
+            b1[1], b1[0], b1[1], b1[2]
+        )
+        s += '<a href="/budgets/%s">%s (%s) (%s)</a>' % (
+            b2[1], b2[0], b2[1], b2[2]
+        )
+    else:
+        s += '<a href="/budgets/%s">%s (%s)</a>' % (
+            budget_id, budget_name, budget_id
+        )
     s += '</span></div>'
     s += '</div>'
     s += '<div class="row"><div class="col-lg-12">'
@@ -326,7 +336,10 @@ class ReconcileHelper(AcceptanceHelper):
         testdb.add(st1)
         t3 = Transaction(
             date=date(2017, 4, 11),
-            budget_amounts={e1budget: Decimal('600.00')},
+            budget_amounts={
+                e1budget: Decimal('590.00'),
+                e2budget: Decimal('10.00')
+            },
             budgeted_amount=Decimal('500.0'),
             description='trans2',
             account=acct2,
@@ -529,7 +542,11 @@ class TestColumns(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -727,7 +744,11 @@ class TestAccountReconcileFalse(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -922,8 +943,7 @@ class TestTransactionEditModal(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         link = selenium.find_element_by_xpath('//a[text()="Trans 1"]')
-        link.click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
         assert body.find_element_by_id(
@@ -973,7 +993,11 @@ class TestTransactionEditModal(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -1028,7 +1052,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -1194,7 +1222,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -1233,7 +1265,11 @@ class TestDragLimitations(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         assert self.normalize_html(tgt.get_attribute('outerHTML')) == expected
@@ -1513,8 +1549,9 @@ class TestReconcileBackend(ReconcileHelper):
         res = testdb.query(TxnReconcile).all()
         txn_id = res[-1].txn_id
         self.get(selenium, base_url + '/transactions')
-        selenium.find_element_by_link_text('Yes (%s)' % txn_id).click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(
+            selenium, selenium.find_element_by_link_text('Yes (%s)' % txn_id)
+        )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile %s' % txn_id
         assert 'Foo Bar Baz' in body.text
@@ -1659,9 +1696,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX2')
         link = ofxdiv.find_element_by_xpath('//a[text()="(make trans)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Transaction for OFX (2, OFX2)'
         assert body.find_element_by_id(
@@ -1851,9 +1887,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         self.get(selenium, base_url + '/reconcile')
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
         link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX31")'
         assert body.find_element_by_id(
@@ -1970,9 +2005,8 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         # ignore
         ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
         link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
-        link.click()
         # test the modal population
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX30")'
         assert body.find_element_by_id(
@@ -2077,7 +2111,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
                 date(2017, 4, 11),
                 600,
                 'BankTwo', 2,
-                '2Periodic', 2,
+                [
+                    ['2Periodic', 2, '$590.00'],
+                    ['3Periodic', 3, '$10.00']
+                ],
+                None,
                 'trans2'
             ),
             txn_div(
@@ -2183,7 +2221,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2214,7 +2256,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=ofx_div(
                 date(2017, 4, 9),
@@ -2239,7 +2285,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2272,7 +2322,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         ofx = selenium.find_element_by_id('ofx-2-OFX3')
@@ -2286,8 +2340,9 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         )
         assert self.get_reconciled(selenium) == {}
         # reconcile as noOFX
-        trans.find_element_by_link_text('(no OFX)').click()
-        modal, title, body = self.get_modal_parts(selenium)
+        modal, title, body = self.try_click_and_get_modal(
+            selenium, trans.find_element_by_link_text('(no OFX)')
+        )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Reconcile Transaction 3 Without OFX'
         assert body.find_element_by_id(
@@ -2313,7 +2368,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2',
             drop_div=noofx_div
         )
@@ -2327,7 +2386,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             date(2017, 4, 11),
             600,
             'BankTwo', 2,
-            '2Periodic', 2,
+            [
+                ['2Periodic', 2, '$590.00'],
+                ['3Periodic', 3, '$10.00']
+            ],
+            None,
             'trans2'
         )
         assert self.get_reconciled(selenium) == {}

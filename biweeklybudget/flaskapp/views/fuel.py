@@ -253,10 +253,7 @@ class VehicleFormHandler(FormHandlerView):
             veh = Vehicle()
             action = 'creating new Vehicle'
         veh.name = data['name'].strip()
-        if data['is_active'] == 'true':
-            veh.is_active = True
-        else:
-            veh.is_active = False
+        veh.is_active = data['is_active']
         logger.info('%s: %s', action, veh.as_dict)
         db_session.add(veh)
         db_session.commit()
@@ -280,7 +277,7 @@ class FuelLogFormHandler(FormHandlerView):
         """
         errors = {k: [] for k in data.keys()}
         errors = self._validate_date_ymd('date', data, errors)
-        if data['add_trans'] == 'true':
+        if data['add_trans'] is True:
             if data['account'] == 'None':
                 errors['account'].append('Transactions must have an account')
             if data['budget'] == 'None':
@@ -335,7 +332,7 @@ class FuelLogFormHandler(FormHandlerView):
         db_session.commit()
         fill.calculate_mpg()
         db_session.commit()
-        if data['add_trans'] != 'true':
+        if data['add_trans'] is not True:
             return {
                 'success_message': 'Successfully saved FuelFill %d '
                                    'in database.' % fill.id,

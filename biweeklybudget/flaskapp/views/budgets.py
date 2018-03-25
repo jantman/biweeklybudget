@@ -144,7 +144,7 @@ class BudgetFormHandler(FormHandlerView):
             errors['name'].append('Name cannot be empty')
             have_errors = True
         if (
-            data['is_periodic'] == 'true' and
+            data['is_periodic'] is True and
             data['starting_balance'].strip() == ''
         ):
             errors['starting_balances'].append(
@@ -152,7 +152,7 @@ class BudgetFormHandler(FormHandlerView):
             )
             have_errors = True
         if (
-            data['is_periodic'] == 'false' and
+            data['is_periodic'] is False and
             data['current_balance'].strip() == ''
         ):
             errors['current_balances'].append(
@@ -184,24 +184,14 @@ class BudgetFormHandler(FormHandlerView):
             action = 'creating new Budget'
         budget.name = data['name'].strip()
         budget.description = data['description'].strip()
-        if data['is_periodic'] == 'true':
-            budget.is_periodic = True
+        budget.is_periodic = data['is_periodic']
+        if data['is_periodic'] is True:
             budget.starting_balance = Decimal(data['starting_balance'])
         else:
-            budget.is_periodic = False
             budget.current_balance = Decimal(data['current_balance'])
-        if data['is_active'] == 'true':
-            budget.is_active = True
-        else:
-            budget.is_active = False
-        if data['is_income'] == 'true':
-            budget.is_income = True
-        else:
-            budget.is_income = False
-        if data['omit_from_graphs'] == 'true':
-            budget.omit_from_graphs = True
-        else:
-            budget.omit_from_graphs = False
+        budget.is_active = data['is_active']
+        budget.is_income = data['is_income']
+        budget.omit_from_graphs = data['omit_from_graphs']
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()
@@ -353,16 +343,17 @@ class BudgetSpendingChartView(MethodView):
             ),
             Transaction.date.__le__(dt_now)
         ).all():
-            if t.budget_transactions[0].budget_id not in budget_names:
-                continue
-            budg_name = t.budget_transactions[0].budget.name
-            budgets_present.add(budg_name)
-            ds = t.date.strftime('%Y-%m')
-            if ds not in records:
-                records[ds] = {'date': ds}
-            if budg_name not in records[ds]:
-                records[ds][budg_name] = Decimal('0')
-            records[ds][budg_name] += t.budget_transactions[0].amount
+            for bt in t.budget_transactions:
+                if bt.budget_id not in budget_names:
+                    continue
+                budg_name = bt.budget.name
+                budgets_present.add(budg_name)
+                ds = t.date.strftime('%Y-%m')
+                if ds not in records:
+                    records[ds] = {'date': ds}
+                if budg_name not in records[ds]:
+                    records[ds][budg_name] = Decimal('0')
+                records[ds][budg_name] += bt.amount
         result = [records[k] for k in sorted(records.keys())]
         res = {
             'data': result,
