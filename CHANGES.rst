@@ -55,6 +55,7 @@ Unreleased Changes
 * On help view, show long version string if we have it.
 * `Issue #177 <https://github.com/jantman/biweeklybudget/issues/177>`_ - Fix bug in ``flask rundev`` logging.
 * Many workarounds for flaky acceptance tests, including some for the selenium/Chrome "Element is not clickable at point... Other element would receive the click" error.
+* ``biweeklybudget.screenscraper.ScreenScraper`` - Save webdriver and browser logs on failure, and set Chrome to capture all logs.
 
 0.7.1 (2018-01-10)
 ------------------

@@ -40,6 +40,7 @@ import logging
 import codecs
 import urllib
 import json
+from tempfile import mkstemp
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -76,6 +77,15 @@ class ScreenScraper(object):
         self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' \
                           ' (KHTML, like Gecko) Chrome/62.0.3202.62 ' \
                           'Safari/537.36'
+        # temporary file for driver logs
+        fp, self._service_log_path = mkstemp()
+        os.close(fp)
+
+    def __del__(self):
+        try:
+            os.unlink(self._service_log_path)
+        except Exception:
+            pass
 
     def load_cookies(self, cookie_file):
         """
@@ -140,20 +150,54 @@ class ScreenScraper(object):
         self._screenshot_num += 1
 
     def error_screenshot(self, fname=None):
+        cwd = os.getcwd()
         if fname is None:
-            fname = os.path.join(os.getcwd(), 'webdriver_fail.png')
+            fname = os.path.join(cwd, 'webdriver_fail.png')
         self._pre_screenshot()
         self.browser.get_screenshot_as_file(fname)
         self._post_screenshot()
         logger.error("Screenshot saved to: {s}".format(s=fname))
         logger.error("Page title: %s", self.browser.title)
-        html_path = os.path.join(os.getcwd(), 'webdriver_fail.html')
+        logger.error('Page URL: %s', self.browser.current_url)
+        html_path = os.path.join(cwd, 'webdriver_fail.html')
         source = self.browser.execute_script(
             "return document.getElementsByTagName('html')[0].innerHTML"
         )
         with codecs.open(html_path, 'w', 'utf-8') as fh:
             fh.write(source)
         logger.error('Page source saved to: %s', html_path)
+        if (
+            os.path.exists(self._service_log_path) and
+            os.path.getsize(self._service_log_path) > 2
+        ):
+            logpath = os.path.join(cwd, 'webdriver_service_log.txt')
+            with open(logpath, 'w') as svclog:
+                with open(self._service_log_path, 'r') as orig:
+                    svclog.write(orig.read())
+            logger.error('Webdriver driver log written to: %s', logpath)
+        try:
+            log_types = self.browser.log_types
+        except Exception:
+            logger.error('Failed to gather browser logs', excinfo=True)
+            return
+        for name in log_types:
+            try:
+                log = self.browser.get_log(name)
+            except Exception:
+                logger.error(
+                    'Failed to get %s log from browser', name, excinfo=True
+                )
+                continue
+            logpath = os.path.join(cwd, 'webdriver_log_%s.txt' % name)
+            with open(logpath, 'w') as fh:
+                if isinstance(log, type([])):
+                    fh.write("\n".join(log))
+                else:
+                    fh.write(log)
+            logger.error(
+                'Wrote driver\'s "%s" log (length: %d) to: %s',
+                name, len(log), logpath
+            )
 
     def _pre_screenshot(self):
         if not self._browser_name.startswith('chrome'):
@@ -226,16 +270,19 @@ class ScreenScraper(object):
                 logger.debug("exporting DISPLAY=:0")
                 os.environ['DISPLAY'] = ":0"
             browser = webdriver.Firefox()
-        elif browser_name == 'chrome':
-            logger.debug("getting Chrome browser (local)")
-            browser = webdriver.Chrome()
-            browser.set_window_size(1920, 1080)
-            browser.implicitly_wait(2)
-        elif browser_name == 'chrome-headless':
-            logger.debug('getting Chrome browser (local) with --headless')
+        elif browser_name in ['chrome', 'chrome-headless']:
             chrome_options = Options()
-            chrome_options.add_argument("--headless")
-            browser = webdriver.Chrome(chrome_options=chrome_options)
+            if browser_name == 'chrome-headless':
+                logger.debug('getting Chrome browser (local) with --headless')
+                chrome_options.add_argument("--headless")
+            else:
+                logger.debug("getting Chrome browser (local)")
+            browser = webdriver.Chrome(
+                chrome_options=chrome_options, desired_capabilities={
+                    'loggingPrefs': {'browser': 'ALL'}
+                },
+                service_log_path=self._service_log_path
+            )
             browser.set_window_size(1920, 1080)
             browser.implicitly_wait(2)
         elif browser_name == 'phantomjs':
