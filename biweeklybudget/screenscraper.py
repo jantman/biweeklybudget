@@ -191,7 +191,7 @@ class ScreenScraper(object):
             logpath = os.path.join(cwd, 'webdriver_log_%s.txt' % name)
             with open(logpath, 'w') as fh:
                 if isinstance(log, type([])):
-                    fh.write("\n".join(log))
+                    fh.write("\n".join([str(x) for x in log]))
                 else:
                     fh.write(log)
             logger.error(
@@ -261,8 +261,17 @@ class ScreenScraper(object):
                      j['headers'].replace("\r", "").replace("\n", "; "))
         return j['respText']
 
-    def get_browser(self, browser_name):
-        """get a webdriver browser instance """
+    def get_browser(self, browser_name, useragent=None):
+        """
+        get a webdriver browser instance
+
+        :param browser_name: name of browser to get. Can be one of "firefox",
+          "chrome", "chrome-headless", or "phantomjs"
+        :type browser_name: str
+        :param useragent: Optionally override the browser's default user-agent
+          string with this value. Supported for phantomjs or chrome.
+        :type useragent: str
+        """
         self._browser_name = browser_name
         if browser_name == 'firefox':
             logger.debug("getting Firefox browser (local)")
@@ -277,6 +286,11 @@ class ScreenScraper(object):
                 chrome_options.add_argument("--headless")
             else:
                 logger.debug("getting Chrome browser (local)")
+            if useragent is not None:
+                chrome_options.add_argument('--user-agent=%s' % useragent)
+                logger.debug(
+                    'Setting chrome user-agent to "%s"', useragent
+                )
             browser = webdriver.Chrome(
                 chrome_options=chrome_options, desired_capabilities={
                     'loggingPrefs': {'browser': 'ALL'}
@@ -288,7 +302,16 @@ class ScreenScraper(object):
         elif browser_name == 'phantomjs':
             logger.debug("getting PhantomJS browser (local)")
             dcap = dict(DesiredCapabilities.PHANTOMJS)
-            dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+            if useragent is None:
+                logger.debug(
+                    'Setting phantomjs user-agent to "%s"', self.user_agent
+                )
+                dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+            else:
+                dcap["phantomjs.page.settings.userAgent"] = useragent
+                logger.debug(
+                    'Setting phantomjs user-agent to "%s"', useragent
+                )
             args = [
                 '--cookies-file={c}'.format(c=self._cookie_file),
                 '--ssl-protocol=any',

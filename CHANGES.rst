@@ -56,6 +56,7 @@ Unreleased Changes
 * `Issue #177 <https://github.com/jantman/biweeklybudget/issues/177>`_ - Fix bug in ``flask rundev`` logging.
 * Many workarounds for flaky acceptance tests, including some for the selenium/Chrome "Element is not clickable at point... Other element would receive the click" error.
 * ``biweeklybudget.screenscraper.ScreenScraper`` - Save webdriver and browser logs on failure, and set Chrome to capture all logs.
+* ``biweeklybudget.screenscraper.ScreenScraper`` - Add option to explicitly set a User-Agent on Chrome or PhantomJS.
 
 0.7.1 (2018-01-10)
 ------------------
