@@ -46,6 +46,7 @@ from sqlalchemy import func
 from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
+from biweeklybudget.models.account import Account
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
@@ -450,7 +451,18 @@ class TestTransReconciledModal(AcceptanceHelper):
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestOfxApi(AcceptanceHelper):
 
-    def test_0_verify_db(self, testdb):
+    def test_0_set_account_regexes(self, testdb):
+        acct = testdb.query(Account).get(3)
+        acct.re_interest_paid = None
+        acct.re_payment = 'INTERNET PAYMENT - THANK.*'
+        testdb.commit()
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == 'INTERNET PAYMENT - THANK.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
+
+    def test_1_verify_db(self, testdb):
         assert testdb.query(OFXStatement).with_entities(
             func.max(OFXStatement.id)
         ).scalar() == 9
@@ -458,8 +470,14 @@ class TestOfxApi(AcceptanceHelper):
             func.max(OFXTransaction.statement_id)
         ).scalar() == 9
         assert len(testdb.query(OFXTransaction).all()) == 33
+        acct = testdb.query(Account).get(3)
+        assert acct.re_interest_charge == '^INTEREST CHARGED TO'
+        assert acct.re_interest_paid is None
+        assert acct.re_payment == 'INTERNET PAYMENT - THANK.*'
+        assert acct.re_late_fee == '^Late Fee'
+        assert acct.re_other_fee == '^re-other-fee'
 
-    def test_1_get_accounts(self, base_url):
+    def test_2_get_accounts(self, base_url):
         r = requests.get(base_url + '/api/ofx/accounts')
         assert r.status_code == 200
         assert r.json() == {
@@ -495,7 +513,7 @@ class TestOfxApi(AcceptanceHelper):
             }
         }
 
-    def test_2_post_ofx(self, base_url):
+    def test_3_post_ofx(self, base_url):
         ofxpath = os.path.join(fixturedir, 'CreditOne_2017-07-28_05-30-00.ofx')
         with open(ofxpath, 'rb') as fh:
             ofx_str = fh.read()
@@ -509,7 +527,7 @@ class TestOfxApi(AcceptanceHelper):
         assert count_new == 1
         assert count_upd == 0
 
-    def test_3_verify_db(self, testdb):
+    def test_4_verify_db(self, testdb):
         assert testdb.query(OFXStatement).with_entities(
             func.max(OFXStatement.id)
         ).scalar() == 10
@@ -552,8 +570,13 @@ class TestOfxApi(AcceptanceHelper):
         assert trans.description is None
         assert trans.notes is None
         assert trans.reconcile_id is None
+        assert trans.is_interest_charge is False
+        assert trans.is_interest_payment is False
+        assert trans.is_late_fee is False
+        assert trans.is_other_fee is False
+        assert trans.is_payment is True
 
-    def test_4_post_same_ofx(self, base_url):
+    def test_5_post_same_ofx(self, base_url):
         ofxpath = os.path.join(fixturedir, 'CreditOne_2017-07-28_05-30-00.ofx')
         with open(ofxpath, 'rb') as fh:
             ofx_str = fh.read()
