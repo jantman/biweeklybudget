@@ -313,7 +313,8 @@ linkcheck_ignore = [
     r'https?://.*readthedocs\.org.*',
     r'https?://pypi\.python\.org/pypi/biweeklybudget',
     r'https?://testpypi\.python\.org/pypi/biweeklybudget',
-    r'https?://localhost.*'
+    r'https?://localhost.*',
+    r'https?://github\.com/jantman/biweeklybudget/issues/.*'
 ]
 
 nitpick_ignore = [
