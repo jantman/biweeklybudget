@@ -417,11 +417,11 @@ class DockerImageBuilder(object):
         ]
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '
-            'timeout=1800 env=%s', ' '.join(cmd), self._toxinidir, env
+            'timeout=3000 env=%s', ' '.join(cmd), self._toxinidir, env
         )
         res = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            cwd=self._toxinidir, timeout=1800, env=env
+            cwd=self._toxinidir, timeout=3000, env=env
         )
         logger.info('Acceptance test tox process exited %d', res.returncode)
         if res.returncode != 0:
