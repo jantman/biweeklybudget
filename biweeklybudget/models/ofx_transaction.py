@@ -251,6 +251,10 @@ class OFXTransaction(Base, ModelAsDict):
             're_other_fee': 'is_other_fee'
         }
         acct = self.account
+        if acct is None:
+            from biweeklybudget.models.account import Account
+            sess = inspect(self).session
+            acct = sess.query(Account).get(self.account_id)
         for fname in fields.values():
             if (
                 fname == 'is_interest_charge' and
