@@ -241,6 +241,9 @@ def parse_args():
                    help='verbose output. specify twice for debug-level output.')
     p.add_argument('-l', '--list-accts', dest='list', action='store_true',
                    help='list accounts and exit')
+    p.add_argument('-i', '--institution', dest='institution',
+                   action='store_true', default=False,
+                   help='list all accounts for institution and exit')
     p.add_argument('-r', '--remote', dest='remote', action='store', type=str,
                    default=None,
                    help='biweeklybudget API URL to use instead of direct DB '
@@ -308,6 +311,21 @@ def main():
         save_path = os.path.abspath(args.save_path)
 
     getter = OfxGetter(client, save_path)
+
+    if args.institution:
+        if args.ACCOUNT_NAME is None:
+            raise SystemExit('ERROR: Account name must be specified')
+        getter = OfxGetter(client, save_path)
+        acct = getter._accounts[args.ACCOUNT_NAME]
+        logger.info('Authenticating to institution:')
+        logger.debug(acct.institution.authenticate())
+        logger.info('Getting list of accounts...')
+        accts = acct.institution.accounts()
+        print('Found %d accounts' % len(accts))
+        for a in accts:
+            print(a.serialize())
+        raise SystemExit(0)
+
     if args.ACCOUNT_NAME is not None:
         getter.get_ofx(args.ACCOUNT_NAME)
         raise SystemExit(0)

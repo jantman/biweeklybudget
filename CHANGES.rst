@@ -58,6 +58,7 @@ Unreleased Changes
 * ``biweeklybudget.screenscraper.ScreenScraper`` - Save webdriver and browser logs on failure, and set Chrome to capture all logs.
 * ``biweeklybudget.screenscraper.ScreenScraper`` - Add option to explicitly set a User-Agent on Chrome or PhantomJS.
 * `Issue #192 <https://github.com/jantman/biweeklybudget/issues/192>`_ - Fix bug where the ``is_`` fields weren't set on OFXTransactions when created via ofxgetter remote API.
+* ``ofxgetter`` - add support to list all accounts at the Institution of one account
 
 0.7.1 (2018-01-10)
 ------------------
