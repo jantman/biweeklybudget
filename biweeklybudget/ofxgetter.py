@@ -264,6 +264,9 @@ def parse_args():
                    type=str, default=None,
                    help='Statement save path; must be specified when running '
                         'in remote (-r) mode.')
+    p.add_argument('-d', '--days', dest='days', action='store', type=int,
+                   default=30,
+                   help='number of days of history to get; default 30')
     p.add_argument('ACCOUNT_NAME', type=str, action='store', default=None,
                    nargs='?',
                    help='Account name; omit to download all accounts')
@@ -327,7 +330,7 @@ def main():
         raise SystemExit(0)
 
     if args.ACCOUNT_NAME is not None:
-        getter.get_ofx(args.ACCOUNT_NAME)
+        getter.get_ofx(args.ACCOUNT_NAME, days=args.days)
         raise SystemExit(0)
     # else all of them
     total = 0
@@ -335,7 +338,7 @@ def main():
     for acctname in sorted(OfxGetter.accounts(client).keys()):
         try:
             total += 1
-            getter.get_ofx(acctname)
+            getter.get_ofx(acctname, days=args.days)
             success += 1
         except Exception:
             logger.error(
