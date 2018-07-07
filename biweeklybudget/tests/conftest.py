@@ -60,7 +60,10 @@ except ImportError:
     pass
 
 try:
-    import pytest_selenium.pytest_selenium
+    # Note that in pytest 3.6.0 thanks to issue #3487, anything called
+    # "pytest_" in this file is attempted to be loaded as a plugin, and then
+    # causes the test run to fail.
+    import pytest_selenium.pytest_selenium as ptselenium
     from selenium.webdriver.support.event_firing_webdriver import \
         EventFiringWebDriver
     from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWD
@@ -307,7 +310,7 @@ def _gather_screenshot(item, report, driver, summary, extra):
     """
     Redefine pytest-selenium's _gather_screenshot so that we can get full-page
     screenshots. This implementation is copied from pytest-selenium 1.11.4,
-    but calls :py:fund:`~.selenium_helpers.set_browser_for_fullpage_screenshot`
+    but calls :py:func:`~.selenium_helpers.set_browser_for_fullpage_screenshot`
     before calling ``driver.get_screenshot_as_base64()``.
     """
     try:
@@ -324,7 +327,7 @@ def _gather_screenshot(item, report, driver, summary, extra):
 
 # redefine _gather_screenshot to use our implementation
 if HAVE_PYTEST_SELENIUM:
-    pytest_selenium.pytest_selenium._gather_screenshot = _gather_screenshot
+    ptselenium._gather_screenshot = _gather_screenshot
 
 
 @pytest.fixture
