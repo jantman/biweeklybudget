@@ -157,7 +157,7 @@ class RegenerateDocs(BaseStep):
 class BuildDocker(BaseStep):
 
     def run(self):
-        self._run_tox_env('docker')
+        self._run_tox_env('docker', timeout=3600)
         self._ensure_committed()
 
 

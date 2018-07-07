@@ -237,7 +237,7 @@ class BaseStep(object):
             )
         )
 
-    def _run_tox_env(self, env_name, extra_env_vars={}):
+    def _run_tox_env(self, env_name, timeout=1800, extra_env_vars={}):
         """
         Run the specified tox environment.
 
@@ -256,11 +256,11 @@ class BaseStep(object):
         cmd = [os.path.join(projdir, 'bin', 'tox'), '-e', env_name]
         logger.info(
             'Running tox environment %s: args="%s" cwd=%s '
-            'timeout=1800', env_name, ' '.join(cmd), projdir
+            'timeout=%d', env_name, ' '.join(cmd), projdir, timeout
         )
         res = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            cwd=projdir, timeout=1800, env=env
+            cwd=projdir, timeout=timeout, env=env
         )
         logger.info('tox process exited %d', res.returncode)
         if res.returncode != 0:
