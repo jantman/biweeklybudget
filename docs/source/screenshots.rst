@@ -9,6 +9,30 @@ Main landing page.
 .. image:: index_sm.png
    :target: index.png
 
+Transactions View
+-----------------
+
+Shows all manually-entered transactions.
+
+.. image:: transactions_sm.png
+   :target: transactions.png
+
+Transaction Detail
+------------------
+
+Transaction detail modal to view and edit a transaction.
+
+.. image:: transaction2_sm.png
+   :target: transaction2.png
+
+Transactions with Budget Splits
+-------------------------------
+
+A single Transaction can be split across multiple budgets.
+
+.. image:: transaction4_sm.png
+   :target: transaction4.png
+
 Credit Card Payoff Calculations
 -------------------------------
 
@@ -64,22 +88,6 @@ Budget detail modal to view and edit a budget.
 
 .. image:: budget2_sm.png
    :target: budget2.png
-
-Transactions View
------------------
-
-Shows all manually-entered transactions.
-
-.. image:: transactions_sm.png
-   :target: transactions.png
-
-Transaction Detail
-------------------
-
-Transaction detail modal to view and edit a transaction.
-
-.. image:: transaction2_sm.png
-   :target: transaction2.png
 
 Accounts View
 -------------
