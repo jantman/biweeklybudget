@@ -61,10 +61,7 @@ or locale, let me know and I'll fix it.
 Important Warning
 +++++++++++++++++
 
-This software should be considered *alpha* quality at best. At this point, I can't even say that I'm 100% confident
-it is mathematically correct, balances are right, all scheduled transactions will show up in the right places, etc. I'm going to
-be testing it for my own purposes, and comparing it against my manual calculations. Until further notice, if you decide to use this,
-please double-check *everything* produced by it before relying on its output.
+This software should be considered *beta* quality at best. I've been using it for about a year and it seems to be working correctly, but I'm very much a creature of habit; it's entirely possible that there are major bugs I haven't found because I always do the same action in the same way, the same order, the same steps, etc. In short, this application works for *me* and the *exact particular way I use it*, but it hasn't seen enough use from other people to say that it's stable and correct in the general case. As such, please **DO NOT RELY ON** the mathematical/financial calculations without double-checking them.
 
 Main Features
 +++++++++++++
