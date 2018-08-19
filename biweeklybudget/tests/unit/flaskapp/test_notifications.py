@@ -80,7 +80,7 @@ class TestNotifications(object):
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
             mocks['budget_account_sum'].return_value = 1000
-            mocks['standing_budgets_sum'].return_value = 1
+            mocks['standing_budgets_sum'].return_value = 1000
             mocks['num_unreconciled_ofx'].return_value = 0
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
@@ -120,6 +120,39 @@ class TestNotifications(object):
             }
         ]
 
+    def test_get_notifications_under_balance(self):
+        with patch.multiple(
+                pb,
+                num_stale_accounts=DEFAULT,
+                budget_account_sum=DEFAULT,
+                standing_budgets_sum=DEFAULT,
+                num_unreconciled_ofx=DEFAULT,
+                budget_account_unreconciled=DEFAULT,
+                pp_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = 2000
+            mocks['standing_budgets_sum'].return_value = 500
+            mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = 700
+            mocks['pp_sum'].return_value = 600
+            res = NotificationsController.get_notifications()
+        assert res == [
+            {
+                'classes': 'alert alert-info',
+                'content': 'Combined balance of all <a href="/accounts">'
+                           'budget-funding accounts</a> '
+                           '(%s) is more than all allocated funds total of '
+                           '%s (%s <a href="/budgets">standing budgets</a>; '
+                           '%s <a href="/pay_period_for">current pay '
+                           'period remaining</a>; %s <a href="/reconcile">'
+                           'unreconciled</a>)!' % (
+                               '$2,000.00', '$1,800.00', '$500.00',
+                               '$600.00', '$700.00'
+                           )
+            }
+        ]
+
     def test_get_notifications_one_stale(self):
         with patch.multiple(
                 pb,
@@ -132,7 +165,7 @@ class TestNotifications(object):
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 1
             mocks['budget_account_sum'].return_value = 1000
-            mocks['standing_budgets_sum'].return_value = 1
+            mocks['standing_budgets_sum'].return_value = 1000
             mocks['num_unreconciled_ofx'].return_value = 28
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
@@ -162,7 +195,7 @@ class TestNotifications(object):
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 3
             mocks['budget_account_sum'].return_value = 1000
-            mocks['standing_budgets_sum'].return_value = 1
+            mocks['standing_budgets_sum'].return_value = 1000
             mocks['num_unreconciled_ofx'].return_value = 28
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
