@@ -1148,10 +1148,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
@@ -1338,10 +1336,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == 'None'
@@ -1474,10 +1470,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == 'None'
@@ -2191,10 +2185,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert from_budget_sel.first_selected_option.get_attribute(
@@ -2210,10 +2202,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert to_budget_sel.first_selected_option.get_attribute(
@@ -2844,10 +2834,8 @@ class TestSkipScheduled(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute(

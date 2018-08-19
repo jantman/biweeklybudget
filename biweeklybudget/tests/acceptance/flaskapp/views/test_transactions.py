@@ -363,10 +363,8 @@ class TestTransModalByURL(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
         assert selenium.find_element_by_id(
@@ -433,11 +431,9 @@ class TestTransModal(AcceptanceHelper):
             ['None', ''],
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
-            ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
+            ['2', 'Periodic2']
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
         assert selenium.find_element_by_id(
@@ -556,10 +552,8 @@ class TestTransModal(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
         assert selenium.find_element_by_id(
@@ -777,6 +771,222 @@ class TestTransModal(AcceptanceHelper):
         assert t.budget_transactions[0].amount == Decimal('345.67')
         assert testdb.query(Budget).get(4).current_balance == Decimal('605.23')
         assert testdb.query(Budget).get(5).current_balance == Decimal('9605.74')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
+
+    def test_00_add_transactions(self, testdb):
+        # Transaction 5 - split with active and inactive
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={
+                testdb.query(Budget).get(1): Decimal('100.10'),
+                testdb.query(Budget).get(2): Decimal('102.11'),
+                testdb.query(Budget).get(3): Decimal('120.11')
+            },
+            date=dtnow().date(),
+            description='InactiveBudgets1',
+            notes='InactiveBudgets Txn1'
+        ))
+        # Transaction 6 - Active only
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={
+                testdb.query(Budget).get(1): Decimal('322.32')
+            },
+            date=dtnow().date(),
+            description='InactiveBudgets2',
+            notes='InactiveBudgets Txn2'
+        ))
+        # Transaction 7 - Inactive only
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={
+                testdb.query(Budget).get(3): Decimal('322.32')
+            },
+            date=dtnow().date(),
+            description='InactiveBudgets3',
+            notes='InactiveBudgets Txn3'
+        ))
+        testdb.commit()
+
+    def test_01_verify_db(self, testdb):
+        # Transaction 5 - split with active and inactive
+        t = testdb.query(Transaction).get(5)
+        assert t is not None
+        assert t.description == 'InactiveBudgets1'
+        assert t.date == dtnow().date()
+        assert t.actual_amount == Decimal('322.32')
+        assert t.account_id == 1
+        assert t.notes == 'InactiveBudgets Txn1'
+        assert len(t.budget_transactions) == 3
+        assert {x.budget_id: x.amount for x in t.budget_transactions} == {
+            1: Decimal('100.10'),
+            2: Decimal('102.11'),
+            3: Decimal('120.11')
+        }
+        # Transaction 6 - Active only
+        t = testdb.query(Transaction).get(6)
+        assert t is not None
+        assert t.description == 'InactiveBudgets2'
+        assert t.date == dtnow().date()
+        assert t.actual_amount == Decimal('322.32')
+        assert t.account_id == 1
+        assert t.notes == 'InactiveBudgets Txn2'
+        assert len(t.budget_transactions) == 1
+        assert {x.budget_id: x.amount for x in t.budget_transactions} == {
+            1: Decimal('322.32')
+        }
+        # Transaction 7 - Inactive only
+        t = testdb.query(Transaction).get(7)
+        assert t is not None
+        assert t.description == 'InactiveBudgets3'
+        assert t.date == dtnow().date()
+        assert t.actual_amount == Decimal('322.32')
+        assert t.account_id == 1
+        assert t.notes == 'InactiveBudgets Txn3'
+        assert len(t.budget_transactions) == 1
+        assert {x.budget_id: x.amount for x in t.budget_transactions} == {
+            3: Decimal('322.32')
+        }
+
+    def test_02_modal_populate_split(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets1"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 5'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '5'
+        # assert budget split items are shown and checkbox is checked
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed()
+        # there should be three split budget input groups
+        assert len(
+            selenium.find_elements_by_class_name('budget_split_row')
+        ) == 3
+        # BUDGET 0
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget_0'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == '3'
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_0').get_attribute('value') == '120.11'
+        # BUDGET 1
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget_1'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == '2'
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_1').get_attribute('value') == '102.11'
+        # BUDGET 2
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget_2'))
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
+        assert budget_sel.first_selected_option.get_attribute('value') == '1'
+        assert body.find_element_by_id(
+            'trans_frm_budget_amount_2').get_attribute('value') == '100.1'
+
+    def test_03_modal_populate_nonsplit_active(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets2"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 6'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '6'
+        # NOT Split Budget
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed() is False
+        amt = body.find_element_by_id('trans_frm_amount')
+        assert amt.get_attribute('value') == '322.32'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '1'
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
+
+    def test_04_modal_populate_nonsplit_inactive(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets3"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 7'
+        assert body.find_element_by_id(
+            'trans_frm_id').get_attribute('value') == '7'
+        # NOT Split Budget
+        assert selenium.find_element_by_id(
+            'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element_by_id(
+            'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element_by_id(
+            'trans_frm_split_budget_container').is_displayed() is False
+        amt = body.find_element_by_id('trans_frm_amount')
+        assert amt.get_attribute('value') == '322.32'
+        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        assert budget_sel.first_selected_option.get_attribute('value') == '3'
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['7', 'Income (income)'],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['3', 'Periodic3 Inactive'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2']
+        ]
 
 
 @pytest.mark.acceptance
@@ -1363,10 +1573,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
         assert body.find_element_by_id(
@@ -1381,10 +1589,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
         assert body.find_element_by_id(
@@ -1542,10 +1748,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
         assert body.find_element_by_id(
@@ -1560,10 +1764,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
         assert body.find_element_by_id(
@@ -1578,10 +1780,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive']
+            ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
         assert body.find_element_by_id(
