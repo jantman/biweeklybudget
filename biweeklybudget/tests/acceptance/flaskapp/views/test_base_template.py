@@ -214,6 +214,9 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
         self.get(selenium, base_url)
         div = selenium.find_element_by_class_name('unreconciled-alert')
         assert div.text == '3 Unreconciled OFXTransactions.'
+        assert div.get_attribute(
+            'class'
+        ) == 'alert alert-warning unreconciled-alert'
         a = div.find_element_by_tag_name('a')
         assert self.relurl(a.get_attribute('href')) == '/reconcile'
         assert a.text == 'Unreconciled OFXTransactions'
@@ -256,6 +259,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
                            'total of $132,617.50 ($132,939.07 standing ' \
                            'budgets; $11.76 current pay period remaining; ' \
                            '-$333.33 unreconciled)!'
+        assert div.get_attribute('class') == 'alert alert-danger'
         a = div.find_elements_by_tag_name('a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
@@ -340,6 +344,61 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
                            'total of $44,778.28 ($11,099.85 standing ' \
                            'budgets; $11.76 current pay period remaining; ' \
                            '$33,666.67 unreconciled)!'
+        assert div.get_attribute('class') == 'alert alert-danger'
+        a = div.find_elements_by_tag_name('a')
+        assert self.relurl(a[0].get_attribute('href')) == '/accounts'
+        assert a[0].text == 'budget-funding accounts'
+        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
+        assert a[1].text == 'standing budgets'
+        assert self.relurl(a[2].get_attribute('href')) == '/pay_period_for'
+        assert a[2].text == 'current pay period remaining'
+        assert self.relurl(a[3].get_attribute('href')) == '/reconcile'
+        assert a[3].text == 'unreconciled'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestUnderBalanceNotification(AcceptanceHelper):
+
+    def test_0_update_db(self, testdb):
+        testdb.query(Account).get(1).set_balance(
+            ledger=Decimal('428890.24'),
+            avail=Decimal('428890.24'),
+            ledger_date=dtnow(),
+            avail_date=dtnow(),
+            overall_date=dtnow()
+        )
+        testdb.flush()
+        testdb.commit()
+
+    def test_1_confirm_db(self, testdb):
+        a = testdb.query(Account).get(1)
+        assert a.balance.ledger == Decimal('428890.24')
+        assert a.balance.avail == Decimal('428890.24')
+
+    def test_2_confirm_pp(self, testdb):
+        acct_bal = NotificationsController.budget_account_sum(testdb)
+        assert acct_bal == Decimal('428990.47')
+        stand_bal = NotificationsController.standing_budgets_sum(testdb)
+        assert stand_bal == Decimal('10766.52')
+        pp_bal = NotificationsController.pp_sum(testdb)
+        assert pp_bal == Decimal('11.76')
+        unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
+        assert unrec_amt == Decimal('-333.33')
+
+    def test_3_notification(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+        div = selenium.find_elements_by_xpath(
+            "//div[@id='notifications-row']/div/div"
+        )[1]
+        assert div.text == 'Combined balance of all budget-funding accounts ' \
+                           '($428,990.47) is more than all allocated funds ' \
+                           'total of $10,444.95 ($10,766.52 standing ' \
+                           'budgets; $11.76 current pay period remaining; ' \
+                           '-$333.33 unreconciled)!'
+        assert div.get_attribute('class') == 'alert alert-info'
         a = div.find_elements_by_tag_name('a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'

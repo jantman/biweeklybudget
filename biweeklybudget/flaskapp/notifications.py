@@ -182,7 +182,8 @@ class NotificationsController(object):
         curr_pp = NotificationsController.pp_sum()
         logger.info('accounts_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
                     accounts_bal, standing_bal, curr_pp, unrec_amt)
-        if accounts_bal < (standing_bal + curr_pp + unrec_amt):
+        bal_sum = standing_bal + curr_pp + unrec_amt
+        if accounts_bal < bal_sum:
             res.append({
                 'classes': 'alert alert-danger',
                 'content': 'Combined balance of all <a href="/accounts">'
@@ -194,9 +195,25 @@ class NotificationsController(object):
                            'unreconciled</a>)!'
                            '' % (
                                fmt_currency(accounts_bal),
-                               fmt_currency(
-                                   (standing_bal + curr_pp + unrec_amt)
-                               ),
+                               fmt_currency(bal_sum),
+                               fmt_currency(standing_bal),
+                               fmt_currency(curr_pp),
+                               fmt_currency(unrec_amt)
+                           )
+            })
+        elif accounts_bal > bal_sum:
+            res.append({
+                'classes': 'alert alert-info',
+                'content': 'Combined balance of all <a href="/accounts">'
+                           'budget-funding accounts</a> '
+                           '(%s) is more than all allocated funds total of '
+                           '%s (%s <a href="/budgets">standing budgets</a>; '
+                           '%s <a href="/pay_period_for">current pay '
+                           'period remaining</a>; %s <a href="/reconcile">'
+                           'unreconciled</a>)!'
+                           '' % (
+                               fmt_currency(accounts_bal),
+                               fmt_currency(bal_sum),
                                fmt_currency(standing_bal),
                                fmt_currency(curr_pp),
                                fmt_currency(unrec_amt)
