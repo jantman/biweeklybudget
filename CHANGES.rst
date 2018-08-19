@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased Changes
+------------------
+
+* `Issue #198 <https://github.com/jantman/biweeklybudget/issues/198>`_ - Fix broken method of retrieving current US Prime Rate. Previously we used marketwatch.com for this but they've introduced javascript-based bot protection on their site (which is ironic since we were reading a value from the page's ``meta`` tags, which are specifically intended to be read by machines). Switch to using wsj.com instead and (ugh) parsing a HTML table. This *will* break when the format of the table changes. As previously, we cache this value in the DB for 48 hours in order to be a good citizen.
+
 1.0.0 (2018-07-07)
 ------------------
 
