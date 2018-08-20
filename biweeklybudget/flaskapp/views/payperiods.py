@@ -118,11 +118,14 @@ class PayPeriodView(MethodView):
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
         budgets = {}
+        active_budgets = {}
         for b in db_session.query(Budget).all():
             k = b.name
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
+            if b.is_active:
+                active_budgets[b.id] = k
         standing = {
             b.id: b.current_balance
             for b in db_session.query(Budget).filter(
@@ -173,7 +176,8 @@ class PayPeriodView(MethodView):
             periodic=periodic,
             transactions=pp.transactions_list,
             accts=accts,
-            txfr_date_str=txfr_date_str
+            txfr_date_str=txfr_date_str,
+            active_budgets=active_budgets
         )
 
 

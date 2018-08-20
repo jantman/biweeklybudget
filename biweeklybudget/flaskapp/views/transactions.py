@@ -64,15 +64,20 @@ class TransactionsView(MethodView):
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         budgets = {}
+        active_budgets = {}
         for b in db_session.query(Budget).all():
             if b.is_income:
-                budgets['%s (income)' % b.name] = b.id
+                bname = '%s (income)' % b.name
             else:
-                budgets[b.name] = b.id
+                bname = b.name
+            budgets[bname] = b.id
+            if b.is_active:
+                active_budgets[bname] = b.id
         return render_template(
             'transactions.html',
             accts=accts,
-            budgets=budgets
+            budgets=budgets,
+            active_budgets=active_budgets
         )
 
 
@@ -85,16 +90,21 @@ class OneTransactionView(MethodView):
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         budgets = {}
+        active_budgets = {}
         for b in db_session.query(Budget).all():
             if b.is_income:
-                budgets['%s (income)' % b.name] = b.id
+                bname = '%s (income)' % b.name
             else:
-                budgets[b.name] = b.id
+                bname = b.name
+            budgets[bname] = b.id
+            if b.is_active:
+                active_budgets[bname] = b.id
         return render_template(
             'transactions.html',
             accts=accts,
             budgets=budgets,
-            trans_id=trans_id
+            trans_id=trans_id,
+            active_budgets=active_budgets
         )
 
 
