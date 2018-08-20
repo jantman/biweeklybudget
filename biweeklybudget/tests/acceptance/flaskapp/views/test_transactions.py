@@ -431,7 +431,7 @@ class TestTransModal(AcceptanceHelper):
             ['None', ''],
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
-            ['2', 'Periodic2']
+            ['2', 'Periodic2'],
             ['4', 'Standing1'],
             ['5', 'Standing2']
         ]
@@ -883,9 +883,9 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2']
+            ['5', 'Standing2'],
+            ['3', 'Periodic3 Inactive']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '3'
         assert body.find_element_by_id(
@@ -983,9 +983,9 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['7', 'Income (income)'],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
-            ['5', 'Standing2']
+            ['5', 'Standing2'],
+            ['3', 'Periodic3 Inactive']
         ]
 
 
