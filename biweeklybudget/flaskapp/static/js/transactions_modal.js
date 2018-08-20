@@ -88,7 +88,7 @@ function transModalDivFillAndShow(msg) {
       $('#trans_frm_transfer_p').show();
     }
     if(msg['budgets'].length == 1) {
-        $('#trans_frm_budget option[value=' + msg['budgets'][0]['id'] + ']').prop('selected', 'selected').change();
+        selectBudget(null, msg['budgets'][0]['id']);
     } else {
         $('#trans_frm_is_split').prop('checked', true);
         $('#trans_frm_budget_group').hide();
@@ -96,11 +96,28 @@ function transModalDivFillAndShow(msg) {
         for(var i = 0; i < msg['budgets'].length; i++) {
             if(i > 1) { $('#trans_frm_budget_splits_div').append(transModalBudgetSplitRowHtml(i)); }
             var budg = msg['budgets'][i];
-            $('#trans_frm_budget_' + i + ' option[value=' + budg['id'] + ']').prop('selected', 'selected').change();
+            selectBudget(i, budg['id']);
             $('#trans_frm_budget_amount_' + i).val(budg['amount']);
         }
     }
     $("#modalDiv").modal('show');
+}
+
+/**
+ * Select a budget in a budget select element. If ``sel_num`` is null then
+ * select in ``#trans_frm_budget``, else it is expected to be an integer
+ * and the selection will be made in ``trans_frm_budget_<sel_num>``.
+ *
+ * @param {(number|null)} sel_num - The ``trans_frm_budget_`` Select element
+ *   suffix, or else null for the ``trans_frm_budget`` select.
+ * @param {number} budg_id - The ID of the budget to select.
+ */
+function selectBudget(sel_num, budg_id) {
+    if(sel_num == null) {
+        $('#trans_frm_budget option[value=' + budg_id + ']').prop('selected', 'selected').change();
+    } else {
+        $('#trans_frm_budget_' + sel_num + ' option[value=' + budg_id + ']').prop('selected', 'selected').change();
+    }
 }
 
 /**
