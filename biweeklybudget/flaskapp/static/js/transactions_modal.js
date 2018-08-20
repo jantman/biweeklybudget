@@ -118,12 +118,14 @@ function selectBudget(sel_num, budg_id) {
     if(sel_num == null) {
         if(budg_name == null) {
             // append the select option
+            budg_name = getObjectValueKey(budget_names_to_id, budg_id);
             $('#trans_frm_budget').append('<option value="' + budg_id + '">' + budg_name + '</option>');
         }
         $('#trans_frm_budget option[value=' + budg_id + ']').prop('selected', 'selected').change();
     } else {
         if(budg_name == null) {
             // append the select option
+            budg_name = getObjectValueKey(budget_names_to_id, budg_id);
             $('#trans_frm_budget_' + sel_num).append('<option value="' + budg_id + '">' + budg_name + '</option>');
         }
         $('#trans_frm_budget_' + sel_num + ' option[value=' + budg_id + ']').prop('selected', 'selected').change();
@@ -136,12 +138,13 @@ function selectBudget(sel_num, budg_id) {
  * @param val the value to look for
  */
 function getObjectValueKey(obj, val) {
+    var result = null;
     Object.keys(obj).forEach(function (key) {
-        if(obj[key] == val) {
-            return key;
+        if(obj[key] == val || obj[key] == "" + val + "") {
+            result = key;
         }
     });
-    return null;
+    return result;
 }
 
 /**

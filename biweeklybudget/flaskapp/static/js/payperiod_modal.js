@@ -134,7 +134,7 @@ function skipSchedTransModalDivForm() {
         .addDatePicker('skipschedtrans_frm_date', 'date', 'Specific Date', { groupHtml: ' style="display: none;"' })
         .addCurrency('skipschedtrans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
         .addLabelToValueSelect('skipschedtrans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('skipschedtrans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('skipschedtrans_frm_budget', 'budget', 'Budget', active_budget_names_to_id, 'None', true)
         .addText('skipschedtrans_frm_notes', 'notes', 'Notes')
         .render();
 }

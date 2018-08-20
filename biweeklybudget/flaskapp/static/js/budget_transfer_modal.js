@@ -43,8 +43,8 @@ function budgetTransferDivForm() {
         .addDatePicker('budg_txfr_frm_date', 'date', 'Date')
         .addCurrency('budg_txfr_frm_amount', 'amount', 'Amount', { helpBlock: 'Transfer amount relative to from account; must be positive.' })
         .addLabelToValueSelect('budg_txfr_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('budg_txfr_frm_from_budget', 'from_budget', 'From Budget', budget_names_to_id, 'None', true)
-        .addLabelToValueSelect('budg_txfr_frm_to_budget', 'to_budget', 'To Budget', budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('budg_txfr_frm_from_budget', 'from_budget', 'From Budget', active_budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('budg_txfr_frm_to_budget', 'to_budget', 'To Budget', active_budget_names_to_id, 'None', true)
         .addText('budg_txfr_frm_notes', 'notes', 'Notes')
         .render();
 }
