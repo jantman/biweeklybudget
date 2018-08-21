@@ -19,6 +19,10 @@
         {% for name in budgets.keys()|sort %}
         budget_names_to_id["{{ name }}"] = {{ budgets[name] }};
         {% endfor %}
+        var active_budget_names_to_id = {};
+        {% for name in active_budgets.keys()|sort %}
+        active_budget_names_to_id["{{ name }}"] = {{ active_budgets[name] }};
+        {% endfor %}
     </script>
 {% endblock %}
 {% block body %}

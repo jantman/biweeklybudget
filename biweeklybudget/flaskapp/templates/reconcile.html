@@ -16,6 +16,10 @@
         {% for id in budgets.keys()|sort %}
         budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
         {% endfor %}
+        var active_budget_names_to_id = {};
+        {% for id in active_budgets.keys()|sort %}
+        active_budget_names_to_id["{{ active_budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
 
         // store state for reconciled transactions - dict of Trans ID to
         // Array of [OFX account_id, OFX fitid]

@@ -41,6 +41,7 @@ var validation_count = 0; // helper for acceptance testing of validation logic
  * Generate the HTML for the form on the Modal
  */
 function transModalDivForm() {
+
     return new FormBuilder('transForm')
         .addHidden('trans_frm_id', 'id', '')
         .addDatePicker('trans_frm_date', 'date', 'Date')
@@ -52,7 +53,7 @@ function transModalDivForm() {
             { inputHtml: 'onchange="transModalHandleSplit()"' }
         )
         .addHTML('<div id="budgets-error-div-container"><div id="budgets-error-div" name="budgets"></div></div>')
-        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('trans_frm_budget', 'budget', 'Budget', active_budget_names_to_id, 'None', true)
         .addHTML(
             '<div id="trans_frm_split_budget_container" style="display: none;">' +
             '<p style="font-weight: 700; margin-bottom: 5px;">Budgets</p>' +
@@ -88,7 +89,7 @@ function transModalDivFillAndShow(msg) {
       $('#trans_frm_transfer_p').show();
     }
     if(msg['budgets'].length == 1) {
-        $('#trans_frm_budget option[value=' + msg['budgets'][0]['id'] + ']').prop('selected', 'selected').change();
+        selectBudget(null, msg['budgets'][0]['id']);
     } else {
         $('#trans_frm_is_split').prop('checked', true);
         $('#trans_frm_budget_group').hide();
@@ -96,11 +97,54 @@ function transModalDivFillAndShow(msg) {
         for(var i = 0; i < msg['budgets'].length; i++) {
             if(i > 1) { $('#trans_frm_budget_splits_div').append(transModalBudgetSplitRowHtml(i)); }
             var budg = msg['budgets'][i];
-            $('#trans_frm_budget_' + i + ' option[value=' + budg['id'] + ']').prop('selected', 'selected').change();
+            selectBudget(i, budg['id']);
             $('#trans_frm_budget_amount_' + i).val(budg['amount']);
         }
     }
     $("#modalDiv").modal('show');
+}
+
+/**
+ * Select a budget in a budget select element. If ``sel_num`` is null then
+ * select in ``#trans_frm_budget``, else it is expected to be an integer
+ * and the selection will be made in ``trans_frm_budget_<sel_num>``.
+ *
+ * @param {(number|null)} sel_num - The ``trans_frm_budget_`` Select element
+ *   suffix, or else null for the ``trans_frm_budget`` select.
+ * @param {number} budg_id - The ID of the budget to select.
+ */
+function selectBudget(sel_num, budg_id) {
+    var budg_name = getObjectValueKey(active_budget_names_to_id, budg_id);
+    if(sel_num == null) {
+        if(budg_name == null) {
+            // append the select option
+            budg_name = getObjectValueKey(budget_names_to_id, budg_id);
+            $('#trans_frm_budget').append('<option value="' + budg_id + '">' + budg_name + '</option>');
+        }
+        $('#trans_frm_budget option[value=' + budg_id + ']').prop('selected', 'selected').change();
+    } else {
+        if(budg_name == null) {
+            // append the select option
+            budg_name = getObjectValueKey(budget_names_to_id, budg_id);
+            $('#trans_frm_budget_' + sel_num).append('<option value="' + budg_id + '">' + budg_name + '</option>');
+        }
+        $('#trans_frm_budget_' + sel_num + ' option[value=' + budg_id + ']').prop('selected', 'selected').change();
+    }
+}
+
+/**
+ * Return the first property of ``obj`` with ``val`` as its value, or null.
+ * @param obj the object to check
+ * @param val the value to look for
+ */
+function getObjectValueKey(obj, val) {
+    var result = null;
+    Object.keys(obj).forEach(function (key) {
+        if(obj[key] == val || obj[key] == "" + val + "") {
+            result = key;
+        }
+    });
+    return result;
 }
 
 /**
@@ -265,8 +309,8 @@ function transModalBudgetSplitRowHtml(row_num) {
     html += '<div class="form-group" id="trans_frm_budget_group_' + row_num + '" style="float: left; width: 75%;">';
     html += '<select id="trans_frm_budget_' + row_num + '" name="budget_' + row_num + '" class="form-control" onblur="budgetSplitBlur()" onchange="transModalSplitBudgetChanged(' + row_num + ')">';
     html += '<option value="None"></option>';
-    Object.keys(budget_names_to_id).forEach(function (key) {
-        html += '<option value="' + budget_names_to_id[key] + '">' + key + '</option>'
+    Object.keys(active_budget_names_to_id).forEach(function (key) {
+        html += '<option value="' + active_budget_names_to_id[key] + '">' + key + '</option>'
     });
     html += '</select>';
     html += '</div>'; // .form-group #trans_frm_budget_group

@@ -42,6 +42,7 @@ from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from calendar import timegm
 from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
 from decimal import Decimal
 
 from biweeklybudget.utils import dtnow
@@ -1148,10 +1149,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
@@ -1338,10 +1337,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == 'None'
@@ -1474,36 +1471,13 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == 'None'
-        budget_sel.select_by_value('3')
-        # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
-        self.wait_for_jquery_done(selenium)
-        # check that we got positive confirmation
-        _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
-        assert 'alert-success' not in x.get_attribute('class')
-        budg_grp = body.find_element_by_id('budgets-error-div-container')
-        p_elems = budg_grp.find_elements_by_tag_name('p')
-        assert len(p_elems) == 1
-        assert 'text-danger' in p_elems[0].get_attribute('class')
-        assert p_elems[0].get_attribute(
-            'innerHTML'
-        ) == 'New transactions cannot use an inactive budget ' \
-             '(Periodic3 Inactive).'
-        # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
-        self.wait_for_load_complete(selenium)
-        # test that updated budget was removed from the page
-        table = selenium.find_element_by_id('trans-table')
-        texts = [y[2] for y in self.tbody2textlist(table)]
-        assert 'issue152regression2' not in texts
+        with pytest.raises(NoSuchElementException):
+            budget_sel.select_by_value('3')
 
     def test_30_issue152_inactive_budget(self, testdb):
         """create a transaction via an inactive budget"""
@@ -2191,10 +2165,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert from_budget_sel.first_selected_option.get_attribute(
@@ -2210,10 +2182,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert to_budget_sel.first_selected_option.get_attribute(
@@ -2844,10 +2814,8 @@ class TestSkipScheduled(AcceptanceHelper):
             ['None', ''],
             ['1', 'Periodic1'],
             ['2', 'Periodic2'],
-            ['3', 'Periodic3 Inactive'],
             ['4', 'Standing1'],
             ['5', 'Standing2'],
-            ['6', 'Standing3 Inactive'],
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute(

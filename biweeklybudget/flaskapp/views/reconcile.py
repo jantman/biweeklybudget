@@ -58,16 +58,20 @@ class ReconcileView(MethodView):
 
     def get(self):
         budgets = {}
+        active_budgets = {}
         for b in db_session.query(Budget).all():
             k = b.name
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
+            if b.is_active:
+                active_budgets[b.id] = k
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         return render_template(
             'reconcile.html',
             budgets=budgets,
-            accts=accts
+            accts=accts,
+            active_budgets=active_budgets
         )
 
 
