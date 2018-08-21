@@ -102,18 +102,22 @@ class OneBudgetView(MethodView):
         ).order_by(Budget.name).all()
         accts = {a.name: a.id for a in db_session.query(Account).all()}
         budgets = {}
+        active_budgets = {}
         for b in db_session.query(Budget).all():
             k = b.name
             if b.is_income:
                 k = '%s (i)' % b.name
             budgets[b.id] = k
+            if b.is_active:
+                active_budgets[b.id] = k
         return render_template(
             'budgets.html',
             standing=standing,
             periodic=periodic,
             budget_id=budget_id,
             accts=accts,
-            budgets=budgets
+            budgets=budgets,
+            active_budgets=active_budgets
         )
 
 
