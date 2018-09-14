@@ -4,6 +4,10 @@ Changelog
 Unreleased Changes
 ------------------
 
+* Add testing for Python 3.7, and make 3.7 the default for tests and tox environments.
+* TravisCI updates for Python 3.7.
+* Upgrade SQLAlchemy from 1.2.0 to 1.2.11 for `python 3 bug fix (4291) <https://docs.sqlalchemy.org/en/latest/changelog/changelog_12.html#change-2cca6c216347ab83d04c766452b48c1a>`_.
+* Switch base image for Docker from ``python:3.6.4-alpine3.7`` to ``python:3.7.0-alpine3.7``.
 * `Issue #198 <https://github.com/jantman/biweeklybudget/issues/198>`_ - Fix broken method of retrieving current US Prime Rate. Previously we used marketwatch.com for this but they've introduced javascript-based bot protection on their site (which is ironic since we were reading a value from the page's ``meta`` tags, which are specifically intended to be read by machines). Switch to using wsj.com instead and (ugh) parsing a HTML table. This *will* break when the format of the table changes. As previously, we cache this value in the DB for 48 hours in order to be a good citizen.
 * `Issue #197 <https://github.com/jantman/biweeklybudget/issues/197>`_ - Add notification for case where balance of all budget-funding accounts is *more* than sum of standing budgets, current payperiod remaining, and unreconciled. This is the opposite of the similar notification that already exists, intended to detect if there is money in accounts not accounted for in the budgets.
 * `Issue #196 <https://github.com/jantman/biweeklybudget/issues/196>`_ - Don't include inactive budgets in Budget select elements on Transaction Modal form, unless it's an existing Transaction using that budget.
