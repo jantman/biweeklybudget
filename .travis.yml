@@ -35,6 +35,7 @@ matrix:
       dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
     - python: "2.7"
       env: TOXENV=acceptance27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest27?charset=utf8mb4'
+      dist: xenial  # want to match acceptance37
     - python: "3.7"
       env: TOXENV=acceptance37 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
       dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
