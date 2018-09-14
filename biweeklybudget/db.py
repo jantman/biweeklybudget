@@ -63,6 +63,12 @@ echo = False
 if os.environ.get('SQL_ECHO', '') == 'true':
     echo = True
 
+# for Py37 warning 3135:
+# "'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and
+# 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict
+#  mode. They will be merged with strict mode in a future release."
+warnings.filterwarnings('ignore', '.*merged with strict mode.*')
+
 # For some reason, with PyMySQL, even setting sql_mode to TRADITIONAL isn't
 # raising an Exception when data is truncated. So we need to explicitly convert
 # ``pymysql.err.Warning`` to an exception...

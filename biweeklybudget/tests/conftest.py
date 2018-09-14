@@ -107,7 +107,8 @@ def get_db_engine():
             connstr, convert_unicode=True, echo=False,
             connect_args={
                 'sql_mode': 'STRICT_ALL_TABLES,NO_ZERO_DATE,'
-                            'NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'
+                            'NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,'
+                            'NO_AUTO_CREATE_USER'
             },
             pool_size=10, pool_timeout=120
         )
