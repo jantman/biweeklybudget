@@ -4,7 +4,7 @@ Mako==1.0.7
 MarkupSafe==1.0
 PyMySQL==0.8.0
 SQLAlchemy-Utc==0.9.0
-SQLAlchemy==1.2.0
+SQLAlchemy==1.2.11
 SecretStorage==2.3.1
 alembic==0.9.6
 appdirs==1.4.3
