@@ -105,7 +105,10 @@ def get_db_engine():
         biweeklybudget.settings.DB_CONNSTRING = connstr
         _DB_ENGINE = create_engine(
             connstr, convert_unicode=True, echo=False,
-            connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
+            connect_args={
+                'sql_mode': 'STRICT_ALL_TABLES,NO_ZERO_DATE,'
+                            'NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'
+            },
             pool_size=10, pool_timeout=120
         )
     return _DB_ENGINE
