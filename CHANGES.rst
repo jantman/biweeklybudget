@@ -4,6 +4,7 @@ Changelog
 Unreleased Changes
 ------------------
 
+* `Issue #201 <https://github.com/jantman/biweeklybudget/issues/201>`_ - Fix **major** bug in calculation of "Remaining" amount for pay periods, when one or more periodic budgets have a greater amount spent than allocated and a $0 starting balance. In that case, we were using the allocated amount instead of the spent amount (i.e. if we had a periodic budget with a $0 starting balance and a $2 ScheduledTransaction, and converted that ScheduledTransaction to a $1000 Transaction, the overall PayPeriod remaining amount would be based on the $2 not the $1000).
 * Add testing for Python 3.7, and make 3.7 the default for tests and tox environments.
 * TravisCI updates for Python 3.7.
 * Upgrade SQLAlchemy from 1.2.0 to 1.2.11 for `python 3 bug fix (4291) <https://docs.sqlalchemy.org/en/latest/changelog/changelog_12.html#change-2cca6c216347ab83d04c766452b48c1a>`_.

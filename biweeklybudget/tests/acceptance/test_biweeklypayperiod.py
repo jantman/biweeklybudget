@@ -493,11 +493,11 @@ class TestTransFromSchedTrans(AcceptanceHelper):
 @pytest.mark.incremental
 class TestSums(AcceptanceHelper):
 
-    def test_0_clean_db(self, dump_file_path):
+    def test_10_clean_db(self, dump_file_path):
         # clean the database; empty schema
         restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
 
-    def test_1_add_account(self, testdb):
+    def test_11_add_account(self, testdb):
         a = Account(
             description='First Bank Account',
             name='BankOne',
@@ -515,7 +515,7 @@ class TestSums(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
 
-    def test_2_add_budgets(self, testdb):
+    def test_12_add_budgets(self, testdb):
         testdb.add(Budget(
             name='1Standing',
             is_periodic=False,
@@ -552,7 +552,7 @@ class TestSums(AcceptanceHelper):
         testdb.commit()
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_3_add_transactions(self, testdb):
+    def test_13_add_transactions(self, testdb):
         acct = testdb.query(Account).get(1)
         budgets = {x.id: x for x in testdb.query(Budget).all()}
         # Budget 3 Income Transaction
@@ -620,7 +620,7 @@ class TestSums(AcceptanceHelper):
         testdb.commit()
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_4_budget_sums(self, testdb):
+    def test_14_budget_sums(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
         )
@@ -660,7 +660,7 @@ class TestSums(AcceptanceHelper):
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_5_overall_sums(self, testdb):
+    def test_15_overall_sums(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
         )
@@ -672,7 +672,7 @@ class TestSums(AcceptanceHelper):
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_6_transaction_list_ordering(self, testdb):
+    def test_16_transaction_list_ordering(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2017, 4, 10), testdb
         )
@@ -688,7 +688,7 @@ class TestSums(AcceptanceHelper):
         ]
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_7_spent_greater_than_allocated(self, testdb):
+    def test_17_spent_greater_than_allocated(self, testdb):
         acct = testdb.query(Account).get(1)
         budget = testdb.query(Budget).get(5)
         t = Transaction(
@@ -747,7 +747,7 @@ class TestSums(AcceptanceHelper):
         }
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_8_sums_for_empty_period(self, testdb):
+    def test_18_sums_for_empty_period(self, testdb):
         pp = BiweeklyPayPeriod.period_for_date(
             date(2020, 4, 9), testdb
         )
@@ -790,4 +790,150 @@ class TestSums(AcceptanceHelper):
             'income': Decimal('222.45'),
             'remaining': Decimal('-377.55'),
             'spent': Decimal('0.0')
+        }
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_80_issue201_setup(self, testdb):
+        budg = Budget(
+            name='6Periodic',
+            is_periodic=True,
+            description='6Periodic',
+            starting_balance=Decimal('0.00')
+        )
+        testdb.add(budg)
+        acct = testdb.query(Account).get(1)
+        testdb.add(ScheduledTransaction(
+            amount=Decimal('2.00'),
+            description='B6 ST4',
+            account=acct,
+            budget=budg,
+            day_of_month=11
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_81_issue201_validate_setup(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2020, 4, 9), testdb
+        )
+        assert pp._data['budget_sums'] == {
+            2: {
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': True,
+                'remaining': Decimal('123.45')
+            },
+            3: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('99.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('99.0'),
+                'is_income': True,
+                'remaining': Decimal('99.0')
+            },
+            4: {
+                'budget_amount': Decimal('500.00'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': False,
+                'remaining': Decimal('500.0')
+            },
+            5: {
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('2.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('2.0'),
+                'is_income': False,
+                'remaining': Decimal('98.0')
+            },
+            6: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('2.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('2.0'),
+                'is_income': False,
+                'remaining': Decimal('-2.0')
+            }
+        }
+        assert pp._data['overall_sums'] == {
+            'allocated': Decimal('602.0'),
+            'income': Decimal('222.45'),
+            'remaining': Decimal('-379.55'),
+            'spent': Decimal('0.0')
+        }
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_82_issue201_st_to_trans(self, testdb):
+        budg = testdb.query(Budget).get(6)
+        st = testdb.query(ScheduledTransaction).get(4)
+        testdb.add(Transaction(
+            date=date(2020, 4, 14),
+            description='B6 T6 from ST4',
+            budget_amounts={
+                budg: Decimal('200.00')
+            },
+            budgeted_amount=Decimal('2.00'),
+            account=testdb.query(Account).get(1),
+            planned_budget=budg,
+            scheduled_trans=st
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_83_issue201_confirm(self, testdb):
+        pp = BiweeklyPayPeriod.period_for_date(
+            date(2020, 4, 9), testdb
+        )
+        assert pp._data['budget_sums'] == {
+            2: {
+                'budget_amount': Decimal('123.45'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': True,
+                'remaining': Decimal('123.45')
+            },
+            3: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('99.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('99.0'),
+                'is_income': True,
+                'remaining': Decimal('99.0')
+            },
+            4: {
+                'budget_amount': Decimal('500.00'),
+                'allocated': Decimal('0.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('0.0'),
+                'is_income': False,
+                'remaining': Decimal('500.0')
+            },
+            5: {
+                'budget_amount': Decimal('100.0'),
+                'allocated': Decimal('2.0'),
+                'spent': Decimal('0.0'),
+                'trans_total': Decimal('2.0'),
+                'is_income': False,
+                'remaining': Decimal('98.0')
+            },
+            6: {
+                'budget_amount': Decimal('0.0'),
+                'allocated': Decimal('2.0'),
+                'spent': Decimal('200.0'),
+                'trans_total': Decimal('200.0'),
+                'is_income': False,
+                'remaining': Decimal('-200.0')
+            }
+        }
+        assert pp._data['overall_sums'] == {
+            'allocated': Decimal('602.0'),
+            'income': Decimal('222.45'),
+            'remaining': Decimal('-577.55'),
+            'spent': Decimal('200.0')
         }
