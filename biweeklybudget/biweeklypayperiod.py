@@ -546,10 +546,7 @@ class BiweeklyPayPeriod(object):
                 else:
                     res['income'] += abs(b['budget_amount'])
                 continue
-            if b['allocated'] > b['budget_amount']:
-                res['allocated'] += b['allocated']
-            else:
-                res['allocated'] += b['budget_amount']
+            res['allocated'] += max(b['allocated'], b['budget_amount'])
             res['spent'] += b['spent']
         if res['spent'] > res['allocated'] or self.is_in_past:
             res['remaining'] = res['income'] - res['spent']
