@@ -933,7 +933,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$421.10'
         assert selenium.find_element_by_id('amt-spent').text == '$355.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,924.57'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,923.66'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -1386,7 +1386,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$521.10'
         assert selenium.find_element_by_id('amt-spent').text == '$455.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,824.57'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,823.66'
 
     def test_23_issue152_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1563,7 +1563,7 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$721.10'
         assert selenium.find_element_by_id('amt-spent').text == '$655.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,624.57'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,623.66'
 
     def test_41_issue161_periodic_budgets(self, base_url, selenium):
         """verify budget totals"""
@@ -1953,7 +1953,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
         assert selenium.find_element_by_id('amt-spent').text == '$345.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,933.66'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -2253,7 +2253,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$534.55'
         assert selenium.find_element_by_id('amt-spent').text == '$468.80'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,811.12'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,810.21'
 
     def test_14_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -2597,7 +2597,7 @@ class TestSkipScheduled(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$411.10'
         assert selenium.find_element_by_id('amt-spent').text == '$345.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,934.57'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,933.66'
 
     def test_04_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
@@ -2769,7 +2769,7 @@ class TestSkipScheduled(AcceptanceHelper):
         ])
         assert max_r == 2
 
-    def test_08_budget_transfer(self, base_url, selenium, testdb):
+    def test_08_skip_scheduled(self, base_url, selenium, testdb):
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -2869,7 +2869,7 @@ class TestSkipScheduled(AcceptanceHelper):
             'amt-income').text == '$2,345.67'
         assert selenium.find_element_by_id('amt-allocated').text == '$388.88'
         assert selenium.find_element_by_id('amt-spent').text == '$345.35'
-        assert selenium.find_element_by_id('amt-remaining').text == '$1,956.79'
+        assert selenium.find_element_by_id('amt-remaining').text == '$1,955.88'
 
     def test_14_periodic_budgets(self, base_url, selenium, testdb):
         self.get(
