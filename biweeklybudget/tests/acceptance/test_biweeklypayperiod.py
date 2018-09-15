@@ -794,7 +794,7 @@ class TestSums(AcceptanceHelper):
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
     def test_80_issue201_setup(self, testdb):
-        budg =Budget(
+        budg = Budget(
             name='6Periodic',
             is_periodic=True,
             description='6Periodic',
