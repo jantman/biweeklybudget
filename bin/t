@@ -181,7 +181,7 @@ class ToxIt(object):
     def run_one_module(self, script_name, module_name, expr=None):
         """run one module"""
         if 'tests/unit' in module_name:
-            env = 'py36'
+            env = 'py37'
             mod = module_name
             logger.debug('Directly-specified unit test module; env=%s mod=%s',
                          env, mod)
@@ -193,7 +193,7 @@ class ToxIt(object):
                 env, mod
             )
         elif script_name.endswith('t'):
-            env = 'py36'
+            env = 'py37'
             mod = self._find_test_mod_for_module(module_name)
             logger.debug('Discovered unit test module; env=%s mod=%s',
                          env, mod)
