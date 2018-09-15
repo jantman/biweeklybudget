@@ -80,8 +80,8 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
     l.setLevel(logging.CRITICAL)
     l.propagate = True
 
-if sys.version_info[0:2] != (3, 6):
-    raise SystemExit('ERROR: Docker build can only run under py 3.6')
+if sys.version_info[0:2] < (3, 6):
+    raise SystemExit('ERROR: Docker build can only run under py >= 3.6')
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
@@ -391,7 +391,7 @@ class DockerImageBuilder(object):
 
     def _run_acceptance_tests(self, db_container, container):
         """
-        Run the ``acceptance36`` tox environment against the running container.
+        Run the ``acceptance37`` tox environment against the running container.
 
         :param db_container: MariaDB Docker container
         :type db_container: ``docker.models.containers.Container``
@@ -413,7 +413,7 @@ class DockerImageBuilder(object):
         }
         cmd = [
             os.path.join(self._toxinidir, 'bin', 'tox'),
-            '-e', 'acceptance36'
+            '-e', 'acceptance37'
         ]
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '
@@ -724,7 +724,7 @@ class DockerImageBuilder(object):
                 ver += '-dirty'
             s_versionfix = "&& /bin/sed -i " \
                            "\"s/^VERSION =.*/VERSION = '%s+git.%s'/\"" \
-                           " /app/lib/python3.6/site-packages/biweeklybudget" \
+                           " /app/lib/python3.7/site-packages/biweeklybudget" \
                            "/version.py" % (
                                VERSION, ver
                            )
