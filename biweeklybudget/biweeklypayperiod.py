@@ -533,6 +533,7 @@ class BiweeklyPayPeriod(object):
         :return: dict describing sums for the pay period
         :rtype: dict
         """
+        budgets_total = Decimal('0.0')
         res = {
             'allocated': Decimal('0.0'),
             'spent': Decimal('0.0'),
@@ -548,10 +549,11 @@ class BiweeklyPayPeriod(object):
                 continue
             res['allocated'] += max(b['allocated'], b['budget_amount'])
             res['spent'] += b['spent']
-        if res['spent'] > res['allocated'] or self.is_in_past:
+            budgets_total += max(b['trans_total'], b['budget_amount'])
+        if self.is_in_past:
             res['remaining'] = res['income'] - res['spent']
         else:
-            res['remaining'] = res['income'] - res['allocated']
+            res['remaining'] = res['income'] - budgets_total
         return res
 
     def _trans_dict(self, t):
