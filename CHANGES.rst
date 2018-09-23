@@ -14,7 +14,9 @@ Unreleased Changes
 * Many dependency updates:
 
   * Upgrade SQLAlchemy from 1.2.0 to 1.2.11 for `python 3 bug fix (4291) <https://docs.sqlalchemy.org/en/latest/changelog/changelog_12.html#change-2cca6c216347ab83d04c766452b48c1a>`_.
-  * upgrade Flask from 0.12.2 to 1.0.2 for `CVE-2018-1000656 <https://nvd.nist.gov/vuln/detail/CVE-2018-1000656>`_
+  * Upgrade Flask from 0.12.2 to 1.0.2 for `CVE-2018-1000656 <https://nvd.nist.gov/vuln/detail/CVE-2018-1000656>`_.
+  * Upgrade cryptography from 2.1.4 to 2.3.1 for `CVE-2018-10903 <https://nvd.nist.gov/vuln/detail/CVE-2018-10903>`_.
+  * Upgrade to latest versions for: alembic, Babel, beautifulsoup4, cffi, httplib2, hvac, idna, keyring, lxml, requests.
 
 1.0.0 (2018-07-07)
 ------------------
