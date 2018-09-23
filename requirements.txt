@@ -1,4 +1,4 @@
-Flask==0.12.2
+Flask==1.0.2
 Jinja2==2.10
 Mako==1.0.7
 MarkupSafe==1.0
