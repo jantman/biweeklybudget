@@ -146,7 +146,7 @@ function handleFormSubmitted(data, container_id, form_id, dataTableObj) {
  * Handle an error in the HTTP request to submit the form.
  */
 function handleFormError(jqXHR, textStatus, errorThrown, container_id, form_id) {
-    console.log("Form submission error: %s (%s)", textStatus, errorThrown);
+    console.log("Form submission error: " + textStatus + " (" + errorThrown + ")");
     if($('#formStatus').length == 0) { $('#' + container_id).prepend('<div id="formStatus"></div>'); }
     $('#formStatus').html(
         '<div class="alert alert-danger formfeedback"><strong>Error submitting ' +

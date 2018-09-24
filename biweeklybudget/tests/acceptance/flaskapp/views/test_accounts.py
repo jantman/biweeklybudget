@@ -39,7 +39,10 @@ import pytest
 from decimal import Decimal
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.models.transaction import Transaction
 from selenium.webdriver.support.ui import Select
+from biweeklybudget.utils import dtnow
+import requests
 
 
 @pytest.mark.acceptance
@@ -1113,3 +1116,571 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment is None
         assert acct.re_late_fee is None
         assert acct.re_other_fee is None
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestAccountTransfer(AcceptanceHelper):
+
+    def test_01_verify_db(self, testdb):
+        max_t = max([
+            t.id for t in testdb.query(Transaction).all()
+        ])
+        assert max_t == 4
+        accts = {
+            t.id: t for t in testdb.query(Account).all()
+        }
+        assert accts[1].acct_type == AcctType.Bank
+        assert accts[1].balance.ledger == Decimal('12789.01')
+        assert accts[1].unreconciled_sum == Decimal('0.0')
+        assert accts[2].acct_type == AcctType.Bank
+        assert accts[2].balance.ledger == Decimal('100.23')
+        assert accts[2].unreconciled_sum == Decimal('-333.33')
+        assert accts[3].acct_type == AcctType.Credit
+        assert accts[4].acct_type == AcctType.Credit
+        assert accts[5].acct_type == AcctType.Investment
+        assert accts[5].balance.ledger == Decimal('10362.91')
+
+    def test_02_transfer_modal(self, base_url, selenium):
+        # Fill in the form
+        self.get(selenium, base_url + '/accounts')
+        # check the table content on the page
+        btable = selenium.find_element_by_id('table-accounts-bank')
+        btexts = self.tbody2textlist(btable)
+        assert btexts == [
+            [
+                'BankOne',
+                '$12,789.01 (14 hours ago)',
+                '$0.00',
+                '$12,789.01'
+            ],
+            [
+                'BankTwoStale',
+                '$100.23 (18 days ago)',
+                '-$333.33',
+                '$433.56'
+            ]
+        ]
+        itable = selenium.find_element_by_id('table-accounts-investment')
+        itexts = self.tbody2textlist(itable)
+        assert itexts == [
+            [
+                'InvestmentOne',
+                '$10,362.91 (13 days ago)'
+            ]
+        ]
+        # open the modal to do a transfer
+        link = selenium.find_element_by_id('btn_acct_txfr_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Account Transfer'
+        assert body.find_element_by_id(
+            'acct_txfr_frm_date').get_attribute('value') == dtnow(
+            ).strftime('%Y-%m-%d')
+        amt = body.find_element_by_id('acct_txfr_frm_amount')
+        amt.clear()
+        amt.send_keys('123.45')
+        budget_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_budget')
+        )
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['7', 'Income (i)']
+        ]
+        assert budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        budget_sel.select_by_value('2')
+        from_acct_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_from_account')
+        )
+        opts = []
+        for o in from_acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert from_acct_sel.first_selected_option.get_attribute(
+            'value'
+        ) == 'None'
+        from_acct_sel.select_by_value('1')
+        to_acct_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_to_account')
+        )
+        opts = []
+        for o in to_acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert to_acct_sel.first_selected_option.get_attribute(
+            'value'
+        ) == 'None'
+        to_acct_sel.select_by_value('2')
+        notes = selenium.find_element_by_id('acct_txfr_frm_notes')
+        notes.clear()
+        notes.send_keys('Account Transfer Notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
+                                 ' in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'table-accounts-bank')
+        # ensure that the page content updated after refreshing
+        btable = selenium.find_element_by_id('table-accounts-bank')
+        btexts = self.tbody2textlist(btable)
+        assert btexts == [
+            [
+                'BankOne',
+                '$12,789.01 (14 hours ago)',
+                '$123.45',
+                '$12,665.56'
+            ],
+            [
+                'BankTwoStale',
+                '$100.23 (18 days ago)',
+                '-$456.78',
+                '$557.01'
+            ]
+        ]
+        itable = selenium.find_element_by_id('table-accounts-investment')
+        itexts = self.tbody2textlist(itable)
+        assert itexts == [
+            [
+                'InvestmentOne',
+                '$10,362.91 (13 days ago)'
+            ]
+        ]
+
+    def test_03_verify_db(self, testdb):
+        max_t = max([
+            t.id for t in testdb.query(Transaction).all()
+        ])
+        assert max_t == 6
+        desc = 'Account Transfer - 123.45 from BankOne (1) to BankTwoStale (2)'
+        t2 = testdb.query(Transaction).get(5)
+        assert t2.date == dtnow().date()
+        assert t2.actual_amount == Decimal('123.45')
+        assert t2.budgeted_amount == Decimal('123.45')
+        assert t2.description == desc
+        assert t2.notes == 'Account Transfer Notes'
+        assert t2.account_id == 1
+        assert t2.scheduled_trans_id is None
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 2
+        assert t2.budget_transactions[0].amount == Decimal('123.45')
+        t1 = testdb.query(Transaction).get(6)
+        assert t1.date == dtnow().date()
+        assert t1.actual_amount == Decimal('-123.45')
+        assert t1.budgeted_amount == Decimal('-123.45')
+        assert t1.description == desc
+        assert t1.notes == 'Account Transfer Notes'
+        assert t1.account_id == 2
+        assert t1.scheduled_trans_id is None
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 2
+        assert t1.budget_transactions[0].amount == Decimal('-123.45')
+        acct1 = testdb.query(Account).get(1)
+        assert acct1.balance.ledger == Decimal('12789.01')
+        assert acct1.unreconciled_sum == Decimal('123.45')
+        acct2 = testdb.query(Account).get(2)
+        assert acct2.balance.ledger == Decimal('100.23')
+        assert acct2.unreconciled_sum == Decimal('-456.78')
+
+    def test_04_no_date_error(self, base_url, selenium):
+        # Fill in the form
+        self.get(selenium, base_url + '/accounts')
+        # open the modal to do a transfer
+        link = selenium.find_element_by_id('btn_acct_txfr_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Account Transfer'
+        date_box = body.find_element_by_id('acct_txfr_frm_date')
+        assert date_box.get_attribute('value') == dtnow().strftime('%Y-%m-%d')
+        date_box.clear()
+        amt = body.find_element_by_id('acct_txfr_frm_amount')
+        amt.clear()
+        amt.send_keys('123.45')
+        budget_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_budget')
+        )
+        opts = []
+        for o in budget_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'Periodic1'],
+            ['2', 'Periodic2'],
+            ['4', 'Standing1'],
+            ['5', 'Standing2'],
+            ['7', 'Income (i)']
+        ]
+        assert budget_sel.first_selected_option.get_attribute(
+            'value') == 'None'
+        budget_sel.select_by_value('2')
+        from_acct_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_from_account')
+        )
+        opts = []
+        for o in from_acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert from_acct_sel.first_selected_option.get_attribute(
+            'value'
+        ) == 'None'
+        from_acct_sel.select_by_value('1')
+        to_acct_sel = Select(
+            body.find_element_by_id('acct_txfr_frm_to_account')
+        )
+        opts = []
+        for o in to_acct_sel.options:
+            opts.append([o.get_attribute('value'), o.text])
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['6', 'DisabledBank'],
+            ['5', 'InvestmentOne']
+        ]
+        assert to_acct_sel.first_selected_option.get_attribute(
+            'value'
+        ) == 'None'
+        to_acct_sel.select_by_value('2')
+        notes = selenium.find_element_by_id('acct_txfr_frm_notes')
+        notes.clear()
+        notes.send_keys('Account Transfer Notes')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_class_name('formfeedback')
+        assert len(x) == 1
+        assert x[0].text.strip() == 'Transactions must have a date'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_id(selenium, 'table-accounts-bank')
+        # ensure that the page content updated after refreshing
+        btable = selenium.find_element_by_id('table-accounts-bank')
+        btexts = self.tbody2textlist(btable)
+        assert btexts == [
+            [
+                'BankOne',
+                '$12,789.01 (14 hours ago)',
+                '$123.45',
+                '$12,665.56'
+            ],
+            [
+                'BankTwoStale',
+                '$100.23 (18 days ago)',
+                '-$456.78',
+                '$557.01'
+            ]
+        ]
+        itable = selenium.find_element_by_id('table-accounts-investment')
+        itexts = self.tbody2textlist(itable)
+        assert itexts == [
+            [
+                'InvestmentOne',
+                '$10,362.91 (13 days ago)'
+            ]
+        ]
+
+    def test_05_no_date_error_requests(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': "",
+                'amount': "100",
+                'notes': "",
+                'budget': "1",
+                'from_account': "1",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [
+                    "Transactions must have a date"
+                ],
+                "from_account": [],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_06_zero_amount(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "0",
+                'notes': "",
+                'budget': "1",
+                'from_account': "1",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": ['Amount cannot be zero'],
+                "budget": [],
+                "date": [],
+                "from_account": [],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_07_negative_amount(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "-120",
+                'notes': "",
+                'budget': "1",
+                'from_account': "1",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": ['Amount cannot be negative'],
+                "budget": [],
+                "date": [],
+                "from_account": [],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_08_empty_from_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'from_account': "None",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "from_account": ['From Account cannot be empty'],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_09_non_transferrable_from_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'from_account': "3",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "from_account": ['From Account type is not transferrable'],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_10_invalid_from_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'from_account': "999",
+                'to_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "from_account": ['from_account ID does not exist'],
+                "notes": [],
+                "to_account": []
+            },
+            "success": False
+        }
+
+    def test_11_empty_to_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'to_account': "None",
+                'from_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "to_account": ['To Account cannot be empty'],
+                "notes": [],
+                "from_account": []
+            },
+            "success": False
+        }
+
+    def test_12_non_transferrable_to_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'to_account': "3",
+                'from_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "to_account": ['To Account type is not transferrable'],
+                "notes": [],
+                "from_account": []
+            },
+            "success": False
+        }
+
+    def test_13_invalid_to_account(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account_transfer',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': "120",
+                'notes': "",
+                'budget': "1",
+                'to_account': "999",
+                'from_account': "2"
+            }
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            "errors": {
+                "amount": [],
+                "budget": [],
+                "date": [],
+                "to_account": ['to_account ID does not exist'],
+                "notes": [],
+                "from_account": []
+            },
+            "success": False
+        }
+
+    def test_99_verify_db_no_changes_from_errors(self, testdb):
+        max_t = max([
+            t.id for t in testdb.query(Transaction).all()
+        ])
+        assert max_t == 6
+        desc = 'Account Transfer - 123.45 from BankOne (1) to BankTwoStale (2)'
+        t2 = testdb.query(Transaction).get(5)
+        assert t2.date == dtnow().date()
+        assert t2.actual_amount == Decimal('123.45')
+        assert t2.budgeted_amount == Decimal('123.45')
+        assert t2.description == desc
+        assert t2.notes == 'Account Transfer Notes'
+        assert t2.account_id == 1
+        assert t2.scheduled_trans_id is None
+        assert len(t2.budget_transactions) == 1
+        assert t2.budget_transactions[0].budget_id == 2
+        assert t2.budget_transactions[0].amount == Decimal('123.45')
+        t1 = testdb.query(Transaction).get(6)
+        assert t1.date == dtnow().date()
+        assert t1.actual_amount == Decimal('-123.45')
+        assert t1.budgeted_amount == Decimal('-123.45')
+        assert t1.description == desc
+        assert t1.notes == 'Account Transfer Notes'
+        assert t1.account_id == 2
+        assert t1.scheduled_trans_id is None
+        assert len(t1.budget_transactions) == 1
+        assert t1.budget_transactions[0].budget_id == 2
+        assert t1.budget_transactions[0].amount == Decimal('-123.45')
+        acct1 = testdb.query(Account).get(1)
+        assert acct1.balance.ledger == Decimal('12789.01')
+        assert acct1.unreconciled_sum == Decimal('123.45')
+        acct2 = testdb.query(Account).get(2)
+        assert acct2.balance.ledger == Decimal('100.23')
+        assert acct2.unreconciled_sum == Decimal('-456.78')

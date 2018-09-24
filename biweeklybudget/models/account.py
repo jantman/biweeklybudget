@@ -82,6 +82,13 @@ class AcctType(enum.Enum):
     def as_dict(self):
         return {'name': self.name, 'value': self.value}
 
+    @classmethod
+    def transferrable_types(self):
+        """Return a list of the transferrable types."""
+        return [
+            self.Bank, self.Investment, self.Cash, self.Other
+        ]
+
 
 class Account(Base, ModelAsDict):
 
