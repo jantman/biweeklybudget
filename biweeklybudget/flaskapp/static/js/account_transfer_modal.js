@@ -38,33 +38,33 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 /**
  * Generate the HTML for the form on the Modal
  */
-function budgetTransferDivForm() {
-    return new FormBuilder('budgetTransferForm')
-        .addDatePicker('budg_txfr_frm_date', 'date', 'Date')
-        .addCurrency('budg_txfr_frm_amount', 'amount', 'Amount', { helpBlock: 'Transfer amount relative to from account; must be positive.' })
-        .addLabelToValueSelect('budg_txfr_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('budg_txfr_frm_from_budget', 'from_budget', 'From Budget', active_budget_names_to_id, 'None', true)
-        .addLabelToValueSelect('budg_txfr_frm_to_budget', 'to_budget', 'To Budget', active_budget_names_to_id, 'None', true)
-        .addText('budg_txfr_frm_notes', 'notes', 'Notes')
+function accountTransferDivForm() {
+    return new FormBuilder('accountTransferForm')
+        .addDatePicker('acct_txfr_frm_date', 'date', 'Date')
+        .addCurrency('acct_txfr_frm_amount', 'amount', 'Amount', { helpBlock: 'Transfer amount relative to from account; must be positive.' })
+        .addLabelToValueSelect('acct_txfr_frm_budget', 'budget', 'Budget', active_budget_names_to_id, 'None', true)
+        .addLabelToValueSelect('acct_txfr_frm_from_account', 'from_account', 'From Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('acct_txfr_frm_to_account', 'to_account', 'To Account', acct_names_to_id, 'None', true)
+        .addText('acct_txfr_frm_notes', 'notes', 'Notes')
         .render();
 }
 
 /**
- * Show the modal popup for transferring between budgets.
- * Uses :js:func:`budgetTransferDivForm` to generate the form.
+ * Show the modal popup for transferring between accounts.
+ * Uses :js:func:`accountTransferDivForm` to generate the form.
  *
  * @param {string} txfr_date - The date, as a "yyyy-mm-dd" string, to default
  *  the form to. If null or undefined, will default to
  *  ``BIWEEKLYBUDGET_DEFAULT_DATE``.
  */
-function budgetTransferModal(txfr_date) {
+function accountTransferModal(txfr_date) {
     if (txfr_date === undefined || txfr_date === null) {
       txfr_date = isoformat(BIWEEKLYBUDGET_DEFAULT_DATE);
     }
     $('#modalBody').empty();
-    $('#modalBody').append(budgetTransferDivForm());
-    $('#budg_txfr_frm_date').val(txfr_date);
-    $('#budg_txfr_frm_date_input_group').datepicker({
+    $('#modalBody').append(accountTransferDivForm());
+    $('#acct_txfr_frm_date').val(txfr_date);
+    $('#acct_txfr_frm_date_input_group').datepicker({
         todayBtn: "linked",
         autoclose: true,
         todayHighlight: true,
@@ -72,9 +72,8 @@ function budgetTransferModal(txfr_date) {
     });
     $('#modalSaveButton').off();
     $('#modalSaveButton').click(function() {
-        handleForm('modalBody', 'budgetTransferForm', '/forms/budget_transfer', null);
+        handleForm('modalBody', 'accountTransferForm', '/forms/account_transfer', null);
     }).show();
-    $('#modalLabel').text('Budget Transfer');
-    $('#budg_txfr_frm_account option[value=' + default_account_id + ']').prop('selected', 'selected').change();
+    $('#modalLabel').text('Account Transfer');
     $("#modalDiv").modal('show');
 }

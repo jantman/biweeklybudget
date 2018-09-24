@@ -10,6 +10,18 @@
         {% for name in min_pay_class_names|sort %}
         min_pay_class_names["{{ name }}"] = "{{ name }}";
         {% endfor %}
+        var acct_names_to_id = {};
+        {% for name in accts.keys()|sort %}
+        acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
+        {% endfor %}
+        var budget_names_to_id = {};
+        {% for id in budgets.keys()|sort %}
+        budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
+        var active_budget_names_to_id = {};
+        {% for id in active_budgets.keys()|sort %}
+        active_budget_names_to_id["{{ active_budgets[id] }}"] = "{{ id }}";
+        {% endfor %}
     </script>
 {% endblock %}
 {% block body %}
@@ -20,11 +32,12 @@
                         <div class="panel-heading">
                             <i class="fa fa-bank fa-fw"></i> Bank Accounts
                             <button type="button" class="btn btn-primary btn-xs btn_add_account" id="btn_add_acct_bank">Add Account</button>
+                            <button type="button" class="btn btn-primary btn-xs btn_acct_txfr" id="btn_acct_txfr_bank">Transfer</button>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-hover table-striped">
+                                <table class="table table-bordered table-hover table-striped" id="table-accounts-bank">
                                     <thead>
                                         <tr>
                                             <th>Account</th>
@@ -106,11 +119,12 @@
                         <div class="panel-heading">
                             <i class="glyphicon glyphicon-piggy-bank"></i> Investment Accounts
                             <button type="button" class="btn btn-primary btn-xs btn_add_account" id="btn_add_acct_invest">Add Account</button>
+                            <button type="button" class="btn btn-primary btn-xs btn_acct_txfr" id="btn_acct_txfr_invest">Transfer</button>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-hover table-striped">
+                                <table class="table table-bordered table-hover table-striped" id="table-accounts-investment">
                                     <thead>
                                         <tr>
                                             <th>Account</th>
@@ -146,13 +160,20 @@
 {% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
+<!-- BootStrap DatePicker JS -->
+<script src="/utils/datetest.js"></script>
+<script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/formBuilder.js"></script>
 <script src="/static/js/accounts_modal.js"></script>
+<script src="/static/js/account_transfer_modal.js"></script>
 <script>
 $(document).ready(function() {
     $('.btn_add_account').click(function() {
         accountModal(null, null);
+    });
+    $('.btn_acct_txfr').click(function() {
+        accountTransferModal();
     });
 });
 /* BEGIN conditional default modal for /budgets/<id> */

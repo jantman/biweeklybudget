@@ -39,12 +39,15 @@ import logging
 from flask.views import MethodView
 from flask import render_template, jsonify
 from decimal import Decimal
+from datetime import datetime
 import json
 import re
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.db import db_session
 from biweeklybudget.interest import (
     INTEREST_CALCULATION_NAMES, MIN_PAYMENT_FORMULA_NAMES
@@ -67,6 +70,16 @@ class AccountsView(MethodView):
     """
 
     def get(self):
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        budgets = {}
+        active_budgets = {}
+        for b in db_session.query(Budget).all():
+            k = b.name
+            if b.is_income:
+                k = '%s (i)' % b.name
+            budgets[b.id] = k
+            if b.is_active:
+                active_budgets[b.id] = k
         return render_template(
             'accounts.html',
             bank_accounts=db_session.query(Account).filter(
@@ -79,7 +92,10 @@ class AccountsView(MethodView):
                 Account.acct_type == AcctType.Investment,
                 Account.is_active == True).all(),  # noqa
             interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
-            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys()
+            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
+            accts=accts,
+            budgets=budgets,
+            active_budgets=active_budgets
         )
 
 
@@ -238,6 +254,144 @@ class AccountFormHandler(FormHandlerView):
         return 'Successfully saved Account %d in database.' % account.id
 
 
+class AccountTxfrFormHandler(FormHandlerView):
+    """
+    Handle POST /forms/account_transfer
+    """
+
+    def validate(self, data):
+        """
+        Validate the form data. Return None if it is valid, or else a hash of
+        field names to list of error strings for each field.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: None if no errors, or hash of field name to errors for that
+          field
+        """
+        have_errors = False
+        errors = {k: [] for k in data.keys()}
+        if data['date'].strip() == '':
+            errors['date'].append('Transactions must have a date')
+            have_errors = True
+        else:
+            try:
+                datetime.strptime(data['date'], '%Y-%m-%d').date()
+            except Exception:
+                errors['date'].append(
+                    'Date "%s" is not valid (YYYY-MM-DD)' % data['date']
+                )
+                have_errors = True
+        if float(data['amount']) == 0:
+            errors['amount'].append('Amount cannot be zero')
+            have_errors = True
+        if float(data['amount']) < 0:
+            errors['amount'].append('Amount cannot be negative')
+            have_errors = True
+        if data['budget'] == 'None':
+            errors['budget'].append('Transactions must have a budget')
+            have_errors = True
+        if data['from_account'] == 'None':
+            errors['from_account'].append('From Account cannot be empty')
+            have_errors = True
+        else:
+            from_acct = db_session.query(Account).get(int(data['from_account']))
+            if from_acct is None:
+                errors['from_account'].append('from_account ID does not exist')
+                have_errors = True
+            else:
+                if not from_acct.is_active:
+                    errors['from_account'].append('From Account must be active')
+                    have_errors = True
+                if from_acct.acct_type not in AcctType.transferrable_types():
+                    errors['from_account'].append(
+                        'From Account type is not transferrable'
+                    )
+                    have_errors = True
+        if data['to_account'] == 'None':
+            errors['to_account'].append('To Account cannot be empty')
+            have_errors = True
+        else:
+            to_acct = db_session.query(Account).get(int(data['to_account']))
+            if to_acct is None:
+                errors['to_account'].append('to_account ID does not exist')
+                have_errors = True
+            else:
+                if not to_acct.is_active:
+                    errors['to_account'].append('To Account must be active')
+                    have_errors = True
+                if to_acct.acct_type not in AcctType.transferrable_types():
+                    errors['to_account'].append(
+                        'To Account type is not transferrable'
+                    )
+                    have_errors = True
+        if have_errors:
+            return errors
+        return None
+
+    def submit(self, data):
+        """
+        Handle form submission; create or update models in the DB. Raises an
+        Exception for any errors.
+
+        :param data: submitted form data
+        :type data: dict
+        :return: message describing changes to DB (i.e. link to created record)
+        :rtype: str
+        """
+        # get the data
+        trans_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        amt = Decimal(data['amount'])
+        from_acct = db_session.query(Account).get(int(data['from_account']))
+        if from_acct is None:
+            raise RuntimeError(
+                "Error: no Account with ID %s" % data['from_account']
+            )
+        to_acct = db_session.query(Account).get(int(data['to_account']))
+        if to_acct is None:
+            raise RuntimeError(
+                "Error: no Account with ID %s" % data['to_account']
+            )
+        budget = db_session.query(Budget).get(int(data['budget']))
+        if budget is None:
+            raise RuntimeError(
+                "Error: no Budget with ID %s" % data['budget']
+            )
+        notes = data['notes'].strip()
+        desc = 'Account Transfer - %s from %s (%d) to %s (%d)' % (
+            amt, from_acct.name, from_acct.id, to_acct.name, to_acct.id
+        )
+        logger.info(desc)
+        t1 = Transaction(
+            date=trans_date,
+            budget_amounts={budget: amt},
+            budgeted_amount=amt,
+            description=desc,
+            account=from_acct,
+            notes=notes,
+            planned_budget=budget
+        )
+        db_session.add(t1)
+        t2 = Transaction(
+            date=trans_date,
+            budget_amounts={budget: (-1 * amt)},
+            budgeted_amount=(-1 * amt),
+            description=desc,
+            account=to_acct,
+            notes=notes,
+            planned_budget=budget
+        )
+        db_session.add(t2)
+        t1.transfer = t2
+        db_session.add(t1)
+        t2.transfer = t1
+        db_session.add(t2)
+        db_session.commit()
+        return 'Successfully saved Transactions %d and %d in database.' % (
+            t1.id, t2.id
+        )
+
+
 app.add_url_rule('/accounts', view_func=AccountsView.as_view('accounts_view'))
 app.add_url_rule(
     '/ajax/account/<int:account_id>',
@@ -250,4 +404,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/forms/account',
     view_func=AccountFormHandler.as_view('account_form')
+)
+app.add_url_rule(
+    '/forms/account_transfer',
+    view_func=AccountTxfrFormHandler.as_view('account_transfer_form')
 )
