@@ -106,6 +106,16 @@ class OneAccountView(MethodView):
     """
 
     def get(self, acct_id):
+        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        budgets = {}
+        active_budgets = {}
+        for b in db_session.query(Budget).all():
+            k = b.name
+            if b.is_income:
+                k = '%s (i)' % b.name
+            budgets[b.id] = k
+            if b.is_active:
+                active_budgets[b.id] = k
         return render_template(
             'accounts.html',
             bank_accounts=db_session.query(Account).filter(
@@ -119,7 +129,10 @@ class OneAccountView(MethodView):
                 Account.is_active == True).all(),  # noqa
             account_id=acct_id,
             interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
-            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys()
+            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
+            accts=accts,
+            budgets=budgets,
+            active_budgets=active_budgets
         )
 
 
