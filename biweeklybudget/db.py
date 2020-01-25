@@ -75,7 +75,6 @@ warnings.filterwarnings('ignore', '.*merged with strict mode.*')
 warnings.simplefilter('error', category=Warning)
 
 engine_args = {
-    'convert_unicode': True,
     'echo': echo,
     'pool_recycle': 3600
 }

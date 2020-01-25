@@ -22,6 +22,8 @@ Unreleased Changes
   * Upgrade Jinja2 from 2.10 to 2.10.3 for `CVE-2019-10906 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-10906>`_.
   * Upgrade to latest versions for: alembic, Babel, beautifulsoup4, cffi, httplib2, hvac, idna, keyring, lxml, requests, SQLAlchemy-Utc.
 
+* Remove ``convert_unicode`` argument from SQLAlchemy DB engine arguments per SQLAlchemy 1.3 upgrade guide / `SQLAlchemy #4393 <https://github.com/sqlalchemy/sqlalchemy/issues/4393>`_.
+
 1.0.0 (2018-07-07)
 ------------------
 
