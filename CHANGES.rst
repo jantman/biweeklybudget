@@ -4,6 +4,7 @@ Changelog
 Unreleased Changes
 ------------------
 
+* **Drop Python 2 Support** - biweeklybudget no longer supports Python 2 (2.7). Python versions 3.5-3.8 are tested, and development is now done on 3.8.
 * `Issue #201 <https://github.com/jantman/biweeklybudget/issues/201>`_ - Fix **major** bug in calculation of "Remaining" amount for pay periods, when one or more periodic budgets have a greater amount spent than allocated and a $0 starting balance. In that case, we were using the allocated amount instead of the spent amount (i.e. if we had a periodic budget with a $0 starting balance and a $2 ScheduledTransaction, and converted that ScheduledTransaction to a $1000 Transaction, the overall PayPeriod remaining amount would be based on the $2 not the $1000).
 * Add testing for Python 3.7, and make 3.7 the default for tests and tox environments.
 * TravisCI updates for Python 3.7.
