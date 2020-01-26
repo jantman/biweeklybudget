@@ -20,7 +20,7 @@ humanize==0.5.1
 hvac==0.9.6
 idna==2.8
 itsdangerous==1.1.0
-keyring==21.1.0
+keyring==20.0.1
 lxml==4.4.2
 ofxhome==0.3.3
 ofxparse==0.20
