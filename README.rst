@@ -17,17 +17,11 @@ biweeklybudget
    :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
    :target: http://www.repostatus.org/#active
 
-.. image:: https://img.shields.io/waffle/label/jantman/biweeklybudget/ready.svg
-   :target: https://waffle.io/jantman/biweeklybudget
-   :alt: 'Stories in Ready'
-
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
 **For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
 
 **For screenshots**, see `<http://biweeklybudget.readthedocs.io/en/latest/screenshots.html>`_
-
-**For development activity**, see `https://waffle.io/jantman/biweeklybudget <https://waffle.io/jantman/biweeklybudget>`_
 
 Overview
 --------
