@@ -20,7 +20,7 @@ Unreleased Changes
   * Upgrade Flask from 0.12.2 to 1.0.2 for `CVE-2018-1000656 <https://nvd.nist.gov/vuln/detail/CVE-2018-1000656>`_.
   * Upgrade cryptography from 2.1.4 to 2.3.1 for `CVE-2018-10903 <https://nvd.nist.gov/vuln/detail/CVE-2018-10903>`_.
   * Upgrade Jinja2 from 2.10 to 2.10.3 for `CVE-2019-10906 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-10906>`_.
-  * Upgrade to latest versions for: alembic, Babel, beautifulsoup4, cffi, httplib2, hvac, idna, keyring, lxml, requests, SQLAlchemy-Utc.
+  * Upgrade to latest version for all dependencies.
 
 * Remove ``convert_unicode`` argument from SQLAlchemy DB engine arguments per SQLAlchemy 1.3 upgrade guide / `SQLAlchemy #4393 <https://github.com/sqlalchemy/sqlalchemy/issues/4393>`_.
 
