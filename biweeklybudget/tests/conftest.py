@@ -226,7 +226,7 @@ def testflask():
         s.close()
         os.environ['BIWEEKLYBUDGET_LOG_FILE'] = LIVESERVER_LOG_PATH
         from biweeklybudget.flaskapp.app import app  # noqa
-        server = LiveServer(app, port)
+        server = LiveServer(app, 'localhost', port)
         server.start()
         yield(server)
         server.stop()
