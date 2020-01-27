@@ -1381,6 +1381,7 @@ class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_08_submit_with_nothing_reconciled(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
+        self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
         # get the innerHTML of both columns
         trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
