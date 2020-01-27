@@ -8,7 +8,7 @@ financial institutions, either manually or automatically (via an external
 command scheduler such as ``cron``).
 
 There are two overall methods of downloading transaction data; for banks that
-support the `OFX protocol <http://ofx.net/>`_, statement data can be downloaded
+support the `OFX protocol <https://www.ofx.net/>`_, statement data can be downloaded
 using HTTP only, via the `ofxclient <https://github.com/captin411/ofxclient>`_ project
 (note we vendor-in a fork with some bug fixes). For banks that do not support the
 OFX protocol and require you to use their website to download OFX format statements,
