@@ -172,6 +172,12 @@ class Account(Base, ModelAsDict):
     #: regex for matching transactions as other fees
     re_other_fee = Column(String(254))
 
+    #: Plaid Item ID for this account
+    plaid_item_id = Column(String(70))
+
+    #: Plaid Token for this account
+    plaid_token = Column(String(70))
+
     def __repr__(self):
         return "<Account(id=%s, name='%s')>" % (
             self.id, self.name
@@ -186,6 +192,16 @@ class Account(Base, ModelAsDict):
         :rtype: bool
         """
         return self.ofxgetter_config_json.isnot(None)
+
+    @hybrid_property
+    def plaid_configured(self):
+        """
+        Return whether or not this account is configured for Plaid.
+
+        :return: whether or not this account is configured for Plaid.
+        :rtype: bool
+        """
+        return self.plaid_item_id.isnot(None) and self.plaid_token.isnot(None)
 
     @hybrid_property
     def is_budget_source(self):
