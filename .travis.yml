@@ -22,10 +22,6 @@ env:
 
 matrix:
   include:
-    - python: "2.7"
-      env: TOXENV=py27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
-    - python: "3.4"
-      env: TOXENV=py34 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.5"
       env: TOXENV=py35 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.6"
@@ -33,18 +29,17 @@ matrix:
     - python: "3.7"
       env: TOXENV=py37 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
       dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
-    - python: "2.7"
-      env: TOXENV=acceptance27 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest27?charset=utf8mb4'
-      dist: xenial  # want to match acceptance37
-    - python: "3.7"
-      env: TOXENV=acceptance37 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
-      dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
-    - python: "3.7"
+    - python: "3.8"
+      env: TOXENV=py38 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
+    - python: "3.8"
+      env: TOXENV=acceptance38 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest36?charset=utf8mb4'
+      dist: xenial  # required for Python 3.8 (travis-ci/travis-ci#9069)
+    - python: "3.8"
       env: TOXENV=migrations MYSQL_USER='root' MYSQL_HOST='127.0.0.1' MYSQL_DBNAME_LEFT='alembicLeft' MYSQL_DBNAME_RIGHT='alembicRight' DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/alembicLeft?charset=utf8mb4'
-      dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
-    - python: "3.7"
+      dist: xenial  # required for Python 3.8 (travis-ci/travis-ci#9069)
+    - python: "3.8"
       env: TOXENV=docs
-      dist: xenial  # required for Python 3.7 (travis-ci/travis-ci#9069)
+      dist: xenial  # required for Python 3.8 (travis-ci/travis-ci#9069)
 
 install:
 - virtualenv --version

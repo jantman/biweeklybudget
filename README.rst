@@ -17,17 +17,11 @@ biweeklybudget
    :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
    :target: http://www.repostatus.org/#active
 
-.. image:: https://img.shields.io/waffle/label/jantman/biweeklybudget/ready.svg
-   :target: https://waffle.io/jantman/biweeklybudget
-   :alt: 'Stories in Ready'
-
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
 **For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
 
 **For screenshots**, see `<http://biweeklybudget.readthedocs.io/en/latest/screenshots.html>`_
-
-**For development activity**, see `https://waffle.io/jantman/biweeklybudget <https://waffle.io/jantman/biweeklybudget>`_
 
 Overview
 --------
@@ -82,7 +76,7 @@ Requirements
 Using the dockerized version will eliminate all of these dependencies aside from MySQL (which you can run in another container) and
 Vault (if you choose to take advantage of the OFX downloading), which you can also run in another container.
 
-* Python 2.7 or 3.4+ (currently tested with 2.7, 3.4, 3.5, 3.6, 3.7 and developed with 3.7)
+* Python 3.5+ (currently tested with 3.5, 3.6, 3.7, 3.8 and developed with 3.8). **Python 2 is not supported.**
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the automated OFX transaction downloading functionality:

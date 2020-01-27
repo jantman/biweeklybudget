@@ -61,37 +61,33 @@ class PrimeRateCalculator(object):
         self._db_sess = db_session
 
     def _rate_from_marketwatch(self):
-        url = 'http://www.wsj.com/mdc/public/page/2_3020-moneyrate.html'
+        url = 'https://www.wsj.com/market-data/bonds/moneyrates'
         logger.debug('Requesting %s for prime rate', url)
         r = requests.get(url)
         doc = lxml.html.fromstring(r.text)
-        prtitle = doc.xpath('//td[starts-with(text(), "Prime rates")]')
+        prtitle = doc.xpath('//caption[starts-with(text(), "Prime Rates")]')
         if prtitle is None or len(prtitle) != 1:
             logger.error(
                 'Could not find "Prime rates" TD; page: %s', r.text
             )
             raise RuntimeError('ERROR: format change in %s' % url)
-        prtbody = prtitle[0].getparent().getparent()
-        rows = prtbody.findall('tr')
-        if not rows[0].findall('td')[0].text.startswith('Prime rates['):
-            logger.error(
-                'tr0,td0 contains unexpected text; prtbody: %s',
-                tostring(prtbody)
-            )
-            raise RuntimeError('ERROR: format change in %s' % url)
-        if not rows[2].findall('td')[1].text == 'Latest':
+        prtbody = prtitle[0].getparent().findall('tbody')[0]
+        prthead = prtitle[0].getparent().findall('thead')[0]
+        headrows = prthead.findall('tr')
+        if not headrows[1].findall('th')[1].text == 'Latest':
             logger.error(
                 'tr2,td1 contains unexpected text; prtbody: %s',
                 tostring(prtbody)
             )
             raise RuntimeError('ERROR: format change in %s' % url)
-        if not rows[3].findall('td')[0].text == 'U.S.':
+        rows = prtbody.findall('tr')
+        if not rows[0].findall('td')[0].text == 'U.S.':
             logger.error(
                 'tr3,td0 contains unexpected text; prtbody: %s',
                 tostring(prtbody)
             )
             raise RuntimeError('ERROR: format change in %s' % url)
-        pr_amt = rows[3].findall('td')[1].text
+        pr_amt = rows[0].findall('td')[1].text
         logger.debug(
             'Found prime rate from %s: %s', url, pr_amt
         )

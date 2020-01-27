@@ -104,7 +104,7 @@ def get_db_engine():
             os.environ['DB_CONNSTRING'] = connstr
         biweeklybudget.settings.DB_CONNSTRING = connstr
         _DB_ENGINE = create_engine(
-            connstr, convert_unicode=True, echo=False,
+            connstr, echo=False,
             connect_args={
                 'sql_mode': 'STRICT_ALL_TABLES,NO_ZERO_DATE,'
                             'NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,'
@@ -226,7 +226,7 @@ def testflask():
         s.close()
         os.environ['BIWEEKLYBUDGET_LOG_FILE'] = LIVESERVER_LOG_PATH
         from biweeklybudget.flaskapp.app import app  # noqa
-        server = LiveServer(app, port)
+        server = LiveServer(app, 'localhost', port)
         server.start()
         yield(server)
         server.stop()

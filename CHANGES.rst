@@ -4,6 +4,7 @@ Changelog
 Unreleased Changes
 ------------------
 
+* **Drop Python 2 Support** - biweeklybudget no longer supports Python 2 (2.7). Python versions 3.5-3.8 are tested, and development is now done on 3.8.
 * `Issue #201 <https://github.com/jantman/biweeklybudget/issues/201>`_ - Fix **major** bug in calculation of "Remaining" amount for pay periods, when one or more periodic budgets have a greater amount spent than allocated and a $0 starting balance. In that case, we were using the allocated amount instead of the spent amount (i.e. if we had a periodic budget with a $0 starting balance and a $2 ScheduledTransaction, and converted that ScheduledTransaction to a $1000 Transaction, the overall PayPeriod remaining amount would be based on the $2 not the $1000).
 * Add testing for Python 3.7, and make 3.7 the default for tests and tox environments.
 * TravisCI updates for Python 3.7.
@@ -15,9 +16,13 @@ Unreleased Changes
 * Many dependency updates:
 
   * Upgrade SQLAlchemy from 1.2.0 to 1.2.11 for `python 3 bug fix (4291) <https://docs.sqlalchemy.org/en/latest/changelog/changelog_12.html#change-2cca6c216347ab83d04c766452b48c1a>`_.
+  * Upgrade SQLAlchemy from 1.2.11 to 1.3.13 for `CVE-2019-7548 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-7548>`_ and `CVE-2019-7164 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-7164>`_.
   * Upgrade Flask from 0.12.2 to 1.0.2 for `CVE-2018-1000656 <https://nvd.nist.gov/vuln/detail/CVE-2018-1000656>`_.
   * Upgrade cryptography from 2.1.4 to 2.3.1 for `CVE-2018-10903 <https://nvd.nist.gov/vuln/detail/CVE-2018-10903>`_.
-  * Upgrade to latest versions for: alembic, Babel, beautifulsoup4, cffi, httplib2, hvac, idna, keyring, lxml, requests.
+  * Upgrade Jinja2 from 2.10 to 2.10.3 for `CVE-2019-10906 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-10906>`_.
+  * Upgrade to latest version for all dependencies.
+
+* Remove ``convert_unicode`` argument from SQLAlchemy DB engine arguments per SQLAlchemy 1.3 upgrade guide / `SQLAlchemy #4393 <https://github.com/sqlalchemy/sqlalchemy/issues/4393>`_.
 
 1.0.0 (2018-07-07)
 ------------------
