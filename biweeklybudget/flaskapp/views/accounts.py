@@ -257,6 +257,8 @@ class AccountFormHandler(FormHandlerView):
             if data[f] == '':
                 data[f] = None
             setattr(account, f, data[f])
+        account.plaid_token = self.fix_string(data['plaid_token'])
+        account.plaid_item_id = self.fix_string(data['plaid_item_id'])
         logger.info('%s: %s', action, account.as_dict)
         db_session.add(account)
         db_session.commit()

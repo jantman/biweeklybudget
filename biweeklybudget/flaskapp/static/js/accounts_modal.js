@@ -104,6 +104,8 @@ function accountModalDivForm() {
             'Minimum Payment Class Name',
             min_pay_class_names
         )
+        .addText('plaid_token', 'plaid_token', 'Plaid Token', { helpBlock: 'Plaid item Access Token. Should only be set via the below link.'})
+        .addText('plaid_item_id', 'plaid_item_id', 'Plaid Item ID', { helpBlock: 'Plaid item ID. Should only be set via the below link.'})
         .addCheckbox('account_frm_active', 'is_active', 'Active?', true)
         .render();
 }
@@ -163,6 +165,8 @@ function accountModalDivFillAndShow(msg) {
     if(msg['re_payment'] != null) { $('#account_frm_re_payment').val(msg['re_payment']); }
     if(msg['re_late_fee'] != null) { $('#account_frm_re_late_fee').val(msg['re_late_fee']); }
     if(msg['re_other_fee'] != null) { $('#account_frm_re_other_fee').val(msg['re_other_fee']); }
+    if(msg['plaid_token'] != null) { $('#plaid_token').val(msg['plaid_token']); }
+    if(msg['plaid_item_id'] != null) { $('#plaid_item_id').val(msg['plaid_item_id']); }
     $("#modalDiv").modal('show');
 }
 

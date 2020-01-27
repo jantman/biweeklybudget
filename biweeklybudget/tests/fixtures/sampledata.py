@@ -288,7 +288,9 @@ class SampleDataLoader(object):
             re_interest_paid='^interest-paid',
             re_payment='^(payment|thank you)',
             re_late_fee='^Late Fee',
-            re_other_fee='^re-other-fee'
+            re_other_fee='^re-other-fee',
+            plaid_item_id='PlaidID',
+            plaid_token='PlaidToken'
         )
         statements = [
             OFXStatement(
