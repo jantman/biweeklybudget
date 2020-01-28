@@ -164,7 +164,8 @@ def init_db():
                 # SQLAlchemy 1.3.13 names the primary keys, but MariaDB ignores
                 # the names; MariaDB >= 10.4.7 now throws a warning for this.
                 warnings.filterwarnings(
-                    'ignore', '.*ignored for PRIMARY key.*',
+                    'ignore',
+                    message=r'^\(1280, "Name.*ignored for PRIMARY key\."\)$',
                     category=Warning
                 )
                 Base.metadata.create_all(engine)
