@@ -558,8 +558,8 @@ class TestAccountModal(AcceptanceHelper):
         selenium.find_element_by_id('account_frm_name').send_keys('Edited')
         selenium.find_element_by_id('account_frm_margin').clear()
         selenium.find_element_by_id('account_frm_margin').send_keys('4.21')
-        assert selenium.find_element_by_id('plaid_token').send_keys('Foo')
-        assert selenium.find_element_by_id('plaid_item_id').send_keys('Bar')
+        selenium.find_element_by_id('plaid_token').send_keys('Foo')
+        selenium.find_element_by_id('plaid_item_id').send_keys('Bar')
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
