@@ -6,7 +6,7 @@ Plaid
 Testing (Sandbox)
 -----------------
 
-.. _code-block:: bash
+.. code-block:: bash
 
     export PLAID_CLIENT_ID=5cf090726590ed001352c268
     export PLAID_SECRET=4265c2b9575665adff6dff6843ec82
