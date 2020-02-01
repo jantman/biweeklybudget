@@ -106,6 +106,7 @@ function accountModalDivForm() {
         )
         .addText('plaid_token', 'plaid_token', 'Plaid Token', { helpBlock: 'Plaid item Access Token. Should only be set via the below link.'})
         .addText('plaid_item_id', 'plaid_item_id', 'Plaid Item ID', { helpBlock: 'Plaid item ID. Should only be set via the below link.'})
+        .addHTML('<div id="plaidLink" class="form-group"></div>')
         .addCheckbox('account_frm_active', 'is_active', 'Active?', true)
         .render();
 }
@@ -167,6 +168,11 @@ function accountModalDivFillAndShow(msg) {
     if(msg['re_other_fee'] != null) { $('#account_frm_re_other_fee').val(msg['re_other_fee']); }
     if(msg['plaid_token'] != null) { $('#plaid_token').val(msg['plaid_token']); }
     if(msg['plaid_item_id'] != null) { $('#plaid_item_id').val(msg['plaid_item_id']); }
+    if(msg['plaid_token'] != null && msg['plaid_item_id'] != null) {
+        $('#plaidLink').html('<a onclick="plaidUpdate()">Plaid Update</a>');
+    } else {
+        $('#plaidLink').html('<a onclick="plaidLink()">Plaid Link</a>');
+    }
     $("#modalDiv").modal('show');
 }
 

@@ -74,7 +74,13 @@ _STRING_VARS = [
     'CURRENCY_CODE',
     'FUEL_VOLUME_UNIT',
     'FUEL_VOLUME_ABBREVIATION',
-    'FUEL_ECO_ABBREVIATION'
+    'FUEL_ECO_ABBREVIATION',
+    'PLAID_CLIENT_ID',
+    'PLAID_SECRET',
+    'PLAID_PUBLIC_KEY',
+    'PLAID_ENV',
+    'PLAID_PRODUCTS',
+    'PLAID_COUNTRY_CODES',
 ]
 
 #: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
@@ -162,6 +168,29 @@ VAULT_ADDR = None
 #: to the specified integer timestamp. Used for acceptance tests only. Do NOT
 #: set this outside of acceptance testing.
 BIWEEKLYBUDGET_TEST_TIMESTAMP = None
+
+#: Plaid Client ID
+PLAID_CLIENT_ID = None
+
+#: Plaid Secret (client secret)
+PLAID_SECRET = None
+
+#: Plaid Public Key
+PLAID_PUBLIC_KEY = None
+
+#: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
+#: environment (username: user_good, password: pass_good). Use `development` to
+#: test with live users and credentials and `production` to go live
+PLAID_ENV = None
+
+#: PLAID_PRODUCTS is a comma-separated list of products to use when initializing
+#: Link. Note that this list must contain 'assets' in order for the app to be
+#: able to create and retrieve asset reports.
+PLAID_PRODUCTS = None
+
+#: PLAID_COUNTRY_CODES is a comma-separated list of countries for which users
+#: will be able to select institutions from.
+PLAID_COUNTRY_CODES = None
 
 if 'SETTINGS_MODULE' in os.environ:
     logger.debug('Attempting to import settings module %s',
