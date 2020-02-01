@@ -89,6 +89,11 @@ class PlaidAccessToken(MethodView):
     """
 
     def post(self):
+        if os.environ.get('CI', 'false') == 'true':
+            return jsonify({
+                'plaid_item_id': 'testITEMid',
+                'plaid_token': 'testTOKEN'
+            })
         client = plaid_client()
         public_token = request.form['public_token']
         logger.debug('Plaid token exchange for public token: %s', public_token)
@@ -112,8 +117,45 @@ class PlaidAccessToken(MethodView):
         return jsonify(exchange_response)
 
 
+class PlaidPublicToken(MethodView):
+    """
+    Handle POST /ajax/plaid/create_public_token endpoint.
+    """
+
+    def post(self):
+        if os.environ.get('CI', 'false') == 'true':
+            return jsonify({'public_token': 'testPUBLICtoken'})
+        client = plaid_client()
+        access_token = request.form['access_token']
+        logger.debug(
+            'Plaid create public token for acess token: %s', access_token
+        )
+        try:
+            response = client.Item.public_token.create(access_token)
+        except PlaidError as e:
+            logger.error(
+                'Plaid error creating token for %s: %s',
+                access_token, e, exc_info=True
+            )
+            resp = jsonify({
+                'success': False,
+                'message': 'Exception: %s' % str(e)
+            })
+            resp.status_code = 400
+            return resp
+        logger.info(
+            'Plaid token creation: access_token=%s response=%s',
+            access_token, response
+        )
+        return jsonify(response)
+
+
 app.add_url_rule(
     '/ajax/plaid/get_access_token',
     view_func=PlaidAccessToken.as_view('plaid_access_token')
+)
+app.add_url_rule(
+    '/ajax/plaid/create_public_token',
+    view_func=PlaidPublicToken.as_view('plaid_public_token')
 )
 app.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
