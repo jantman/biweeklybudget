@@ -336,7 +336,8 @@ nitpick_ignore = [
     ('js:func', 'number'),
     ('js:func', 'Date'),
     ('js:func', 'Boolean'),
-    ('js:func', 'Array')
+    ('js:func', 'Array'),
+    ('js:func', 'number|null'),
 ]
 
 todo_include_todos = True

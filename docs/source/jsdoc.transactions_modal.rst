@@ -13,6 +13,28 @@ File: ``biweeklybudget/flaskapp/static/js/transactions_modal.js``
 
    
 
+.. js:function:: getObjectValueKey(obj, val)
+
+   Return the first property of ``obj`` with ``val`` as its value, or null.
+
+   :param obj: the object to check
+   :param val: the value to look for
+   
+
+   
+
+.. js:function:: selectBudget(sel_num, budg_id)
+
+   Select a budget in a budget select element. If ``sel_num`` is null then
+   select in ``#trans_frm_budget``, else it is expected to be an integer
+   and the selection will be made in ``trans_frm_budget_<sel_num>``.
+
+   :param number|null sel_num: The ``trans_frm_budget_`` Select element suffix, or else null for the ``trans_frm_budget`` select.
+   :param number budg_id: The ID of the budget to select.
+   
+
+   
+
 .. js:function:: transModal(id, dataTableObj)
 
    Show the Transaction modal popup, optionally populated with
