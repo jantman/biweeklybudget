@@ -85,6 +85,15 @@ DEFAULT_ACCOUNT_ID = 1
 #: must be the database ID of a valid budget.
 FUEL_BUDGET_ID = 2
 
+#: Plaid Client ID
+PLAID_CLIENT_ID = 'plaidCID'
+
+#: Plaid Secret (client secret)
+PLAID_SECRET = 'plaidSecret'
+
+#: Plaid Public Key
+PLAID_PUBLIC_KEY = 'plaidPubKey'
+
 #: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
 #: environment (username: user_good, password: pass_good). Use `development` to
 #: test with live users and credentials and `production` to go live

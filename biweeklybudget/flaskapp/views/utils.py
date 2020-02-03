@@ -73,11 +73,15 @@ class PlaidConfigJS(MethodView):
         """)
 
 
-app.add_url_rule(
-    '/utils/datetest.js',
-    view_func=DateTestJS.as_view('date_test_js')
-)
-app.add_url_rule(
-    '/utils/plaid_config.js',
-    view_func=PlaidConfigJS.as_view('plaid_config_js')
-)
+def set_url_rules(a):
+    a.add_url_rule(
+        '/utils/datetest.js',
+        view_func=DateTestJS.as_view('date_test_js')
+    )
+    a.add_url_rule(
+        '/utils/plaid_config.js',
+        view_func=PlaidConfigJS.as_view('plaid_config_js')
+    )
+
+
+set_url_rules(app)

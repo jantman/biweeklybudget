@@ -43,6 +43,7 @@ from biweeklybudget.models.transaction import Transaction
 from selenium.webdriver.support.ui import Select
 from biweeklybudget.utils import dtnow
 import requests
+from time import sleep
 
 
 @pytest.mark.acceptance
@@ -1152,6 +1153,79 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment is None
         assert acct.re_late_fee is None
         assert acct.re_other_fee is None
+        assert acct.plaid_item_id is None
+        assert acct.plaid_token is None
+
+    def test_83_plaid_link(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element_by_xpath('//a[text()="Acct9"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 9'
+        plaidLink = selenium.find_element_by_xpath('//a[text()="Plaid Link"]')
+        plaidLink.click()
+        self.wait_for_jquery_done(selenium)
+        sleep(2)
+        assert selenium.find_element_by_id('plaid_token').get_attribute(
+            'value'
+        ) == 'testTOKEN'
+        assert selenium.find_element_by_id('plaid_item_id').get_attribute(
+            'value'
+        ) == 'testITEMid'
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 9 in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+
+    def test_84_verify_db(self, testdb):
+        acct = testdb.query(Account).get(9)
+        assert acct is not None
+        assert acct.name == 'Acct9'
+        assert acct.description == 'a9desc'
+        assert acct.ofx_cat_memo_to_name is False
+        assert acct.vault_creds_path is None
+        assert acct.ofxgetter_config_json is None
+        assert acct.negate_ofx_amounts is False
+        assert acct.reconcile_trans is True
+        assert acct.acct_type == AcctType.Investment
+        assert acct.credit_limit is None
+        assert acct.apr is None
+        assert acct.prime_rate_margin is None
+        assert acct.interest_class_name is None
+        assert acct.min_payment_class_name is None
+        assert acct.is_active is True
+        assert acct.re_interest_charge is None
+        assert acct.re_interest_paid is None
+        assert acct.re_payment is None
+        assert acct.re_late_fee is None
+        assert acct.re_other_fee is None
+        assert acct.plaid_item_id == 'testITEMid'
+        assert acct.plaid_token == 'testTOKEN'
+
+    def test_85_plaid_update(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element_by_xpath('//a[text()="Acct9"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 9'
+        plaidLink = selenium.find_element_by_xpath('//a[text()="Plaid Update"]')
+        plaidLink.click()
+        self.wait_for_jquery_done(selenium)
+        assert selenium.find_element_by_id('plaid_token').get_attribute(
+            'value'
+        ) == 'updatedToken-testPUBLICtoken'
+        assert selenium.find_element_by_id('plaid_item_id').get_attribute(
+            'value'
+        ) == 'updatedItem-testPUBLICtoken'
+        # no need to submit; Plaid Update doesn't change Item ID or Token
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
 
 
 @pytest.mark.acceptance

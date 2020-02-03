@@ -38,14 +38,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 import logging
 from flask.views import MethodView
-from flask import jsonify, request, url_for, redirect
+from flask import jsonify, request, redirect
 from plaid import Client
 from plaid.errors import PlaidError
 
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.account import Account
-from biweeklybudget.db import db_session
 from biweeklybudget import settings
 
 logger = logging.getLogger(__name__)
@@ -53,10 +50,10 @@ logger = logging.getLogger(__name__)
 
 def plaid_client():
     """
-    Return an initialized :py:class:`plaid.Client` instance.
+    Return an initialized ``plaid.Client`` instance.
 
     :return: initialized Plaid client
-    :rtype: plaid.Client
+    :rtype: ``plaid.Client``
     """
     logger.debug('Getting Plaid client instance')
     assert settings.PLAID_CLIENT_ID is not None
@@ -91,8 +88,8 @@ class PlaidAccessToken(MethodView):
     def post(self):
         if os.environ.get('CI', 'false') == 'true':
             return jsonify({
-                'plaid_item_id': 'testITEMid',
-                'plaid_token': 'testTOKEN'
+                'item_id': 'testITEMid',
+                'access_token': 'testTOKEN'
             })
         client = plaid_client()
         public_token = request.form['public_token']
@@ -150,12 +147,16 @@ class PlaidPublicToken(MethodView):
         return jsonify(response)
 
 
-app.add_url_rule(
-    '/ajax/plaid/get_access_token',
-    view_func=PlaidAccessToken.as_view('plaid_access_token')
-)
-app.add_url_rule(
-    '/ajax/plaid/create_public_token',
-    view_func=PlaidPublicToken.as_view('plaid_public_token')
-)
-app.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
+def set_url_rules(a):
+    a.add_url_rule(
+        '/ajax/plaid/get_access_token',
+        view_func=PlaidAccessToken.as_view('plaid_access_token')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/create_public_token',
+        view_func=PlaidPublicToken.as_view('plaid_public_token')
+    )
+    a.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
+
+
+set_url_rules(app)
