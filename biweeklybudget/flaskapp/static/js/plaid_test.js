@@ -24,6 +24,8 @@ function plaidUpdate() {
         {access_token: $('#plaid_token').val()},
         function(data) {
             console.log("Got create_public_token response: %o", data);
+            $('#plaid_item_id').val("updatedItem-" + data.public_token);
+            $('#plaid_token').val("updatedToken-" + data.public_token);
         },
     ).fail(function() {
         alert("ERROR: /ajax/plaid/create_public_token callback failed; see server log for details.")
