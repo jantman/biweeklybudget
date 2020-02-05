@@ -22,8 +22,6 @@ env:
 
 matrix:
   include:
-    - python: "3.5"
-      env: TOXENV=py35 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.6"
       env: TOXENV=py36 DB_CONNSTRING='mysql+pymysql://root@127.0.0.1:3306/budgettest?charset=utf8mb4'
     - python: "3.7"

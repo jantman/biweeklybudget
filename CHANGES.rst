@@ -4,11 +4,11 @@ Changelog
 Unreleased Changes
 ------------------
 
-* **Drop Python 2 Support** - biweeklybudget no longer supports Python 2 (2.7). Python versions 3.5-3.8 are tested, and development is now done on 3.8.
+* **Drop Python 2 Support and Python 3.5 Support** - biweeklybudget no longer supports Python 2 (2.7) or Python 3.5. Python versions 3.6-3.8 are tested, and development is now done on 3.8.
 * `Issue #201 <https://github.com/jantman/biweeklybudget/issues/201>`_ - Fix **major** bug in calculation of "Remaining" amount for pay periods, when one or more periodic budgets have a greater amount spent than allocated and a $0 starting balance. In that case, we were using the allocated amount instead of the spent amount (i.e. if we had a periodic budget with a $0 starting balance and a $2 ScheduledTransaction, and converted that ScheduledTransaction to a $1000 Transaction, the overall PayPeriod remaining amount would be based on the $2 not the $1000).
-* Add testing for Python 3.7, and make 3.7 the default for tests and tox environments.
-* TravisCI updates for Python 3.7.
-* Switch base image for Docker from ``python:3.6.4-alpine3.7`` to ``python:3.7.0-alpine3.7``.
+* Add testing for Python 3.7 and 3.8, and make 3.8 the default for tests and tox environments.
+* TravisCI updates for Python 3.7 and 3.8.
+* Switch base image for Docker from ``python:3.6.4-alpine3.7`` to ``python:3.8.1-alpine3.11``.
 * `Issue #198 <https://github.com/jantman/biweeklybudget/issues/198>`_ - Fix broken method of retrieving current US Prime Rate. Previously we used marketwatch.com for this but they've introduced javascript-based bot protection on their site (which is ironic since we were reading a value from the page's ``meta`` tags, which are specifically intended to be read by machines). Switch to using wsj.com instead and (ugh) parsing a HTML table. This *will* break when the format of the table changes. As previously, we cache this value in the DB for 48 hours in order to be a good citizen.
 * `Issue #197 <https://github.com/jantman/biweeklybudget/issues/197>`_ - Add notification for case where balance of all budget-funding accounts is *more* than sum of standing budgets, current payperiod remaining, and unreconciled. This is the opposite of the similar notification that already exists, intended to detect if there is money in accounts not accounted for in the budgets.
 * `Issue #196 <https://github.com/jantman/biweeklybudget/issues/196>`_ - Don't include inactive budgets in Budget select elements on Transaction Modal form, unless it's an existing Transaction using that budget.
