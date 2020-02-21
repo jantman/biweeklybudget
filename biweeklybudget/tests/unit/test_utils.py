@@ -35,21 +35,32 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.utils import dtnow
+from biweeklybudget.utils import dtnow, plaid_client
 from pytz import utc
 from datetime import datetime
 from freezegun import freeze_time
 import sys
 
-# https://code.google.com/p/mock/issues/detail?id=249
-# py>=3.4 should use unittest.mock not the mock package on pypi
-if (
-        sys.version_info[0] < 3 or
-        sys.version_info[0] == 3 and sys.version_info[1] < 4
-):
-    from mock import patch
-else:
-    from unittest.mock import patch
+from unittest.mock import patch, call, Mock
+
+
+class TestPlaidClient:
+
+    def test_happy_path(self):
+        mock_client = Mock()
+        with patch(f'biweeklybudget.utils.Client', autospec=True) as m_client:
+            m_client.return_value = mock_client
+            res = plaid_client()
+        assert res == mock_client
+        assert m_client.mock_calls == [
+            call(
+                client_id='plaidCID',
+                secret='plaidSecret',
+                public_key='plaidPubKey',
+                environment='sandbox',
+                api_version='2019-05-29'
+            )
+        ]
 
 
 class TestDtNow(object):

@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from biweeklybudget.flaskapp.views.plaid import (
-    plaid_client, PlaidJs, PlaidPublicToken, PlaidAccessToken, set_url_rules
+    PlaidJs, PlaidPublicToken, PlaidAccessToken, set_url_rules
 )
 from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
 
@@ -72,25 +72,6 @@ class TestSetUrlRules:
             call.add_url_rule(
                 '/plaid.js',
                 view_func=m_pjs_view
-            )
-        ]
-
-
-class TestPlaidClient:
-
-    def test_happy_path(self):
-        mock_client = Mock()
-        with patch(f'{pbm}.Client', autospec=True) as m_client:
-            m_client.return_value = mock_client
-            res = plaid_client()
-        assert res == mock_client
-        assert m_client.mock_calls == [
-            call(
-                client_id='plaidCID',
-                secret='plaidSecret',
-                public_key='plaidPubKey',
-                environment='sandbox',
-                api_version='2019-05-29'
             )
         ]
 

@@ -39,34 +39,14 @@ import os
 import logging
 from flask.views import MethodView
 from flask import jsonify, request, redirect
-from plaid import Client
 from plaid.errors import PlaidError
 
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget import settings
+from biweeklybudget.utils import plaid_client
+from biweeklybudget.models.account import Account
+from biweeklybudget.plaid_updater import PlaidUpdater
 
 logger = logging.getLogger(__name__)
-
-
-def plaid_client():
-    """
-    Return an initialized ``plaid.Client`` instance.
-
-    :return: initialized Plaid client
-    :rtype: ``plaid.Client``
-    """
-    logger.debug('Getting Plaid client instance')
-    assert settings.PLAID_CLIENT_ID is not None
-    assert settings.PLAID_SECRET is not None
-    assert settings.PLAID_PUBLIC_KEY is not None
-    assert settings.PLAID_ENV is not None
-    return Client(
-        client_id=settings.PLAID_CLIENT_ID,
-        secret=settings.PLAID_SECRET,
-        public_key=settings.PLAID_PUBLIC_KEY,
-        environment=settings.PLAID_ENV,
-        api_version='2019-05-29'
-    )
 
 
 class PlaidJs(MethodView):
@@ -147,6 +127,41 @@ class PlaidPublicToken(MethodView):
         return jsonify(response)
 
 
+class PlaidUpdate(MethodView):
+    """
+    Handle GET /plaid-update
+    """
+
+    def get(self):
+        """
+        Handle GET. If the ``account_ids`` query parameter is set, then return
+        :py:meth:`~._update`, else return :py:meth:`~._form`.
+        """
+        ids = request.args.get('account_ids')
+        if ids is None:
+            return self._form()
+        return self._update()
+
+    def _update(self):
+        ids = request.args.get('account_ids')
+        assert ids is not None
+        updater = PlaidUpdater()
+        if ids == 'ALL':
+            accounts = updater.available_accounts
+        else:
+            ids = ids.split(',')
+            accounts = [
+                updater.db.query(Account).get(int(x)) for x in ids
+            ]
+        results = updater.update(accounts=accounts)
+        if request.headers.get('accept') == 'application/json':
+            return jsonify([x.as_dict for x in results])
+        raise NotImplementedError()
+
+    def _form(self):
+        raise NotImplementedError()
+
+
 def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/get_access_token',
@@ -157,6 +172,10 @@ def set_url_rules(a):
         view_func=PlaidPublicToken.as_view('plaid_public_token')
     )
     a.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
+    a.add_url_rule(
+        '/plaid-update',
+        view_func=PlaidUpdate.as_view('plaid_update')
+    )
 
 
 set_url_rules(app)

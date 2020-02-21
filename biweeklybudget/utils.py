@@ -42,8 +42,30 @@ from datetime import datetime
 import pytz
 from contextlib import contextmanager
 from babel.numbers import format_currency
+from plaid import Client
 
 logger = logging.getLogger(__name__)
+
+
+def plaid_client():
+    """
+    Return an initialized ``plaid.Client`` instance.
+
+    :return: initialized Plaid client
+    :rtype: ``plaid.Client``
+    """
+    logger.debug('Getting Plaid client instance')
+    assert settings.PLAID_CLIENT_ID is not None
+    assert settings.PLAID_SECRET is not None
+    assert settings.PLAID_PUBLIC_KEY is not None
+    assert settings.PLAID_ENV is not None
+    return Client(
+        client_id=settings.PLAID_CLIENT_ID,
+        secret=settings.PLAID_SECRET,
+        public_key=settings.PLAID_PUBLIC_KEY,
+        environment=settings.PLAID_ENV,
+        api_version='2019-05-29'
+    )
 
 
 def fix_werkzeug_logger():
