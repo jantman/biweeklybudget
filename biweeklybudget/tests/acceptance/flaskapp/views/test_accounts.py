@@ -594,8 +594,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == '.*Online Payment, thank you.*'
         assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
-        assert acct.plaid_item_id == 'Bar'
-        assert acct.plaid_token == 'Foo'
+        assert acct.plaid_item_id == 'acct3itemBar'
+        assert acct.plaid_token == 'acct3tokenFoo'
 
     def test_40_verify_db(self, testdb):
         acct = testdb.query(Account).get(4)

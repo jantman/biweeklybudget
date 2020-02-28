@@ -63,7 +63,12 @@ class PrimeRateCalculator(object):
     def _rate_from_marketwatch(self):
         url = 'https://www.wsj.com/market-data/bonds/moneyrates'
         logger.debug('Requesting %s for prime rate', url)
-        r = requests.get(url)
+        r = requests.get(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
+                                   'AppleWebKit/537.36 (KHTML, like Gecko) '
+                                   'Chrome/79.0.3945.130 Safari/537.36'}
+        )
         doc = lxml.html.fromstring(r.text)
         prtitle = doc.xpath('//caption[starts-with(text(), "Prime Rates")]')
         if prtitle is None or len(prtitle) != 1:
