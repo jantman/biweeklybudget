@@ -544,10 +544,10 @@ class TestAccountModal(AcceptanceHelper):
         # END CREDIT
         assert selenium.find_element_by_id(
             'plaid_token'
-        ).get_attribute('value') == 'acct3item'
+        ).get_attribute('value') == 'acct3token'
         assert selenium.find_element_by_id(
             'plaid_item_id'
-        ).get_attribute('value') == 'acct3token'
+        ).get_attribute('value') == 'acct3item'
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_32_edit_acct3(self, base_url, selenium):

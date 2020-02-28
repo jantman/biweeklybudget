@@ -90,6 +90,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             ('/accounts', 'Accounts'),
             ('/accounts/credit-payoff', 'Credit Payoffs'),
             ('/ofx', 'OFX'),
+            ('/plaid-update', 'Plaid Update'),
             ('/transactions', 'Transactions'),
             ('/reconcile', 'Reconcile'),
             ('/budgets', 'Budgets'),
