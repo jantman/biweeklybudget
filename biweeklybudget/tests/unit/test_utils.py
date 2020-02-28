@@ -39,7 +39,6 @@ from biweeklybudget.utils import dtnow, plaid_client
 from pytz import utc
 from datetime import datetime
 from freezegun import freeze_time
-import sys
 
 from unittest.mock import patch, call, Mock
 

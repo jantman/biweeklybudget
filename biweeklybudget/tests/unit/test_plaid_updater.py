@@ -35,34 +35,34 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.flaskapp.views.utils import DateTestJS, set_url_rules
-from unittest.mock import Mock, patch, call
+from biweeklybudget.plaid_updater import PlaidUpdateResult, PlaidUpdater
+from biweeklybudget.models.account import Account
 
-pbm = 'biweeklybudget.flaskapp.views.utils'
+from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
 
-
-class TestUrlRules:
-
-    def test_rules(self):
-        m_dtj_view = Mock()
-        m_app = Mock()
-        with patch(f'{pbm}.DateTestJS') as dtj_cls:
-            dtj_cls.as_view.return_value = m_dtj_view
-            set_url_rules(m_app)
-        assert m_app.mock_calls == [
-            call.add_url_rule('/utils/datetest.js', view_func=m_dtj_view)
-        ]
-        assert dtj_cls.mock_calls == [call.as_view('date_test_js')]
+pbm = 'biweeklybudget.plaid_updater'
+pb = f'{pbm}.PlaidUpdater'
 
 
-class TestDateTestJS:
+class TestPlaidUpdateResult:
 
-    def test_normal(self):
-        with patch(f'{pbm}.settings.BIWEEKLYBUDGET_TEST_TIMESTAMP', None):
-            res = DateTestJS().get()
-        assert res == 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date();'
-
-    def test_during_tests(self):
-        res = DateTestJS().get()
-        assert res == 'var BIWEEKLYBUDGET_DEFAULT_DATE = new ' \
-                      'Date(2017, 6, 28);'
+    def test_happy_path(self):
+        acct = Mock(spec_set=Account)
+        type(acct).id = 2
+        r = PlaidUpdateResult(
+            acct, True, 1, 2, 'foo', 123
+        )
+        assert r.account == acct
+        assert r.success is True
+        assert r.updated == 1
+        assert r.added == 2
+        assert r.exc == 'foo'
+        assert r.stmt_id == 123
+        assert r.as_dict == {
+            'account_id': 2,
+            'success': True,
+            'exception': 'foo',
+            'statement_id': 123,
+            'added': 2,
+            'updated': 1
+        }

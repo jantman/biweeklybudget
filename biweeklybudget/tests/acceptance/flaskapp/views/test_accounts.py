@@ -484,8 +484,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == '.*Online Payment, thank you.*'
         assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
-        assert acct.plaid_item_id is None
-        assert acct.plaid_token is None
+        assert acct.plaid_item_id == 'acct3item'
+        assert acct.plaid_token == 'acct3token'
 
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -544,10 +544,10 @@ class TestAccountModal(AcceptanceHelper):
         # END CREDIT
         assert selenium.find_element_by_id(
             'plaid_token'
-        ).get_attribute('value') == ''
+        ).get_attribute('value') == 'acct3item'
         assert selenium.find_element_by_id(
             'plaid_item_id'
-        ).get_attribute('value') == ''
+        ).get_attribute('value') == 'acct3token'
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_32_edit_acct3(self, base_url, selenium):
@@ -770,6 +770,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment is None
         assert acct.re_late_fee is None
         assert acct.re_other_fee is None
+        assert acct.plaid_token == 'acct5token'
+        assert acct.plaid_item_id == 'acct5item'
 
     def test_51_get_acct5_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')

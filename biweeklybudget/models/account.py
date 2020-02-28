@@ -201,9 +201,7 @@ class Account(Base, ModelAsDict):
         :return: whether or not this account is configured for Plaid.
         :rtype: bool
         """
-        if self.plaid_item_id is None or self.plaid_token is None:
-            return False
-        return True
+        return self.plaid_item_id.isnot(None) & self.plaid_token.isnot(None)
 
     @hybrid_property
     def is_budget_source(self):

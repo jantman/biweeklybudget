@@ -432,7 +432,9 @@ class SampleDataLoader(object):
             re_interest_charge='^INTEREST CHARGED TO',
             re_payment='.*Online Payment, thank you.*',
             re_late_fee='^Late Fee',
-            re_other_fee='^re-other-fee'
+            re_other_fee='^re-other-fee',
+            plaid_token='acct3token',
+            plaid_item_id='acct3item'
         )
         statements = [
             OFXStatement(
@@ -605,7 +607,9 @@ class SampleDataLoader(object):
             vault_creds_path='',
             acct_type=AcctType.Investment,
             is_active=True,
-            reconcile_trans=False
+            reconcile_trans=False,
+            plaid_item_id='acct5item',
+            plaid_token='acct5token'
         )
         statements = [
             OFXStatement(

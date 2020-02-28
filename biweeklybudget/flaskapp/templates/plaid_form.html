@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Plaid Update - BiweeklyBudget{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <div class="row" id="content-row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-plaid-accounts">
+                        <div class="panel-heading">Plaid Accounts</div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped" id="table-accounts-plaid">
+                                    <thead>
+                                        <tr>
+                                            <th>Update Account?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for acct in accounts %}
+                                        <tr>
+                                            <td><div class="form-group"><label for="account_{{ acct.id }}" class="checkbox-inline control-label"><input type="checkbox" id="account_{{ acct.id }}" name="account_{{ acct.id }}" value="{{ acct.id }}" class="account-checkbox" checked> <a href="/accounts/{{ acct.id }}">{{ acct.name }} ({{ acct.id }})</a></label></div></td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                            <div><p><button type="button" class="btn btn-primary" id="btn_update_plaid" onclick="runPlaidUpdate()">Run Update</button></p></div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+{% include 'modal.html' %}
+{% endblock %}
+{% block extra_foot_script %}
+<script>
+/**
+ * Handle click of the "Run Update" button.
+ */
+function runPlaidUpdate() {
+    var account_ids = [];
+    $('input').each(function(index) {
+        if($(this).prop('checked') == true) {
+            account_ids.push($(this).attr('value'));
+        }
+    });
+    console.log("account_ids: ", account_ids);
+    window.location.href = window.location.href + '?account_ids=' + account_ids.join(",");
+}
+</script>
+{% endblock %}

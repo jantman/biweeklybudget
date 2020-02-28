@@ -39,7 +39,6 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_DOWN
 from typing import Optional
-import json
 
 from pytz import UTC
 
@@ -56,18 +55,20 @@ class PlaidUpdateResult:
     """Describes the result of updating a single account via Plaid."""
 
     def __init__(
-        self, success: bool, updated: int, added: int, exc: Optional[Exception],
-        stmt_id: Optional[int]
+        self, account: Account, success: bool, updated: int, added: int,
+        exc: Optional[Exception], stmt_id: Optional[int]
     ):
         """
         Store the result of an update.
 
+        :param account: the Account that this update pertains to
         :param success: whether the update succeeded or not
         :param updated: count of updated transactions
         :param added: count of added transactions
         :param exc: exception encountered, if any
         :param stmt_id: added Statement ID
         """
+        self.account = account
         self.success = success
         self.updated = updated
         self.added = added
@@ -77,6 +78,7 @@ class PlaidUpdateResult:
     @property
     def as_dict(self):
         return {
+            'account_id': self.account.id,
             'success': self.success,
             'exception': str(self.exc),
             'statement_id': self.stmt_id,
@@ -91,7 +93,7 @@ class PlaidUpdater:
         self.db = db_session
         self.client = plaid_client()
 
-    @property
+    @classmethod
     def available_accounts(self):
         """
         Return a list of :py:class:`~.Account` objects that can be updated via
@@ -100,9 +102,9 @@ class PlaidUpdater:
         :return: Accounts that can be updated via Plaid
         :rtype: list of :py:class:`~.Account` objects
         """
-        return self.db.query(Account).filter(
+        return db_session.query(Account).filter(
             Account.plaid_configured
-        ).order_by(Account.name).all()
+        ).order_by(Account.id).all()
 
     def update(self, accounts=None, days=30):
         """
@@ -155,7 +157,7 @@ class PlaidUpdater:
                 account, txns, end_date
             )
             return PlaidUpdateResult(
-                True, updated, added, None, sid
+                account, True, updated, added, None, sid
             )
         except Exception as ex:
             logger.error(
@@ -163,7 +165,7 @@ class PlaidUpdater:
                 account.name, account.id, exc_info=True
             )
             return PlaidUpdateResult(
-                False, 0, 0, ex, None
+                account, False, 0, 0, ex, None
             )
 
     def _stmt_for_acct(self, account, txns, end_dt):

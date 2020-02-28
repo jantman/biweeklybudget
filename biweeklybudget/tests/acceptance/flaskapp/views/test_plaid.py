@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2020 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -35,34 +35,40 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.flaskapp.views.utils import DateTestJS, set_url_rules
-from unittest.mock import Mock, patch, call
+import pytest
 
-pbm = 'biweeklybudget.flaskapp.views.utils'
+from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 
 
-class TestUrlRules:
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestPlaidUpdateView(AcceptanceHelper):
 
-    def test_rules(self):
-        m_dtj_view = Mock()
-        m_app = Mock()
-        with patch(f'{pbm}.DateTestJS') as dtj_cls:
-            dtj_cls.as_view.return_value = m_dtj_view
-            set_url_rules(m_app)
-        assert m_app.mock_calls == [
-            call.add_url_rule('/utils/datetest.js', view_func=m_dtj_view)
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/plaid-update')
+
+    def test_1_heading(self, selenium):
+        heading = selenium.find_element_by_class_name('navbar-brand')
+        assert heading.text == 'Plaid Update - BiweeklyBudget'
+
+    def test_2_nav_menu(self, selenium):
+        ul = selenium.find_element_by_id('side-menu')
+        assert ul is not None
+        assert 'nav' in ul.get_attribute('class')
+        assert ul.tag_name == 'ul'
+
+    def test_3_notifications(self, selenium):
+        div = selenium.find_element_by_id('notifications-row')
+        assert div is not None
+        assert div.get_attribute('class') == 'row'
+
+    def test_4_table(self, selenium):
+        table = selenium.find_element_by_id('table-accounts-plaid')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            ['BankOne (1)'],
+            ['CreditOne (3)'],
+            ['InvestmentOne (5)']
         ]
-        assert dtj_cls.mock_calls == [call.as_view('date_test_js')]
-
-
-class TestDateTestJS:
-
-    def test_normal(self):
-        with patch(f'{pbm}.settings.BIWEEKLYBUDGET_TEST_TIMESTAMP', None):
-            res = DateTestJS().get()
-        assert res == 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date();'
-
-    def test_during_tests(self):
-        res = DateTestJS().get()
-        assert res == 'var BIWEEKLYBUDGET_DEFAULT_DATE = new ' \
-                      'Date(2017, 6, 28);'
