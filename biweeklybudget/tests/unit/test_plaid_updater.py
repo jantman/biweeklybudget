@@ -35,10 +35,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.plaid_updater import PlaidUpdateResult, PlaidUpdater
+from biweeklybudget.plaid_updater import PlaidUpdateResult
 from biweeklybudget.models.account import Account
 
-from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
+from unittest.mock import Mock
 
 pbm = 'biweeklybudget.plaid_updater'
 pb = f'{pbm}.PlaidUpdater'

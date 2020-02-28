@@ -90,7 +90,6 @@ class PlaidUpdateResult:
 class PlaidUpdater:
 
     def __init__(self):
-        self.db = db_session
         self.client = plaid_client()
 
     @classmethod
