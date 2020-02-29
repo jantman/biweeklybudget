@@ -93,7 +93,7 @@ class PlaidUpdater:
         self.client = plaid_client()
 
     @classmethod
-    def available_accounts(self):
+    def available_accounts(cls):
         """
         Return a list of :py:class:`~.Account` objects that can be updated via
         Plaid.
@@ -119,7 +119,7 @@ class PlaidUpdater:
         :rtype: list
         """
         if accounts is None:
-            accounts = self.available_accounts
+            accounts = self.available_accounts()
         logger.debug(
             'Running Plaid update for %d accounts: %s',
             len(accounts), accounts
@@ -179,7 +179,7 @@ class PlaidUpdater:
         acct = txns['accounts'][0]
         stmt = OFXStatement(
             account_id=account.id,
-            filename=f'Plaid_{account.name}_{end_dt.timestamp()}.ofx',
+            filename=f'Plaid_{account.name}_{int(end_dt.timestamp())}.ofx',
             file_mtime=end_dt,
             as_of=end_dt,
             currency=acct['balances']['iso_currency_code'],
@@ -228,6 +228,7 @@ class PlaidUpdater:
 
     def _update_bank_or_credit(self, end_dt, account, acct, txns, stmt):
         logger.debug('Generating statement for credit account')
+        stmt.as_of = end_dt
         stmt.ledger_bal_as_of = end_dt
         stmt.ledger_bal = Decimal(acct['balances']['current']).quantize(
             Decimal('.01'), rounding=ROUND_HALF_DOWN
