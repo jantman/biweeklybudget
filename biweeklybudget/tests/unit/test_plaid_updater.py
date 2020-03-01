@@ -220,7 +220,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
     def test_credit(self):
         mock_acct = Mock(id=5)
         type(mock_acct).name = 'acct5'
-        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0, tzinfo=UTC)
         txns = {
             'item': {
                 'institution_id': 'abc123'
@@ -256,7 +256,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert m_ofxstmt.mock_calls == [
             call(
                 account_id=5,
-                filename='Plaid_acct5_1590379200.ofx',
+                filename='Plaid_acct5_1590364800.ofx',
                 file_mtime=end_dt,
                 as_of=end_dt,
                 currency='USD',
@@ -270,7 +270,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
     def test_investment(self):
         mock_acct = Mock(id=5)
         type(mock_acct).name = 'acct5'
-        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0, tzinfo=UTC)
         txns = {
             'item': {
                 'institution_id': None
@@ -306,7 +306,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert m_ofxstmt.mock_calls == [
             call(
                 account_id=5,
-                filename='Plaid_acct5_1590379200.ofx',
+                filename='Plaid_acct5_1590364800.ofx',
                 file_mtime=end_dt,
                 as_of=end_dt,
                 currency='USD',
@@ -319,7 +319,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
     def test_unknown_type(self):
         mock_acct = Mock(id=5)
         type(mock_acct).name = 'acct5'
-        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0, tzinfo=UTC)
         txns = {
             'item': {
                 'institution_id': None
@@ -354,7 +354,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert m_ofxstmt.mock_calls == [
             call(
                 account_id=5,
-                filename='Plaid_acct5_1590379200.ofx',
+                filename='Plaid_acct5_1590364800.ofx',
                 file_mtime=end_dt,
                 as_of=end_dt,
                 currency='USD',
