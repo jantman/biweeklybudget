@@ -424,7 +424,7 @@ class TestPlaidUpdate:
         mock_query = Mock()
         mock_query.get.side_effect = db_get
         mock_db.query.return_value = mock_query
-        mock_updater = Mock(db=mock_db)
+        mock_updater = Mock()
         rendered = Mock()
         mock_json = Mock()
         result = [
@@ -446,30 +446,27 @@ class TestPlaidUpdate:
             mocks['render_template'].return_value = rendered
             mocks['jsonify'].return_value = mock_json
             with patch(f'{pbm}.request', mock_req):
-                res = self.cls._update('1,2,3')
+                with patch(f'{pbm}.db_session', mock_db):
+                    res = self.cls._update('1,2,3')
         assert res == mock_json
         assert mocks['PlaidUpdater'].mock_calls == [
             call(),
-            call().db.query(Account),
-            call().db.query().get(1),
-            call().db.query(Account),
-            call().db.query().get(2),
-            call().db.query(Account),
-            call().db.query().get(3),
             call().update(accounts=[m_acct1, m_acct2, m_acct3])
         ]
         assert mock_updater.mock_calls == [
-            call.db.query(Account),
-            call.db.query().get(1),
-            call.db.query(Account),
-            call.db.query().get(2),
-            call.db.query(Account),
-            call.db.query().get(3),
             call.update(accounts=[m_acct1, m_acct2, m_acct3])
         ]
         assert mocks['render_template'].mock_calls == []
         assert mocks['jsonify'].mock_calls == [
             call(['res1', 'res2', 'res3'])
+        ]
+        assert mock_db.mock_calls == [
+            call.query(Account),
+            call.query().get(1),
+            call.query(Account),
+            call.query().get(2),
+            call.query(Account),
+            call.query().get(3),
         ]
 
     def test_update_text(self):

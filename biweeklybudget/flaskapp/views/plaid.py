@@ -48,6 +48,7 @@ from biweeklybudget.utils import plaid_client
 from biweeklybudget.models.account import Account
 from biweeklybudget.plaid_updater import PlaidUpdater
 from biweeklybudget.version import VERSION
+from biweeklybudget.db import db_session
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +171,7 @@ class PlaidUpdate(MethodView):
         else:
             ids = ids.split(',')
             accounts = [
-                updater.db.query(Account).get(int(x)) for x in ids
+                db_session.query(Account).get(int(x)) for x in ids
             ]
         results = updater.update(accounts=accounts)
         if request.headers.get('accept') == 'application/json':
