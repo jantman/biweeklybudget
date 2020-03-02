@@ -392,7 +392,7 @@ class DockerImageBuilder(object):
 
     def _run_acceptance_tests(self, db_container, container):
         """
-        Run the ``acceptance37`` tox environment against the running container.
+        Run the ``acceptance38`` tox environment against the running container.
 
         :param db_container: MariaDB Docker container
         :type db_container: ``docker.models.containers.Container``
@@ -729,7 +729,7 @@ class DockerImageBuilder(object):
                 ver += '-dirty'
             s_versionfix = "&& /bin/sed -i " \
                            "\"s/^VERSION =.*/VERSION = '%s+git.%s'/\"" \
-                           " /app/lib/python3.7/site-packages/biweeklybudget" \
+                           " /app/lib/python3.8/site-packages/biweeklybudget" \
                            "/version.py" % (
                                VERSION, ver
                            )
