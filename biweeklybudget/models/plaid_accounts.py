@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2020 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -35,18 +35,51 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.models.account_balance import AccountBalance
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.dbsetting import DBSetting
-from biweeklybudget.models.fuel import FuelFill, Vehicle
-from biweeklybudget.models.ofx_statement import OFXStatement
-from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.models.plaid_items import PlaidItem
-from biweeklybudget.models.projects import Project, BoMItem
-from biweeklybudget.models.reconcile_rule import ReconcileRule
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
+import logging
+from sqlalchemy import (
+    Column, Integer, String, PrimaryKeyConstraint
+)
+from datetime import timedelta
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import null
+from decimal import Decimal
+
+from biweeklybudget.models.base import Base, ModelAsDict
+
+logger = logging.getLogger(__name__)
+
+
+class PlaidAccount(Base, ModelAsDict):
+
+    __tablename__ = 'plaid_accounts'
+    __table_args__ = (
+        PrimaryKeyConstraint('item_id', 'account_id'),
+        {'mysql_engine': 'InnoDB'}
+    )
+
+    #: Plaid Item ID
+    item_id = Column(String(70), nullable=False)
+
+    #: Plaid Account ID
+    account_id = Column(String(70), nullable=False)
+
+    #: PlaidItem this PlaidAccount is associated with
+    plaid_item = relationship('PlaidItem', uselist=False)
+
+    #: Name of the account
+    name = Column(String(100))
+
+    #: mask
+    mask = Column(String(20))
+
+    #: Plaid account type
+    account_type = Column(String(50))
+
+    #: Plaid account subtype
+    account_subtype = Column(String(50))
+
+    def __repr__(self):
+        return "<PlaidAccount(item_id=%s, account_id=%s)>" % (
+            self.item_id, self.account_id
+        )

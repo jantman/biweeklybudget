@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2020 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -35,18 +35,44 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.models.account_balance import AccountBalance
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.dbsetting import DBSetting
-from biweeklybudget.models.fuel import FuelFill, Vehicle
-from biweeklybudget.models.ofx_statement import OFXStatement
-from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.models.plaid_items import PlaidItem
-from biweeklybudget.models.projects import Project, BoMItem
-from biweeklybudget.models.reconcile_rule import ReconcileRule
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
+import logging
+from sqlalchemy import Column, String
+from sqlalchemy_utc import UtcDateTime
+from sqlalchemy.orm import relationship
+
+from biweeklybudget.models.base import Base, ModelAsDict
+
+logger = logging.getLogger(__name__)
+
+
+class PlaidItem(Base, ModelAsDict):
+
+    __tablename__ = 'plaid_items'
+    __table_args__ = (
+        {'mysql_engine': 'InnoDB'}
+    )
+
+    #: Primary Key - plaid Item ID
+    item_id = Column(String(70), primary_key=True)
+
+    #: Plaid item access token
+    access_token = Column(String(70))
+
+    #: institution name
+    institution_name = Column(String(100))
+
+    #: institution ID
+    institution_id = Column(String(50))
+
+    #: When this item was last updated
+    last_updated = Column(UtcDateTime)
+
+    #: Relationship to all :py:class:`~.PlaidAccount` for this Item
+    all_accounts = relationship(
+        'PlaidAccount', order_by='PlaidAccount.account_id'
+    )
+
+    def __repr__(self):
+        return "<PlaidItem(item_id=%s, institution_name='%s')>" % (
+            self.item_id, self.institution_name
+        )

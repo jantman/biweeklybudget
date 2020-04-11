@@ -192,6 +192,11 @@ class PlaidUpdater:
             self._update_bank_or_credit(
                 end_dt, account, acct, txns, stmt
             )
+        elif acct['type'] == 'depository':
+            stmt.type = 'Bank'
+            self._update_bank_or_credit(
+                end_dt, account, acct, txns, stmt
+            )
         elif acct['type'] == 'investment':
             stmt.type = 'Investment'
             self._update_investment(end_dt, account, acct, stmt)

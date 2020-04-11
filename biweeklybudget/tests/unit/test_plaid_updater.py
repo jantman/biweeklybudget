@@ -267,6 +267,57 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert mock_stmt.type == 'CreditCard'
         assert m_dbsess.mock_calls == [call.commit()]
 
+    def test_depository(self):
+        mock_acct = Mock(id=5)
+        type(mock_acct).name = 'acct5'
+        end_dt = datetime(2020, 5, 25, 0, 0, 0, tzinfo=UTC)
+        txns = {
+            'item': {
+                'institution_id': 'abc123'
+            },
+            'accounts': [
+                {
+                    'type': 'depository',
+                    'subtype': 'checking',
+                    'balances': {
+                        'iso_currency_code': 'USD'
+                    },
+                    'mask': '012345'
+                }
+            ]
+        }
+        mock_stmt = Mock(id=123)
+        with patch.multiple(
+            pb,
+            _update_bank_or_credit=DEFAULT,
+            _update_investment=DEFAULT,
+            _new_updated_counts=DEFAULT
+        ) as mocks:
+            mocks['_new_updated_counts'].return_value = (1, 2)
+            with patch(f'{pbm}.OFXStatement') as m_ofxstmt:
+                with patch(f'{pbm}.db_session') as m_dbsess:
+                    m_ofxstmt.return_value = mock_stmt
+                    res = self.cls._stmt_for_acct(mock_acct, txns, end_dt)
+        assert res == (123, 1, 2)
+        assert mocks['_update_bank_or_credit'].mock_calls == [
+            call(end_dt, mock_acct, txns['accounts'][0], txns, mock_stmt)
+        ]
+        assert mocks['_update_investment'].mock_calls == []
+        assert mocks['_new_updated_counts'].mock_calls == [call()]
+        assert m_ofxstmt.mock_calls == [
+            call(
+                account_id=5,
+                filename='Plaid_acct5_1590364800.ofx',
+                file_mtime=end_dt,
+                as_of=end_dt,
+                currency='USD',
+                acctid='012345'
+            )
+        ]
+        assert mock_stmt.bankid == 'abc123'
+        assert mock_stmt.type == 'Bank'
+        assert m_dbsess.mock_calls == [call.commit()]
+
     def test_investment(self):
         mock_acct = Mock(id=5)
         type(mock_acct).name = 'acct5'
