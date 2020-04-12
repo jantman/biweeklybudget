@@ -224,15 +224,15 @@ class PlaidRefreshAccounts(MethodView):
 
 class PlaidUpdate(MethodView):
     """
-    Handle GET /plaid-update
+    Handle GET or POST /plaid-update
 
     This single endpoint has multiple functions:
 
     * If called with no query parameters, displays a form template to use to
       interactively update Plaid accounts.
-    * If called with an ``account_ids`` query argument, performs a Plaid update
-      of the specified CSV list of account IDs, or all Plaid-enabled accounts if
-      the value is ``ALL``. The response from this endpoint can be in one of
+    * If called with an ``item_ids`` query argument, performs a Plaid update
+      of the specified CSV list of Plaid Item IDs, or all Plaid-enabled accounts
+      if the value is ``ALL``. The response from this endpoint can be in one of
       three forms:
 
       * If the ``Accept`` HTTP header is set to ``application/json``, return a
@@ -241,7 +241,28 @@ class PlaidUpdate(MethodView):
       * If the ``Accept`` HTTP header is set to ``text/plain``, return a plain
         text human-readable summary of the update operation.
       * Otherwise, return a templated view of the update operation results.
+
+    NOTE that POST requests will never return the templated view; they will
+    return plain-text if ``Accept: text/plain`` is specified, or otherwise will
+    always return JSON.
     """
+
+    def post(self):
+        """
+        Handle POST. If the ``account_ids`` query parameter is set, then return
+        :py:meth:`~._update`, else return a HTTP 400.
+        """
+        ids = request.args.get('account_ids')
+        if ids is None and request.form:
+            ids = ','.join([
+                x.replace('item_', '') for x in request.form.keys()
+            ])
+        if ids is None:
+            return jsonify({
+                'success': False,
+                'message': 'Missing parameter: account_ids'
+            }), 400
+        return self._update(ids, from_post=True)
 
     def get(self):
         """
@@ -253,7 +274,7 @@ class PlaidUpdate(MethodView):
             return self._form()
         return self._update(ids)
 
-    def _update(self, ids):
+    def _update(self, ids, from_post=False):
         """Handle an update for Plaid accounts."""
         raise NotImplementedError(
             'In addition to using the new available_accounts, also need to '
@@ -269,9 +290,7 @@ class PlaidUpdate(MethodView):
                 db_session.query(Account).get(int(x)) for x in ids
             ]
         results = updater.update(accounts=accounts)
-        if request.headers.get('accept') == 'application/json':
-            return jsonify([x.as_dict for x in results])
-        elif request.headers.get('accept') == 'text/plain':
+        if request.headers.get('accept') == 'text/plain':
             s = ''
             num_updated = 0
             num_added = 0
@@ -288,6 +307,8 @@ class PlaidUpdate(MethodView):
             s += f'TOTAL: {num_updated} updated, {num_added} added, ' \
                  f'{num_failed} account(s) failed'
             return s
+        if from_post or request.headers.get('accept') == 'application/json':
+            return jsonify([x.as_dict for x in results])
         # have to do this here in python and iterate twice, because of
         # https://github.com/pallets/jinja/issues/641
         num_updated = 0

@@ -8,6 +8,7 @@
                         <div class="panel-heading">Plaid Update Transactions</div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
+                            <form method="post">
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover table-striped" id="table-update-plaid">
                                     <thead>
@@ -21,8 +22,8 @@
                                     <tr>
                                         <td>
                                             <div class="form-group">
-                                                <label for="account_" class="checkbox-inline control-label">
-                                                    <input type="checkbox" id="account_" name="account_" value="1" class="account-checkbox" checked>
+                                                <label for="item_{{ i.item_id }}" class="checkbox-inline control-label">
+                                                    <input type="checkbox" id="item_{{ i.item_id }}" name="item_{{ i.item_id }}" value="1" class="account-checkbox" checked>
                                                     {{ i.institution_name }} ({{ i.item_id }})
                                                 </label>
                                             </div>
@@ -34,7 +35,8 @@
                                 </table>
                             </div>
                             <!-- /.table-responsive -->
-                            <div><p><button type="button" class="btn btn-primary" id="btn_plaid_txns" onclick="getPlaidTransactions()">Update Transactions</button></p></div>
+                            <div><p><button type="submit" class="btn btn-primary" id="btn_plaid_txns" onclick="getPlaidTransactions()">Update Transactions</button></p></div>
+                            </form>
                         </div>
                         <!-- /.panel-body -->
                     </div>
@@ -86,20 +88,6 @@
 <script src="/plaid_config.js"></script>
 <script src="/plaid.js"></script>
 <script>
-/**
- * Handle click of the "Update Transactions" button.
- */
-function getPlaidTransactions() {
-    var account_ids = [];
-    $('input').each(function(index) {
-        if($(this).prop('checked') == true) {
-            account_ids.push($(this).attr('value'));
-        }
-    });
-    console.log("account_ids: ", account_ids);
-    // window.location.href = window.location.href + '?account_ids=' + account_ids.join(",");
-    alert("Not implemented! Need to POST!");
-}
 
 /**
  * Handle click of the "Link (Add Plaid Item)" button.
