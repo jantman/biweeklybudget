@@ -104,9 +104,12 @@ function accountModalDivForm() {
             'Minimum Payment Class Name',
             min_pay_class_names
         )
-        .addText('plaid_token', 'plaid_token', 'Plaid Token', { helpBlock: 'Plaid item Access Token. Should only be set via the below link.'})
-        .addText('plaid_item_id', 'plaid_item_id', 'Plaid Item ID', { helpBlock: 'Plaid item ID. Should only be set via the below link.'})
-        .addHTML('<div id="plaidLink" class="form-group"></div>')
+        .addLabelToValueSelect(
+            'account_frm_plaid_account',
+            'plaid_account',
+            'Plaid Account',
+            plaid_accounts
+        )
         .addCheckbox('account_frm_active', 'is_active', 'Active?', true)
         .render();
 }
@@ -166,13 +169,7 @@ function accountModalDivFillAndShow(msg) {
     if(msg['re_payment'] != null) { $('#account_frm_re_payment').val(msg['re_payment']); }
     if(msg['re_late_fee'] != null) { $('#account_frm_re_late_fee').val(msg['re_late_fee']); }
     if(msg['re_other_fee'] != null) { $('#account_frm_re_other_fee').val(msg['re_other_fee']); }
-    if(msg['plaid_token'] != null) { $('#plaid_token').val(msg['plaid_token']); }
-    if(msg['plaid_item_id'] != null) { $('#plaid_item_id').val(msg['plaid_item_id']); }
-    if(msg['plaid_token'] != null && msg['plaid_item_id'] != null) {
-        $('#plaidLink').html('<a onclick="plaidUpdate()">Plaid Update</a>');
-    } else {
-        $('#plaidLink').html('<a onclick="plaidLink()">Plaid Link</a>');
-    }
+    $('#account_frm_plaid_account option[value="' + msg['plaid_item_id'] + ',' + msg['plaid_account_id'] + '"]').prop('selected', 'selected').change();
     $("#modalDiv").modal('show');
 }
 

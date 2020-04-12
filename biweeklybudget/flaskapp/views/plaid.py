@@ -44,8 +44,10 @@ from plaid.errors import PlaidError
 
 from biweeklybudget import settings
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.utils import plaid_client
+from biweeklybudget.utils import plaid_client, dtnow
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.plaid_items import PlaidItem
+from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.plaid_updater import PlaidUpdater
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
@@ -64,19 +66,23 @@ class PlaidJs(MethodView):
         return redirect('static/js/plaid_prod.js')
 
 
-class PlaidAccessToken(MethodView):
+class PlaidHandleLink(MethodView):
     """
-    Handle POST /ajax/plaid/get_access_token endpoint.
+    Handle POST /ajax/plaid/handle_link endpoint.
     """
 
     def post(self):
+        data = request.get_json()
+        logger.debug(
+            'got POST to /ajax/plaid/handle_link; data=%s', data
+        )
         if os.environ.get('CI', 'false') == 'true':
             return jsonify({
                 'item_id': 'testITEMid',
                 'access_token': 'testTOKEN'
             })
         client = plaid_client()
-        public_token = request.form['public_token']
+        public_token = data['public_token']
         logger.debug('Plaid token exchange for public token: %s', public_token)
         try:
             exchange_response = client.Item.public_token.exchange(public_token)
@@ -95,7 +101,32 @@ class PlaidAccessToken(MethodView):
             'Plaid token exchange: public_token=%s response=%s',
             public_token, exchange_response
         )
-        return jsonify(exchange_response)
+        item = PlaidItem(
+            item_id=exchange_response['item_id'],
+            access_token=exchange_response['access_token'],
+            last_updated=dtnow(),
+            institution_name=data['metadata']['institution']['name'],
+            institution_id=data['metadata']['institution']['institution_id']
+        )
+        logger.info('Add to DB: %s', item)
+        db_session.add(item)
+        for acct in data['metadata']['accounts']:
+            acct = PlaidAccount(
+                item_id=exchange_response['item_id'],
+                account_id=acct['id'],
+                name=acct['name'],
+                mask=acct['mask'],
+                account_type=acct['type'],
+                account_subtype=acct.get('subtype', 'unknown')
+            )
+            logger.info('Add to DB: %s', acct)
+            db_session.add(acct)
+        db_session.commit()
+        return jsonify({
+            'success': True,
+            'item_id': exchange_response['item_id'],
+            'access_token': exchange_response['access_token']
+        })
 
 
 class PlaidPublicToken(MethodView):
@@ -107,16 +138,17 @@ class PlaidPublicToken(MethodView):
         if os.environ.get('CI', 'false') == 'true':
             return jsonify({'public_token': 'testPUBLICtoken'})
         client = plaid_client()
-        access_token = request.form['access_token']
+        item_id = request.form['item_id']
+        item: PlaidItem = db_session.query(PlaidItem).get(item_id)
         logger.debug(
-            'Plaid create public token for acess token: %s', access_token
+            'Plaid create public token for %s', item
         )
         try:
-            response = client.Item.public_token.create(access_token)
+            response = client.Item.public_token.create(item.access_token)
         except PlaidError as e:
             logger.error(
                 'Plaid error creating token for %s: %s',
-                access_token, e, exc_info=True
+                item.access_token, e, exc_info=True
             )
             resp = jsonify({
                 'success': False,
@@ -126,9 +158,68 @@ class PlaidPublicToken(MethodView):
             return resp
         logger.info(
             'Plaid token creation: access_token=%s response=%s',
-            access_token, response
+            item.access_token, response
         )
         return jsonify(response)
+
+
+class PlaidRefreshAccounts(MethodView):
+    """
+    Handle POST /ajax/plaid/refresh_item_accounts endpoint.
+    """
+
+    def post(self):
+        data = request.get_json()
+        if os.environ.get('CI', 'false') == 'true':
+            return jsonify({'success': True})
+        client = plaid_client()
+        item_id = data['item_id']
+        item: PlaidItem = db_session.query(PlaidItem).get(item_id)
+        logger.debug(
+            'Plaid refresh accounts for %s', item
+        )
+        try:
+            response = client.Accounts.get(item.access_token)
+        except PlaidError as e:
+            logger.error(
+                'Plaid error getting accounts for %s: %s',
+                item.access_token, e, exc_info=True
+            )
+            resp = jsonify({
+                'success': False,
+                'message': 'Exception: %s' % str(e)
+            })
+            resp.status_code = 400
+            return resp
+        logger.info('Plaid account refresh for item %s: %s', item, response)
+        a: PlaidAccount
+        all_accts = {a.account_id: a for a in item.all_accounts}
+        curr_acct_ids = []
+        logger.info(
+            'Plaid reported %d accounts for the item', len(response['accounts'])
+        )
+        for acct in response['accounts']:
+            if acct['account_id'] in all_accts:
+                curr_acct_ids.append(acct['account_id'])
+                continue
+            a = PlaidAccount(
+                item_id=item.item_id,
+                account_id=acct['account_id'],
+                name=acct['name'],
+                mask=acct['mask'],
+                account_type=acct['type'],
+                account_subtype=acct.get('subtype', 'unknown')
+            )
+            curr_acct_ids.append(acct['account_id'])
+            logger.info('Add new to DB: %s', a)
+            db_session.add(a)
+        for aid, a in all_accts.items():
+            if aid in curr_acct_ids:
+                continue
+            logger.info('Account no longer in Plaid item; removing: %s', a)
+            db_session.delete(a)
+        db_session.commit()
+        return jsonify({'success': True})
 
 
 class PlaidUpdate(MethodView):
@@ -164,6 +255,10 @@ class PlaidUpdate(MethodView):
 
     def _update(self, ids):
         """Handle an update for Plaid accounts."""
+        raise NotImplementedError(
+            'In addition to using the new available_accounts, also need to '
+            'update the last_updated timestamp on each item.'
+        )
         logger.info('Handle Plaid Update request; account_ids=%s', ids)
         updater = PlaidUpdater()
         if ids == 'ALL':
@@ -212,8 +307,26 @@ class PlaidUpdate(MethodView):
         )
 
     def _form(self):
+        items = db_session.query(PlaidItem).all()
+        x: PlaidItem
+        a: PlaidAccount
+        plaid_accounts = {
+            x.item_id: ', '.join(
+                [f'{a.name} ({a.mask})' for a in x.all_accounts]
+            ) for x in items
+        }
+        accounts = {
+            x.item_id: ', '.join(filter(None,
+                [
+                    None if a.account is None else
+                    f'{a.account.name} ({a.account.id})'
+                    for a in x.all_accounts
+                ]
+            )) for x in items
+        }
         return render_template(
-            'plaid_form.html', accounts=PlaidUpdater.available_accounts()
+            'plaid_form.html', plaid_items=items, plaid_accounts=plaid_accounts,
+            accounts=accounts
         )
 
 
@@ -235,8 +348,8 @@ class PlaidConfigJS(MethodView):
 
 def set_url_rules(a):
     a.add_url_rule(
-        '/ajax/plaid/get_access_token',
-        view_func=PlaidAccessToken.as_view('plaid_access_token')
+        '/ajax/plaid/handle_link',
+        view_func=PlaidHandleLink.as_view('plaid_handle_link')
     )
     a.add_url_rule(
         '/ajax/plaid/create_public_token',
@@ -250,6 +363,10 @@ def set_url_rules(a):
     a.add_url_rule(
         '/plaid_config.js',
         view_func=PlaidConfigJS.as_view('plaid_config_js')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/refresh_item_accounts',
+        view_func=PlaidRefreshAccounts.as_view('plaid_refresh_item_accounts')
     )
 
 

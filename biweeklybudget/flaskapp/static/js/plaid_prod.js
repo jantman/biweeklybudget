@@ -1,7 +1,6 @@
 /**
  * Initiate a Plaid link. Perform the link process and retrieve a public token;
- * POST it to /ajax/plaid/get_access_token and update from fields with the
- * result.
+ * POST it to /ajax/plaid/handle_link.
  */
 function plaidLink() {
     console.log("Call plaidLink()");
@@ -12,16 +11,24 @@ function plaidLink() {
         product: PLAID_PRODUCTS,
         key: PLAID_PUBLIC_KEY,
         countryCodes: PLAID_COUNTRY_CODES.split(','),
-        onSuccess: function(public_token) {
-            console.log("plaidLink onSuccess public_token=" + public_token);
-            $.post('/ajax/plaid/get_access_token', {
-                public_token: public_token
-            }, function(data) {
-                console.log("get_access_token response: %o", data);
-                $('#plaid_item_id').val(data.item_id);
-                $('#plaid_token').val(data.access_token);
-            }).fail(function() {
-                alert("ERROR: /ajax/plaid/get_access_token callback failed; see server log for details.")
+        onSuccess: function(public_token, metadata) {
+            console.log("plaidLink onSuccess public_token=" + public_token + " metadata=" + metadata);
+            $.ajax({
+                url: '/ajax/plaid/handle_link',
+                type: 'POST',
+                data: JSON.stringify({
+                    public_token: public_token,
+                    metadata: metadata
+                }),
+                dataType: 'json',
+                contentType: 'application/json',
+                success: function(data) {
+                    console.log("get_access_token response: %o; reloading", data);
+                    location.reload();
+                },
+                error: function() {
+                    alert("ERROR: /ajax/plaid/handle_link callback failed; see server log for details.");
+                }
             });
         },
     });
@@ -32,10 +39,10 @@ function plaidLink() {
 /**
  * Update the existing Plaid account / Link.
  */
-function plaidUpdate() {
-    console.log("called plaidUpdate()");
+function plaidUpdate(item_id) {
+    console.log("called plaidUpdate(" + item_id + ")");
     $.post('/ajax/plaid/create_public_token',
-        {access_token: $('#plaid_token').val()},
+        {item_id: item_id},
         function(data) {
             console.log("Call plaidLink() with public_token=" + data.public_token);
             var handler = Plaid.create({
@@ -56,5 +63,27 @@ function plaidUpdate() {
         },
     ).fail(function() {
         alert("ERROR: /ajax/plaid/create_public_token callback failed; see server log for details.")
+    });
+}
+
+/**
+ * Call the /ajax/plaid/refresh_item_accounts endpoint and then reload this page.
+ */
+function plaidRefresh(item_id) {
+    console.log("called plaidRefresh(" + item_id + ")");
+    $.ajax({
+        url: '/ajax/plaid/refresh_item_accounts',
+        type: 'POST',
+        data: JSON.stringify({
+            item_id: item_id
+        }),
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function(data) {
+            location.reload();
+        },
+        error: function() {
+            alert("ERROR: /ajax/plaid/refresh_item_accounts callback failed; see server log for details.");
+        }
     });
 }

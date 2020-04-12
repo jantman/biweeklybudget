@@ -37,13 +37,9 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, Integer, String, PrimaryKeyConstraint
+    Column, String, PrimaryKeyConstraint, ForeignKey
 )
-from datetime import timedelta
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import null
-from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
 
@@ -59,7 +55,9 @@ class PlaidAccount(Base, ModelAsDict):
     )
 
     #: Plaid Item ID
-    item_id = Column(String(70), nullable=False)
+    item_id = Column(
+        String(70), ForeignKey('plaid_items.item_id'), nullable=False
+    )
 
     #: Plaid Account ID
     account_id = Column(String(70), nullable=False)
