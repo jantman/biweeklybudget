@@ -222,6 +222,43 @@ class PlaidRefreshAccounts(MethodView):
         return jsonify({'success': True})
 
 
+class PlaidUpdateItemInfo(MethodView):
+    """
+    Handle POST /ajax/plaid/update_item_info endpoint.
+    """
+
+    def post(self):
+        if os.environ.get('CI', 'false') == 'true':
+            return jsonify({'success': True})
+        client = plaid_client()
+        logger.info('Refreshing Plaid item info')
+        item: PlaidItem
+        for item in db_session.query(PlaidItem).all():
+            logger.debug(
+                'Plaid refresh item: %s', item
+            )
+            try:
+                response = client.Item.get(item.access_token)
+            except PlaidError as e:
+                logger.error(
+                    'Plaid error getting item %s: %s',
+                    item, e, exc_info=True
+                )
+                resp = jsonify({
+                    'success': False,
+                    'message': 'Exception: %s' % str(e)
+                })
+                resp.status_code = 400
+                return resp
+            logger.info('Plaid item info item %s: %s', item, response)
+            item.institution_id = response['item']['institution_id']
+            inst = client.Institutions.get_by_id(item.institution_id)
+            item.institution_name = inst['institution']['name']
+            db_session.add(item)
+        db_session.commit()
+        return jsonify({'success': True})
+
+
 class PlaidUpdate(MethodView):
     """
     Handle GET or POST /plaid-update
@@ -241,10 +278,6 @@ class PlaidUpdate(MethodView):
       * If the ``Accept`` HTTP header is set to ``text/plain``, return a plain
         text human-readable summary of the update operation.
       * Otherwise, return a templated view of the update operation results.
-
-    NOTE that POST requests will never return the templated view; they will
-    return plain-text if ``Accept: text/plain`` is specified, or otherwise will
-    always return JSON.
     """
 
     def post(self):
@@ -262,7 +295,7 @@ class PlaidUpdate(MethodView):
                 'success': False,
                 'message': 'Missing parameter: account_ids'
             }), 400
-        return self._update(ids, from_post=True)
+        return self._update(ids)
 
     def get(self):
         """
@@ -274,22 +307,18 @@ class PlaidUpdate(MethodView):
             return self._form()
         return self._update(ids)
 
-    def _update(self, ids, from_post=False):
+    def _update(self, ids):
         """Handle an update for Plaid accounts."""
-        raise NotImplementedError(
-            'In addition to using the new available_accounts, also need to '
-            'update the last_updated timestamp on each item.'
-        )
-        logger.info('Handle Plaid Update request; account_ids=%s', ids)
+        logger.info('Handle Plaid Update request; item_ids=%s', ids)
         updater = PlaidUpdater()
         if ids == 'ALL':
-            accounts = PlaidUpdater.available_accounts()
+            items = PlaidUpdater.available_items()
         else:
             ids = ids.split(',')
-            accounts = [
-                db_session.query(Account).get(int(x)) for x in ids
+            items = [
+                db_session.query(PlaidItem).get(x) for x in ids
             ]
-        results = updater.update(accounts=accounts)
+        results = updater.update(items=items)
         if request.headers.get('accept') == 'text/plain':
             s = ''
             num_updated = 0
@@ -298,16 +327,18 @@ class PlaidUpdate(MethodView):
             for r in results:
                 if not r.success:
                     num_failed += 1
-                    s += f'{r.account.name} ({r.account.id}): Failed: {r.exc}\n'
+                    s += f'{r.item.institution_name} ({r.item.item_id}): ' \
+                         f'Failed: {r.exc}\n'
                     continue
                 num_updated += r.updated
                 num_added += r.added
-                s += f'{r.account.name} ({r.account.id}): {r.updated} ' \
-                     f'updated, {r.added} added (stmt {r.stmt_id})\n'
+                s += f'{r.item.institution_name} ({r.item.item_id}): ' \
+                     f'{r.updated} ' \
+                     f'updated, {r.added} added (stmts: {r.stmt_ids})\n'
             s += f'TOTAL: {num_updated} updated, {num_added} added, ' \
                  f'{num_failed} account(s) failed'
             return s
-        if from_post or request.headers.get('accept') == 'application/json':
+        if request.headers.get('accept') == 'application/json':
             return jsonify([x.as_dict for x in results])
         # have to do this here in python and iterate twice, because of
         # https://github.com/pallets/jinja/issues/641
@@ -388,6 +419,10 @@ def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/refresh_item_accounts',
         view_func=PlaidRefreshAccounts.as_view('plaid_refresh_item_accounts')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/update_item_info',
+        view_func=PlaidUpdateItemInfo.as_view('plaid_update_item_info')
     )
 
 

@@ -12,17 +12,17 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-accounts-plaid">
                                     <thead>
                                         <tr>
-                                            <th>Account</th>
+                                            <th>Item</th>
                                             <th>Updated</th>
                                             <th>Added</th>
                                             <th>Exception?</th>
-                                            <th>Statement ID</th>
+                                            <th>Statement IDs</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     {% for pur in results %}
                                         <tr>
-                                            <td><a href="/accounts/{{ pur.account.id }}">{{ pur.account.name }} ({{ pur.account.id }})</a></td>
+                                            <td>{{ pur.item.institution_name }} ({{ pur.item.item_id }})</a></td>
                                             <td>{{ pur.updated }}</td>
                                             <td>{{ pur.added}} </td>
                                             <td>{{ pur.exc }}</td>

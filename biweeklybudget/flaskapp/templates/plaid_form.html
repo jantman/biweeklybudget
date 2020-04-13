@@ -72,7 +72,7 @@
                                 </table>
                             </div>
                             <!-- /.table-responsive -->
-                            <div><p><button type="button" class="btn btn-primary" id="btn_link_plaid" onclick="addPlaidItem()">Link (Add Plaid Item)</button></p></div>
+                            <div><p><button type="button" class="btn btn-primary" id="btn_link_plaid" onclick="addPlaidItem()">Link (Add Plaid Item)</button>&nbsp;<button type="button" class="btn btn-secondary" id="btn_import_plaid" onclick="importPlaidItems()">Update Item Information from Plaid</button></p></div>
                         </div>
                         <!-- /.panel-body -->
                     </div>
@@ -94,6 +94,23 @@
  */
 function addPlaidItem() {
     plaidLink();
+}
+
+/**
+ * Handle click of the "Import Existing Plaid Items" button.
+ */
+function importPlaidItems() {
+    console.log("called importPlaidItems()");
+    $.ajax({
+        url: '/ajax/plaid/update_item_info',
+        type: 'POST',
+        success: function(data) {
+            location.reload();
+        },
+        error: function() {
+            alert("ERROR: /ajax/plaid/update_item_info callback failed; see server log for details.");
+        }
+    });
 }
 </script>
 {% endblock %}

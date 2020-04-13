@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_DOWN
-from typing import Optional
+from typing import Optional, List, Dict
 
 from pytz import UTC
 
@@ -46,6 +46,8 @@ from biweeklybudget.db import db_session, upsert_record
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.plaid_items import PlaidItem
+from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.utils import plaid_client, dtnow
 
 logger = logging.getLogger(__name__)
@@ -55,33 +57,33 @@ class PlaidUpdateResult:
     """Describes the result of updating a single account via Plaid."""
 
     def __init__(
-        self, account: Account, success: bool, updated: int, added: int,
-        exc: Optional[Exception], stmt_id: Optional[int]
+        self, item: PlaidItem, success: bool, updated: int, added: int,
+        exc: Optional[Exception], stmt_ids: Optional[List[int]]
     ):
         """
         Store the result of an update.
 
-        :param account: the Account that this update pertains to
+        :param item: the PlaidItem that this update pertains to
         :param success: whether the update succeeded or not
         :param updated: count of updated transactions
         :param added: count of added transactions
         :param exc: exception encountered, if any
-        :param stmt_id: added Statement ID
+        :param stmt_ids: list of added Statement IDs
         """
-        self.account = account
+        self.item = item
         self.success = success
         self.updated = updated
         self.added = added
         self.exc = exc
-        self.stmt_id = stmt_id
+        self.stmt_ids = stmt_ids
 
     @property
     def as_dict(self):
         return {
-            'account_id': self.account.id,
+            'item_id': self.item.item_id,
             'success': self.success,
             'exception': str(self.exc),
-            'statement_id': self.stmt_id,
+            'statement_ids': self.stmt_ids,
             'added': self.added,
             'updated': self.updated
         }
@@ -93,117 +95,158 @@ class PlaidUpdater:
         self.client = plaid_client()
 
     @classmethod
-    def available_accounts(cls):
+    def available_items(cls):
         """
-        Return a list of :py:class:`~.Account` objects that can be updated via
+        Return a list of :py:class:`~.PlaidItem` objects that can be updated via
         Plaid.
 
-        :return: Accounts that can be updated via Plaid
-        :rtype: list of :py:class:`~.Account` objects
+        :return: PlaidItem that can be updated via Plaid
+        :rtype: list of :py:class:`~.PlaidItem` objects
         """
-        return db_session.query(Account).filter(
-            Account.plaid_configured
-        ).order_by(Account.id).all()
+        return db_session.query(PlaidItem).order_by(
+            PlaidItem.institution_name
+        ).all()
 
-    def update(self, accounts=None, days=30):
+    def update(self, items=None, days=30):
         """
         Update account balances and transactions from Plaid, for either all
-        accounts that are configured for Plaid (default) or a specified list of
-        Accounts.
+        Plaid Items that are available or a specified list of Item IDs.
 
-        :param accounts: a list of :py:class:`~.Account` objects to update
-        :type accounts: list or None
+        :param items: a list of :py:class:`~.PlaidItem` objects to update
+        :type items: list or None
         :param days: number of days of transactions to get from Plaid
         :type days: int
         :return: list of :py:class:`~.PlaidUpdateResult` instances
         :rtype: list
         """
-        if accounts is None:
-            accounts = self.available_accounts()
+        if items is None:
+            items = self.available_items()
         logger.debug(
-            'Running Plaid update for %d accounts: %s',
-            len(accounts), accounts
+            'Running Plaid update for %d items: %s',
+            len(items), items
         )
         result = []
-        for acct in accounts:
-            result.append(self._do_acct(acct, days=days))
+        for item in items:
+            result.append(self._do_item(item, days=days))
         return result
 
-    def _do_acct(self, account, days):
+    def _do_item(self, item, days):
         """
-        Update balances and transactions from Plaid for one account.
+        Request transactions from Plaid for one Item. Update balances and
+        transactions for each Account in that item.
 
-        :param account: the account to update
-        :type account: Account
+        :param item: the item to update
+        :type item: PlaidItem
         :param days: number of days of transactions to get from Plaid
         :type days: int
+        :rtype: PlaidUpdateResult
         """
-        logger.info('Plaid update for %s', account)
+        logger.info('Plaid update for %s', item)
         try:
-            end_date = dtnow()
-            end_ds = end_date.strftime('%Y-%m-%d')
-            start_date = end_date - timedelta(days=days)
-            start_ds = start_date.strftime('%Y-%m-%d')
+            end_date: datetime = dtnow()
+            end_ds: str = end_date.strftime('%Y-%m-%d')
+            start_date: datetime = end_date - timedelta(days=days)
+            start_ds: str = start_date.strftime('%Y-%m-%d')
             logger.debug(
-                'Downloading Plaid transactions for account: %s from %s to %s',
-                account.name, start_ds, end_ds
+                'Downloading Plaid transactions for item: %s from %s to %s',
+                item, start_ds, end_ds
             )
-            txns = self.client.Transactions.get(
-                account.plaid_token, start_ds, end_ds
+            txns: dict = self.client.Transactions.get(
+                item.access_token, start_ds, end_ds
             )
             logger.debug('Plaid Transactions API result: %s', txns)
-            sid, added, updated = self._stmt_for_acct(
-                account, txns, end_date
-            )
+            if len(txns['transactions']) != txns['total_transactions']:
+                raise RuntimeError(
+                    f"ERROR: Plaid API reported {txns['total_transactions']} "
+                    "total transactions but only returned "
+                    f"{len(txns['transactions'])}."
+                )
+            accounts: Dict[str, PlaidAccount] = {}
+            pa: PlaidAccount
+            for pa in db_session.query(PlaidAccount).filter(
+                PlaidAccount.item_id == item.item_id
+            ).all():
+                accounts[pa.account_id] = pa
+            stmt_ids: List[int] = []
+            added: int = 0
+            updated: int = 0
+            accts: Dict[str, dict] = {
+                a['account_id']: a for a in txns['accounts']
+            }
+            txns_per_acct: Dict[str, list] = {}
+            for t in txns['transactions']:
+                if t['account_id'] not in txns_per_acct:
+                    txns_per_acct[t['account_id']] = []
+                txns_per_acct[t['account_id']].append(t)
+            for plaid_account_id in accts.keys():
+                plaid_acct: PlaidAccount = accounts[plaid_account_id]
+                acct: Optional[Account] = plaid_acct.account
+                if acct is None:
+                    logger.warning(
+                        'Plaid item %s returned transactions for %s, but it is '
+                        'not mapped to an Account.', item, plaid_acct
+                    )
+                    continue
+                sid, a, u = self._stmt_for_acct(
+                    acct, accts[plaid_account_id],
+                    txns_per_acct.get(plaid_account_id, []), end_date
+                )
+                added += a
+                updated += u
+                stmt_ids.append(sid)
+            item.last_updated = dtnow()
+            db_session.add(item)
+            db_session.commit()
             return PlaidUpdateResult(
-                account, True, updated, added, None, sid
+                item, True, updated, added, None, stmt_ids
             )
         except Exception as ex:
             logger.error(
-                'Exception encountered when updating account: %s (%d)',
-                account.name, account.id, exc_info=True
+                'Exception encountered when updating item: %s (%s)',
+                item.institution_name, item.item_id, exc_info=True
             )
             return PlaidUpdateResult(
-                account, False, 0, 0, ex, None
+                item, False, 0, 0, ex, None
             )
 
-    def _stmt_for_acct(self, account, txns, end_dt):
+    def _stmt_for_acct(
+        self, account: Account, plaid_acct_info: dict, plaid_txns: List[dict],
+        end_dt: datetime
+    ):
         """
         Put Plaid transaction data to the DB
 
         :param account: the account to update
-        :type account: Account
-        :param txns: Plaid transaction response
-        :type txns: dict
+        :param plaid_acct_info: dict of account information from Plaid
+        :param txns: list of transactions from Plaid
+        :param end_dt: current time, as of when transactions were retrieved
         """
-        acct = txns['accounts'][0]
         stmt = OFXStatement(
             account_id=account.id,
             filename=f'Plaid_{account.name}_{int(end_dt.timestamp())}.ofx',
             file_mtime=end_dt,
             as_of=end_dt,
-            currency=acct['balances']['iso_currency_code'],
-            acctid=acct['mask']
+            currency=plaid_acct_info['balances']['iso_currency_code'],
+            acctid=plaid_acct_info['mask']
         )
-        if txns['item']['institution_id'] is not None:
-            stmt.bankid = txns['item']['institution_id']
-        if acct['type'] == 'credit':
+        stmt.bankid = account.plaid_account.plaid_item.institution_id
+        if account.plaid_account.account_type == 'credit':
             stmt.type = 'CreditCard'
             self._update_bank_or_credit(
-                end_dt, account, acct, txns, stmt
+                end_dt, account, plaid_acct_info, plaid_txns, stmt
             )
-        elif acct['type'] == 'depository':
+        elif account.plaid_account.account_type == 'depository':
             stmt.type = 'Bank'
             self._update_bank_or_credit(
-                end_dt, account, acct, txns, stmt
+                end_dt, account, plaid_acct_info, plaid_txns, stmt
             )
-        elif acct['type'] == 'investment':
+        elif account.plaid_account.account_type == 'investment':
             stmt.type = 'Investment'
-            self._update_investment(end_dt, account, acct, stmt)
+            self._update_investment(end_dt, account, plaid_acct_info, stmt)
         else:
             raise RuntimeError(
                 'ERROR: Unknown account type: ' +
-                txns['accounts'][0].get('type', '<none>')
+                account.plaid_account.account_type
             )
         count_new, count_upd = self._new_updated_counts()
         db_session.commit()
@@ -231,19 +274,24 @@ class PlaidUpdater:
                 count_new += 1
         return count_new, count_upd
 
-    def _update_bank_or_credit(self, end_dt, account, acct, txns, stmt):
+    def _update_bank_or_credit(
+        self, end_dt: datetime, account: Account, plaid_acct_info: dict,
+        plaid_txns: List[dict], stmt: OFXStatement
+    ):
         logger.debug('Generating statement for credit account')
         stmt.as_of = end_dt
         stmt.ledger_bal_as_of = end_dt
-        stmt.ledger_bal = Decimal(acct['balances']['current']).quantize(
+        stmt.ledger_bal = Decimal(
+            plaid_acct_info['balances']['current']
+        ).quantize(
             Decimal('.01'), rounding=ROUND_HALF_DOWN
         )
-        if acct['balances'].get('available', None) is not None:
+        if plaid_acct_info['balances'].get('available', None) is not None:
             stmt.avail_bal = Decimal(
-                acct['balances']['available']
+                plaid_acct_info['balances']['available']
             ).quantize(Decimal('.01'), rounding=ROUND_HALF_DOWN)
             stmt.avail_bal_as_of = end_dt
-        stmt.currency = acct['balances']['iso_currency_code']
+        stmt.currency = plaid_acct_info['balances']['iso_currency_code']
         db_session.add(stmt)
         account.set_balance(
             overall_date=stmt.as_of,
@@ -252,13 +300,7 @@ class PlaidUpdater:
             avail=stmt.avail_bal,
             avail_date=stmt.avail_bal_as_of
         )
-        if len(txns['transactions']) != txns['total_transactions']:
-            raise RuntimeError(
-                f'ERROR: Plaid response indicates {txns["total_transactions"]}'
-                f' total transactions but only contains '
-                f'{len(txns["transactions"])} transactions.'
-            )
-        for pt in txns['transactions']:
+        for pt in plaid_txns:
             if pt['pending']:
                 logger.info('Skipping pending transaction: %s', pt)
                 continue
@@ -282,14 +324,17 @@ class PlaidUpdater:
                 **kwargs
             )
 
-    def _update_investment(self, end_dt, account, acct, stmt):
+    def _update_investment(
+        self, end_dt: datetime, account: Account, plaid_acct_info: dict,
+        stmt: OFXStatement
+    ):
         logger.debug('Generating statement for investment account')
         stmt.as_of = end_dt
-        stmt.ledger_bal = Decimal(acct['balances']['current']).quantize(
+        stmt.ledger_bal = Decimal(plaid_acct_info['balances']['current']).quantize(
             Decimal('.01'), rounding=ROUND_HALF_DOWN
         )
         stmt.ledger_bal_as_of = end_dt
-        stmt.currency = acct['balances']['iso_currency_code']
+        stmt.currency = plaid_acct_info['balances']['iso_currency_code']
         db_session.add(stmt)
         account.set_balance(
             overall_date=stmt.as_of,
