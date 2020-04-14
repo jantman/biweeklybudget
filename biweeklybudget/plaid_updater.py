@@ -316,6 +316,8 @@ class PlaidUpdater:
                 'account_id': account.id,
                 'statement': stmt
             }
+            if account.negate_ofx_amounts:
+                kwargs['amount'] = kwargs['amount'] * Decimal('-1.0')
             if kwargs['fitid'] is None:
                 kwargs['fitid'] = pt['transaction_id']
             upsert_record(
