@@ -243,6 +243,10 @@ class PlaidUpdater:
         elif account.plaid_account.account_type == 'investment':
             stmt.type = 'Investment'
             self._update_investment(end_dt, account, plaid_acct_info, stmt)
+        elif account.plaid_account.account_type == 'loan':
+            # For now, this should work...
+            stmt.type = 'Investment'
+            self._update_investment(end_dt, account, plaid_acct_info, stmt)
         else:
             raise RuntimeError(
                 'ERROR: Unknown account type: ' +
