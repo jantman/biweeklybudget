@@ -84,7 +84,7 @@ class AccountsView(MethodView):
                 active_budgets[b.id] = k
         pa: PlaidAccount
         plaid_accts = {
-            f'{pa.plaid_item.institution_name} / {pa.name}':
+            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
                 f'{pa.item_id},{pa.account_id}'
             for pa in db_session.query(PlaidAccount).all()
         }
