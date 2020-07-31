@@ -25,6 +25,7 @@ Unreleased Changes
 * Remove ``convert_unicode`` argument from SQLAlchemy DB engine arguments per SQLAlchemy 1.3 upgrade guide / `SQLAlchemy #4393 <https://github.com/sqlalchemy/sqlalchemy/issues/4393>`_.
 * Numerous updates to fix ``tox`` tests.
 * Implement transaction downloading via `Plaid <https://plaid.com/>`__.
+* Switch tests from deprecated ``pep8`` / ``pytest-pep8`` packages to ``pycodestyle`` / ``pytest-pycodestyle``.
 
 1.0.0 (2018-07-07)
 ------------------
