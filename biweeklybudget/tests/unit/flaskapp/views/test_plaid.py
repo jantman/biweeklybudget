@@ -39,7 +39,7 @@ from textwrap import dedent
 from biweeklybudget import settings
 from biweeklybudget.version import VERSION
 from biweeklybudget.flaskapp.views.plaid import (
-    PlaidJs, PlaidPublicToken, PlaidAccessToken, set_url_rules,
+    PlaidJs, PlaidPublicToken, PlaidHandleLink, set_url_rules,
     PlaidConfigJS, PlaidUpdate
 )
 from biweeklybudget.models.account import Account
@@ -54,30 +54,36 @@ pbm = 'biweeklybudget.flaskapp.views.plaid'
 class TestSetUrlRules:
 
     def test_rules(self):
-        m_pat_view = Mock()
+        m_phl_view = Mock()
         m_ppt_view = Mock()
         m_pjs_view = Mock()
         m_pj_view = Mock()
         m_pu_view = Mock()
+        m_pra_view = Mock()
+        m_puii_view = Mock()
         m_app = Mock()
         with patch.multiple(
             pbm,
-            PlaidAccessToken=DEFAULT,
+            PlaidHandleLink=DEFAULT,
             PlaidPublicToken=DEFAULT,
             PlaidJs=DEFAULT,
             PlaidConfigJS=DEFAULT,
-            PlaidUpdate=DEFAULT
+            PlaidUpdate=DEFAULT,
+            PlaidRefreshAccounts=DEFAULT,
+            PlaidUpdateItemInfo=DEFAULT
         ) as mocks:
-            mocks['PlaidAccessToken'].as_view.return_value = m_pat_view
+            mocks['PlaidHandleLink'].as_view.return_value = m_phl_view
             mocks['PlaidPublicToken'].as_view.return_value = m_ppt_view
             mocks['PlaidJs'].as_view.return_value = m_pjs_view
             mocks['PlaidConfigJS'].as_view.return_value = m_pj_view
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
+            mocks['PlaidRefreshAccounts'].as_view.return_value = m_pra_view
+            mocks['PlaidUpdateItemInfo'].as_view.return_value = m_puii_view
             set_url_rules(m_app)
         assert m_app.mock_calls == [
             call.add_url_rule(
-                '/ajax/plaid/get_access_token',
-                view_func=m_pat_view
+                '/ajax/plaid/handle_link',
+                view_func=m_phl_view.as_view('plaid_handle_link')
             ),
             call.add_url_rule(
                 '/ajax/plaid/create_public_token',
@@ -93,6 +99,14 @@ class TestSetUrlRules:
             ),
             call.add_url_rule(
                 '/plaid_config.js', view_func=m_pj_view
+            ),
+            call.add_url_rule(
+                '/ajax/plaid/refresh_item_accounts',
+                view_func=m_pra_view.as_view('plaid_refresh_item_accounts')
+            ),
+            call.add_url_rule(
+                '/ajax/plaid/update_item_info',
+                view_func=m_puii_view.as_view('plaid_update_item_info')
             )
         ]
 
