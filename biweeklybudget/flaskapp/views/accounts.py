@@ -125,6 +125,12 @@ class OneAccountView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
+        pa: PlaidAccount
+        plaid_accts = {
+            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
+                f'{pa.item_id},{pa.account_id}'
+            for pa in db_session.query(PlaidAccount).all()
+        }
         return render_template(
             'accounts.html',
             bank_accounts=db_session.query(Account).filter(
@@ -141,7 +147,8 @@ class OneAccountView(MethodView):
             min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
             accts=accts,
             budgets=budgets,
-            active_budgets=active_budgets
+            active_budgets=active_budgets,
+            plaid_accounts=plaid_accts
         )
 
 
