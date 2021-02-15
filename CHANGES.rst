@@ -28,6 +28,7 @@ Unreleased Changes
 * Switch tests from deprecated ``pep8`` / ``pytest-pep8`` packages to ``pycodestyle`` / ``pytest-pycodestyle``.
 * Add optional ``VERSIONFINDER_DEBUG`` env var; set to ``true`` to enable logging for versionfinder / pip / git.
 * Drop testing for Python 3.6; move default test environment to 3.9.
+* Add ``git`` to Docker image.
 
 1.0.0 (2018-07-07)
 ------------------
