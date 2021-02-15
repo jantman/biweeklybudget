@@ -26,6 +26,7 @@ Unreleased Changes
 * Numerous updates to fix ``tox`` tests.
 * Implement transaction downloading via `Plaid <https://plaid.com/>`__.
 * Switch tests from deprecated ``pep8`` / ``pytest-pep8`` packages to ``pycodestyle`` / ``pytest-pycodestyle``.
+* Add optional ``VERSIONFINDER_DEBUG`` env var; set to ``true`` to enable logging for versionfinder / pip / git.
 
 1.0.0 (2018-07-07)
 ------------------
