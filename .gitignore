@@ -101,3 +101,7 @@ bin/*
 .idea
 /.release_position.json
 .pytest_cache
+pyvenv.cfg
+lib64/
+.tox-OLD/
+lib64
