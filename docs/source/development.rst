@@ -165,7 +165,7 @@ currently as of the 3.3.7-1 GitHub release. It is currently not modified at all,
 this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
 Sphinx also generates documentation for the custom javascript files. This must be done manually
-on a machine with `jsdoc <http://usejsdoc.org/>`_ installed, via: ``tox -e jsdoc``.
+on a machine with `jsdoc <https://jsdoc.app/>`_ installed, via: ``tox -e jsdoc``.
 
 .. _development.vendored_requirements:
 

@@ -2,7 +2,7 @@ biweeklybudget
 ==============
 
 .. image:: https://secure.travis-ci.org/jantman/biweeklybudget.png?branch=master
-   :target: http://travis-ci.org/jantman/biweeklybudget
+   :target: https://travis-ci.org/jantman/biweeklybudget
    :alt: travis-ci for master branch
 
 .. image:: https://codecov.io/github/jantman/biweeklybudget/coverage.svg?branch=master

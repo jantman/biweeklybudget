@@ -297,7 +297,7 @@ texinfo_documents = [
 intersphinx_mapping = {
     'https://docs.python.org/3/': None,
     'sqlalchemy': (
-        'http://docs.sqlalchemy.org/en/latest/', None
+        'http://docs.sqlalchemy.org/en/13/', None
     ),
     'selenium': ('http://selenium-python.readthedocs.io/', None)
 }
@@ -314,7 +314,9 @@ linkcheck_ignore = [
     r'https?://pypi\.python\.org/pypi/biweeklybudget',
     r'https?://testpypi\.python\.org/pypi/biweeklybudget',
     r'https?://localhost.*',
-    r'https?://github\.com/jantman/biweeklybudget/issues/.*'
+    r'https?://github\.com/jantman/biweeklybudget/issues/.*',
+    r'https?://www\.lastpass\.com.*',
+    r'https?://www\.ofx\.net/',
 ]
 
 nitpick_ignore = [
