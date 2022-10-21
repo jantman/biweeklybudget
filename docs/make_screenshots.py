@@ -742,7 +742,7 @@ class Screenshotter(object):
         port = s.getsockname()[1]
         s.close()
         logger.info('LiveServer will listen on port %s', port)
-        return LiveServer(app, port)
+        return LiveServer(app, '127.0.0.1', port)
 
     @property
     def base_url(self):

@@ -134,7 +134,9 @@ def init_db():
     Initialize the database; call
     :py:meth:`sqlalchemy.schema.MetaData.create_all` on the metadata object.
     """
-    logger.debug('Initializing database')
+    logger.debug(
+        'Initializing database with connstring: %s', settings.DB_CONNSTRING
+    )
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
