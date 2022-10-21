@@ -24,6 +24,22 @@ Guidelines
 * pep8 compliant with some exceptions (see pytest.ini)
 * 100% test coverage with pytest (with valid tests)
 
+.. _development.docker_database:
+
+Docker Database Container
+-------------------------
+
+To run a Dockerized database for your test environment:
+
+.. code-block:: bash
+
+    $ docker run -d --name budgettest -p 13306:3306 --env MARIADB_ROOT_PASSWORD=dbroot mariadb:10.6.10
+    # wait for the DB to start up
+    $ docker exec budgettest sh -c 'exec mysql -uroot -pdbroot -e "CREATE DATABASE budgettest; CREATE DATABASE budgettest27; CREATE DATABASE budgettest36; CREATE DATABASE alembicLeft; CREATE DATABASE alembicRight;"'
+    $ export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight
+    # run your tests
+    docker stop budgettest && docker rm budgettest
+
 .. _development.loading_data:
 
 Loading Data
