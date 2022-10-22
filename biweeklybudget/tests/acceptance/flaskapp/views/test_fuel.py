@@ -238,17 +238,17 @@ class TestFuelLogView(AcceptanceHelper):
             [
                 '<a href="javascript:vehicleModal(1)">1</a>',
                 '<a href="javascript:vehicleModal(1)">Veh1</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(2)">2</a>',
                 '<a href="javascript:vehicleModal(2)">Veh2</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(3)">3</a>',
                 '<a href="javascript:vehicleModal(3)">Veh3Inactive</a>',
-                'false'
+                'False'
             ]
         ]
 
@@ -324,17 +324,17 @@ class TestModals(AcceptanceHelper):
             [
                 '<a href="javascript:vehicleModal(1)">1</a>',
                 '<a href="javascript:vehicleModal(1)">Veh1</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(2)">2</a>',
                 '<a href="javascript:vehicleModal(2)">Veh2</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(3)">3</a>',
                 '<a href="javascript:vehicleModal(3)">Veh3Edited</a>',
-                'true'
+                'True'
             ]
         ]
 
@@ -379,22 +379,22 @@ class TestModals(AcceptanceHelper):
             [
                 '<a href="javascript:vehicleModal(1)">1</a>',
                 '<a href="javascript:vehicleModal(1)">Veh1</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(2)">2</a>',
                 '<a href="javascript:vehicleModal(2)">Veh2</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(3)">3</a>',
                 '<a href="javascript:vehicleModal(3)">Veh3Edited</a>',
-                'true'
+                'True'
             ],
             [
                 '<a href="javascript:vehicleModal(4)">4</a>',
                 '<a href="javascript:vehicleModal(4)">Vehicle4</a>',
-                'false'
+                'False'
             ]
         ]
 

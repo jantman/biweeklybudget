@@ -522,20 +522,20 @@ class TestColumns(ReconcileHelper):
         ]
         expected_trans = [
             txn_div(
-                1,
-                date(2017, 4, 10),
-                -100,
-                'BankOne', 1,
-                '1Income', 1,
-                'income'
-            ),
-            txn_div(
                 2,
                 date(2017, 4, 10),
                 250,
                 'BankOne', 1,
                 '3Periodic', 3,
                 'trans1'
+            ),
+            txn_div(
+                1,
+                date(2017, 4, 10),
+                -100,
+                'BankOne', 1,
+                '1Income', 1,
+                'income'
             ),
             txn_div(
                 3,
@@ -860,6 +860,14 @@ class TestAccountReconcileFalse(ReconcileHelper):
         ]
         expected_trans = [
             txn_div(
+                2,
+                date(2017, 4, 10),
+                250,
+                'BankOne', 1,
+                '3Periodic', 3,
+                'trans1'
+            ),
+            txn_div(
                 1,
                 date(2017, 4, 10),
                 -100,
@@ -867,14 +875,6 @@ class TestAccountReconcileFalse(ReconcileHelper):
                 '1Income', 1,
                 'income'
             ),
-            txn_div(
-                2,
-                date(2017, 4, 10),
-                250,
-                'BankOne', 1,
-                '3Periodic', 3,
-                'trans1'
-            )
         ]
         assert actual_trans == expected_trans
 
