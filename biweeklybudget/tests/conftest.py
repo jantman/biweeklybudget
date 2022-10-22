@@ -337,6 +337,7 @@ if HAVE_PYTEST_SELENIUM:
 @pytest.fixture
 def chrome_options(chrome_options):
     chrome_options.add_argument('headless')
+    chrome_options.add_argument('window-size=1920x1080')
     return chrome_options
 
 
