@@ -186,7 +186,7 @@ class ToxIt(object):
             logger.debug('Directly-specified unit test module; env=%s mod=%s',
                          env, mod)
         elif 'tests/acceptance' in module_name:
-            env = 'acceptance37'
+            env = 'acceptance38'
             mod = module_name
             logger.debug(
                 'Directly-specified acceptance test module; env=%s mod=%s',
@@ -198,7 +198,7 @@ class ToxIt(object):
             logger.debug('Discovered unit test module; env=%s mod=%s',
                          env, mod)
         elif script_name.endswith('ta'):
-            env = 'acceptance37'
+            env = 'acceptance38'
             mod = self._find_test_mod_for_module(module_name, True)
             logger.debug('Discovered acceptnace test module; env=%s mod=%s',
                      env, mod)
