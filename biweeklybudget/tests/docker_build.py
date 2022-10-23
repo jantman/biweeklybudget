@@ -412,8 +412,8 @@ class DockerImageBuilder(object):
             'PATH': self._fixed_path
         }
         cmd = [
-            os.path.join(self._toxinidir, 'bin', 'tox'),
-            '-e', 'acceptance37'
+            os.path.join(self._toxinidir, 'venv', 'bin', 'tox'),
+            '-e', 'acceptance38'
         ]
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '

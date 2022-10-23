@@ -16,6 +16,8 @@ except RuntimeError:
     KEYRING_AVAILABLE = False
 except ImportError:
     KEYRING_AVAILABLE = False
+except KeyError:
+    KEYRING_AVAILABLE = False
 import os
 import os.path
 import sys
