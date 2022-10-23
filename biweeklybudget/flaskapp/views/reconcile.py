@@ -120,7 +120,8 @@ class OfxUnreconciledAjax(MethodView):
     def get(self):
         res = []
         for t in OFXTransaction.unreconciled(
-                db_session).order_by(OFXTransaction.date_posted).all():
+            db_session
+        ).order_by(OFXTransaction.date_posted, OFXTransaction.fitid).all():
             d = t.as_dict
             d['account_name'] = t.account.name
             d['account_amount'] = t.account_amount
@@ -136,7 +137,8 @@ class TransUnreconciledAjax(MethodView):
     def get(self):
         res = []
         for t in Transaction.unreconciled(
-                db_session).order_by(Transaction.date).all():
+            db_session
+        ).order_by(Transaction.date, Transaction.id).all():
             d = t.as_dict
             d['budgets'] = [
                 {
