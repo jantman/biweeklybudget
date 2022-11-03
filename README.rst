@@ -116,3 +116,8 @@ biweeklybudget includes a number of dependencies distributed alongside it, which
 are licensed and distributed under their respective licenses. See the
 ``biweeklybudget/vendored`` directory in the source distribution for further
 information.
+
+Attributions
+------------
+
+The logo used for biweeklybudget makes use of the wonderful, free Ledger icon by Eucalyp on FlatIcons: `Ledger icons created by Eucalyp - Flaticon <https://www.flaticon.com/free-icons/ledger>`_.
