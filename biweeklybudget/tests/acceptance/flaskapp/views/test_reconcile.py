@@ -1301,27 +1301,30 @@ class TestDragAndDropReconcile(ReconcileHelper):
         ).perform()
         """
         IMPORTANT - 2022-10-22
-        These tests used to work fine. They haven't been run in a couple of years.
-        As of today, they're always failing with 
-        
-            ElementNotInteractableException: Message: element not interactable: [object HTMLDivElement] has no size and location
-        
-        on the second drag-and-drop operation. No matter which divs are involved,
-        or which order they're run in, the first drag-and-drop works fine and
-        the second raises that exception.
-        
-        I'm currently using ChromeDriver 106 and Chrome 106. It's likely that the
-        last time these tests were working was sometime in the era of
+        These tests used to work fine. They haven't been run in a couple of
+        years. As of today, they're always failing with
+
+            ElementNotInteractableException: Message: element not interactable:
+            [object HTMLDivElement] has no size and location
+
+        on the second drag-and-drop operation. No matter which divs are
+        involved, or which order they're run in, the first drag-and-drop works
+        fine and the second raises that exception.
+
+        I'm currently using ChromeDriver 106 and Chrome 106. It's likely that
+        the last time these tests were working was sometime in the era of
         ChromeDriver 79 or 81 and the coorresponding Chrome version.
-        
+
         I've dug around on Google for about an hour and tried a bunch of things
         (like what's shown below) but just can't get this test to work. It's
-        possible (likely?) that maybe I need some updates to webdriver / selenium
-        or that I should try this test from a new standalone Python file outside
-        of this project, with all the latest dependencies, and see if that works.
-        
+        possible (likely?) that maybe I need some updates to webdriver /
+        selenium or that I should try this test from a new standalone Python
+        file outside of this project, with all the latest dependencies, and see
+        if that works.
+
         But, given all of the other things I need to get done at much higher
-        priority, I'm going to mark this class to be skipped and revisit it later.
+        priority, I'm going to mark this class to be skipped and revisit it
+        later.
         """
         # DEBUG
         WebDriverWait(selenium, 10).until(
@@ -1409,7 +1412,8 @@ class TestUIReconcileMulti(ReconcileHelper):
     These tests used to work fine. They haven't been run in a couple of years.
     As of today, they're always failing with
 
-        ElementNotInteractableException: Message: element not interactable: [object HTMLDivElement] has no size and location
+        ElementNotInteractableException: Message: element not interactable:
+        [object HTMLDivElement] has no size and location
 
     on the second drag-and-drop operation. No matter which divs are involved,
     or which order they're run in, the first drag-and-drop works fine and
