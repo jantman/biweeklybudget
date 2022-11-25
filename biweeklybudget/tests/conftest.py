@@ -118,7 +118,7 @@ def get_db_engine():
 @pytest.fixture
 def alembic_root():
     return os.path.join(
-        os.environ['TOXINIDIR'], 'biweeklybudget', 'alembic'
+        os.path.abspath(os.environ['TOXINIDIR']), 'biweeklybudget', 'alembic'
     )
 
 

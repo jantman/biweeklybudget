@@ -110,6 +110,9 @@ class MigrationTest(object):
 
     def test_migration_roundtrip(self, uri_left, alembic_config_left):
         """DO NOT OVERRIDE. Method that runs migration tests."""
+        alembic_config_left.set_section_option(
+            'bwbTest', 'connstring', uri_left
+        )
         load_premigration_sql(uri_left)
         engine = create_engine(uri_left)
         revs = self._rev_list(alembic_config_left)

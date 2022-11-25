@@ -44,6 +44,8 @@ import logging
 from biweeklybudget.settings import DB_CONNSTRING
 from biweeklybudget.models.base import Base
 
+logger = logging.getLogger(__name__)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -66,6 +68,19 @@ target_metadata = Base.metadata
 # ... etc.
 
 
+def env_get_connstring():
+    """Helper for migration tests"""
+    try:
+        conf = config.get_section_option('bwbTest', 'connstring', default=None)
+    except Exception:
+        conf = None
+    if conf:
+        logger.debug('Overriding connstring to: %s', conf)
+        return conf
+    logger.debug('Using default connstring from settings: %s', DB_CONNSTRING)
+    return DB_CONNSTRING
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -78,7 +93,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = DB_CONNSTRING
+    url = env_get_connstring()
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True)
 
@@ -94,7 +109,7 @@ def run_migrations_online():
 
     """
     connectable = create_engine(
-        DB_CONNSTRING, poolclass=pool.NullPool,
+        env_get_connstring(), poolclass=pool.NullPool,
         pool_pre_ping=('SQL_POOL_PRE_PING' in os.environ)
     )
 

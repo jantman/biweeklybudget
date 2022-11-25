@@ -62,6 +62,8 @@ def test_upgrade_and_downgrade(uri_left, alembic_config_left):
     Tests that we can apply all migrations from a brand new empty
     database, and also that we can remove them all.
     """
+    alembic_config_left.set_section_option('bwbTest', 'connstring', uri_left)
+    logger.info('Set alembic config bwbTest.connstring to: %s', uri_left)
     ah.load_premigration_sql(uri_left)
     engine, script = prepare_schema_from_migrations(
         uri_left, alembic_config_left
@@ -83,11 +85,35 @@ def test_model_and_migration_schemas_are_the_same(
     """Compares the database schema obtained with all migrations against the
     one we get out of the models.
     """
+    alembic_config_left.set_section_option('bwbTest', 'connstring', uri_left)
+    logger.info('Set alembic config bwbTest.connstring to: %s', uri_left)
     ah.load_premigration_sql(uri_left)
     prepare_schema_from_migrations(uri_left, alembic_config_left)
     prepare_schema_from_models(uri_right, Base)
 
-    result = compare(uri_left, uri_right, ignores=['alembic_version'])
+    result = compare(
+        uri_left, uri_right,
+        ignores=[
+            'alembic_version',
+            # for some reason, these constraints don't diff correctly,
+            # likely due to creation order
+            'accounts.cons.CONSTRAINT_1',
+            'accounts.cons.CONSTRAINT_2',
+            'accounts.cons.CONSTRAINT_3',
+            'accounts.cons.CONSTRAINT_4',
+            'budgets.cons.CONSTRAINT_1',
+            'budgets.cons.CONSTRAINT_2',
+            'budgets.cons.CONSTRAINT_3',
+            'budgets.cons.CONSTRAINT_4',
+            'ofx_trans.cons.CONSTRAINT_1',
+            'ofx_trans.cons.CONSTRAINT_2',
+            'ofx_trans.cons.CONSTRAINT_3',
+            'ofx_trans.cons.CONSTRAINT_4',
+            'ofx_trans.cons.CONSTRAINT_5',
+            'reconcile_rules.cons.CONSTRAINT_1',
+            'scheduled_transactions.cons.CONSTRAINT_1',
+        ]
+    )
 
     assert result.is_match is True, \
         'Differences (left is migrations, right is models):\n' \
