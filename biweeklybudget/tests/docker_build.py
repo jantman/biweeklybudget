@@ -70,6 +70,7 @@ from io import BytesIO
 import tarfile
 from biweeklybudget.version import VERSION
 import subprocess
+import argparse
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -146,7 +147,7 @@ class DockerImageBuilder(object):
         self._toxinidir = toxinidir
         self._distdir = distdir
         self._gitdir = os.path.join(self._toxinidir, '.git')
-        logger.debug('Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
+        logger.info('Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
                      'distdir=%s',
                      self._toxinidir, self._gitdir, self._distdir)
         if not os.path.exists(self._gitdir) or not os.path.isdir(self._gitdir):
@@ -411,10 +412,11 @@ class DockerImageBuilder(object):
             'BIWEEKLYBUDGET_TEST_BASE_URL': 'http://%s' % web_ip,
             'PATH': self._fixed_path
         }
-        cmd = [
-            os.path.join(self._toxinidir, 'venv', 'bin', 'tox'),
-            '-e', 'acceptance38'
-        ]
+        if os.path.exists(os.path.join(self._toxinidir, 'venv', 'bin', 'tox')):
+            toxpath = os.path.join(self._toxinidir, 'venv', 'bin', 'tox')
+        else:
+            toxpath = os.path.join(self._toxinidir, 'bin', 'tox')
+        cmd = [toxpath, '-e', 'acceptance38']
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '
             'timeout=3000 env=%s', ' '.join(cmd), self._toxinidir, env
@@ -518,12 +520,13 @@ class DockerImageBuilder(object):
         :return: MySQL container object
         :rtype: docker.models.containers.Container
         """
-        img = 'mariadb:10.3.5'
+        img = 'mariadb:10.4.7'
         kwargs = {
             'detach': True,
             'name': 'biweeklybudget-mariadb-%s' % int(time.time()),
             'environment': {
-                'MYSQL_ROOT_PASSWORD': 'root'
+                'MYSQL_ROOT_PASSWORD': 'root',
+                'MYSQL_ROOT_HOST': '%'
             },
             'ports': {
                 '3306/tcp': None
@@ -533,6 +536,8 @@ class DockerImageBuilder(object):
         cont = self._docker.containers.run(img, **kwargs)
         logger.debug('MySQL container running; name=%s id=%s',
                      cont.name, cont.id)
+        logger.info('Waiting 30s for MySQL container to stabilize...')
+        time.sleep(30)
         count = 0
         while count < 10:
             count += 1
@@ -789,10 +794,13 @@ def set_log_level_format(level, format):
 
 
 if __name__ == "__main__":
-    sys.argv.pop(0)
+    p = argparse.ArgumentParser()
+    p.add_argument('TOXINIDIR', type=str)
+    p.add_argument('DISTDIR', type=str)
+    args = p.parse_args(sys.argv[1:])
     set_log_debug()
-    toxinidir = sys.argv[0]
-    distdir = sys.argv[1]
+    toxinidir = args.TOXINIDIR
+    distdir = args.DISTDIR
     b = DockerImageBuilder(toxinidir, distdir)
     test_tag = os.environ.get('DOCKER_TEST_TAG', None)
     if test_tag is not None:

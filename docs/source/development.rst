@@ -6,12 +6,13 @@ Development
 To install for development:
 
 1. Fork the `biweeklybudget <https://github.com/jantman/biweeklybudget>`_ repository on GitHub
-2. Create a new branch off of master in your fork.
+2. Create a new branch off of master in your fork, and clone it locally then:
 
 .. code-block:: bash
 
-    $ virtualenv biweeklybudget
-    $ cd biweeklybudget && source bin/activate
+    $ cd biweeklybudget
+    $ python3 -mvenv venv
+    $ source venv/bin/activate
     $ pip install -e git+git@github.com:YOURNAME/biweeklybudget.git@BRANCHNAME#egg=biweeklybudget
     $ cd src/biweeklybudget
 
