@@ -86,7 +86,7 @@ if sys.version_info[0:2] < (3, 6):
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
-FROM python:3.8.1-alpine3.11
+FROM python:3.10-alpine3.16
 
 ARG version
 USER root
