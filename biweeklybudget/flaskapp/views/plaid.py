@@ -48,7 +48,7 @@ from biweeklybudget.utils import plaid_client, dtnow
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.plaid_updater import PlaidUpdater
+from biweeklybudget.plaid_updater import PlaidUpdater, PlaidUpdateResult
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
 
@@ -274,7 +274,7 @@ class PlaidUpdate(MethodView):
 
       * If the ``Accept`` HTTP header is set to ``application/json``, return a
         JSON list of update results. Each list item is the JSON-ified value of
-        :py:meth:`~.PlaidUpdateResult.as_dict`.
+        :py:attr:`~.PlaidUpdateResult.as_dict`.
       * If the ``Accept`` HTTP header is set to ``text/plain``, return a plain
         text human-readable summary of the update operation.
       * Otherwise, return a templated view of the update operation results.
