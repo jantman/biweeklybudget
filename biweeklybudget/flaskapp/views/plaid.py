@@ -368,13 +368,16 @@ class PlaidUpdate(MethodView):
             ) for x in items
         }
         accounts = {
-            x.item_id: ', '.join(filter(None,
-                [
-                    None if a.account is None else
-                    f'{a.account.name} ({a.account.id})'
-                    for a in x.all_accounts
-                ]
-            )) for x in items
+            x.item_id: ', '.join(
+                filter(
+                    None,
+                    [
+                        None if a.account is None else
+                        f'{a.account.name} ({a.account.id})'
+                        for a in x.all_accounts
+                    ]
+                )
+            ) for x in items
         }
         return render_template(
             'plaid_form.html', plaid_items=items, plaid_accounts=plaid_accounts,

@@ -47,4 +47,5 @@ class ExampleView(MethodView):
     def get(self):
         return render_template('example.html')
 
+
 app.add_url_rule('/example', view_func=ExampleView.as_view('example_view'))

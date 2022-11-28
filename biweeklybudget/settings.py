@@ -220,7 +220,7 @@ for varname in _INT_VARS:
     try:
         value = int(os.environ[varname])
         assert os.environ[varname] == '%s' % value
-    except:
+    except Exception:
         raise SystemExit('ERROR: env var %s cannot parse as int' % varname)
     logger.debug('Setting %S from env var: %s', varname, value)
     globals()[varname] = value
@@ -231,7 +231,7 @@ for varname in _TIMEDELTA_VARS:
     try:
         value = int(os.environ[varname])
         assert os.environ[varname] == '%s' % value
-    except:
+    except Exception:
         raise SystemExit('ERROR: env var %s cannot parse as int' % varname)
     value = timedelta(days=value)
     logger.debug('Setting %S from env var: %s', varname, value)
@@ -242,7 +242,7 @@ for varname in _DATE_VARS:
         continue
     try:
         value = datetime.strptime(os.environ[varname], '%Y-%m-%d')
-    except:
+    except Exception:
         raise SystemExit('ERROR: env var %s cannot parse as %Y-%m-%d' % varname)
     logger.debug('Setting %S from env var: %s', varname, value)
     globals()[varname] = value

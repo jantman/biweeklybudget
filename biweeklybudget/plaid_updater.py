@@ -336,9 +336,9 @@ class PlaidUpdater:
     ):
         logger.debug('Generating statement for investment account')
         stmt.as_of = end_dt
-        stmt.ledger_bal = Decimal(plaid_acct_info['balances']['current']).quantize(
-            Decimal('.01'), rounding=ROUND_HALF_DOWN
-        )
+        stmt.ledger_bal = Decimal(
+            plaid_acct_info['balances']['current']
+        ).quantize(Decimal('.01'), rounding=ROUND_HALF_DOWN)
         stmt.ledger_bal_as_of = end_dt
         stmt.currency = plaid_acct_info['balances']['iso_currency_code']
         db_session.add(stmt)

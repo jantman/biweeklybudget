@@ -217,7 +217,7 @@ def testdb():
     sess = sessionmaker(autocommit=False, bind=conn)()
     init_event_listeners(sess, engine)
     # yield the session
-    yield(sess)
+    yield sess
     sess.close()
     conn.close()
 
@@ -238,7 +238,7 @@ def testflask():
         from biweeklybudget.flaskapp.app import app  # noqa
         server = LiveServer(app, 'localhost', port)
         server.start()
-        yield(server)
+        yield server
         server.stop()
 
 

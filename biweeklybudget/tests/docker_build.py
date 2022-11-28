@@ -77,9 +77,9 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger()
 
 for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
-    l = logging.getLogger(lname)
-    l.setLevel(logging.CRITICAL)
-    l.propagate = True
+    _log = logging.getLogger(lname)
+    _log.setLevel(logging.CRITICAL)
+    _log.propagate = True
 
 if sys.version_info[0:2] < (3, 6):
     raise SystemExit('ERROR: Docker build can only run under py >= 3.6')
@@ -148,9 +148,11 @@ class DockerImageBuilder(object):
         self._toxinidir = toxinidir
         self._distdir = distdir
         self._gitdir = os.path.join(self._toxinidir, '.git')
-        logger.info('Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
-                     'distdir=%s',
-                     self._toxinidir, self._gitdir, self._distdir)
+        logger.info(
+            'Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
+            'distdir=%s',
+            self._toxinidir, self._gitdir, self._distdir
+        )
         if not os.path.exists(self._gitdir) or not os.path.isdir(self._gitdir):
             raise RuntimeError(
                 'Error: %s does not exist or is not a directory' % self._gitdir

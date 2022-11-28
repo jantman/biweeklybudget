@@ -178,27 +178,29 @@ class ToxIt(object):
         logger.debug('Test module: %s', testpath)
         return testpath
 
-    def run_one_module(self, script_name, module_name, expr=None):
+    def run_one_module(
+        self, script_name, module_name, expr=None, env_name=None
+    ):
         """run one module"""
         if 'tests/unit' in module_name:
-            env = 'py37'
+            env = 'py310'
             mod = module_name
             logger.debug('Directly-specified unit test module; env=%s mod=%s',
                          env, mod)
         elif 'tests/acceptance' in module_name:
-            env = 'acceptance38'
+            env = 'acceptance310'
             mod = module_name
             logger.debug(
                 'Directly-specified acceptance test module; env=%s mod=%s',
                 env, mod
             )
         elif script_name.endswith('t'):
-            env = 'py37'
+            env = 'py310'
             mod = self._find_test_mod_for_module(module_name)
             logger.debug('Discovered unit test module; env=%s mod=%s',
                          env, mod)
         elif script_name.endswith('ta'):
-            env = 'acceptance38'
+            env = 'acceptance310'
             mod = self._find_test_mod_for_module(module_name, True)
             logger.debug('Discovered acceptnace test module; env=%s mod=%s',
                      env, mod)
@@ -210,6 +212,8 @@ class ToxIt(object):
                 env, mod
             )
         # run it
+        if env_name:
+            env = env_name
         env_config = self.env_config[env]
         for cmd in env_config['commands']:
             if not cmd[0].endswith('py.test'):
@@ -261,4 +265,6 @@ if __name__ == "__main__":
     if args.envname is not None:
         script_name = args.envname
     script = ToxIt()
-    script.run_one_module(script_name, args.MODULE, args.EXPR)
+    script.run_one_module(
+        script_name, args.MODULE, expr=args.EXPR, env_name=args.envname
+    )
