@@ -145,6 +145,14 @@ class SampleDataLoader(object):
                 account_type='investment',
                 account_subtype='401k'
             ),
+            'PlaidAcct4': PlaidAccount(
+                item_id='PlaidItem1',
+                account_id='PlaidAcct4',
+                name='Acct4',
+                mask='foo4',
+                account_type='depository',
+                account_subtype='checking'
+            ),
         }
         for item in res.values():
             self.db.add(item)

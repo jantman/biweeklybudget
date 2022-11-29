@@ -65,10 +65,23 @@ class TestPlaidUpdateView(AcceptanceHelper):
         assert div.get_attribute('class') == 'row'
 
     def test_4_table(self, selenium):
-        table = selenium.find_element_by_id('table-accounts-plaid')
+        table = selenium.find_element_by_id('table-items-plaid')
         texts = self.tbody2textlist(table)
         assert texts == [
-            ['BankOne (1)'],
-            ['CreditOne (3)'],
-            ['InvestmentOne (5)']
+            [
+                'PlaidItem1',
+                'Inst1 (None)',
+                'Acct1 (foo), Acct2 (foo), Acct4 (foo4)',
+                'now',
+                'Update / Fix Item',
+                'Refresh'
+            ],
+            [
+                'PlaidItem2',
+                'Inst2 (None)',
+                'Acct3 (foo)',
+                'now',
+                'Update / Fix Item',
+                'Refresh'
+            ],
         ]

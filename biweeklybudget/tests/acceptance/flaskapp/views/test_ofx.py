@@ -449,6 +449,7 @@ class TestTransReconciledModal(AcceptanceHelper):
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.skip('Deprecated, will be removed')
 class TestOfxApi(AcceptanceHelper):
 
     def test_0_set_account_regexes(self, testdb):
