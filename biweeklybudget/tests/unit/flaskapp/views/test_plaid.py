@@ -43,6 +43,8 @@ from biweeklybudget.flaskapp.views.plaid import (
     PlaidConfigJS, PlaidUpdate
 )
 from biweeklybudget.models.account import Account
+from biweeklybudget.models.plaid_items import PlaidItem
+from biweeklybudget.models.plaid_accounts import PlaidAccount
 
 from plaid.errors import PlaidError
 
@@ -70,20 +72,21 @@ class TestSetUrlRules:
             PlaidConfigJS=DEFAULT,
             PlaidUpdate=DEFAULT,
             PlaidRefreshAccounts=DEFAULT,
-            PlaidUpdateItemInfo=DEFAULT
+            PlaidUpdateItemInfo=DEFAULT,
+            new_callable=MagicMock
         ) as mocks:
-            mocks['PlaidHandleLink'].as_view.return_value = m_phl_view
+            mocks['PlaidHandleLink'].return_value = m_phl_view
             mocks['PlaidPublicToken'].as_view.return_value = m_ppt_view
             mocks['PlaidJs'].as_view.return_value = m_pjs_view
             mocks['PlaidConfigJS'].as_view.return_value = m_pj_view
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
-            mocks['PlaidRefreshAccounts'].as_view.return_value = m_pra_view
-            mocks['PlaidUpdateItemInfo'].as_view.return_value = m_puii_view
+            mocks['PlaidRefreshAccounts'].return_value = m_pra_view
+            mocks['PlaidUpdateItemInfo'].return_value = m_puii_view
             set_url_rules(m_app)
         assert m_app.mock_calls == [
             call.add_url_rule(
                 '/ajax/plaid/handle_link',
-                view_func=m_phl_view.as_view('plaid_handle_link')
+                view_func=mocks['PlaidHandleLink'].as_view('plaid_handle_link')
             ),
             call.add_url_rule(
                 '/ajax/plaid/create_public_token',
@@ -102,11 +105,15 @@ class TestSetUrlRules:
             ),
             call.add_url_rule(
                 '/ajax/plaid/refresh_item_accounts',
-                view_func=m_pra_view.as_view('plaid_refresh_item_accounts')
+                view_func=mocks['PlaidRefreshAccounts'].as_view(
+                    'plaid_refresh_item_accounts'
+                )
             ),
             call.add_url_rule(
                 '/ajax/plaid/update_item_info',
-                view_func=m_puii_view.as_view('plaid_update_item_info')
+                view_func=mocks['PlaidUpdateItemInfo'].as_view(
+                    'plaid_update_item_info'
+                )
             )
         ]
 
@@ -127,100 +134,28 @@ class TestPlaidJs:
         assert res == 'static/js/plaid_prod.js'
 
 
-class TestPlaidAccessToken:
-
-    @patch.dict('os.environ', {}, clear=True)
-    def test_normal(self):
-        mock_json = Mock()
-        mock_req = Mock(form={'public_token': 'foo'})
-        mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.return_value = {
-            'exchange': 'response'
-        }
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidAccessToken().post()
-        assert res == mock_json
-        assert m_jsonify.mock_calls == [
-            call({'exchange': 'response'})
-        ]
-        assert mock_json.mock_calls == []
-        assert m_client.mock_calls == [
-            call(),
-            call().Item.public_token.exchange('foo')
-        ]
-
-    @patch.dict('os.environ', {}, clear=True)
-    def test_exception(self):
-        mock_json = Mock()
-        mock_req = Mock(form={'public_token': 'foo'})
-        mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.side_effect = PlaidError(
-            'some error message',
-            'API_ERROR',
-            999,
-            'Some Displayed Error Message'
-        )
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidAccessToken().post()
-        assert res == mock_json
-        assert m_jsonify.mock_calls == [
-            call({'success': False, 'message': 'Exception: some error message'})
-        ]
-        assert mock_json.mock_calls == []
-        assert mock_json.status_code == 400
-        assert m_client.mock_calls == [
-            call(),
-            call().Item.public_token.exchange('foo')
-        ]
-
-    def test_ci(self):
-        mock_json = Mock()
-        mock_req = Mock(form={'public_token': 'foo'})
-        mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.return_value = {
-            'exchange': 'response'
-        }
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidAccessToken().post()
-        assert res == mock_json
-        assert m_jsonify.mock_calls == [
-            call({
-                'item_id': 'testITEMid',
-                'access_token': 'testTOKEN'
-            })
-        ]
-        assert mock_json.mock_calls == []
-        assert m_client.mock_calls == []
-
-
 class TestPlaidPublicToken:
 
     @patch.dict('os.environ', {}, clear=True)
     def test_normal(self):
         mock_json = Mock()
-        mock_req = Mock(form={'access_token': 'foo'})
+        mock_req = Mock(form={'item_id': 'Item1'})
         mock_client = MagicMock()
         mock_client.Item.public_token.create.return_value = {
             'create': 'response'
         }
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidPublicToken().post()
+        mock_item = Mock(item_id='Item1', access_token='aToken')
+        mock_db = Mock()
+        mock_query = Mock()
+        mock_query.get.return_value = mock_item
+        mock_db.query.return_value = mock_query
+        with patch(f'{pbm}.db_session', mock_db):
+            with patch(f'{pbm}.jsonify') as m_jsonify:
+                m_jsonify.return_value = mock_json
+                with patch(f'{pbm}.request', mock_req):
+                    with patch(f'{pbm}.plaid_client') as m_client:
+                        m_client.return_value = mock_client
+                        res = PlaidPublicToken().post()
         assert res == mock_json
         assert m_jsonify.mock_calls == [
             call({'create': 'response'})
@@ -228,13 +163,17 @@ class TestPlaidPublicToken:
         assert mock_json.mock_calls == []
         assert m_client.mock_calls == [
             call(),
-            call().Item.public_token.create('foo')
+            call().Item.public_token.create('aToken')
+        ]
+        assert mock_db.mock_calls == [
+            call.query(PlaidItem),
+            call.query().get('Item1')
         ]
 
     @patch.dict('os.environ', {}, clear=True)
     def test_exception(self):
         mock_json = Mock()
-        mock_req = Mock(form={'access_token': 'foo'})
+        mock_req = Mock(form={'item_id': 'Item1'})
         mock_client = MagicMock()
         mock_client.Item.public_token.create.side_effect = PlaidError(
             'some error message',
@@ -242,12 +181,18 @@ class TestPlaidPublicToken:
             999,
             'Some Displayed Error Message'
         )
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidPublicToken().post()
+        mock_item = Mock(item_id='Item1', access_token='aToken')
+        mock_db = Mock()
+        mock_query = Mock()
+        mock_query.get.return_value = mock_item
+        mock_db.query.return_value = mock_query
+        with patch(f'{pbm}.db_session', mock_db):
+            with patch(f'{pbm}.jsonify') as m_jsonify:
+                m_jsonify.return_value = mock_json
+                with patch(f'{pbm}.request', mock_req):
+                    with patch(f'{pbm}.plaid_client') as m_client:
+                        m_client.return_value = mock_client
+                        res = PlaidPublicToken().post()
         assert res == mock_json
         assert m_jsonify.mock_calls == [
             call({'success': False, 'message': 'Exception: some error message'})
@@ -256,7 +201,11 @@ class TestPlaidPublicToken:
         assert mock_json.status_code == 400
         assert m_client.mock_calls == [
             call(),
-            call().Item.public_token.create('foo')
+            call().Item.public_token.create('aToken')
+        ]
+        assert mock_db.mock_calls == [
+            call.query(PlaidItem),
+            call.query().get('Item1')
         ]
 
     def test_ci(self):
@@ -329,45 +278,87 @@ class TestPlaidUpdate:
         assert m_update.mock_calls == [call(self.cls, '1,2,3')]
 
     def test_form(self):
-        m_acct1 = Mock()
-        type(m_acct1).name = 'Acct1'
-        type(m_acct1).id = 1
-        m_acct2 = Mock()
-        type(m_acct2).name = 'Acct2'
-        type(m_acct2).id = 2
-        m_acct3 = Mock()
-        type(m_acct3).name = 'Acct3'
-        type(m_acct3).id = 3
+        accts = [
+            Mock(spec_set=Account, id='AID1'),
+            Mock(spec_set=Account, id='AID2')
+        ]
+        type(accts[0]).name = 'AName1'
+        type(accts[1]).name = 'AName2'
+        plaid_accts = [
+            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+        ]
+        type(plaid_accts[0]).name = 'Acct1'
+        type(plaid_accts[1]).name = 'Acct2'
+        type(plaid_accts[2]).name = 'Acct3'
+        items = [
+            Mock(
+                spec_set=PlaidItem, item_id='Item1',
+                all_accounts=[plaid_accts[0], plaid_accts[1]]
+            ),
+            Mock(
+                spec_set=PlaidItem, item_id='Item2',
+                all_accounts=[plaid_accts[2]]
+            )
+        ]
         rendered = Mock()
-        with patch(f'{pbm}.PlaidUpdater.available_accounts') as m_aa:
-            m_aa.return_value = [m_acct1, m_acct2, m_acct3]
+        mock_db = Mock()
+        mock_query = Mock()
+        mock_query.all.return_value = items
+        mock_db.query.return_value = mock_query
+        with patch(f'{pbm}.db_session', mock_db):
             with patch(f'{pbm}.render_template') as m_render:
                 m_render.return_value = rendered
                 res = self.cls._form()
         assert res == rendered
         assert m_render.mock_calls == [
-            call('plaid_form.html', accounts=[m_acct1, m_acct2, m_acct3])
+            call(
+                'plaid_form.html',
+                plaid_items=items,
+                plaid_accounts={
+                    'Item1': 'Acct1 (XXX1), Acct2 (XXX2)',
+                    'Item2': 'Acct3 (XXX3)'
+                },
+                accounts={
+                    'Item1': 'AName1 (AID1)',
+                    'Item2': 'AName2 (AID2)'
+                }
+            )
         ]
 
     def test_update_template(self):
         mock_req = Mock(headers={})
-        m_acct1 = Mock()
-        type(m_acct1).name = 'Acct1'
-        type(m_acct1).id = 1
-        m_acct2 = Mock()
-        type(m_acct2).name = 'Acct2'
-        type(m_acct2).id = 2
-        m_acct3 = Mock()
-        type(m_acct3).name = 'Acct3'
-        type(m_acct3).id = 3
+        accts = [
+            Mock(spec_set=Account, id='AID1'),
+            Mock(spec_set=Account, id='AID2')
+        ]
+        type(accts[0]).name = 'AName1'
+        type(accts[1]).name = 'AName2'
+        plaid_accts = [
+            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+        ]
+        type(plaid_accts[0]).name = 'Acct1'
+        type(plaid_accts[1]).name = 'Acct2'
+        type(plaid_accts[2]).name = 'Acct3'
+        items = [
+            Mock(
+                spec_set=PlaidItem, item_id='Item1',
+                all_accounts=[plaid_accts[0], plaid_accts[1]]
+            ),
+            Mock(
+                spec_set=PlaidItem, item_id='Item2',
+                all_accounts=[plaid_accts[2]]
+            )
+        ]
 
         def db_get(_id):
-            if _id == 1:
-                return m_acct1
-            if _id == 2:
-                return m_acct2
-            if _id == 3:
-                return m_acct3
+            if _id == 'Item1':
+                return items[0]
+            if _id == 'Item2':
+                return items[1]
 
         mock_db = Mock()
         mock_query = Mock()
@@ -389,9 +380,7 @@ class TestPlaidUpdate:
             jsonify=DEFAULT
         ) as mocks:
             mocks['PlaidUpdater'].return_value = mock_updater
-            mocks['PlaidUpdater'].available_accounts.return_value = [
-                m_acct1, m_acct2, m_acct3
-            ]
+            mocks['PlaidUpdater'].available_items.return_value = items
             mocks['render_template'].return_value = rendered
             mocks['jsonify'].return_value = mock_json
             with patch(f'{pbm}.request', mock_req):
@@ -399,11 +388,11 @@ class TestPlaidUpdate:
         assert res == rendered
         assert mocks['PlaidUpdater'].mock_calls == [
             call(),
-            call.available_accounts(),
-            call().update(accounts=[m_acct1, m_acct2, m_acct3])
+            call.available_items(),
+            call().update(items=items)
         ]
         assert mock_updater.mock_calls == [
-            call.update(accounts=[m_acct1, m_acct2, m_acct3])
+            call.update(items=items)
         ]
         assert mocks['render_template'].mock_calls == [call(
             'plaid_result.html',
@@ -416,23 +405,36 @@ class TestPlaidUpdate:
 
     def test_update_json(self):
         mock_req = Mock(headers={'accept': 'application/json'})
-        m_acct1 = Mock()
-        type(m_acct1).name = 'Acct1'
-        type(m_acct1).id = 1
-        m_acct2 = Mock()
-        type(m_acct2).name = 'Acct2'
-        type(m_acct2).id = 2
-        m_acct3 = Mock()
-        type(m_acct3).name = 'Acct3'
-        type(m_acct3).id = 3
+        accts = [
+            Mock(spec_set=Account, id='AID1'),
+            Mock(spec_set=Account, id='AID2')
+        ]
+        type(accts[0]).name = 'AName1'
+        type(accts[1]).name = 'AName2'
+        plaid_accts = [
+            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+        ]
+        type(plaid_accts[0]).name = 'Acct1'
+        type(plaid_accts[1]).name = 'Acct2'
+        type(plaid_accts[2]).name = 'Acct3'
+        items = [
+            Mock(
+                spec_set=PlaidItem, item_id='Item1',
+                all_accounts=[plaid_accts[0], plaid_accts[1]]
+            ),
+            Mock(
+                spec_set=PlaidItem, item_id='Item2',
+                all_accounts=[plaid_accts[2]]
+            )
+        ]
 
         def db_get(_id):
-            if _id == 1:
-                return m_acct1
-            if _id == 2:
-                return m_acct2
-            if _id == 3:
-                return m_acct3
+            if _id == 'Item1':
+                return items[0]
+            if _id == 'Item2':
+                return items[1]
 
         mock_db = Mock()
         mock_query = Mock()
@@ -442,9 +444,7 @@ class TestPlaidUpdate:
         rendered = Mock()
         mock_json = Mock()
         result = [
-            Mock(success=True, updated=1, added=1, as_dict='res1'),
-            Mock(success=False, updated=0, added=0, as_dict='res2'),
-            Mock(success=True, updated=2, added=4, as_dict='res3')
+            Mock(success=True, updated=1, added=2, as_dict='res1')
         ]
         mock_updater.update.return_value = result
         with patch.multiple(
@@ -454,102 +454,25 @@ class TestPlaidUpdate:
             jsonify=DEFAULT
         ) as mocks:
             mocks['PlaidUpdater'].return_value = mock_updater
-            mocks['PlaidUpdater'].available_accounts.return_value = [
-                m_acct1, m_acct2, m_acct3
-            ]
+            mocks['PlaidUpdater'].available_accounts.return_value = items
             mocks['render_template'].return_value = rendered
             mocks['jsonify'].return_value = mock_json
             with patch(f'{pbm}.request', mock_req):
                 with patch(f'{pbm}.db_session', mock_db):
-                    res = self.cls._update('1,2,3')
+                    res = self.cls._update('Item1')
         assert res == mock_json
         assert mocks['PlaidUpdater'].mock_calls == [
             call(),
-            call().update(accounts=[m_acct1, m_acct2, m_acct3])
+            call().update(items=[items[0]])
         ]
         assert mock_updater.mock_calls == [
-            call.update(accounts=[m_acct1, m_acct2, m_acct3])
+            call.update(items=[items[0]])
         ]
         assert mocks['render_template'].mock_calls == []
         assert mocks['jsonify'].mock_calls == [
-            call(['res1', 'res2', 'res3'])
+            call(['res1'])
         ]
         assert mock_db.mock_calls == [
-            call.query(Account),
-            call.query().get(1),
-            call.query(Account),
-            call.query().get(2),
-            call.query(Account),
-            call.query().get(3),
+            call.query(PlaidItem),
+            call.query().get('Item1'),
         ]
-
-    def test_update_text(self):
-        mock_req = Mock(headers={'accept': 'text/plain'})
-        m_acct1 = Mock()
-        type(m_acct1).name = 'Acct1'
-        type(m_acct1).id = 1
-        m_acct2 = Mock()
-        type(m_acct2).name = 'Acct2'
-        type(m_acct2).id = 2
-        m_acct3 = Mock()
-        type(m_acct3).name = 'Acct3'
-        type(m_acct3).id = 3
-
-        def db_get(_id):
-            if _id == 1:
-                return m_acct1
-            if _id == 2:
-                return m_acct2
-            if _id == 3:
-                return m_acct3
-
-        mock_db = Mock()
-        mock_query = Mock()
-        mock_query.get.side_effect = db_get
-        mock_db.query.return_value = mock_query
-        mock_updater = Mock(db=mock_db)
-        rendered = Mock()
-        mock_json = Mock()
-        result = [
-            Mock(
-                success=True, updated=1, added=1,
-                as_dict='res1', account=m_acct1, stmt_id=111
-            ),
-            Mock(
-                success=False, updated=0, added=0, as_dict='res2',
-                account=m_acct2, exc='My Exception'
-            ),
-            Mock(
-                success=True, updated=2, added=4, as_dict='res3',
-                account=m_acct3, stmt_id=333
-            )
-        ]
-        mock_updater.update.return_value = result
-        with patch.multiple(
-            pbm,
-            PlaidUpdater=DEFAULT,
-            render_template=DEFAULT,
-            jsonify=DEFAULT
-        ) as mocks:
-            mocks['PlaidUpdater'].return_value = mock_updater
-            mocks['PlaidUpdater'].available_accounts.return_value = [
-                m_acct1, m_acct2, m_acct3
-            ]
-            mocks['render_template'].return_value = rendered
-            mocks['jsonify'].return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                res = self.cls._update('ALL')
-        assert res == 'Acct1 (1): 1 updated, 1 added (stmt 111)\n' \
-                      'Acct2 (2): Failed: My Exception\n' \
-                      'Acct3 (3): 2 updated, 4 added (stmt 333)\n' \
-                      'TOTAL: 3 updated, 5 added, 1 account(s) failed'
-        assert mocks['PlaidUpdater'].mock_calls == [
-            call(),
-            call.available_accounts(),
-            call().update(accounts=[m_acct1, m_acct2, m_acct3])
-        ]
-        assert mock_updater.mock_calls == [
-            call.update(accounts=[m_acct1, m_acct2, m_acct3])
-        ]
-        assert mocks['render_template'].mock_calls == []
-        assert mocks['jsonify'].mock_calls == []

@@ -41,6 +41,7 @@ from textwrap import dedent
 from flask.views import MethodView
 from flask import jsonify, request, redirect, render_template
 from plaid.errors import PlaidError
+from typing import List, Dict
 
 from biweeklybudget import settings
 from biweeklybudget.flaskapp.app import app
@@ -359,10 +360,10 @@ class PlaidUpdate(MethodView):
         )
 
     def _form(self):
-        items = db_session.query(PlaidItem).all()
+        items: List[PlaidItem] = db_session.query(PlaidItem).all()
         x: PlaidItem
         a: PlaidAccount
-        plaid_accounts = {
+        plaid_accounts: Dict[str, str] = {
             x.item_id: ', '.join(
                 [f'{a.name} ({a.mask})' for a in x.all_accounts]
             ) for x in items
