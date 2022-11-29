@@ -35,11 +35,21 @@ To run a Dockerized database for your test environment:
 .. code-block:: bash
 
     $ docker run -d --name budgettest -p 13306:3306 --env MYSQL_ROOT_PASSWORD=dbroot --env MYSQL_ROOT_HOST='%' mariadb:10.4.7
-    # wait for the DB to start up
-    $ docker exec -it budgettest sh -c 'exec mysql -uroot -pdbroot -e "CREATE DATABASE budgettest; CREATE DATABASE budgettest27; CREATE DATABASE budgettest36; CREATE DATABASE alembicLeft; CREATE DATABASE alembicRight;"'
-    $ export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight
+    $ export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME=budgettest; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight
+    $ python dev/setup_test_db.py
     # run your tests
     $ docker stop budgettest && docker rm budgettest
+
+.. _development.database_setup:
+
+Test Database Setup
+-------------------
+
+After starting your test database (i.e. :ref:`development.docker_database` above or by running a local MySQL / MariaDB server) and exporting your connection string and MySQL-related variables, i.e.:
+
+``export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME=budgettest; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight``
+
+you can set up the test databases by running ``dev/setup_test_db.py``
 
 .. _development.loading_data:
 
