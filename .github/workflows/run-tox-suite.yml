@@ -39,7 +39,8 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
-          name: code-coverage-report
+          name: test-results-and-coverage
+          if-no-files-found: ignore
           path: |
             results/
             coverage.xml
