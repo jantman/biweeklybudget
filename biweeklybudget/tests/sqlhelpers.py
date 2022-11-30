@@ -45,7 +45,9 @@ logger = logging.getLogger(__name__)
 mysqldump_path = find_executable('mysqldump')
 mysql_path = find_executable('mysql')
 
-dump_ver_out = subprocess.check_output([mysqldump_path, '--version'])
+dump_ver_out = subprocess.check_output(
+    [mysqldump_path, '--version']
+).decode('utf-8')
 mysqldump_is_mariadb = False
 if 'mariadb' in dump_ver_out.lower():
     mysqldump_is_mariadb = True
