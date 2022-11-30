@@ -48,7 +48,7 @@ TOKEN_PATH = 'vault_token.txt'
 STATEMENTS_SAVE_PATH = os.path.expanduser('~/ofx')
 
 #: SQLAlchemy database connection string. Note that the value given in
-#: generated documentation is the value used in TravisCI, not the real default.
+#: generated documentation is the value used in CI builds, not the real default.
 DB_CONNSTRING = None
 
 # MySQL connection settings

@@ -29,7 +29,8 @@ Unreleased Changes
 * Add optional ``VERSIONFINDER_DEBUG`` env var; set to ``true`` to enable logging for versionfinder / pip / git.
 * Drop testing for Python 3.6; move default test environment to 3.9.
 * Add ``git`` to Docker image.
-* Move testing and runtime to Python 3.10.
+* Move testing and runtime to Python 3.10, and get all test environments running successfully.
+* Move CI from TravisCI to GitHub Actions and remove all traces of TravisCI.
 
 1.0.0 (2018-07-07)
 ------------------

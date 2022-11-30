@@ -8,14 +8,6 @@ about the version of biweeklybudget installed...
 If ``DOCKER_TEST_TAG`` is set, just run tests against an existing (local) image
 with that tag, and exit.
 
-If ``TRAVIS=="true"``:
-
-  - build the image using the sdist created by ``tox``
-  - run the image with test configuration and in-memory SQLite, make sure
-    it serves pages (just check that ``GET /`` is 200 OK).
-
-Otherwise:
-
   - just build the image
   - test it unless ``TEST_DOCKER=="false"``
   - tag it appropriately
@@ -186,16 +178,6 @@ class DockerImageBuilder(object):
         logger.debug('Git info: %s', res)
         return res
 
-    def _tag_for_travis(self):
-        """
-        Return the Docker image tag for a TravisCI build.
-
-        :rtype: str
-        :return: tag for Docker image
-        """
-        job = os.environ.get('TRAVIS_JOB_NUMBER', '%d' % int(time.time()))
-        return 'travis_%s' % job
-
     @property
     def build_ver(self):
         """
@@ -235,12 +217,8 @@ class DockerImageBuilder(object):
 
     def build(self):
         self._gitinfo = self._find_git_info()
-        if os.environ.get('TRAVIS', 'false') == 'true':
-            tag = self._tag_for_travis()
-            logger.info('Travis build; tag=%s', tag)
-        else:
-            tag = self._tag_for_local()
-            logger.info('Local build; tag=%s', tag)
+        tag = self._tag_for_local()
+        logger.info('Local build; tag=%s', tag)
         self._check_tag(tag)
         img_tag = self._build_image(tag)
         if self._needs_test:
@@ -266,8 +244,6 @@ class DockerImageBuilder(object):
         :return: whether image should be tested
         :rtype: bool
         """
-        if os.environ.get('TRAVIS', 'false') == 'true':
-            return True
         if os.environ.get('TEST_DOCKER', 'true') == 'false':
             return False
         return True

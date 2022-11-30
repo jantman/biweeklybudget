@@ -1,9 +1,9 @@
 biweeklybudget
 ==============
 
-.. image:: https://secure.travis-ci.org/jantman/biweeklybudget.png?branch=master
-   :target: https://travis-ci.org/jantman/biweeklybudget
-   :alt: travis-ci for master branch
+.. image:: https://github.com/jantman/biweeklybudget/actions/workflows/run-tox-suite.yml/badge.svg
+   :target: https://github.com/jantman/biweeklybudget/actions/workflows/run-tox-suite.yml
+   :alt: GitHub Actions build for master branch
 
 .. image:: https://codecov.io/github/jantman/biweeklybudget/coverage.svg?branch=master
    :target: https://codecov.io/github/jantman/biweeklybudget?branch=master

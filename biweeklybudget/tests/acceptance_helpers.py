@@ -61,7 +61,7 @@ class AcceptanceHelper(object):
         :return: normalized HTML
         :rtype: str
         """
-        # strange inconsistency between local and TravisCI...
+        # strange inconsistency between local and CI...
         html = html.replace('style="display: none; "', 'style="display: none;"')
         return html
 
