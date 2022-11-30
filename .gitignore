@@ -42,10 +42,13 @@ pip-selfcheck.json
 htmlcov/
 .tox/
 .coverage
+.coverage-acceptance
 .coverage.*
 .cache
 nosetests.xml
 coverage.xml
+coverage-acceptance.xml
+htmlcov-acceptance/
 *,cover
 .hypothesis/
 results/

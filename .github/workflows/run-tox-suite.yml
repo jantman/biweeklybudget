@@ -149,12 +149,13 @@ jobs:
           if-no-files-found: ignore
           path: |
             results/
-            coverage.xml
-            htmlcov/
+            coverage-acceptance.xml
+            htmlcov-acceptance/
       - name: CodeCov Upload
         uses: codecov/codecov-action@v3
         with:
           flags: acceptance
+          files: ./coverage-acceptance.xml
           name: coverage-${{ github.job }}
           fail_ci_if_error: true
   docker:

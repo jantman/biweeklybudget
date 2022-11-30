@@ -1,6 +1,6 @@
 [run]
 branch = True
-data_file = .coverage
+data_file = .coverage-acceptance
 omit = lib/*
        biweeklybudget/tests/*
        setup.py
@@ -17,7 +17,7 @@ exclude_lines =
     .*# nocoverage.*
 
 [html]
-directory = htmlcov
+directory = htmlcov-acceptance
 
 [xml]
-output = coverage.xml
+output = coverage-acceptance.xml
