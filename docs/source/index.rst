@@ -13,6 +13,7 @@ Contents
    Getting Started <getting_started>
    Application Usage <app_usage>
    Flask App <flask_app>
+   Plaid Transaction Downloading <plaid>
    OFX Transaction Downloading <ofx>
    Getting Help <getting_help>
    Development <development>

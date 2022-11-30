@@ -43,6 +43,7 @@ from biweeklybudget.models.transaction import Transaction
 from selenium.webdriver.support.ui import Select
 from biweeklybudget.utils import dtnow
 import requests
+from time import sleep
 
 
 @pytest.mark.acceptance
@@ -183,6 +184,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == '^(payment|thank you)'
         assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
+        assert acct.plaid_item_id == 'PlaidItem1'
+        assert acct.plaid_account_id == 'PlaidAcct1'
 
     def test_11_get_acct1_url(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/1')
@@ -243,6 +246,11 @@ class TestAccountModal(AcceptanceHelper):
             'account_frm_re_other_fee'
         ).get_attribute('value') == '^re-other-fee'
         # END REs
+        assert Select(
+            selenium.find_element_by_id('account_frm_plaid_account')
+        ).first_selected_option.get_attribute(
+            'value'
+        ) == 'PlaidItem1,PlaidAcct1'
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_12_edit_acct1(self, base_url, selenium):
@@ -251,6 +259,10 @@ class TestAccountModal(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 1'
         selenium.find_element_by_id('account_frm_name').send_keys('Edited')
+        selenium.find_element_by_id('account_frm_plaid_account')
+        Select(
+            selenium.find_element_by_id('account_frm_plaid_account')
+        ).select_by_value('PlaidItem1,PlaidAcct4')
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -279,6 +291,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.interest_class_name is None
         assert acct.min_payment_class_name is None
         assert acct.is_active is True
+        assert acct.plaid_item_id == 'PlaidItem1'
+        assert acct.plaid_account_id == 'PlaidAcct4'
 
     def test_20_verify_db(self, testdb):
         acct = testdb.query(Account).get(2)
@@ -302,6 +316,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment is None
         assert acct.re_late_fee is None
         assert acct.re_other_fee is None
+        assert acct.plaid_item_id is None
+        assert acct.plaid_account_id is None
 
     def test_21_get_acct2_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -363,6 +379,11 @@ class TestAccountModal(AcceptanceHelper):
             'account_frm_re_other_fee'
         ).get_attribute('value') == ''
         # END REs
+        assert Select(
+            selenium.find_element_by_id('account_frm_plaid_account')
+        ).first_selected_option.get_attribute(
+            'value'
+        ) == 'null,null'
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_22_edit_acct2(self, base_url, selenium):
@@ -436,6 +457,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == 'my-re-p$'
         assert acct.re_late_fee == 'my-re-lf$'
         assert acct.re_other_fee is None
+        assert acct.plaid_item_id is None
+        assert acct.plaid_account_id is None
 
     def test_30_verify_db(self, testdb):
         acct = testdb.query(Account).get(3)
@@ -459,6 +482,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == '.*Online Payment, thank you.*'
         assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
+        assert acct.plaid_item_id == 'PlaidItem1'
+        assert acct.plaid_account_id == 'PlaidAcct2'
 
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
@@ -515,6 +540,11 @@ class TestAccountModal(AcceptanceHelper):
             'account_frm_min_pay_class_name')
         ).first_selected_option.get_attribute('value') == 'MinPaymentAmEx'
         # END CREDIT
+        assert Select(
+            selenium.find_element_by_id('account_frm_plaid_account')
+        ).first_selected_option.get_attribute(
+            'value'
+        ) == 'PlaidItem1,PlaidAcct2'
         assert selenium.find_element_by_id('account_frm_active').is_selected()
 
     def test_32_edit_acct3(self, base_url, selenium):
@@ -559,6 +589,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment == '.*Online Payment, thank you.*'
         assert acct.re_late_fee == '^Late Fee'
         assert acct.re_other_fee == '^re-other-fee'
+        assert acct.plaid_item_id == 'PlaidItem1'
+        assert acct.plaid_account_id == 'PlaidAcct2'
 
     def test_40_verify_db(self, testdb):
         acct = testdb.query(Account).get(4)
@@ -1116,6 +1148,8 @@ class TestAccountModal(AcceptanceHelper):
         assert acct.re_payment is None
         assert acct.re_late_fee is None
         assert acct.re_other_fee is None
+        assert acct.plaid_item_id is None
+        assert acct.plaid_account_id is None
 
 
 @pytest.mark.acceptance

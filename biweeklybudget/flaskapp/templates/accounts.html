@@ -22,6 +22,11 @@
         {% for id in active_budgets.keys()|sort %}
         active_budget_names_to_id["{{ active_budgets[id] }}"] = "{{ id }}";
         {% endfor %}
+        var plaid_accounts = {};
+        plaid_accounts["none"] = "null,null";
+        {% for id in plaid_accounts.keys()|sort %}
+        plaid_accounts["{{ id }}"] = "{{ plaid_accounts[id] }}";
+        {% endfor %}
     </script>
 {% endblock %}
 {% block body %}
@@ -165,7 +170,9 @@
 <script src="/static/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/formBuilder.js"></script>
+
 <script src="/static/js/accounts_modal.js"></script>
+
 <script src="/static/js/account_transfer_modal.js"></script>
 <script>
 $(document).ready(function() {

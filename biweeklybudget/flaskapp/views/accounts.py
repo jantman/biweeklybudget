@@ -47,6 +47,8 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.plaid_accounts import PlaidAccount
+from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.db import db_session
 from biweeklybudget.interest import (
@@ -80,6 +82,12 @@ class AccountsView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
+        pa: PlaidAccount
+        plaid_accts = {
+            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
+                f'{pa.item_id},{pa.account_id}'
+            for pa in db_session.query(PlaidAccount).all()
+        }
         return render_template(
             'accounts.html',
             bank_accounts=db_session.query(Account).filter(
@@ -95,7 +103,8 @@ class AccountsView(MethodView):
             min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
             accts=accts,
             budgets=budgets,
-            active_budgets=active_budgets
+            active_budgets=active_budgets,
+            plaid_accounts=plaid_accts
         )
 
 
@@ -116,6 +125,12 @@ class OneAccountView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
+        pa: PlaidAccount
+        plaid_accts = {
+            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
+                f'{pa.item_id},{pa.account_id}'
+            for pa in db_session.query(PlaidAccount).all()
+        }
         return render_template(
             'accounts.html',
             bank_accounts=db_session.query(Account).filter(
@@ -132,7 +147,8 @@ class OneAccountView(MethodView):
             min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
             accts=accts,
             budgets=budgets,
-            active_budgets=active_budgets
+            active_budgets=active_budgets,
+            plaid_accounts=plaid_accts
         )
 
 
@@ -189,6 +205,22 @@ class AccountFormHandler(FormHandlerView):
             errors['min_payment_class_name'].append(
                 'Invalid minimum payment class name'
             )
+        if data['plaid_account'] != 'null,null':
+            iid, aid = data['plaid_account'].split(',')
+            acctid = 0
+            if 'id' in data and data['id'].strip() != '':
+                acctid = int(data['id'])
+            existing = db_session.query(Account).filter(
+                Account.plaid_item_id == self.fix_string(iid),
+                Account.plaid_account_id == self.fix_string(aid),
+                Account.id != acctid
+            ).all()
+            if existing:
+                errors['plaid_account'].append(
+                    'ERROR: This Plaid account is already used by the Account: '
+                    f'{existing[0].name} ({existing[0].id}). Please remove it '
+                    f'from that account before adding it to another.'
+                )
         for f in RE_FIELD_NAMES:
             if data[f].strip() == '':
                 continue
@@ -198,6 +230,9 @@ class AccountFormHandler(FormHandlerView):
                 errors[f].append('Invalid regular expression.')
         if have_errors:
             return errors
+        for k, v in errors.items():
+            if v:
+                return errors
         return None
 
     def submit(self, data):
@@ -257,6 +292,13 @@ class AccountFormHandler(FormHandlerView):
             if data[f] == '':
                 data[f] = None
             setattr(account, f, data[f])
+        if data['plaid_account'] == 'null,null':
+            account.plaid_item_id = None
+            account.plaid_account_id = None
+        else:
+            iid, aid = data['plaid_account'].split(',')
+            account.plaid_item_id = self.fix_string(iid)
+            account.plaid_account_id = self.fix_string(aid)
         logger.info('%s: %s', action, account.as_dict)
         db_session.add(account)
         db_session.commit()

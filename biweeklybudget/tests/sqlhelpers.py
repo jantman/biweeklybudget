@@ -86,7 +86,7 @@ def do_mysqldump(dumpdir, eng, with_data=True):
     res = subprocess.check_output(args)
     if not with_data:
         # for no-data dumps, need to remove the AUTO_INCREMENT setters
-        res = re.sub(b'AUTO_INCREMENT=\d+\s', b'', res)
+        res = re.sub(rb"AUTO_INCREMENT=\d+\s", b'', res)
     with open(str(fpath), 'wb') as fh:
         fh.write(res)
     logger.info('Wrote %d bytes of SQL to %s', len(res), fpath)

@@ -104,6 +104,12 @@ function accountModalDivForm() {
             'Minimum Payment Class Name',
             min_pay_class_names
         )
+        .addLabelToValueSelect(
+            'account_frm_plaid_account',
+            'plaid_account',
+            'Plaid Account',
+            plaid_accounts
+        )
         .addCheckbox('account_frm_active', 'is_active', 'Active?', true)
         .render();
 }
@@ -163,6 +169,7 @@ function accountModalDivFillAndShow(msg) {
     if(msg['re_payment'] != null) { $('#account_frm_re_payment').val(msg['re_payment']); }
     if(msg['re_late_fee'] != null) { $('#account_frm_re_late_fee').val(msg['re_late_fee']); }
     if(msg['re_other_fee'] != null) { $('#account_frm_re_other_fee').val(msg['re_other_fee']); }
+    $('#account_frm_plaid_account option[value="' + msg['plaid_item_id'] + ',' + msg['plaid_account_id'] + '"]').prop('selected', 'selected').change();
     $("#modalDiv").modal('show');
 }
 

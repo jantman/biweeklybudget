@@ -1381,6 +1381,7 @@ class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_08_submit_with_nothing_reconciled(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
+        self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
         # get the innerHTML of both columns
         trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
@@ -2094,6 +2095,7 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
         assert json.loads(res.strip()) == {'2%OFX30': 'My Note'}
         # check that the OFX div has been updated
+        self.wait_for_jquery_done(selenium)
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
@@ -2122,6 +2124,7 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
         assert json.loads(res.strip()) == {}
         # check that the OFX div has been updated
+        self.wait_for_jquery_done(selenium)
         ofxtrans_div = selenium.find_element_by_id('ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))

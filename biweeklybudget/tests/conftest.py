@@ -44,6 +44,7 @@ import socket
 import json
 from time import time
 from tempfile import mkstemp
+import warnings
 
 from retrying import retry
 
@@ -156,7 +157,16 @@ def refreshdb(dump_file_path):
         logger.info('Refreshing DB (session-scoped)')
         # clean the database
         biweeklybudget.models.base.Base.metadata.drop_all(get_db_engine())
-        biweeklybudget.models.base.Base.metadata.create_all(get_db_engine())
+        with warnings.catch_warnings():
+            # Ignore warning from MariaDB MDEV-17544 when creating tables;
+            # SQLAlchemy 1.3.13 names the primary keys, but MariaDB ignores
+            # the names; MariaDB >= 10.4.7 now throws a warning for this.
+            warnings.filterwarnings(
+                'ignore',
+                message=r'^\(1280, "Name.*ignored for PRIMARY key\."\)$',
+                category=Warning
+            )
+            biweeklybudget.models.base.Base.metadata.create_all(get_db_engine())
         # load the sample data
         data_sess = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=conn)
@@ -207,7 +217,7 @@ def testdb():
     sess = sessionmaker(autocommit=False, bind=conn)()
     init_event_listeners(sess, engine)
     # yield the session
-    yield(sess)
+    yield sess
     sess.close()
     conn.close()
 
@@ -228,7 +238,7 @@ def testflask():
         from biweeklybudget.flaskapp.app import app  # noqa
         server = LiveServer(app, 'localhost', port)
         server.start()
-        yield(server)
+        yield server
         server.stop()
 
 

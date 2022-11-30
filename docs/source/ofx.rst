@@ -3,6 +3,9 @@
 OFX Transaction Downloading
 ===========================
 
+.. important::
+   OFX support is tentatively being deprecated. Please see :ref:`Plaid <plaid>` for the tentative replacement.
+
 biweeklybudget has the ability to download OFX transaction data from your
 financial institutions, either manually or automatically (via an external
 command scheduler such as ``cron``).

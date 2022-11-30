@@ -29,6 +29,7 @@ Submodules
    biweeklybudget.interest
    biweeklybudget.load_data
    biweeklybudget.ofxgetter
+   biweeklybudget.plaid_updater
    biweeklybudget.prime_rate
    biweeklybudget.screenscraper
    biweeklybudget.settings

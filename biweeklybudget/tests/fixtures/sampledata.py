@@ -54,6 +54,8 @@ class SampleDataLoader(object):
         self.budgets = {}
         self.scheduled_transactions = []
         self.transactions = {}
+        self.plaid_items = {}
+        self.plaid_accounts = {}
         self.dt = dtnow()
 
     def load(self):
@@ -73,6 +75,8 @@ class SampleDataLoader(object):
                 }, cls=MagicJSONEncoder)
             )
         )
+        self.plaid_items = self._plaid_items()
+        self.plaid_accounts = self._plaid_accounts()
         self.db.flush()
         self.db.commit()
         self._projects()
@@ -95,6 +99,64 @@ class SampleDataLoader(object):
         ))
         self.db.flush()
         self.db.commit()
+
+    def _plaid_items(self):
+        res = {
+            'PlaidItem1': PlaidItem(
+                item_id='PlaidItem1',
+                access_token='AccessToken1',
+                institution_name='Inst1',
+                last_updated=self.dt
+            ),
+            'PlaidItem2': PlaidItem(
+                item_id='PlaidItem2',
+                access_token='AccessToken2',
+                institution_name='Inst2',
+                last_updated=self.dt
+            ),
+        }
+        for item in res.values():
+            self.db.add(item)
+        return res
+
+    def _plaid_accounts(self):
+        res = {
+            'PlaidAcct1': PlaidAccount(
+                item_id='PlaidItem1',
+                account_id='PlaidAcct1',
+                name='Acct1',
+                mask='foo',
+                account_type='depository',
+                account_subtype='checking'
+            ),
+            'PlaidAcct2': PlaidAccount(
+                item_id='PlaidItem1',
+                account_id='PlaidAcct2',
+                name='Acct2',
+                mask='foo',
+                account_type='credit',
+                account_subtype='credit card'
+            ),
+            'PlaidAcct3': PlaidAccount(
+                item_id='PlaidItem2',
+                account_id='PlaidAcct3',
+                name='Acct3',
+                mask='foo',
+                account_type='investment',
+                account_subtype='401k'
+            ),
+            'PlaidAcct4': PlaidAccount(
+                item_id='PlaidItem1',
+                account_id='PlaidAcct4',
+                name='Acct4',
+                mask='foo4',
+                account_type='depository',
+                account_subtype='checking'
+            ),
+        }
+        for item in res.values():
+            self.db.add(item)
+        return res
 
     def _budgets(self):
         res = {
@@ -288,7 +350,9 @@ class SampleDataLoader(object):
             re_interest_paid='^interest-paid',
             re_payment='^(payment|thank you)',
             re_late_fee='^Late Fee',
-            re_other_fee='^re-other-fee'
+            re_other_fee='^re-other-fee',
+            plaid_item_id='PlaidItem1',
+            plaid_account_id='PlaidAcct1',
         )
         statements = [
             OFXStatement(
@@ -430,7 +494,9 @@ class SampleDataLoader(object):
             re_interest_charge='^INTEREST CHARGED TO',
             re_payment='.*Online Payment, thank you.*',
             re_late_fee='^Late Fee',
-            re_other_fee='^re-other-fee'
+            re_other_fee='^re-other-fee',
+            plaid_item_id='PlaidItem1',
+            plaid_account_id='PlaidAcct2',
         )
         statements = [
             OFXStatement(
@@ -603,7 +669,9 @@ class SampleDataLoader(object):
             vault_creds_path='',
             acct_type=AcctType.Investment,
             is_active=True,
-            reconcile_trans=False
+            reconcile_trans=False,
+            plaid_item_id='PlaidItem2',
+            plaid_account_id='PlaidAcct3',
         )
         statements = [
             OFXStatement(

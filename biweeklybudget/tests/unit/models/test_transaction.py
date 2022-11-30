@@ -113,11 +113,11 @@ class TestSetBudgetAmounts(object):
                 assert isinstance(bt, BudgetTransaction)
                 assert bt.transaction == t
             assert {
-                   bt.budget: bt.amount for bt in t.budget_transactions
-               } == {
-                   b1: Decimal('10.00'),
-                   b2: Decimal('90.00')
-               }
+                bt.budget: bt.amount for bt in t.budget_transactions
+            } == {
+                b1: Decimal('10.00'),
+                b2: Decimal('90.00')
+            }
             mock_sess.reset_mock()
             with pytest.raises(AssertionError):
                 t.set_budget_amounts({})

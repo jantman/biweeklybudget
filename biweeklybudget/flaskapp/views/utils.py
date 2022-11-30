@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from flask.views import MethodView
-from biweeklybudget.settings import BIWEEKLYBUDGET_TEST_TIMESTAMP
+from biweeklybudget import settings
 from biweeklybudget.utils import dtnow
 from biweeklybudget.flaskapp.app import app
 
@@ -47,7 +47,7 @@ class DateTestJS(MethodView):
     """
 
     def get(self):
-        if BIWEEKLYBUDGET_TEST_TIMESTAMP is None:
+        if settings.BIWEEKLYBUDGET_TEST_TIMESTAMP is None:
             return 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date();'
         dt = dtnow()
         return 'var BIWEEKLYBUDGET_DEFAULT_DATE = new Date(%s, %s, %s);' % (
@@ -55,7 +55,11 @@ class DateTestJS(MethodView):
         )
 
 
-app.add_url_rule(
-    '/utils/datetest.js',
-    view_func=DateTestJS.as_view('date_test_js')
-)
+def set_url_rules(a):
+    a.add_url_rule(
+        '/utils/datetest.js',
+        view_func=DateTestJS.as_view('date_test_js')
+    )
+
+
+set_url_rules(app)

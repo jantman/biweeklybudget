@@ -77,16 +77,20 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger()
 
 for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
-    l = logging.getLogger(lname)
-    l.setLevel(logging.CRITICAL)
-    l.propagate = True
+    _log = logging.getLogger(lname)
+    _log.setLevel(logging.CRITICAL)
+    _log.propagate = True
 
 if sys.version_info[0:2] < (3, 6):
     raise SystemExit('ERROR: Docker build can only run under py >= 3.6')
 
+DOCKER_IMG = 'python:3.10-alpine3.16'
+PY_VERSION = '3.10'
+ACCEPTANCE_ENV = 'acceptance310'
+
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
-FROM python:3.7.0-alpine3.7
+FROM {docker_img}
 
 ARG version
 USER root
@@ -105,6 +109,7 @@ RUN set -ex \
         libxslt \
         libxslt-dev \
         tini \
+        git \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libffi-dev \
@@ -147,9 +152,11 @@ class DockerImageBuilder(object):
         self._toxinidir = toxinidir
         self._distdir = distdir
         self._gitdir = os.path.join(self._toxinidir, '.git')
-        logger.info('Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
-                     'distdir=%s',
-                     self._toxinidir, self._gitdir, self._distdir)
+        logger.info(
+            'Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
+            'distdir=%s',
+            self._toxinidir, self._gitdir, self._distdir
+        )
         if not os.path.exists(self._gitdir) or not os.path.isdir(self._gitdir):
             raise RuntimeError(
                 'Error: %s does not exist or is not a directory' % self._gitdir
@@ -392,7 +399,7 @@ class DockerImageBuilder(object):
 
     def _run_acceptance_tests(self, db_container, container):
         """
-        Run the ``acceptance37`` tox environment against the running container.
+        Run the ``acceptance38`` tox environment against the running container.
 
         :param db_container: MariaDB Docker container
         :type db_container: ``docker.models.containers.Container``
@@ -416,7 +423,7 @@ class DockerImageBuilder(object):
             toxpath = os.path.join(self._toxinidir, 'venv', 'bin', 'tox')
         else:
             toxpath = os.path.join(self._toxinidir, 'bin', 'tox')
-        cmd = [toxpath, '-e', 'acceptance38']
+        cmd = [toxpath, '-e', ACCEPTANCE_ENV]
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '
             'timeout=3000 env=%s', ' '.join(cmd), self._toxinidir, env
@@ -729,8 +736,8 @@ class DockerImageBuilder(object):
                 ver += '-dirty'
             s_versionfix = "&& /bin/sed -i " \
                            "\"s/^VERSION =.*/VERSION = '%s+git.%s'/\"" \
-                           " /app/lib/python3.7/site-packages/biweeklybudget" \
-                           "/version.py" % (
+                           f" /app/lib/python{PY_VERSION}/site-packages/" \
+                           f"biweeklybudget/version.py" % (
                                VERSION, ver
                            )
         else:
@@ -740,7 +747,8 @@ class DockerImageBuilder(object):
         s = DOCKERFILE_TEMPLATE.format(
             copy=s_copy,
             install=s_install,
-            versionfix=s_versionfix
+            versionfix=s_versionfix,
+            docker_img=DOCKER_IMG
         )
         logger.debug("Dockerfile:\n%s", s)
         return s

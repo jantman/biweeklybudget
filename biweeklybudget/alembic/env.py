@@ -41,6 +41,7 @@ from alembic import context
 from sqlalchemy import pool, create_engine
 from logging.config import fileConfig
 import logging
+import warnings
 from biweeklybudget.settings import DB_CONNSTRING
 from biweeklybudget.models.base import Base
 
@@ -108,9 +109,12 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    echo = False
+    if os.environ.get('SQL_ECHO', '') == 'true':
+        echo = True
     connectable = create_engine(
         env_get_connstring(), poolclass=pool.NullPool,
-        pool_pre_ping=('SQL_POOL_PRE_PING' in os.environ)
+        pool_pre_ping=('SQL_POOL_PRE_PING' in os.environ), echo=echo
     )
 
     with connectable.connect() as connection:
@@ -118,9 +122,17 @@ def run_migrations_online():
             connection=connection,
             target_metadata=target_metadata
         )
-
         with context.begin_transaction():
-            context.run_migrations()
+            with warnings.catch_warnings():
+                # Ignore warning from MariaDB MDEV-17544 when creating tables;
+                # SQLAlchemy 1.3.13 names the primary keys, but MariaDB ignores
+                # the names; MariaDB >= 10.4.7 now throws a warning for this.
+                warnings.filterwarnings(
+                    'ignore',
+                    message=r'^\(1280, "Name.*ignored for PRIMARY key\."\)$',
+                    category=Warning
+                )
+                context.run_migrations()
 
 
 if context.is_offline_mode():

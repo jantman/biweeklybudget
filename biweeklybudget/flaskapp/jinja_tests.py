@@ -55,4 +55,5 @@ def is_stale_data(dt):
         return True
     return False
 
+
 app.jinja_env.tests['stale_data'] = is_stale_data

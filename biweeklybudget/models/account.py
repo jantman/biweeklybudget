@@ -37,17 +37,19 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_
+    Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_,
+    ForeignKeyConstraint
 )
 from datetime import timedelta
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.expression import null
 from decimal import Decimal
 
 from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.models.account_balance import AccountBalance
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import dtnow
 from biweeklybudget.prime_rate import PrimeRateCalculator
@@ -94,6 +96,10 @@ class Account(Base, ModelAsDict):
 
     __tablename__ = 'accounts'
     __table_args__ = (
+        ForeignKeyConstraint(
+            ['plaid_item_id', 'plaid_account_id'],
+            [PlaidAccount.item_id, PlaidAccount.account_id]
+        ),
         {'mysql_engine': 'InnoDB'}
     )
 
@@ -172,6 +178,18 @@ class Account(Base, ModelAsDict):
     #: regex for matching transactions as other fees
     re_other_fee = Column(String(254))
 
+    #: Plaid Item ID for this account
+    plaid_item_id = Column(String(70), nullable=True)
+
+    #: Plaid Token for this account
+    plaid_account_id = Column(String(70), nullable=True)
+
+    #: :py:class:`~.PlaidAccount` this account is linked with
+    plaid_account = relationship(
+        'PlaidAccount', backref=backref('account', uselist=False),
+        foreign_keys=[plaid_item_id, plaid_account_id]
+    )
+
     def __repr__(self):
         return "<Account(id=%s, name='%s')>" % (
             self.id, self.name
@@ -186,6 +204,17 @@ class Account(Base, ModelAsDict):
         :rtype: bool
         """
         return self.ofxgetter_config_json.isnot(None)
+
+    @hybrid_property
+    def plaid_configured(self):
+        """
+        Return whether or not this account is configured for Plaid.
+
+        :return: whether or not this account is configured for Plaid.
+        :rtype: bool
+        """
+        return self.plaid_account_id.isnot(None) & \
+            self.plaid_item_id.isnot(None)
 
     @hybrid_property
     def is_budget_source(self):

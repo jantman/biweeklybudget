@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 import re
+import os
 from flask.views import MethodView
 from flask import render_template, request
 from versionfinder import find_version
@@ -47,10 +48,11 @@ from biweeklybudget.settings import DB_CONNSTRING
 
 logger = logging.getLogger(__name__)
 
-for lname in ['versionfinder', 'pip', 'git']:
-    l = logging.getLogger(lname)
-    l.setLevel(logging.CRITICAL)
-    l.propagate = True
+if os.environ.get('VERSIONFINDER_DEBUG') != 'true':
+    for lname in ['versionfinder', 'pip', 'git']:
+        _log = logging.getLogger(lname)
+        _log.setLevel(logging.CRITICAL)
+        _log.propagate = True
 
 DBPASS_RE = re.compile(r':[^@:]+@')
 

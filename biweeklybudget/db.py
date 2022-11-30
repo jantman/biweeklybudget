@@ -159,7 +159,16 @@ def init_db():
                 'Alembic not setup; creating all models and stamping'
             )
             logger.debug('Creating all models')
-            Base.metadata.create_all(engine)
+            with warnings.catch_warnings():
+                # Ignore warning from MariaDB MDEV-17544 when creating tables;
+                # SQLAlchemy 1.3.13 names the primary keys, but MariaDB ignores
+                # the names; MariaDB >= 10.4.7 now throws a warning for this.
+                warnings.filterwarnings(
+                    'ignore',
+                    message=r'^\(1280, "Name.*ignored for PRIMARY key\."\)$',
+                    category=Warning
+                )
+                Base.metadata.create_all(engine)
             command.stamp(alembic_config, "head")
             logger.debug("DB stamped at %s", head_rev)
         elif curr_rev != head_rev:
