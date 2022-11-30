@@ -91,7 +91,7 @@ with connection:
         for dbname in want_dbs:
             if dbname in have_dbs:
                 continue
-            sql = f'CREATE DATABASE {dbname};'
+            sql = f"CREATE DATABASE {dbname} CHARACTER SET = 'utf8mb4';"
             logger.info('EXECUTE SQL: %s', sql)
             cursor.execute(sql)
     connection.connect()

@@ -58,28 +58,9 @@ def upgrade():
         ['item_id', 'account_id']
     )
     op.drop_column('accounts', 'plaid_token')
-    op.create_index(
-        'fk_txn_reconciles_ofx_account_id_ofx_trans',
-        'txn_reconciles',
-        ['ofx_account_id', 'ofx_fitid'],
-        unique=False
-    )
-    op.create_index(
-        'fk_txn_reconciles_txn_id_transactions',
-        'txn_reconciles',
-        ['txn_id'],
-        unique=False
-    )
 
 
 def downgrade():
-    op.drop_index(
-        'fk_txn_reconciles_txn_id_transactions', table_name='txn_reconciles'
-    )
-    op.drop_index(
-        'fk_txn_reconciles_ofx_account_id_ofx_trans',
-        table_name='txn_reconciles'
-    )
     op.add_column(
         'accounts',
         sa.Column('plaid_token', mysql.VARCHAR(length=70), nullable=True)
@@ -90,5 +71,5 @@ def downgrade():
         type_='foreignkey'
     )
     op.drop_column('accounts', 'plaid_account_id')
-    op.drop_table('plaid_items')
     op.drop_table('plaid_accounts')
+    op.drop_table('plaid_items')
