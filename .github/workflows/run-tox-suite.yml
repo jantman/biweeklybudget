@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: python -m pip install --upgrade pip && pip install tox pymysql && npm install jsdoc
+        run: python -m pip install --upgrade pip && pip install tox pymysql && npm install -g jsdoc
       - name: Setup test DB
         run: python dev/setup_test_db.py
       - name: Run tests
