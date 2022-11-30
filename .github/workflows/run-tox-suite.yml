@@ -1,12 +1,10 @@
 name: Run Tox Suite
 on: [push, pull_request]
 jobs:
-  run-tests:
+  py310:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        tox-env: ["py310", "docs", "jsdoc", "screenshots", "acceptance310", "docker", "migrations"]
     env:
       DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
       MYSQL_HOST: 127.0.0.1
@@ -31,17 +29,216 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: python -m pip install --upgrade pip && pip install tox pymysql && npm install -g jsdoc
+        run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
       - name: Run tests
-        run: tox -e ${{ matrix.tox-env }}
+        run: tox -e ${{ env.GITHUB_JOB }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
-          name: test-results-and-coverage-${{ matrix.tox-env }}
+          name: test-results-and-coverage-${{ env.GITHUB_JOB }}
+          path: |
+            results/
+            coverage.xml
+            htmlcov/
+      - name: CodeCov Upload
+        uses: codecov/codecov-action@v3
+        with:
+          flags: unittests
+          name: coverage-${{ env.GITHUB_JOB }}
+          fail_ci_if_error: true
+  docs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+  jsdoc:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox && npm install -g jsdoc
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+  screenshots:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '13306'
+      MYSQL_USER: root
+      MYSQL_PASS: dbroot
+      MYSQL_DBNAME: budgettest
+      MYSQL_DBNAME_LEFT: alembicLeft
+      MYSQL_DBNAME_RIGHT: alembicRight
+    services:
+      mariadb:
+        image: 'mariadb:10.4.7'
+        ports:
+          - 13306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: dbroot
+          MYSQL_ROOT_HOST: '%'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox pymysql
+      - name: Setup test DB
+        run: python dev/setup_test_db.py
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+  acceptance310:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '13306'
+      MYSQL_USER: root
+      MYSQL_PASS: dbroot
+      MYSQL_DBNAME: budgettest
+      MYSQL_DBNAME_LEFT: alembicLeft
+      MYSQL_DBNAME_RIGHT: alembicRight
+    services:
+      mariadb:
+        image: 'mariadb:10.4.7'
+        ports:
+          - 13306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: dbroot
+          MYSQL_ROOT_HOST: '%'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox pymysql
+      - name: Setup test DB
+        run: python dev/setup_test_db.py
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-and-coverage-${{ env.GITHUB_JOB }}
           if-no-files-found: ignore
           path: |
             results/
             coverage.xml
             htmlcov/
+      - name: CodeCov Upload
+        uses: codecov/codecov-action@v3
+        with:
+          flags: acceptance
+          name: coverage-${{ env.GITHUB_JOB }}
+          fail_ci_if_error: true
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '13306'
+      MYSQL_USER: root
+      MYSQL_PASS: dbroot
+      MYSQL_DBNAME: budgettest
+      MYSQL_DBNAME_LEFT: alembicLeft
+      MYSQL_DBNAME_RIGHT: alembicRight
+    services:
+      mariadb:
+        image: 'mariadb:10.4.7'
+        ports:
+          - 13306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: dbroot
+          MYSQL_ROOT_HOST: '%'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox pymysql
+      - name: Setup test DB
+        run: python dev/setup_test_db.py
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-and-coverage-${{ env.GITHUB_JOB }}
+          if-no-files-found: ignore
+          path: |
+            results/
+            coverage.xml
+            htmlcov/
+  migrations:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '13306'
+      MYSQL_USER: root
+      MYSQL_PASS: dbroot
+      MYSQL_DBNAME: budgettest
+      MYSQL_DBNAME_LEFT: alembicLeft
+      MYSQL_DBNAME_RIGHT: alembicRight
+    services:
+      mariadb:
+        image: 'mariadb:10.4.7'
+        ports:
+          - 13306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: dbroot
+          MYSQL_ROOT_HOST: '%'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox pymysql
+      - name: Setup test DB
+        run: python dev/setup_test_db.py
+      - name: Run tests
+        run: tox -e ${{ env.GITHUB_JOB }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-and-coverage-${{ env.GITHUB_JOB }}
+          if-no-files-found: ignore
+          path: |
+            results/
+            coverage.xml
+            htmlcov/
+
