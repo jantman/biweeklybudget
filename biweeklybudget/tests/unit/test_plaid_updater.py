@@ -571,6 +571,65 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert mock_stmt.type == 'Investment'
         assert m_dbsess.mock_calls == [call.commit()]
 
+    def test_loan(self):
+        mock_item = Mock(institution_id='abc123')
+        mock_plaid_account = Mock(
+            account_type='loan', plaid_item=mock_item
+        )
+        mock_acct = Mock(id=5, plaid_account=mock_plaid_account)
+        type(mock_acct).name = 'acct5'
+        end_dt = datetime(2020, 5, 25, 0, 0, 0, tzinfo=UTC)
+        txns = {
+            'item': {
+                'institution_id': None
+            },
+            'accounts': [
+                {
+                    'type': 'loan',
+                    'balances': {
+                        'iso_currency_code': 'USD'
+                    },
+                    'mask': '012345'
+                }
+            ]
+        }
+        pai = {
+            'mask': 'XXXX',
+            'balances': {
+                'iso_currency_code': 'USD'
+            }
+        }
+        mock_stmt = Mock(id=123)
+        with patch.multiple(
+            pb,
+            _update_bank_or_credit=DEFAULT,
+            _update_investment=DEFAULT,
+            _new_updated_counts=DEFAULT
+        ) as mocks:
+            mocks['_new_updated_counts'].return_value = (1, 2)
+            with patch(f'{pbm}.OFXStatement') as m_ofxstmt:
+                with patch(f'{pbm}.db_session') as m_dbsess:
+                    m_ofxstmt.return_value = mock_stmt
+                    res = self.cls._stmt_for_acct(mock_acct, pai, txns, end_dt)
+        assert res == (123, 1, 2)
+        assert mocks['_update_bank_or_credit'].mock_calls == []
+        assert mocks['_update_investment'].mock_calls == [
+            call(end_dt, mock_acct, pai, mock_stmt)
+        ]
+        assert mocks['_new_updated_counts'].mock_calls == [call()]
+        assert m_ofxstmt.mock_calls == [
+            call(
+                account_id=5,
+                filename='Plaid_acct5_1590364800.ofx',
+                file_mtime=end_dt,
+                as_of=end_dt,
+                currency='USD',
+                acctid='XXXX'
+            )
+        ]
+        assert mock_stmt.type == 'Investment'
+        assert m_dbsess.mock_calls == [call.commit()]
+
     def test_unknown_type(self):
         mock_item = Mock(institution_id='abc123')
         mock_plaid_account = Mock(
@@ -651,7 +710,87 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
 
     def test_happy_path(self):
         mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
-        mock_acct = Mock(id=4)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': '1234.5678',
+                'iso_currency_code': 'USD',
+                'available': 854.2903
+            }
+        }
+        txns = [
+            {
+                'pending': True,
+            },
+            {
+                'pending': False,
+                'amount': 123.4567,
+                'date': '2020-02-23',
+                'payment_meta': {
+                    'reference_number': None
+                },
+                'name': 'Some Txn',
+                'transaction_id': 'TXN001'
+            },
+            {
+                'pending': False,
+                'amount': 482.86392,
+                'date': '2020-03-15',
+                'payment_meta': {
+                    'reference_number': '456def'
+                },
+                'name': 'Other Txn',
+                'transaction_id': 'TXN002'
+            }
+        ]
+        with patch(f'{pbm}.db_session') as mock_db:
+            with patch(f'{pbm}.upsert_record') as mock_upsert:
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, txns, mock_stmt
+                )
+        assert mock_stmt.as_of == end_dt
+        assert mock_stmt.ledger_bal == Decimal('1234.57')
+        assert mock_stmt.ledger_bal_as_of == end_dt
+        assert mock_stmt.avail_bal == Decimal('854.29')
+        assert mock_stmt.avail_bal_as_of == end_dt
+        assert mock_stmt.currency == 'USD'
+        assert mock_db.mock_calls == [call.add(mock_stmt)]
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('1234.57'),
+                ledger_date=end_dt,
+                avail=Decimal('854.29'),
+                avail_date=end_dt
+            )
+        ]
+        assert mock_upsert.mock_calls == [
+            call(
+                OFXTransaction,
+                ['account_id', 'fitid'],
+                amount=Decimal('123.46'),
+                date_posted=datetime(2020, 2, 23, 0, 0, 0, tzinfo=UTC),
+                fitid='TXN001',
+                name='Some Txn',
+                account_id=4,
+                statement=mock_stmt
+            ),
+            call(
+                OFXTransaction,
+                ['account_id', 'fitid'],
+                amount=Decimal('482.86'),
+                date_posted=datetime(2020, 3, 15, 0, 0, 0, tzinfo=UTC),
+                fitid='456def',
+                name='Other Txn',
+                account_id=4,
+                statement=mock_stmt
+            )
+        ]
+
+    def test_negate_amounts(self):
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=True)
         end_dt = datetime(2020, 5, 25, 0, 0, 0)
         acct = {
             'balances': {
