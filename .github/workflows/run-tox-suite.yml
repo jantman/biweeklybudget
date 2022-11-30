@@ -39,7 +39,7 @@ jobs:
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
         with:
-          name: test-results-and-coverage
+          name: test-results-and-coverage-${{ matrix.tox-env }}
           if-no-files-found: ignore
           path: |
             results/
