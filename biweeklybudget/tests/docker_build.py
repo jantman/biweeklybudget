@@ -71,6 +71,7 @@ import tarfile
 from biweeklybudget.version import VERSION
 import subprocess
 import argparse
+from distutils.spawn import find_executable
 
 FORMAT = "[%(asctime)s %(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -421,8 +422,10 @@ class DockerImageBuilder(object):
         }
         if os.path.exists(os.path.join(self._toxinidir, 'venv', 'bin', 'tox')):
             toxpath = os.path.join(self._toxinidir, 'venv', 'bin', 'tox')
-        else:
+        elif os.path.exists(os.path.join(self._toxinidir, 'bin', 'tox')):
             toxpath = os.path.join(self._toxinidir, 'bin', 'tox')
+        else:
+            toxpath = find_executable('tox')
         cmd = [toxpath, '-e', ACCEPTANCE_ENV]
         logger.info(
             'Running acceptance tests against container; args="%s" cwd=%s '

@@ -45,6 +45,11 @@ logger = logging.getLogger(__name__)
 mysqldump_path = find_executable('mysqldump')
 mysql_path = find_executable('mysql')
 
+dump_ver_out = subprocess.check_output([mysqldump_path, '--version'])
+mysqldump_is_mariadb = False
+if 'mariadb' in dump_ver_out.lower():
+    mysqldump_is_mariadb = True
+
 
 def do_mysqldump(dumpdir, eng, with_data=True):
     """
@@ -76,6 +81,8 @@ def do_mysqldump(dumpdir, eng, with_data=True):
             '--no-data',
             '--no-create-db'
         ]
+    if not mysqldump_is_mariadb:
+        args.append('--column-statistics=0')
     args.append('--host=%s' % eng.url.host)
     args.append('--port=%s' % eng.url.port)
     args.append('--user=%s' % eng.url.username)
