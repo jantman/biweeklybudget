@@ -111,7 +111,7 @@ class TestAvailableItems:
 
 class PlaidUpdaterTester:
 
-    def setup(self):
+    def setup_method(self):
         self.mock_client = MagicMock(spec_set=Client)
         with patch(f'{pbm}.plaid_client') as m_pc:
             m_pc.return_value = self.mock_client

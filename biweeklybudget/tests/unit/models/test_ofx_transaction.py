@@ -63,7 +63,7 @@ pbm = 'biweeklybudget.models.ofx_transaction'
 
 class TestParamsFromOfxparserTransaction(object):
 
-    def setup(self):
+    def setup_method(self):
         trans = Transaction()
         trans.payee = 'PayeeName'
         trans.type = 'TType'

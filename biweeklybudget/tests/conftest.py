@@ -273,7 +273,7 @@ def get_driver_for_class(driver_class, driver_kwargs):
     return driver_class(**driver_kwargs)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def driver(request, driver_class, driver_kwargs):
     """
     Returns a WebDriver instance based on options and capabilities
@@ -305,7 +305,7 @@ def driver(request, driver_class, driver_kwargs):
     driver.quit()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def selenium(driver):
     """
     Per pytest-selenium docs, use this to override the selenium fixture to
@@ -391,7 +391,7 @@ def pytest_terminal_summary(terminalreporter):
 # incremental-testing-test-steps
 
 
-@pytest.mark.hookwrapper
+@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     if "incremental" in item.keywords:
         if call.excinfo is not None:

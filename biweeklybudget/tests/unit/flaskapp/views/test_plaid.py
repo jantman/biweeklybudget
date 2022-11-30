@@ -246,7 +246,7 @@ class TestPlaidUpdate:
 
     pb = f'{pbm}.PlaidUpdate'
 
-    def setup(self):
+    def setup_method(self):
         self.cls = PlaidUpdate()
 
     def test_get_form(self):

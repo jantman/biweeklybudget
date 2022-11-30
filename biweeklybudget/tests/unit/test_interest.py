@@ -124,7 +124,7 @@ class FixedInterest(_InterestCalculation):
 
 class TestInterestHelper(object):
 
-    def setup(self):
+    def setup_method(self):
         bal3 = Mock(
             spec_set=AccountBalance,
             ledger=Decimal('-952.06'),
@@ -1143,7 +1143,7 @@ class TestModuleConstants(object):
 
 class TestAcceptanceData(object):
 
-    def setup(self):
+    def setup_method(self):
         self.stmt_cc_one = CCStatement(
             AdbCompoundedDaily(Decimal('0.0100')),
             Decimal('952.06'),
@@ -1249,7 +1249,7 @@ class TestAcceptanceData(object):
 
 class TestSimpleData(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mpm = Mock(spec_set=MinPaymentAmEx)
         self.mpm.calculate.return_value = Decimal('200.00')
         self.stmt_cc_one = CCStatement(

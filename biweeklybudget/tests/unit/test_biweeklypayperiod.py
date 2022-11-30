@@ -67,7 +67,7 @@ pb = '%s.BiweeklyPayPeriod' % pbm
 
 class TestInit(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -88,7 +88,7 @@ class TestInit(object):
 
 class TestProperties(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -115,7 +115,7 @@ class TestProperties(object):
 
 class TestMagicMethods(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -142,7 +142,7 @@ class TestMagicMethods(object):
 
 class TestForDate(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -173,7 +173,7 @@ class TestForDate(object):
 
 class TestFilterQuery(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -192,7 +192,7 @@ class TestFilterQuery(object):
 
 class TestTransactions(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -212,7 +212,7 @@ class TestTransactions(object):
 
 class TestSTDate(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -240,7 +240,7 @@ class TestSTDate(object):
 
 class TestSTPeriod(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -262,7 +262,7 @@ class TestSTPeriod(object):
 
 class TestSTMonthly(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
 
     def test_contiguous(self):
@@ -313,7 +313,7 @@ class TestSTMonthly(object):
 
 class TestTransactionsList(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -325,7 +325,7 @@ class TestTransactionsList(object):
 
 class TestBudgetSums(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -337,7 +337,7 @@ class TestBudgetSums(object):
 
 class TestOverallSums(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -349,7 +349,7 @@ class TestOverallSums(object):
 
 class TestIncomeBudgetIDs(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
 
@@ -387,7 +387,7 @@ class TestIncomeBudgetIDs(object):
 
 class TestData(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -495,7 +495,7 @@ class TestData(object):
 
 class TestMakeCombinedTransactions(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -570,7 +570,7 @@ class TestMakeCombinedTransactions(object):
 
 class TestMakeBudgetSums(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
 
@@ -808,7 +808,7 @@ class TestMakeBudgetSums(object):
 
 class TestMakeOverallSums(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
 
     def test_past(self):
@@ -990,7 +990,7 @@ class TestMakeOverallSums(object):
 
 class TestTransDict(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -1023,7 +1023,7 @@ class TestTransDict(object):
 
 class TestDictForTrans(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
 
@@ -1232,7 +1232,7 @@ class TestDictForTrans(object):
 
 class TestDictForSchedTrans(object):
 
-    def setup(self):
+    def setup_method(self):
         self.mock_sess = Mock(spec_set=Session)
         self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
         m_account = Mock(name='foo')
