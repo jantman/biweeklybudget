@@ -36,11 +36,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from textwrap import dedent
+from datetime import datetime, timezone
 from biweeklybudget import settings
 from biweeklybudget.version import VERSION
 from biweeklybudget.flaskapp.views.plaid import (
     PlaidJs, PlaidPublicToken, PlaidHandleLink, set_url_rules,
-    PlaidConfigJS, PlaidUpdate
+    PlaidConfigJS, PlaidUpdate, PlaidRefreshAccounts
 )
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
@@ -132,6 +133,276 @@ class TestPlaidJs:
             m_redir.side_effect = lambda x: x
             res = PlaidJs().get()
         assert res == 'static/js/plaid_prod.js'
+
+
+class TestPlaidHandleLink:
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_normal(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'public_token': 'pubToken',
+            'metadata': {
+                'institution': {
+                    'name': 'Inst1',
+                    'institution_id': 'IID1'
+                },
+                'accounts': [
+                    {
+                        'id': 'AID1',
+                        'name': 'Name1',
+                        'mask': 'XXX1',
+                        'type': 'depository',
+                        'subtype': 'checking'
+                    },
+                    {
+                        'id': 'AID2',
+                        'name': 'Name2',
+                        'mask': 'XXX2',
+                        'type': 'credit'
+                    }
+                ]
+            }
+        }
+        mock_client = MagicMock()
+        mock_client.Item.public_token.exchange.return_value = {
+            'item_id': 'itemId',
+            'access_token': 'accToken'
+        }
+        mock_sess = Mock()
+
+        m_item1 = Mock()
+        m_acct1 = Mock()
+        m_acct2 = Mock()
+
+        def se_item(**kwargs):
+            return m_item1
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            return m_acct2
+
+        with patch.multiple(
+            pbm,
+            jsonify=DEFAULT,
+            request=mock_req,
+            plaid_client=DEFAULT,
+            PlaidItem=DEFAULT,
+            PlaidAccount=DEFAULT,
+            db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidHandleLink().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().Item.public_token.exchange('pubToken')
+        ]
+        assert mock_client.mock_calls == [
+            call.Item.public_token.exchange('pubToken')
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': True,
+                'item_id': 'itemId',
+                'access_token': 'accToken'
+            })
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_sess.mock_calls == [
+            call.add(m_item1),
+            call.add(m_acct1),
+            call.add(m_acct2),
+            call.commit()
+        ]
+        assert mocks['PlaidItem'].mock_calls == [
+            call(
+                item_id='itemId',
+                access_token='accToken',
+                last_updated=datetime(
+                    2017, 7, 28, 6, 24, 44, tzinfo=timezone.utc
+                ),
+                institution_name='Inst1',
+                institution_id='IID1'
+            )
+        ]
+        assert mocks['PlaidAccount'].mock_calls == [
+            call(
+                item_id='itemId',
+                account_id='AID1',
+                name='Name1',
+                mask='XXX1',
+                account_type='depository',
+                account_subtype='checking'
+            ),
+            call(
+                item_id='itemId',
+                account_id='AID2',
+                name='Name2',
+                mask='XXX2',
+                account_type='credit',
+                account_subtype='unknown'
+            )
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_exception(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'public_token': 'pubToken',
+            'metadata': {
+                'institution': {
+                    'name': 'Inst1',
+                    'institution_id': 'IID1'
+                },
+                'accounts': [
+                    {
+                        'id': 'AID1',
+                        'name': 'Name1',
+                        'mask': 'XXX1',
+                        'type': 'depository',
+                        'subtype': 'checking'
+                    },
+                    {
+                        'id': 'AID2',
+                        'name': 'Name2',
+                        'mask': 'XXX2',
+                        'type': 'credit'
+                    }
+                ]
+            }
+        }
+        mock_client = MagicMock()
+        mock_client.Item.public_token.exchange.side_effect = PlaidError(
+            'foo', 123, 'bar', 'foobar'
+        )
+        mock_sess = Mock()
+
+        m_item1 = Mock()
+        m_acct1 = Mock()
+        m_acct2 = Mock()
+
+        def se_item(**kwargs):
+            return m_item1
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            return m_acct2
+
+        with patch.multiple(
+            pbm,
+            jsonify=DEFAULT,
+            request=mock_req,
+            plaid_client=DEFAULT,
+            PlaidItem=DEFAULT,
+            PlaidAccount=DEFAULT,
+            db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidHandleLink().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().Item.public_token.exchange('pubToken')
+        ]
+        assert mock_client.mock_calls == [
+            call.Item.public_token.exchange('pubToken')
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'Exception: foo'
+            })
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_json.status_code == 400
+        assert mock_sess.mock_calls == []
+        assert mocks['PlaidItem'].mock_calls == []
+        assert mocks['PlaidAccount'].mock_calls == []
+
+    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
+    def test_ci(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'public_token': 'pubToken',
+            'metadata': {
+                'institution': {
+                    'name': 'Inst1',
+                    'institution_id': 'IID1'
+                },
+                'accounts': [
+                    {
+                        'id': 'AID1',
+                        'name': 'Name1',
+                        'mask': 'XXX1',
+                        'type': 'depository',
+                        'subtype': 'checking'
+                    },
+                    {
+                        'id': 'AID2',
+                        'name': 'Name2',
+                        'mask': 'XXX2',
+                        'type': 'credit'
+                    }
+                ]
+            }
+        }
+        mock_client = MagicMock()
+        mock_client.Item.public_token.exchange.side_effect = PlaidError(
+            'foo', 123, 'bar', 'foobar'
+        )
+        mock_sess = Mock()
+
+        m_item1 = Mock()
+        m_acct1 = Mock()
+        m_acct2 = Mock()
+
+        def se_item(**kwargs):
+            return m_item1
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            return m_acct2
+
+        with patch.multiple(
+            pbm,
+            jsonify=DEFAULT,
+            request=mock_req,
+            plaid_client=DEFAULT,
+            PlaidItem=DEFAULT,
+            PlaidAccount=DEFAULT,
+            db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidHandleLink().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == []
+        assert mock_client.mock_calls == []
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'item_id': 'testITEMid',
+                'access_token': 'testTOKEN'
+            })
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_sess.mock_calls == []
+        assert mocks['PlaidItem'].mock_calls == []
+        assert mocks['PlaidAccount'].mock_calls == []
 
 
 class TestPlaidPublicToken:
@@ -227,6 +498,247 @@ class TestPlaidPublicToken:
         ]
         assert mock_json.mock_calls == []
         assert m_client.mock_calls == []
+
+
+class TestPlaidRefreshAccounts:
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_normal(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'item_id': 'IID1'
+        }
+        mock_client = MagicMock()
+        mock_client.Accounts.get.return_value = {
+            'accounts': [
+                {
+                    'account_id': 'AID1',
+                    'name': 'Name1',
+                    'mask': 'XXX1',
+                    'type': 'depository',
+                    'subtype': 'checking',
+                },
+                {
+                    'account_id': 'AID2',
+                    'name': 'Name2',
+                    'mask': 'XXX2',
+                    'type': 'depository',
+                    'subtype': 'savings',
+                },
+                {
+                    'account_id': 'AID3',
+                    'name': 'Name3',
+                    'mask': 'XXX3',
+                    'type': 'credit',
+                }
+            ]
+        }
+        m_acct1 = Mock(account_id='AID1')
+        m_acct2 = Mock(account_id='AID2')
+        m_acct3 = Mock(account_id='AID3')
+        m_acct4 = Mock(account_id='AID4')
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken',
+            all_accounts=[m_acct2, m_acct4]
+        )
+
+        def se_item(**kwargs):
+            return mock_item
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            if kwargs['account_id'] == 'AID2':
+                return m_acct2
+            if kwargs['account_id'] == 'AID3':
+                return m_acct3
+
+        mock_sess = MagicMock()
+        mock_sess.query.return_value.get.return_value = mock_item
+
+        with patch.multiple(
+                pbm,
+                jsonify=DEFAULT,
+                request=mock_req,
+                plaid_client=DEFAULT,
+                PlaidItem=DEFAULT,
+                PlaidAccount=DEFAULT,
+                db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidRefreshAccounts().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().Accounts.get('accToken')
+        ]
+        assert mock_client.mock_calls == [
+            call.Accounts.get('accToken')
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({'success': True})
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1'),
+            call.add(m_acct1),
+            call.add(m_acct3),
+            call.delete(m_acct4),
+            call.commit()
+        ]
+        assert mocks['PlaidItem'].mock_calls == []
+        assert mocks['PlaidAccount'].mock_calls == [
+            call(
+                item_id='IID1',
+                account_id='AID1',
+                name='Name1',
+                mask='XXX1',
+                account_type='depository',
+                account_subtype='checking'
+            ),
+            call(
+                item_id='IID1',
+                account_id='AID3',
+                name='Name3',
+                mask='XXX3',
+                account_type='credit',
+                account_subtype='unknown'
+            )
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_exception(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'item_id': 'IID1'
+        }
+        mock_client = MagicMock()
+        mock_client.Accounts.get.side_effect = PlaidError(
+            'fooerror', 'bar', 'baz', 'blam'
+        )
+        m_acct1 = Mock(account_id='AID1')
+        m_acct2 = Mock(account_id='AID2')
+        m_acct3 = Mock(account_id='AID3')
+        m_acct4 = Mock(account_id='AID4')
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken',
+            all_accounts=[m_acct2, m_acct4]
+        )
+
+        def se_item(**kwargs):
+            return mock_item
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            if kwargs['account_id'] == 'AID2':
+                return m_acct2
+            if kwargs['account_id'] == 'AID3':
+                return m_acct3
+
+        mock_sess = MagicMock()
+        mock_sess.query.return_value.get.return_value = mock_item
+
+        with patch.multiple(
+                pbm,
+                jsonify=DEFAULT,
+                request=mock_req,
+                plaid_client=DEFAULT,
+                PlaidItem=DEFAULT,
+                PlaidAccount=DEFAULT,
+                db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidRefreshAccounts().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().Accounts.get('accToken')
+        ]
+        assert mock_client.mock_calls == [
+            call.Accounts.get('accToken')
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'Exception: fooerror'
+            })
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1')
+        ]
+        assert mocks['PlaidItem'].mock_calls == []
+        assert mocks['PlaidAccount'].mock_calls == []
+
+    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
+    def test_ci(self):
+        mock_json = Mock()
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = {
+            'item_id': 'IID1'
+        }
+        mock_client = MagicMock()
+        mock_client.Accounts.get.side_effect = PlaidError(
+            'fooerror', 'bar', 'baz', 'blam'
+        )
+        m_acct1 = Mock(account_id='AID1')
+        m_acct2 = Mock(account_id='AID2')
+        m_acct3 = Mock(account_id='AID3')
+        m_acct4 = Mock(account_id='AID4')
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken',
+            all_accounts=[m_acct2, m_acct4]
+        )
+
+        def se_item(**kwargs):
+            return mock_item
+
+        def se_acct(**kwargs):
+            if kwargs['account_id'] == 'AID1':
+                return m_acct1
+            if kwargs['account_id'] == 'AID2':
+                return m_acct2
+            if kwargs['account_id'] == 'AID3':
+                return m_acct3
+
+        mock_sess = MagicMock()
+        mock_sess.query.return_value.get.return_value = mock_item
+
+        with patch.multiple(
+                pbm,
+                jsonify=DEFAULT,
+                request=mock_req,
+                plaid_client=DEFAULT,
+                PlaidItem=DEFAULT,
+                PlaidAccount=DEFAULT,
+                db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['PlaidItem'].side_effect = se_item
+            mocks['PlaidAccount'].side_effect = se_acct
+            res = PlaidRefreshAccounts().post()
+        assert res == mock_json
+        assert mocks['plaid_client'].mock_calls == []
+        assert mock_client.mock_calls == []
+        assert mocks['jsonify'].mock_calls == [
+            call({'success': True})
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_sess.mock_calls == []
+        assert mocks['PlaidItem'].mock_calls == []
+        assert mocks['PlaidAccount'].mock_calls == []
 
 
 class TestPlaidConfigJS:
