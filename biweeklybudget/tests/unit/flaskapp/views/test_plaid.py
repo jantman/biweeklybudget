@@ -122,12 +122,6 @@ class TestSetUrlRules:
 
 class TestPlaidJs:
 
-    def test_ci(self):
-        with patch(f'{pbm}.redirect') as m_redir:
-            m_redir.side_effect = lambda x: x
-            res = PlaidJs().get()
-        assert res == 'static/js/plaid_test.js'
-
     @patch.dict('os.environ', {}, clear=True)
     def test_normal(self):
         with patch(f'{pbm}.redirect') as m_redir:
@@ -331,80 +325,6 @@ class TestPlaidHandleLink:
         assert mocks['PlaidItem'].mock_calls == []
         assert mocks['PlaidAccount'].mock_calls == []
 
-    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
-    def test_ci(self):
-        mock_json = Mock()
-        mock_req = MagicMock()
-        mock_req.get_json.return_value = {
-            'public_token': 'pubToken',
-            'metadata': {
-                'institution': {
-                    'name': 'Inst1',
-                    'institution_id': 'IID1'
-                },
-                'accounts': [
-                    {
-                        'id': 'AID1',
-                        'name': 'Name1',
-                        'mask': 'XXX1',
-                        'type': 'depository',
-                        'subtype': 'checking'
-                    },
-                    {
-                        'id': 'AID2',
-                        'name': 'Name2',
-                        'mask': 'XXX2',
-                        'type': 'credit'
-                    }
-                ]
-            }
-        }
-        mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.side_effect = PlaidError(
-            'foo', 123, 'bar', 'foobar'
-        )
-        mock_sess = Mock()
-
-        m_item1 = Mock()
-        m_acct1 = Mock()
-        m_acct2 = Mock()
-
-        def se_item(**kwargs):
-            return m_item1
-
-        def se_acct(**kwargs):
-            if kwargs['account_id'] == 'AID1':
-                return m_acct1
-            return m_acct2
-
-        with patch.multiple(
-            pbm,
-            jsonify=DEFAULT,
-            request=mock_req,
-            plaid_client=DEFAULT,
-            PlaidItem=DEFAULT,
-            PlaidAccount=DEFAULT,
-            db_session=mock_sess
-        ) as mocks:
-            mocks['jsonify'].return_value = mock_json
-            mocks['plaid_client'].return_value = mock_client
-            mocks['PlaidItem'].side_effect = se_item
-            mocks['PlaidAccount'].side_effect = se_acct
-            res = PlaidHandleLink().post()
-        assert res == mock_json
-        assert mocks['plaid_client'].mock_calls == []
-        assert mock_client.mock_calls == []
-        assert mocks['jsonify'].mock_calls == [
-            call({
-                'item_id': 'testITEMid',
-                'access_token': 'testTOKEN'
-            })
-        ]
-        assert mock_json.mock_calls == []
-        assert mock_sess.mock_calls == []
-        assert mocks['PlaidItem'].mock_calls == []
-        assert mocks['PlaidAccount'].mock_calls == []
-
 
 class TestPlaidPublicToken:
 
@@ -479,26 +399,6 @@ class TestPlaidPublicToken:
             call.query(PlaidItem),
             call.query().get('Item1')
         ]
-
-    def test_ci(self):
-        mock_json = Mock()
-        mock_req = Mock(form={'access_token': 'foo'})
-        mock_client = MagicMock()
-        mock_client.Item.public_token.create.return_value = {
-            'create': 'response'
-        }
-        with patch(f'{pbm}.jsonify') as m_jsonify:
-            m_jsonify.return_value = mock_json
-            with patch(f'{pbm}.request', mock_req):
-                with patch(f'{pbm}.plaid_client') as m_client:
-                    m_client.return_value = mock_client
-                    res = PlaidPublicToken().post()
-        assert res == mock_json
-        assert m_jsonify.mock_calls == [
-            call({'public_token': 'testPUBLICtoken'})
-        ]
-        assert mock_json.mock_calls == []
-        assert m_client.mock_calls == []
 
 
 class TestPlaidRefreshAccounts:
@@ -682,65 +582,6 @@ class TestPlaidRefreshAccounts:
         assert mocks['PlaidItem'].mock_calls == []
         assert mocks['PlaidAccount'].mock_calls == []
 
-    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
-    def test_ci(self):
-        mock_json = Mock()
-        mock_req = MagicMock()
-        mock_req.get_json.return_value = {
-            'item_id': 'IID1'
-        }
-        mock_client = MagicMock()
-        mock_client.Accounts.get.side_effect = PlaidError(
-            'fooerror', 'bar', 'baz', 'blam'
-        )
-        m_acct1 = Mock(account_id='AID1')
-        m_acct2 = Mock(account_id='AID2')
-        m_acct3 = Mock(account_id='AID3')
-        m_acct4 = Mock(account_id='AID4')
-        mock_item = Mock(
-            item_id='IID1', access_token='accToken',
-            all_accounts=[m_acct2, m_acct4]
-        )
-
-        def se_item(**kwargs):
-            return mock_item
-
-        def se_acct(**kwargs):
-            if kwargs['account_id'] == 'AID1':
-                return m_acct1
-            if kwargs['account_id'] == 'AID2':
-                return m_acct2
-            if kwargs['account_id'] == 'AID3':
-                return m_acct3
-
-        mock_sess = MagicMock()
-        mock_sess.query.return_value.get.return_value = mock_item
-
-        with patch.multiple(
-                pbm,
-                jsonify=DEFAULT,
-                request=mock_req,
-                plaid_client=DEFAULT,
-                PlaidItem=DEFAULT,
-                PlaidAccount=DEFAULT,
-                db_session=mock_sess
-        ) as mocks:
-            mocks['jsonify'].return_value = mock_json
-            mocks['plaid_client'].return_value = mock_client
-            mocks['PlaidItem'].side_effect = se_item
-            mocks['PlaidAccount'].side_effect = se_acct
-            res = PlaidRefreshAccounts().post()
-        assert res == mock_json
-        assert mocks['plaid_client'].mock_calls == []
-        assert mock_client.mock_calls == []
-        assert mocks['jsonify'].mock_calls == [
-            call({'success': True})
-        ]
-        assert mock_json.mock_calls == []
-        assert mock_sess.mock_calls == []
-        assert mocks['PlaidItem'].mock_calls == []
-        assert mocks['PlaidAccount'].mock_calls == []
-
 
 class TestPlaidUpdateItemInfo:
 
@@ -916,76 +757,6 @@ class TestPlaidUpdateItemInfo:
             call.query().all(),
             call.add(m_item1),
         ]
-        assert mocks['PlaidItem'].mock_calls == []
-        assert mocks['PlaidAccount'].mock_calls == []
-
-    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
-    def test_ci(self):
-        mock_json = Mock()
-        mock_client = MagicMock()
-        m_item1 = Mock(item_id='IID1', access_token='accToken1')
-        m_item2 = Mock(item_id='IID2', access_token='accToken2')
-        m_item3 = Mock(item_id='IID3', access_token='accToken3')
-
-        mock_sess = MagicMock()
-        mock_sess.query.return_value.all.return_value = [
-            m_item1, m_item2, m_item3
-        ]
-
-        def se_get(token):
-            if token == 'accToken1':
-                return {
-                    'item': {
-                        'institution_id': 'inst1'
-                    }
-                }
-            if token == 'accToken2':
-                raise PlaidError(
-                    'foo', 123, 'bar', 'baz'
-                )
-            if token == 'accToken3':
-                return {
-                    'item': {
-                        'institution_id': 'inst1'
-                    }
-                }
-
-        mock_client.Item.get.side_effect = se_get
-
-        def se_inst(inst_id):
-            if inst_id == 'inst1':
-                return {
-                    'institution': {
-                        'name': 'name1'
-                    }
-                }
-            if inst_id == 'inst2':
-                return {
-                    'institution': {
-                        'name': 'name2'
-                    }
-                }
-
-        mock_client.Institutions.get_by_id.side_effect = se_inst
-
-        with patch.multiple(
-                pbm,
-                jsonify=DEFAULT,
-                plaid_client=DEFAULT,
-                PlaidItem=DEFAULT,
-                PlaidAccount=DEFAULT,
-                db_session=mock_sess
-        ) as mocks:
-            mocks['jsonify'].return_value = mock_json
-            mocks['plaid_client'].return_value = mock_client
-            res = PlaidUpdateItemInfo().post()
-        assert res == mock_json
-        assert mocks['plaid_client'].mock_calls == []
-        assert mocks['jsonify'].mock_calls == [
-            call({'success': True})
-        ]
-        assert mock_json.mock_calls == []
-        assert mock_sess.mock_calls == []
         assert mocks['PlaidItem'].mock_calls == []
         assert mocks['PlaidAccount'].mock_calls == []
 

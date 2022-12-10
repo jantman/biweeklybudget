@@ -62,8 +62,6 @@ class PlaidJs(MethodView):
     """
 
     def get(self):
-        if os.environ.get('CI', 'false') == 'true':
-            return redirect('static/js/plaid_test.js')
         return redirect('static/js/plaid_prod.js')
 
 
@@ -77,11 +75,6 @@ class PlaidHandleLink(MethodView):
         logger.debug(
             'got POST to /ajax/plaid/handle_link; data=%s', data
         )
-        if os.environ.get('CI', 'false') == 'true':
-            return jsonify({
-                'item_id': 'testITEMid',
-                'access_token': 'testTOKEN'
-            })
         client = plaid_client()
         public_token = data['public_token']
         logger.debug('Plaid token exchange for public token: %s', public_token)
@@ -136,8 +129,6 @@ class PlaidPublicToken(MethodView):
     """
 
     def post(self):
-        if os.environ.get('CI', 'false') == 'true':
-            return jsonify({'public_token': 'testPUBLICtoken'})
         client = plaid_client()
         item_id = request.form['item_id']
         item: PlaidItem = db_session.query(PlaidItem).get(item_id)
@@ -171,8 +162,6 @@ class PlaidRefreshAccounts(MethodView):
 
     def post(self):
         data = request.get_json()
-        if os.environ.get('CI', 'false') == 'true':
-            return jsonify({'success': True})
         client = plaid_client()
         item_id = data['item_id']
         item: PlaidItem = db_session.query(PlaidItem).get(item_id)
@@ -229,8 +218,6 @@ class PlaidUpdateItemInfo(MethodView):
     """
 
     def post(self):
-        if os.environ.get('CI', 'false') == 'true':
-            return jsonify({'success': True})
         client = plaid_client()
         logger.info('Refreshing Plaid item info')
         item: PlaidItem
