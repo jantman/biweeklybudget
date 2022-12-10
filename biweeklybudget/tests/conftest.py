@@ -68,6 +68,9 @@ try:
     from selenium.webdriver.support.event_firing_webdriver import \
         EventFiringWebDriver
     from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWD
+    from selenium.webdriver.common.desired_capabilities import \
+        DesiredCapabilities
+    from selenium.webdriver import ChromeOptions
     HAVE_PYTEST_SELENIUM = True
 except ImportError:
     HAVE_PYTEST_SELENIUM = False
@@ -285,12 +288,16 @@ def driver(request, driver_class, driver_kwargs):
     is wrapped in the retrying package's ``@retry`` decorator.
     """
     kwargs = driver_kwargs
-    if driver_class == ChromeWD:
-        kwargs['desired_capabilities']['loggingPrefs'] = {
-            'browser': 'ALL'
-        }
+    if 'desired_capabilities' not in kwargs:
+        kwargs['desired_capabilities'] = DesiredCapabilities.CHROME
+    kwargs['desired_capabilities']['goog:loggingPrefs'] = {
+        'browser': 'ALL',
+        'driver': 'ALL'
+    }
+    kwargs['desired_capabilities']['loggingPrefs'] = {
+        'browser': 'ALL',
+    }
     driver = get_driver_for_class(driver_class, kwargs)
-
     event_listener = request.config.getoption('event_listener')
     if event_listener is not None:
         # Import the specified event listener and wrap the driver instance
@@ -339,13 +346,39 @@ def _gather_screenshot(item, report, driver, summary, extra):
         extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
 
 
+def _gather_logs(item, report, driver, summary, extra):
+    """Redefine here to fix a bug"""
+    pytest_html = item.config.pluginmanager.getplugin("html")
+    try:
+        # this doesn't work with chromedriver
+        # types = driver.log_types
+        types = ['browser', 'driver', 'client', 'server']
+    except Exception as e:
+        # note that some drivers may not implement log types
+        summary.append("WARNING: Failed to gather log types: {0}".format(e))
+        return
+    for name in types:
+        try:
+            log = driver.get_log(name)
+        except Exception as e:
+            summary.append("WARNING: Failed to gather {0} log: {1}".format(name, e))
+            return
+        if pytest_html is not None:
+            extra.append(
+                pytest_html.extras.text(
+                    ptselenium.format_log(log), "%s Log" % name.title()
+                )
+            )
+
+
 # redefine _gather_screenshot to use our implementation
 if HAVE_PYTEST_SELENIUM:
     ptselenium._gather_screenshot = _gather_screenshot
+    ptselenium._gather_logs = _gather_logs
 
 
 @pytest.fixture
-def chrome_options(chrome_options):
+def chrome_options(chrome_options: 'ChromeOptions') -> 'ChromeOptions':
     chrome_options.add_argument('headless')
     chrome_options.add_argument('window-size=1920x1080')
     return chrome_options
