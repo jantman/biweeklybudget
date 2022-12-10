@@ -9,6 +9,8 @@ With many of my banks and credit card companies discontinuing support for OFX Di
 
 The Plaid component uses the same "OFX" models in biweeklybudget that the older OFX Direct Connect component used. Transactions retrieved via Plaid will still show up on the "OFX Transactions" view, and reconciling works the same way. Both Plaid and OFX write their data into the same models and database tables.
 
+**IMPORTANT** As of late 2022, a handful of financial institutions, Chase being the most notable, require `OAuth2 integration via Plaid <https://plaid.com/docs/link/oauth/?`__. This requires that your Plaid account request and be approved for Production environment access, which is a non-trivial process that requires additional legal agreements and a security and privacy review. In addition, Chase has their own partner review process that includes a security review. While it is *possible* for an individual to pass these reviews for a personal project, it's far from trivial. I would only recommend this for folks who have professional experience developing and operating applications that handle financial data, and who intend to operate biweeklybudget in a similar fashion.
+
 Configuration
 -------------
 
