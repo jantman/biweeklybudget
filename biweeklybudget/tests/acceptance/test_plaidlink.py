@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2022 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -36,904 +36,142 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import sys
-import pytest
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pytz import UTC
 from decimal import Decimal
+import pytest
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
-from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
-from biweeklybudget.tests.conftest import get_db_engine
-from biweeklybudget.tests.sqlhelpers import restore_mysqldump
+from biweeklybudget.models import (
+    Account, Transaction, BudgetTransaction, PlaidAccount, PlaidItem,
+    OFXTransaction, OFXStatement
+)
 
-# https://code.google.com/p/mock/issues/detail?id=249
-# py>=3.4 should use unittest.mock not the mock package on pypi
-if (
-        sys.version_info[0] < 3 or
-        sys.version_info[0] == 3 and sys.version_info[1] < 4
-):
-    from mock import patch
-else:
-    from unittest.mock import patch
-
-pbm = 'biweeklybudget.biweeklypayperiod'
-
+SANDBOX_USERNAME: str = ''
+SANDBOX_PASSWORD: str = ''
+SANDBOX_MFA: str = '1234'
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
-class TestSchedTransOrderingAndPeriodAssignment(AcceptanceHelper):
-
-    def find_income_trans_id(self, db):
-        return db.query(ScheduledTransaction).filter(
-            ScheduledTransaction.description.__eq__('Income')
-        ).one().id
+class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     def test_0_clean_transactions(self, testdb):
-        testdb.query(TxnReconcile).delete(synchronize_session='fetch')
-        testdb.query(BudgetTransaction).delete(synchronize_session='fetch')
-        testdb.query(Transaction).delete(synchronize_session='fetch')
-        num_rows = testdb.query(
-            ScheduledTransaction).delete(synchronize_session='fetch')
-        assert num_rows == 6
+        for stmt in [
+            'UPDATE accounts SET plaid_item_id=NULL, plaid_account_id=NULL;',
+            'DELETE FROM plaid_accounts;',
+            'DELETE FROM plaid_items;',
+            'DELETE FROM txn_reconciles;',
+            'DELETE FROM ofx_trans;',
+            'DELETE FROM ofx_statements;',
+            'DELETE FROM budget_transactions;',
+            'DELETE FROM transactions;',
+        ]:
+            testdb.execute(stmt)
         testdb.flush()
         testdb.commit()
 
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_1_confirm_pay_period_start(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        assert pp.start_date == date(2017, 4, 7)
+    def test_1_verify_db_state(self, testdb):
+        for acct in testdb.query(Account).all():
+            assert acct.plaid_account_id is None
+            assert acct.plaid_item_id is None
+        assert len(testdb.query(PlaidAccount).all()) == 0
+        assert len(testdb.query(PlaidItem).all()) == 0
+        assert len(testdb.query(Transaction).all()) == 0
+        assert len(testdb.query(BudgetTransaction).all()) == 0
+        assert len(testdb.query(OFXStatement).all()) == 0
+        assert len(testdb.query(OFXTransaction).all()) == 0
 
-    def test_2_add_data(self, testdb):
-        acct = testdb.query(Account).get(1)
-        budg = testdb.query(Budget).get(1)
-        inc_budg = testdb.query(Budget).get(7)
-        for daynum in range(1, 29):
-            testdb.add(ScheduledTransaction(
-                amount=Decimal('123.45'),
-                description='ST_day_%d' % daynum,
-                account=acct,
-                budget=budg,
-                day_of_month=daynum
-            ))
-        testdb.add(ScheduledTransaction(
-            amount=Decimal('-1000.00'),
-            description='Income',
-            account=acct,
-            budget=inc_budg,
-            num_per_period=1
-        ))
-        testdb.flush()
-        testdb.commit()
+    def test_2_items_table(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        table = selenium.find_element_by_id('table-items-plaid')
+        texts = self.tbody2textlist(table)
+        assert texts == []
 
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_3_previous_pay_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 1), testdb
+    def test_3_simple_link(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element_by_id('btn_link_plaid').click()
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 30).until(
+            EC.frame_to_be_available_and_switch_to_it(
+                (By.ID, 'plaid-link-iframe-1')
+            )
         )
-        assert pp.start_date == date(2017, 3, 24)
-        all_trans = pp.transactions_list
-        all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
-        assert len(all_monthly) == 11
-        # note monthly scheduled must have a day number <= 28
-        assert all_monthly[0]['date'] == date(2017, 3, 24)
-        assert all_monthly[1]['date'] == date(2017, 3, 25)
-        assert all_monthly[2]['date'] == date(2017, 3, 26)
-        assert all_monthly[3]['date'] == date(2017, 3, 27)
-        assert all_monthly[4]['date'] == date(2017, 3, 28)
-        assert all_monthly[5]['date'] == date(2017, 4, 1)
-        assert all_monthly[6]['date'] == date(2017, 4, 2)
-        assert all_monthly[7]['date'] == date(2017, 4, 3)
-        assert all_monthly[8]['date'] == date(2017, 4, 4)
-        assert all_monthly[9]['date'] == date(2017, 4, 5)
-        assert all_monthly[10]['date'] == date(2017, 4, 6)
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_4_income_trans_is_first_previous_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 1), testdb
+        # inside iframe
+        # click Continue button
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//button[normalize-space()="Continue"]')
+            )
+        ).click()
+        # search box
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'search-input'))
+        ).click()
+        # enter search item
+        sb = selenium.find_element_by_id('search-input')
+        assert sb.is_displayed()
+        sb.clear()
+        sb.send_keys('First Platypus')
+        # click on First Platypus Bank
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-First Platypus Bank'))
+        ).click()
+        # click on the non-OAuth institution
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-ins_109508'))
+        ).click()
+        # enter username
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-input-0'))
+        ).click()
+        user = selenium.find_element_by_id('aut-input-0')
+        user.clear()
+        user.send_keys(SANDBOX_USERNAME)
+        # enter password
+        passwd = selenium.find_element_by_id('aut-input-1')
+        passwd.clear()
+        passwd.send_keys(SANDBOX_PASSWORD)
+        # click submit
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-button'))
+        ).click()
+        # wait for accounts confirmation screen
+        WebDriverWait(selenium, 10).until(
+            EC.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, 'div.Content-module__content'),
+                'Your accounts'
+            )
         )
-        all_trans = pp.transactions_list
-        income_id = self.find_income_trans_id(testdb)
-        assert income_id is not None
-        assert all_trans[0]['id'] == income_id
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_5_current_pay_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 13), testdb
+        # click continue
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-button'))
+        ).click()
+        # wait for success message
+        WebDriverWait(selenium, 10).until(
+            EC.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, 'div.Content-module__content'),
+                'Your account has been successfully linked to '
+            )
         )
-        assert pp.start_date == date(2017, 4, 7)
-        all_trans = pp.transactions_list
-        all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
-        assert len(all_monthly) == 14
-        assert all_monthly[0]['date'] == date(2017, 4, 7)
-        assert all_monthly[1]['date'] == date(2017, 4, 8)
-        assert all_monthly[2]['date'] == date(2017, 4, 9)
-        assert all_monthly[3]['date'] == date(2017, 4, 10)
-        assert all_monthly[4]['date'] == date(2017, 4, 11)
-        assert all_monthly[5]['date'] == date(2017, 4, 12)
-        assert all_monthly[6]['date'] == date(2017, 4, 13)
-        assert all_monthly[7]['date'] == date(2017, 4, 14)
-        assert all_monthly[8]['date'] == date(2017, 4, 15)
-        assert all_monthly[9]['date'] == date(2017, 4, 16)
-        assert all_monthly[10]['date'] == date(2017, 4, 17)
-        assert all_monthly[11]['date'] == date(2017, 4, 18)
-        assert all_monthly[12]['date'] == date(2017, 4, 19)
-        assert all_monthly[13]['date'] == date(2017, 4, 20)
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_6_income_trans_is_first_current_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 13), testdb
-        )
-        all_trans = pp.transactions_list
-        income_id = self.find_income_trans_id(testdb)
-        assert income_id is not None
-        assert all_trans[0]['id'] == income_id
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_7_next_pay_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 5, 4), testdb
-        )
-        assert pp.start_date == date(2017, 4, 21)
-        all_trans = pp.transactions_list
-        all_monthly = [x for x in all_trans if x['sched_type'] == 'monthly']
-        assert len(all_monthly) == 12
-        # note monthly scheduled must have a day number <= 28
-        assert all_monthly[0]['date'] == date(2017, 4, 21)
-        assert all_monthly[1]['date'] == date(2017, 4, 22)
-        assert all_monthly[2]['date'] == date(2017, 4, 23)
-        assert all_monthly[3]['date'] == date(2017, 4, 24)
-        assert all_monthly[4]['date'] == date(2017, 4, 25)
-        assert all_monthly[5]['date'] == date(2017, 4, 26)
-        assert all_monthly[6]['date'] == date(2017, 4, 27)
-        assert all_monthly[7]['date'] == date(2017, 4, 28)
-        assert all_monthly[8]['date'] == date(2017, 5, 1)
-        assert all_monthly[9]['date'] == date(2017, 5, 2)
-        assert all_monthly[10]['date'] == date(2017, 5, 3)
-        assert all_monthly[11]['date'] == date(2017, 5, 4)
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_8_income_trans_is_first_next_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 5, 4), testdb
-        )
-        all_trans = pp.transactions_list
-        income_id = self.find_income_trans_id(testdb)
-        assert income_id is not None
-        assert all_trans[0]['id'] == income_id
-
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-@pytest.mark.incremental
-class TestTransFromSchedTrans(AcceptanceHelper):
-
-    def test_0_clean_transactions(self, testdb):
-        testdb.query(TxnReconcile).delete(synchronize_session='fetch')
-        testdb.query(BudgetTransaction).delete(synchronize_session='fetch')
-        testdb.query(Transaction).delete(synchronize_session='fetch')
-        num_rows = testdb.query(
-            ScheduledTransaction).delete(synchronize_session='fetch')
-        assert num_rows == 6
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_1_confirm_pay_period_start(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        assert pp.start_date == date(2017, 4, 7)
-
-    def test_2_add_data(self, testdb):
-        acct = testdb.query(Account).get(1)
-        budg = testdb.query(Budget).get(1)
-        budg2 = testdb.query(Budget).get(2)
-        st_daynum = ScheduledTransaction(
-            amount=Decimal('111.11'),
-            description='ST_day_9',
-            account=acct,
-            budget=budg,
-            day_of_month=9
-        )
-        testdb.add(st_daynum)
-        t_daynum = Transaction(
-            budget_amounts={budg: Decimal('111.33')},
-            budgeted_amount=Decimal('111.11'),
-            date=date(2017, 4, 9),
-            description='Trans_ST_day_9',
-            account=acct,
-            planned_budget=budg,
-            scheduled_trans=st_daynum,
-        )
-        testdb.add(t_daynum)
-        testdb.add(TxnReconcile(
-            note='foo',
-            transaction=t_daynum
-        ))
-        st_pp1 = ScheduledTransaction(
-            amount=Decimal('222.22'),
-            description='ST_pp_1',
-            account=acct,
-            budget=budg,
-            num_per_period=1
-        )
-        testdb.add(st_pp1)
-        st_pp3 = ScheduledTransaction(
-            amount=Decimal('333.33'),
-            description='ST_pp_3',
-            account=acct,
-            budget=budg,
-            num_per_period=3
-        )
-        testdb.add(st_pp3)
-        t_pp3A = Transaction(
-            budget_amounts={budg: Decimal('333.33')},
-            budgeted_amount=Decimal('333.33'),
-            date=date(2017, 4, 14),
-            description='Trans_ST_pp_3_A',
-            account=acct,
-            planned_budget=budg,
-            scheduled_trans=st_pp3,
-        )
-        testdb.add(t_pp3A)
-        t_pp3B = Transaction(
-            budget_amounts={budg: Decimal('333.33')},
-            budgeted_amount=Decimal('333.33'),
-            date=date(2017, 4, 15),
-            description='Trans_ST_pp_3_B',
-            account=acct,
-            planned_budget=budg,
-            scheduled_trans=st_pp3
-        )
-        testdb.add(t_pp3B)
-        st_date = ScheduledTransaction(
-            amount=Decimal('444.44'),
-            description='ST_date',
-            account=acct,
-            budget=budg,
-            date=date(2017, 4, 12)
-        )
-        testdb.add(st_date)
-        t_date = Transaction(
-            budget_amounts={budg: Decimal('444.44')},
-            budgeted_amount=Decimal('444.44'),
-            date=date(2017, 4, 12),
-            description='Trans_ST_date',
-            account=acct,
-            planned_budget=budg,
-            scheduled_trans=st_date
-        )
-        testdb.add(t_date)
-        t_foo = Transaction(
-            budget_amounts={budg: Decimal('555.55')},
-            date=date(2017, 4, 8),
-            description='Trans_foo',
-            account=acct
-        )
-        testdb.add(t_foo)
-        t_bar = Transaction(
-            budget_amounts={
-                budg: Decimal('666.66'),
-                budg2: Decimal('100.00')
-            },
-            date=date(2017, 4, 16),
-            description='Trans_bar',
-            account=acct
-        )
-        testdb.add(t_bar)
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_3_ignore_scheduled_converted_to_real_trans(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 7), testdb
-        )
-        assert pp.start_date == date(2017, 4, 7)
-        all_trans = pp.transactions_list
-        assert all_trans == [
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('222.2200'),
-                'budgeted_amount': None,
-                'budgets': {
-                    1: {'amount': Decimal('222.2200'), 'name': 'Periodic1'}
-                },
-                'date': None,
-                'description': 'ST_pp_1',
-                'id': 8,
-                'reconcile_id': None,
-                'sched_trans_id': None,
-                'sched_type': 'per period',
-                'type': 'ScheduledTransaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('333.3300'),
-                'budgeted_amount': None,
-                'budgets': {
-                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
-                },
-                'date': None,
-                'description': 'ST_pp_3',
-                'id': 9,
-                'reconcile_id': None,
-                'sched_trans_id': None,
-                'sched_type': 'per period',
-                'type': 'ScheduledTransaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('555.5500'),
-                'budgeted_amount': None,
-                'budgets': {
-                    1: {'amount': Decimal('555.5500'), 'name': 'Periodic1'}
-                },
-                'date': date(2017, 4, 8),
-                'description': 'Trans_foo',
-                'id': 9,
-                'planned_budget_id': None,
-                'planned_budget_name': None,
-                'reconcile_id': None,
-                'sched_trans_id': None,
-                'sched_type': None,
-                'type': 'Transaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('111.3300'),
-                'budgeted_amount': Decimal('111.1100'),
-                'budgets': {
-                    1: {'amount': Decimal('111.3300'), 'name': 'Periodic1'}
-                },
-                'date': date(2017, 4, 9),
-                'description': 'Trans_ST_day_9',
-                'id': 5,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1',
-                'reconcile_id': 2,
-                'sched_trans_id': 7,
-                'sched_type': None,
-                'type': 'Transaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('444.4400'),
-                'budgeted_amount': Decimal('444.4400'),
-                'budgets': {
-                    1: {'amount': Decimal('444.4400'), 'name': 'Periodic1'}
-                },
-                'date': date(2017, 4, 12),
-                'description': 'Trans_ST_date',
-                'id': 8,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1',
-                'reconcile_id': None,
-                'sched_trans_id': 10,
-                'sched_type': None,
-                'type': 'Transaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('333.3300'),
-                'budgeted_amount': Decimal('333.3300'),
-                'budgets': {
-                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
-                },
-                'date': date(2017, 4, 14),
-                'description': 'Trans_ST_pp_3_A',
-                'id': 6,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1',
-                'reconcile_id': None,
-                'sched_trans_id': 9,
-                'sched_type': None,
-                'type': 'Transaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('333.3300'),
-                'budgeted_amount': Decimal('333.3300'),
-                'budgets': {
-                    1: {'amount': Decimal('333.3300'), 'name': 'Periodic1'}
-                },
-                'date': date(2017, 4, 15),
-                'description': 'Trans_ST_pp_3_B',
-                'id': 7,
-                'planned_budget_id': 1,
-                'planned_budget_name': 'Periodic1',
-                'reconcile_id': None,
-                'sched_trans_id': 9,
-                'sched_type': None,
-                'type': 'Transaction'
-            },
-            {
-                'account_id': 1,
-                'account_name': 'BankOne',
-                'amount': Decimal('766.6600'),
-                'budgeted_amount': None,
-                'budgets': {
-                    1: {'amount': Decimal('666.6600'), 'name': 'Periodic1'},
-                    2: {'amount': Decimal('100.0000'), 'name': 'Periodic2'}
-                },
-                'date': date(2017, 4, 16),
-                'description': 'Trans_bar',
-                'id': 10,
-                'planned_budget_id': None,
-                'planned_budget_name': None,
-                'reconcile_id': None,
-                'sched_trans_id': None,
-                'sched_type': None,
-                'type': 'Transaction'
-            }
-        ]
-
-
-@pytest.mark.acceptance
-@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
-@pytest.mark.incremental
-class TestSums(AcceptanceHelper):
-
-    def test_10_clean_db(self, dump_file_path):
-        # clean the database; empty schema
-        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
-
-    def test_11_add_account(self, testdb):
-        a = Account(
-            description='First Bank Account',
-            name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
-            acct_type=AcctType.Bank
-        )
-        testdb.add(a)
-        a.set_balance(
-            overall_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC),
-            ledger=Decimal('1.0'),
-            ledger_date=datetime(2017, 4, 10, 12, 0, 0, tzinfo=UTC)
-        )
-        testdb.flush()
-        testdb.commit()
-
-    def test_12_add_budgets(self, testdb):
-        testdb.add(Budget(
-            name='1Standing',
-            is_periodic=False,
-            description='1Standing',
-            current_balance=Decimal('987.65')
-        ))
-        testdb.add(Budget(
-            name='2Income',
-            is_periodic=True,
-            description='2Income',
-            starting_balance=Decimal('123.45'),
-            is_income=True
-        ))
-        testdb.add(Budget(
-            name='3Income',
-            is_periodic=True,
-            description='2Income',
-            starting_balance=Decimal('0.0'),
-            is_income=True
-        ))
-        testdb.add(Budget(
-            name='4Periodic',
-            is_periodic=True,
-            description='4Periodic',
-            starting_balance=Decimal('500.00')
-        ))
-        testdb.add(Budget(
-            name='5Periodic',
-            is_periodic=True,
-            description='5Periodic',
-            starting_balance=Decimal('100.00')
-        ))
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_13_add_transactions(self, testdb):
-        acct = testdb.query(Account).get(1)
-        budgets = {x.id: x for x in testdb.query(Budget).all()}
-        # Budget 3 Income Transaction
-        t1 = Transaction(
-            date=date(2017, 4, 7),
-            budget_amounts={
-                budgets[3]: Decimal('100.00'),
-                budgets[4]: Decimal('50.00')
-            },
-            budgeted_amount=Decimal('100.00'),
-            description='B3 Income',
-            account=acct
-        )
-        testdb.add(t1)
-        # Budget 3 Income ST
-        testdb.add(ScheduledTransaction(
-            amount=Decimal('99.00'),
-            description='B3 Income ST',
-            account=acct,
-            budget=budgets[3],
-            num_per_period=1
-        ))
-        # Budget 4 allocated greater than budgeted (500.00)
-        testdb.add(ScheduledTransaction(
-            amount=Decimal('250.00'),
-            description='B4 ST',
-            account=acct,
-            budget=budgets[4],
-            date=date(2017, 4, 10)
-        ))
-        t2 = Transaction(
-            date=date(2017, 4, 11),
-            budget_amounts={budgets[4]: Decimal('250.00')},
-            description='B4 T no budgeted',
-            account=acct
-        )
-        testdb.add(t2)
-        t3 = Transaction(
-            date=date(2017, 4, 12),
-            budget_amounts={budgets[4]: Decimal('600.00')},
-            budgeted_amount=Decimal('500.00'),
-            description='B4 T budgeted',
-            account=acct,
-            planned_budget=budgets[4]
-        )
-        testdb.add(t3)
-        # Budget 5 budgeted greater than allocated (100)
-        testdb.add(ScheduledTransaction(
-            amount=Decimal('2.00'),
-            description='B5 ST',
-            account=acct,
-            budget=budgets[5],
-            day_of_month=9
-        ))
-        t4 = Transaction(
-            date=date(2017, 4, 13),
-            description='B5 T',
-            budget_amounts={budgets[5]: Decimal('3.00')},
-            budgeted_amount=Decimal('1.00'),
-            account=acct,
-            planned_budget=budgets[5]
-        )
-        testdb.add(t4)
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_14_budget_sums(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        assert pp._data['budget_sums'] == {
-            2: {
-                'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': True,
-                'remaining': Decimal('123.45')
-            },
-            3: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('199.0'),
-                'spent': Decimal('100.0'),
-                'trans_total': Decimal('199.0'),
-                'is_income': True,
-                'remaining': Decimal('199.0')
-            },
-            4: {
-                'budget_amount': Decimal('500.00'),
-                'allocated': Decimal('1000.0'),
-                'spent': Decimal('900.0'),
-                'trans_total': Decimal('1150.0'),
-                'is_income': False,
-                'remaining': Decimal('-650.0')
-            },
-            5: {
-                'budget_amount': Decimal('100.0'),
-                'allocated': Decimal('3.0'),
-                'spent': Decimal('3.0'),
-                'trans_total': Decimal('5.0'),
-                'is_income': False,
-                'remaining': Decimal('95.0')
-            }
-        }
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_15_overall_sums(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        assert pp._data['overall_sums'] == {
-            'allocated': Decimal('1100.0'),
-            'spent': Decimal('903.0'),
-            'income': Decimal('322.45'),
-            'remaining': Decimal('-580.55')
-        }
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_16_transaction_list_ordering(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        type_id = [[x['type'], x['id']] for x in pp.transactions_list]
-        assert type_id == [
-            ['ScheduledTransaction', 1],
-            ['Transaction', 1],
-            ['ScheduledTransaction', 3],
-            ['ScheduledTransaction', 2],
-            ['Transaction', 2],
-            ['Transaction', 3],
-            ['Transaction', 4]
-        ]
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_17_spent_greater_than_allocated(self, testdb):
-        acct = testdb.query(Account).get(1)
-        budget = testdb.query(Budget).get(5)
-        t = Transaction(
-            date=date(2017, 4, 13),
-            description='B6 T',
-            budget_amounts={budget: Decimal('2032.0')},
-            budgeted_amount=Decimal('32.0'),
-            account=acct,
-            planned_budget=budget
-        )
-        testdb.add(t)
-        testdb.flush()
-        testdb.commit()
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2017, 4, 10), testdb
-        )
-        assert pp._data['budget_sums'] == {
-            2: {
-                'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': True,
-                'remaining': Decimal('123.45')
-            },
-            3: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('199.0'),
-                'spent': Decimal('100.0'),
-                'trans_total': Decimal('199.0'),
-                'is_income': True,
-                'remaining': Decimal('199.0')
-            },
-            4: {
-                'budget_amount': Decimal('500.00'),
-                'allocated': Decimal('1000.0'),
-                'spent': Decimal('900.0'),
-                'trans_total': Decimal('1150.0'),
-                'is_income': False,
-                'remaining': Decimal('-650.0')
-            },
-            5: {
-                'budget_amount': Decimal('100.0'),
-                'allocated': Decimal('35.0'),
-                'spent': Decimal('2035.0'),
-                'trans_total': Decimal('2037.0'),
-                'is_income': False,
-                'remaining': Decimal('-1937.0')
-            }
-        }
-        assert pp._data['overall_sums'] == {
-            'allocated': Decimal('1100.0'),
-            'spent': Decimal('2935.0'),
-            'income': Decimal('322.45'),
-            'remaining': Decimal('-2612.55')
-        }
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_18_sums_for_empty_period(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2020, 4, 9), testdb
-        )
-        assert pp._data['budget_sums'] == {
-            2: {
-                'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': True,
-                'remaining': Decimal('123.45')
-            },
-            3: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('99.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('99.0'),
-                'is_income': True,
-                'remaining': Decimal('99.0')
-            },
-            4: {
-                'budget_amount': Decimal('500.00'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': False,
-                'remaining': Decimal('500.0')
-            },
-            5: {
-                'budget_amount': Decimal('100.0'),
-                'allocated': Decimal('2.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('2.0'),
-                'is_income': False,
-                'remaining': Decimal('98.0')
-            }
-        }
-        assert pp._data['overall_sums'] == {
-            'allocated': Decimal('600.0'),
-            'income': Decimal('222.45'),
-            'remaining': Decimal('-377.55'),
-            'spent': Decimal('0.0')
-        }
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_80_issue201_setup(self, testdb):
-        budg = Budget(
-            name='6Periodic',
-            is_periodic=True,
-            description='6Periodic',
-            starting_balance=Decimal('0.00')
-        )
-        testdb.add(budg)
-        acct = testdb.query(Account).get(1)
-        testdb.add(ScheduledTransaction(
-            amount=Decimal('2.00'),
-            description='B6 ST4',
-            account=acct,
-            budget=budg,
-            day_of_month=11
-        ))
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_81_issue201_validate_setup(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2020, 4, 9), testdb
-        )
-        assert pp._data['budget_sums'] == {
-            2: {
-                'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': True,
-                'remaining': Decimal('123.45')
-            },
-            3: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('99.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('99.0'),
-                'is_income': True,
-                'remaining': Decimal('99.0')
-            },
-            4: {
-                'budget_amount': Decimal('500.00'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': False,
-                'remaining': Decimal('500.0')
-            },
-            5: {
-                'budget_amount': Decimal('100.0'),
-                'allocated': Decimal('2.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('2.0'),
-                'is_income': False,
-                'remaining': Decimal('98.0')
-            },
-            6: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('2.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('2.0'),
-                'is_income': False,
-                'remaining': Decimal('-2.0')
-            }
-        }
-        assert pp._data['overall_sums'] == {
-            'allocated': Decimal('602.0'),
-            'income': Decimal('222.45'),
-            'remaining': Decimal('-379.55'),
-            'spent': Decimal('0.0')
-        }
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_82_issue201_st_to_trans(self, testdb):
-        budg = testdb.query(Budget).get(6)
-        st = testdb.query(ScheduledTransaction).get(4)
-        testdb.add(Transaction(
-            date=date(2020, 4, 14),
-            description='B6 T6 from ST4',
-            budget_amounts={
-                budg: Decimal('200.00')
-            },
-            budgeted_amount=Decimal('2.00'),
-            account=testdb.query(Account).get(1),
-            planned_budget=budg,
-            scheduled_trans=st
-        ))
-        testdb.flush()
-        testdb.commit()
-
-    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
-    def test_83_issue201_confirm(self, testdb):
-        pp = BiweeklyPayPeriod.period_for_date(
-            date(2020, 4, 9), testdb
-        )
-        assert pp._data['budget_sums'] == {
-            2: {
-                'budget_amount': Decimal('123.45'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': True,
-                'remaining': Decimal('123.45')
-            },
-            3: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('99.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('99.0'),
-                'is_income': True,
-                'remaining': Decimal('99.0')
-            },
-            4: {
-                'budget_amount': Decimal('500.00'),
-                'allocated': Decimal('0.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('0.0'),
-                'is_income': False,
-                'remaining': Decimal('500.0')
-            },
-            5: {
-                'budget_amount': Decimal('100.0'),
-                'allocated': Decimal('2.0'),
-                'spent': Decimal('0.0'),
-                'trans_total': Decimal('2.0'),
-                'is_income': False,
-                'remaining': Decimal('98.0')
-            },
-            6: {
-                'budget_amount': Decimal('0.0'),
-                'allocated': Decimal('2.0'),
-                'spent': Decimal('200.0'),
-                'trans_total': Decimal('200.0'),
-                'is_income': False,
-                'remaining': Decimal('-200.0')
-            }
-        }
-        assert pp._data['overall_sums'] == {
-            'allocated': Decimal('602.0'),
-            'income': Decimal('222.45'),
-            'remaining': Decimal('-577.55'),
-            'spent': Decimal('200.0')
-        }
+        # click continue
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-button'))
+        ).click()
+        self.wait_for_jquery_done(selenium)
+        # verify that it shows up
+        table = selenium.find_element_by_id('table-update-plaid')
+        texts = self.tbody2textlist(table)
+        assert len(texts) == 1
+        assert 'First Platypus Bank' in texts[0][1]
+        table = selenium.find_element_by_id('table-items-plaid')
+        texts = self.tbody2textlist(table)
+        assert len(texts) == 1
+        assert texts[0][1] == 'First Platypus Bank (ins_109508)'
+        assert 'Plaid Checking (0000)' in texts[0][2]
