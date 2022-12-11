@@ -65,6 +65,7 @@ ONE_HOUR = timedelta(hours=1)
 class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     plaid_accts = {}
+    plaid_acct_ids = []
 
     def test_00_clean_transactions_and_setup(self, testdb):
         for stmt in [
@@ -81,6 +82,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
         self.plaid_accts = {}
+        self.plaid_acct_ids = []
 
     def test_01_verify_db_state(self, testdb):
         for acct in testdb.query(Account).all():
@@ -218,6 +220,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         checking = None
         credit = None
         for item in paccts:
+            self.plaid_acct_ids.append(item.account_id)
             if item.name == 'Plaid Checking':
                 checking = item
             elif item.name == 'Plaid Credit Card':
@@ -383,5 +386,43 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert pitems[0].institution_name == 'First Platypus Bank'
         assert pitems[0].institution_id == 'ins_109508'
 
-# test refreshing accounts for an item; how to check if it worked?
+    def test_13_break_some_plaid_accounts(self, testdb):
+        assert len(testdb.query(PlaidAccount).all()) == 9
+        item_id = self.plaid_accts['checking']['item_id']
+        chk_acct_id = self.plaid_accts['checking']['acct_id']
+        credit_acct_id = self.plaid_accts['credit']['acct_id']
+        acct_ids = [x for x in self.plaid_acct_ids]
+        acct_ids.remove(chk_acct_id)
+        acct_ids.remove(credit_acct_id)
+        # remove/change two of the other accounts from the DB
+        testdb.delete(testdb.query(PlaidAccount).get((item_id, acct_ids[0])))
+        acct = testdb.query(PlaidAccount).get((item_id, acct_ids[-1]))
+        acct.account_id = 'fooBarBaz'
+        testdb.add(acct)
+        testdb.flush()
+        testdb.commit()
+        all_accts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
+        assert len(all_accts) == 8
+        assert 'fooBarBaz' in [x.account_id for x in all_accts]
+
+    def test_14_refresh_plaid_accounts_for_item(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        item_id = self.plaid_accts['checking']['item_id']
+        button = selenium.find_element_by_css_selector(
+            f'a[onclick="plaidRefresh(\'{item_id}\')"]'
+        )
+        button.click()
+        # wait for page reload, indicated by staleness of element
+        WebDriverWait(selenium, 20).until(
+            EC.staleness_of(button)
+        )
+
+    def test_15_verify_accounts_updated_in_db(self, testdb):
+        all_accts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
+        assert len(all_accts) == 9
+        acct_ids = sorted([x.account_id for x in all_accts])
+        assert acct_ids == sorted(self.plaid_acct_ids)
+
 # test update/fixing an item; how to check if it worked?
