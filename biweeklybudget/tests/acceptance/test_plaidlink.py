@@ -271,21 +271,80 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             )
         )
         div = selenium.find_element_by_class_name('unreconciled-alert')
-        assert div.text == '30 Unreconciled OFXTransactions.'
-        assert div.get_attribute(
-            'class'
-        ) == 'alert alert-warning unreconciled-alert'
-        a = div.find_element_by_tag_name('a')
-        assert self.relurl(a.get_attribute('href')) == '/reconcile'
-        assert a.text == 'Unreconciled OFXTransactions'
+        assert div.text == '13 Unreconciled OFXTransactions.'
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
         print(texts)
-        assert texts == ['foo']
+        assert texts == [
+            [
+                f"First Platypus Bank ({self.plaid_accts['credit']['item_id']})",
+                '0',
+                '13',
+                'None',
+                ''
+            ],
+            ['Total', '0', '13', '', '']
+        ]
 
     def test_08_verify_new_transactions_in_db(self, testdb):
         assert len(testdb.query(Transaction).all()) == 0
         assert len(testdb.query(BudgetTransaction).all()) == 0
         assert len(testdb.query(OFXStatement).all()) == 2
-        assert len(testdb.query(OFXTransaction).all()) == 30
-        raise NotImplementedError('need to get counts per account')
+        assert len(
+            testdb.query(OFXStatement).filter(OFXStatement.account_id == 1).all()
+        ) == 1
+        assert len(
+            testdb.query(OFXStatement).filter(OFXStatement.account_id == 3).all()
+        ) == 1
+        assert len(testdb.query(OFXTransaction).all()) == 13
+        assert len(
+            testdb.query(OFXTransaction).filter(OFXTransaction.account_id == 1).all()
+        ) == 6
+        assert len(
+            testdb.query(OFXTransaction).filter(OFXTransaction.account_id == 3).all()
+        ) == 7
+
+    def test_09_update_transactions_again(self, base_url, selenium, testdb):
+        orig_updated: datetime = testdb.query(PlaidItem).get(
+            self.plaid_accts['checking']['item_id']
+        ).last_updated
+        assert len(testdb.query(OFXStatement).all()) == 2
+        assert len(testdb.query(OFXTransaction).all()) == 13
+        testdb.flush()
+        testdb.commit()
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element_by_id('btn_plaid_txns').click()
+        self.wait_for_jquery_done(selenium)
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located(
+                (By.ID, 'table-accounts-plaid')
+            )
+        )
+        div = selenium.find_element_by_class_name('unreconciled-alert')
+        assert div.text == '13 Unreconciled OFXTransactions.'
+        table = selenium.find_element_by_id('table-accounts-plaid')
+        texts = self.tbody2textlist(table)
+        assert texts == [
+            [
+                f"First Platypus Bank ({self.plaid_accts['credit']['item_id']})",
+                '13',
+                '0',
+                'None',
+                ''
+            ],
+            ['Total', '13', '0', '', '']
+        ]
+        assert len(testdb.query(OFXStatement).all()) == 4
+        assert len(testdb.query(OFXTransaction).all()) == 13
+        new_updated: datetime = testdb.query(PlaidItem).get(
+            self.plaid_accts['checking']['item_id']
+        ).last_updated
+        assert new_updated > orig_updated
+
+# test updating item information; how to check if it worked?
+# test refreshing accounts for an item; how to check if it worked?
+# test update/fixing an item; how to check if it worked?
