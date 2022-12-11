@@ -58,7 +58,7 @@ SANDBOX_PASSWORD: str = 'pass_good'
 
 ONE_HOUR = timedelta(hours=1)
 
-@pytest.mark.acceptance
+@pytest.mark.plaid
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
 class TestLinkAndUpdateSimple(AcceptanceHelper):
