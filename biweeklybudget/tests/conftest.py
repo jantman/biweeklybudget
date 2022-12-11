@@ -361,7 +361,9 @@ def _gather_logs(item, report, driver, summary, extra):
         try:
             log = driver.get_log(name)
         except Exception as e:
-            summary.append("WARNING: Failed to gather {0} log: {1}".format(name, e))
+            summary.append(
+                "WARNING: Failed to gather {0} log: {1}".format(name, e)
+            )
             return
         if pytest_html is not None:
             extra.append(

@@ -37,20 +37,20 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from textwrap import dedent
 from datetime import datetime, timezone
-from biweeklybudget import settings
-from biweeklybudget.version import VERSION
-from biweeklybudget.flaskapp.views.plaid import (
-    PlaidJs, PlaidPublicToken, PlaidHandleLink, set_url_rules,
-    PlaidConfigJS, PlaidUpdate, PlaidRefreshAccounts,
-    PlaidUpdateItemInfo
-)
-from biweeklybudget.models.account import Account
-from biweeklybudget.models.plaid_items import PlaidItem
-from biweeklybudget.models.plaid_accounts import PlaidAccount
-
+from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
 from plaid.errors import PlaidError
 
-from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
+with patch('biweeklybudget.db.init_db'):
+    from biweeklybudget import settings
+    from biweeklybudget.version import VERSION
+    from biweeklybudget.flaskapp.views.plaid import (
+        PlaidJs, PlaidPublicToken, PlaidHandleLink, set_url_rules,
+        PlaidConfigJS, PlaidUpdate, PlaidRefreshAccounts,
+        PlaidUpdateItemInfo
+    )
+    from biweeklybudget.models.account import Account
+    from biweeklybudget.models.plaid_items import PlaidItem
+    from biweeklybudget.models.plaid_accounts import PlaidAccount
 
 pbm = 'biweeklybudget.flaskapp.views.plaid'
 

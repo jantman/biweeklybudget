@@ -58,6 +58,7 @@ SANDBOX_PASSWORD: str = 'pass_good'
 
 ONE_HOUR = timedelta(hours=1)
 
+
 @pytest.mark.plaid
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
@@ -277,7 +278,8 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         print(texts)
         assert texts == [
             [
-                f"First Platypus Bank ({self.plaid_accts['credit']['item_id']})",
+                "First Platypus Bank ("
+                f"{self.plaid_accts['credit']['item_id']})",
                 '0',
                 '13',
                 'None',
@@ -291,17 +293,25 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert len(testdb.query(BudgetTransaction).all()) == 0
         assert len(testdb.query(OFXStatement).all()) == 2
         assert len(
-            testdb.query(OFXStatement).filter(OFXStatement.account_id == 1).all()
+            testdb.query(OFXStatement).filter(
+                OFXStatement.account_id == 1
+            ).all()
         ) == 1
         assert len(
-            testdb.query(OFXStatement).filter(OFXStatement.account_id == 3).all()
+            testdb.query(OFXStatement).filter(
+                OFXStatement.account_id == 3
+            ).all()
         ) == 1
         assert len(testdb.query(OFXTransaction).all()) == 13
         assert len(
-            testdb.query(OFXTransaction).filter(OFXTransaction.account_id == 1).all()
+            testdb.query(OFXTransaction).filter(
+                OFXTransaction.account_id == 1
+            ).all()
         ) == 6
         assert len(
-            testdb.query(OFXTransaction).filter(OFXTransaction.account_id == 3).all()
+            testdb.query(OFXTransaction).filter(
+                OFXTransaction.account_id == 3
+            ).all()
         ) == 7
 
     def test_09_update_transactions_again(self, base_url, selenium, testdb):
@@ -330,7 +340,8 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         assert texts == [
             [
-                f"First Platypus Bank ({self.plaid_accts['credit']['item_id']})",
+                "First Platypus Bank "
+                f"({self.plaid_accts['credit']['item_id']})",
                 '13',
                 '0',
                 'None',
