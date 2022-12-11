@@ -135,20 +135,16 @@ class DockerImageBuilder(object):
 
     image_name = 'jantman/biweeklybudget'
 
-    def __init__(self, toxinidir, distdir):
+    def __init__(self, toxinidir):
         """
         :param toxinidir: directory containing tox.ini
         :type toxinidir: str
-        :param distdir: tox dist directory
-        :type distdir: str
         """
         self._toxinidir = toxinidir
-        self._distdir = distdir
         self._gitdir = os.path.join(self._toxinidir, '.git')
         logger.info(
-            'Initializing DockerImageBuilder; toxinidir=%s gitdir=%s '
-            'distdir=%s',
-            self._toxinidir, self._gitdir, self._distdir
+            'Initializing DockerImageBuilder; toxinidir=%s gitdir=%s',
+            self._toxinidir, self._gitdir
         )
         if not os.path.exists(self._gitdir) or not os.path.isdir(self._gitdir):
             raise RuntimeError(
@@ -626,11 +622,7 @@ class DockerImageBuilder(object):
         :return: path to tox dist file
         :rtype: str
         """
-        fname = 'biweeklybudget-%s.zip' % VERSION
-        fpath = os.path.join(self._distdir, fname)
-        if not os.path.exists(fpath):
-            raise RuntimeError('Does Not Exist: %s' % fpath)
-        return fpath
+        return os.environ['TOX_PACKAGE']
 
     def _docker_context(self):
         """
@@ -783,12 +775,10 @@ def set_log_level_format(level, format):
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument('TOXINIDIR', type=str)
-    p.add_argument('DISTDIR', type=str)
     args = p.parse_args(sys.argv[1:])
     set_log_debug()
     toxinidir = args.TOXINIDIR
-    distdir = args.DISTDIR
-    b = DockerImageBuilder(toxinidir, distdir)
+    b = DockerImageBuilder(toxinidir)
     test_tag = os.environ.get('DOCKER_TEST_TAG', None)
     if test_tag is not None:
         logger.info('TEST-ONLY RUN for tag: %s', test_tag)
