@@ -32,6 +32,7 @@ Unreleased Changes
 * Move testing and runtime to Python 3.10, and get all test environments running successfully.
 * Move CI from TravisCI to GitHub Actions and remove all traces of TravisCI.
 * Add acceptance test coverage of the Plaid Link process.
+* Updates for ``tox`` 4.0.6.
 
 1.0.0 (2018-07-07)
 ------------------
