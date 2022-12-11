@@ -35,7 +35,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import sys
+import os
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Optional
@@ -52,6 +52,7 @@ from biweeklybudget.models import (
     OFXTransaction, OFXStatement
 )
 from biweeklybudget.utils import dtnow
+from plaid import Client
 
 SANDBOX_USERNAME: str = 'user_good'
 SANDBOX_PASSWORD: str = 'pass_good'
@@ -66,6 +67,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     plaid_accts = {}
     plaid_acct_ids = []
+    plaid_item_access_token = None
 
     def test_00_clean_transactions_and_setup(self, testdb):
         for stmt in [
@@ -83,6 +85,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         testdb.commit()
         self.plaid_accts = {}
         self.plaid_acct_ids = []
+        self.plaid_item_access_token = None
 
     def test_01_verify_db_state(self, testdb):
         for acct in testdb.query(Account).all():
@@ -214,6 +217,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert pitems[0].institution_name == 'First Platypus Bank'
         assert pitems[0].institution_id == 'ins_109508'
         assert dtnow() - pitems[0].last_updated < ONE_HOUR
+        self.plaid_item_access_token = pitems[0].access_token
         paccts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
         assert len(paccts) == 9
         # find and check the checking and credit accounts
@@ -425,4 +429,51 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         acct_ids = sorted([x.account_id for x in all_accts])
         assert acct_ids == sorted(self.plaid_acct_ids)
 
-# test update/fixing an item; how to check if it worked?
+    def test_16_plaid_api_set_item_needs_login(self):
+        client: Client = Client(
+            client_id=os.environ['PLAID_CLIENT_ID'],
+            secret=os.environ['PLAID_SECRET'],
+            public_key=os.environ['PLAID_PUBLIC_KEY'],
+            environment=os.environ['PLAID_ENV'],
+            api_version='2019-05-29'
+        )
+        res = client.Sandbox.item.reset_login(self.plaid_item_access_token)
+        # xfail - let's see what the response is
+        assert res == {}
+
+    def test_17_try_update_transactions_expect_error(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element_by_id('btn_plaid_txns').click()
+        self.wait_for_jquery_done(selenium)
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located(
+                (By.ID, 'table-accounts-plaid')
+            )
+        )
+        table = selenium.find_element_by_id('table-accounts-plaid')
+        texts = self.tbody2textlist(table)
+        print(texts)
+        assert texts == [
+            [
+                "First Platypus Bank ("
+                f"{self.plaid_accts['credit']['item_id']})",
+                '0',
+                '13',
+                'None',
+                ''
+            ],
+            ['Total', '0', '13', '', '']
+        ]
+
+    def test_18_update_item_relogin(self):
+        raise NotImplementedError()
+
+    def test_19_verify_item_updated_in_db(self):
+        raise NotImplementedError()
+
+    def test_20_update_transactions(self):
+        raise NotImplementedError()
