@@ -39,6 +39,7 @@ import sys
 from datetime import date, datetime, timedelta
 from pytz import UTC
 from decimal import Decimal
+from typing import List, Optional
 import pytest
 
 from selenium.webdriver.common.by import By
@@ -50,17 +51,21 @@ from biweeklybudget.models import (
     Account, Transaction, BudgetTransaction, PlaidAccount, PlaidItem,
     OFXTransaction, OFXStatement
 )
+from biweeklybudget.utils import dtnow
 
-SANDBOX_USERNAME: str = ''
-SANDBOX_PASSWORD: str = ''
-SANDBOX_MFA: str = '1234'
+SANDBOX_USERNAME: str = 'user_good'
+SANDBOX_PASSWORD: str = 'pass_good'
+
+ONE_HOUR = timedelta(hours=1)
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
 class TestLinkAndUpdateSimple(AcceptanceHelper):
 
-    def test_0_clean_transactions(self, testdb):
+    plaid_accts = {}
+
+    def test_00_clean_transactions_and_setup(self, testdb):
         for stmt in [
             'UPDATE accounts SET plaid_item_id=NULL, plaid_account_id=NULL;',
             'DELETE FROM plaid_accounts;',
@@ -74,8 +79,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             testdb.execute(stmt)
         testdb.flush()
         testdb.commit()
+        self.plaid_accts = {}
 
-    def test_1_verify_db_state(self, testdb):
+    def test_01_verify_db_state(self, testdb):
         for acct in testdb.query(Account).all():
             assert acct.plaid_account_id is None
             assert acct.plaid_item_id is None
@@ -86,13 +92,13 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert len(testdb.query(OFXStatement).all()) == 0
         assert len(testdb.query(OFXTransaction).all()) == 0
 
-    def test_2_items_table(self, base_url, selenium):
+    def test_02_plaid_items_table_is_empty(self, base_url, selenium):
         self.get(selenium, base_url + '/plaid-update')
         table = selenium.find_element_by_id('table-items-plaid')
         texts = self.tbody2textlist(table)
         assert texts == []
 
-    def test_3_simple_link(self, base_url, selenium):
+    def test_03_do_simple_link(self, base_url, selenium):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
@@ -130,11 +136,14 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         # enter username
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-input-0'))
-        ).click()
+        )
         user = selenium.find_element_by_id('aut-input-0')
         user.clear()
         user.send_keys(SANDBOX_USERNAME)
         # enter password
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-input-1'))
+        )
         passwd = selenium.find_element_by_id('aut-input-1')
         passwd.clear()
         passwd.send_keys(SANDBOX_PASSWORD)
@@ -164,14 +173,119 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-button'))
         ).click()
-        self.wait_for_jquery_done(selenium)
         # verify that it shows up
-        table = selenium.find_element_by_id('table-update-plaid')
-        texts = self.tbody2textlist(table)
-        assert len(texts) == 1
-        assert 'First Platypus Bank' in texts[0][1]
+        selenium.switch_to.default_content()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located((By.ID, 'table-items-plaid'))
+        )
+        WebDriverWait(selenium, 10).until(
+            EC.presence_of_element_located((By.ID, 'table-items-plaid'))
+        )
+        WebDriverWait(selenium, 30).until(
+            EC.text_to_be_present_in_element(
+                (By.ID, 'table-items-plaid'),
+                'First Platypus Bank'
+            )
+        )
         table = selenium.find_element_by_id('table-items-plaid')
         texts = self.tbody2textlist(table)
         assert len(texts) == 1
         assert texts[0][1] == 'First Platypus Bank (ins_109508)'
-        assert 'Plaid Checking (0000)' in texts[0][2]
+        assert texts[0][2] == 'Plaid 401k (6666), ' \
+                              'Plaid CD (2222), ' \
+                              'Plaid Checking (0000), ' \
+                              'Plaid Credit Card (3333), ' \
+                              'Plaid IRA (5555), ' \
+                              'Plaid Money Market (4444), ' \
+                              'Plaid Mortgage (8888), ' \
+                              'Plaid Saving (1111), ' \
+                              'Plaid Student Loan (7777)'
+        assert texts[0][3] == 'now'
+
+    def test_04_verify_db_updated(self, testdb):
+        # check plaid items and accounts
+        pitems: List[PlaidItem] = testdb.query(PlaidItem).all()
+        assert len(pitems) == 1
+        assert pitems[0].institution_name == 'First Platypus Bank'
+        assert pitems[0].institution_id == 'ins_109508'
+        assert dtnow() - pitems[0].last_updated < ONE_HOUR
+        paccts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
+        assert len(paccts) == 9
+        # find and check the checking and credit accounts
+        checking = None
+        credit = None
+        for item in paccts:
+            if item.name == 'Plaid Checking':
+                checking = item
+            elif item.name == 'Plaid Credit Card':
+                credit = item
+        assert checking is not None
+        assert checking.mask == '0000'
+        assert checking.account_type == 'depository'
+        assert checking.account_subtype == 'checking'
+        self.plaid_accts['checking'] = {
+            'name': checking.name,
+            'acct_id': checking.account_id,
+            'item_id': checking.item_id
+        }
+        assert credit is not None
+        assert credit.mask == '3333'
+        assert credit.account_type == 'credit'
+        assert credit.account_subtype == 'credit card'
+        self.plaid_accts['credit'] = {
+            'name': credit.name,
+            'acct_id': credit.account_id,
+            'item_id': credit.item_id
+        }
+
+    def test_05_associate_accounts_in_db(self, testdb):
+        acct_chk: Account = testdb.query(Account).get(1)
+        acct_chk.plaid_item_id = self.plaid_accts['checking']['item_id']
+        acct_chk.plaid_account_id = self.plaid_accts['checking']['acct_id']
+        testdb.add(acct_chk)
+        acct_credit: Account = testdb.query(Account).get(3)
+        acct_credit.plaid_item_id = self.plaid_accts['credit']['item_id']
+        acct_credit.plaid_account_id = self.plaid_accts['credit']['acct_id']
+        testdb.add(acct_credit)
+        testdb.commit()
+
+    def test_06_verify_no_transactions_in_db(self, testdb):
+        assert len(testdb.query(Transaction).all()) == 0
+        assert len(testdb.query(BudgetTransaction).all()) == 0
+        assert len(testdb.query(OFXStatement).all()) == 0
+        assert len(testdb.query(OFXTransaction).all()) == 0
+
+    def test_07_update_transactions(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element_by_id('btn_plaid_txns').click()
+        self.wait_for_jquery_done(selenium)
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located(
+                (By.ID, 'table-accounts-plaid')
+            )
+        )
+        div = selenium.find_element_by_class_name('unreconciled-alert')
+        assert div.text == '30 Unreconciled OFXTransactions.'
+        assert div.get_attribute(
+            'class'
+        ) == 'alert alert-warning unreconciled-alert'
+        a = div.find_element_by_tag_name('a')
+        assert self.relurl(a.get_attribute('href')) == '/reconcile'
+        assert a.text == 'Unreconciled OFXTransactions'
+        table = selenium.find_element_by_id('table-accounts-plaid')
+        texts = self.tbody2textlist(table)
+        print(texts)
+        assert texts == ['foo']
+
+    def test_08_verify_new_transactions_in_db(self, testdb):
+        assert len(testdb.query(Transaction).all()) == 0
+        assert len(testdb.query(BudgetTransaction).all()) == 0
+        assert len(testdb.query(OFXStatement).all()) == 2
+        assert len(testdb.query(OFXTransaction).all()) == 30
+        raise NotImplementedError('need to get counts per account')
