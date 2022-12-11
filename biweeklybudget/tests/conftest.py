@@ -43,7 +43,6 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 import socket
 import json
 from time import time
-from tempfile import mkstemp
 import warnings
 
 from retrying import retry
@@ -54,11 +53,6 @@ from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
 from biweeklybudget.tests.selenium_helpers import (
     set_browser_for_fullpage_screenshot
 )
-
-try:
-    from pytest_flask.fixtures import LiveServer
-except ImportError:
-    pass
 
 try:
     # Note that in pytest 3.6.0 thanks to issue #3487, anything called
@@ -75,9 +69,6 @@ try:
 except ImportError:
     HAVE_PYTEST_SELENIUM = False
 
-tempfd, LIVESERVER_LOG_PATH = mkstemp('testflask')
-os.close(tempfd)
-
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
@@ -85,6 +76,8 @@ from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
 from biweeklybudget.tests.migrations.alembic_helpers import (
     uri_for_db, empty_db_by_uri  # noqa
 )
+
+LIVESERVER_LOG_PATH = os.environ.get('BIWEEKLYBUDGET_LOG_FILE')
 
 _DB_ENGINE = None
 
@@ -237,7 +230,7 @@ def testflask():
         s.bind(('', 0))
         port = s.getsockname()[1]
         s.close()
-        os.environ['BIWEEKLYBUDGET_LOG_FILE'] = LIVESERVER_LOG_PATH
+        from pytest_flask.fixtures import LiveServer  # noqa
         from biweeklybudget.flaskapp.app import app  # noqa
         server = LiveServer(app, 'localhost', port)
         server.start()
@@ -352,7 +345,7 @@ def _gather_logs(item, report, driver, summary, extra):
     try:
         # this doesn't work with chromedriver
         # types = driver.log_types
-        types = ['browser', 'driver', 'client', 'server']
+        types = ['browser', 'driver', 'server']
     except Exception as e:
         # note that some drivers may not implement log types
         summary.append("WARNING: Failed to gather log types: {0}".format(e))
