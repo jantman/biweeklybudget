@@ -109,7 +109,7 @@ jobs:
         run: python dev/setup_test_db.py
       - name: Run tests
         run: tox -e ${{ github.job }}
-  acceptance310:
+  acceptance:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

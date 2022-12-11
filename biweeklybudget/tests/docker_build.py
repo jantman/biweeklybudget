@@ -79,7 +79,7 @@ if sys.version_info[0:2] < (3, 6):
 
 DOCKER_IMG = 'python:3.10-alpine3.16'
 PY_VERSION = '3.10'
-ACCEPTANCE_ENV = 'acceptance310'
+ACCEPTANCE_ENV = 'acceptance'
 
 DOCKERFILE_TEMPLATE = """
 # biweeklybudget Dockerfile - http://github.com/jantman/biweeklybudget
