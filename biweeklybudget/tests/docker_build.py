@@ -641,7 +641,7 @@ class DockerImageBuilder(object):
             os.path.join(self._toxinidir, 'requirements.txt'),
             arcname='requirements.txt'
         )
-        tar.add(self._tox_dist_file, arcname='biweeklybudget.zip')
+        tar.add(self._tox_dist_file, arcname='biweeklybudget.tar.gz')
         tar.add(
             os.path.join(self._toxinidir, 'dev', 'tini_0.14.0.deb'),
             arcname='tini_0.14.0.deb'
@@ -700,8 +700,8 @@ class DockerImageBuilder(object):
         :rtype: str
         """
         if self.build_ver is None:
-            s_copy = 'COPY biweeklybudget.zip /tmp/biweeklybudget.zip'
-            s_install = '/tmp/biweeklybudget.zip'
+            s_copy = 'COPY biweeklybudget.tar.gz /tmp/biweeklybudget.tar.gz'
+            s_install = '/tmp/biweeklybudget.tar.gz'
             ver = self._gitinfo['sha'][:8]
             if self._gitinfo['dirty']:
                 ver += '-dirty'
