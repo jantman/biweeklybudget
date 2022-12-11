@@ -36,11 +36,11 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import sys
-from datetime import date, datetime, timedelta
-from pytz import UTC
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Optional
 import pytest
+import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -203,7 +203,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                               'Plaid Mortgage (8888), ' \
                               'Plaid Saving (1111), ' \
                               'Plaid Student Loan (7777)'
-        assert texts[0][3] == 'now'
+        assert texts[0][3] in ['now', 'a second ago']
 
     def test_04_verify_db_updated(self, testdb):
         # check plaid items and accounts
@@ -262,6 +262,8 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
+        print('Waiting 30 seconds for item to be ready...')
+        time.sleep(30)
         selenium.find_element_by_id('btn_plaid_txns').click()
         self.wait_for_jquery_done(selenium)
         self.wait_for_load_complete(selenium)
@@ -356,6 +358,30 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         ).last_updated
         assert new_updated > orig_updated
 
-# test updating item information; how to check if it worked?
+    def test_10_change_item_institutions_in_db(self, testdb):
+        pitems: List[PlaidItem] = testdb.query(PlaidItem).all()
+        assert len(pitems) == 1
+        pitems[0].institution_name = 'Wrong in DB'
+        pitems[0].institution_id = 'wrongInDB'
+        testdb.add(pitems[0])
+        testdb.commit()
+
+    def test_11_update_item_info(self, base_url, selenium):
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        button = selenium.find_element_by_id('btn_import_plaid')
+        button.click()
+        # wait for page reload, indicated by staleness of element
+        WebDriverWait(selenium, 20).until(
+            EC.staleness_of(button)
+        )
+
+    def test_12_verify_item_info_updated(self, testdb):
+        pitems: List[PlaidItem] = testdb.query(PlaidItem).all()
+        assert len(pitems) == 1
+        assert pitems[0].institution_name == 'First Platypus Bank'
+        assert pitems[0].institution_id == 'ins_109508'
+
 # test refreshing accounts for an item; how to check if it worked?
 # test update/fixing an item; how to check if it worked?
