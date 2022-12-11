@@ -352,7 +352,10 @@ class PlaidUpdate(MethodView):
         a: PlaidAccount
         plaid_accounts: Dict[str, str] = {
             x.item_id: ', '.join(
-                [f'{a.name} ({a.mask})' for a in x.all_accounts]
+                [
+                    f'{a.name} ({a.mask})'
+                    for a in sorted(x.all_accounts, key=lambda a: a.name)
+                ]
             ) for x in items
         }
         accounts = {
