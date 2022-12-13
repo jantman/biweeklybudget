@@ -23,10 +23,11 @@ idna==2.8
 itsdangerous==1.1.0
 keyring==20.0.1
 lxml==4.9.1
+nulltype==2.3.1
 ofxhome==0.3.3
 ofxparse==0.20
 packaging==20.1
-plaid-python==3.5.0
+plaid-python==11.2.0
 pycparser==2.19
 pyparsing==2.4.6
 python-dateutil==2.8.1
