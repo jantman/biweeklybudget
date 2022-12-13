@@ -37,10 +37,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import os
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from typing import List, Optional
+from typing import List
 import pytest
 import time
+import re
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -67,7 +67,6 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     plaid_accts = {}
     plaid_acct_ids = []
-    plaid_item_access_token = None
 
     def test_00_clean_transactions_and_setup(self, testdb):
         for stmt in [
@@ -85,7 +84,6 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         testdb.commit()
         self.plaid_accts = {}
         self.plaid_acct_ids = []
-        self.plaid_item_access_token = None
 
     def test_01_verify_db_state(self, testdb):
         for acct in testdb.query(Account).all():
@@ -217,7 +215,6 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert pitems[0].institution_name == 'First Platypus Bank'
         assert pitems[0].institution_id == 'ins_109508'
         assert dtnow() - pitems[0].last_updated < ONE_HOUR
-        self.plaid_item_access_token = pitems[0].access_token
         paccts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
         assert len(paccts) == 9
         # find and check the checking and credit accounts
@@ -281,21 +278,16 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             )
         )
         div = selenium.find_element_by_class_name('unreconciled-alert')
-        assert div.text == '13 Unreconciled OFXTransactions.'
+        assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
-        print(texts)
-        assert texts == [
-            [
-                "First Platypus Bank ("
-                f"{self.plaid_accts['credit']['item_id']})",
-                '0',
-                '13',
-                'None',
-                ''
-            ],
-            ['Total', '0', '13', '', '']
-        ]
+        assert texts[0][0] == f"First Platypus Bank (" \
+                           f"{self.plaid_accts['credit']['item_id']})"
+        assert texts[0][1] == '0'
+        assert 10 < int(texts[0][2]) < 20
+        assert texts[0][3] == 'None'
+        assert texts[0][4] == ''
+        assert texts[1][0] == 'Total'
 
     def test_08_verify_new_transactions_in_db(self, testdb):
         assert len(testdb.query(Transaction).all()) == 0
@@ -311,24 +303,24 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 OFXStatement.account_id == 3
             ).all()
         ) == 1
-        assert len(testdb.query(OFXTransaction).all()) == 13
+        assert len(testdb.query(OFXTransaction).all()) > 10
         assert len(
             testdb.query(OFXTransaction).filter(
                 OFXTransaction.account_id == 1
             ).all()
-        ) == 6
+        ) > 5
         assert len(
             testdb.query(OFXTransaction).filter(
                 OFXTransaction.account_id == 3
             ).all()
-        ) == 7
+        ) > 5
 
     def test_09_update_transactions_again(self, base_url, selenium, testdb):
         orig_updated: datetime = testdb.query(PlaidItem).get(
             self.plaid_accts['checking']['item_id']
         ).last_updated
         assert len(testdb.query(OFXStatement).all()) == 2
-        assert len(testdb.query(OFXTransaction).all()) == 13
+        assert len(testdb.query(OFXTransaction).all()) > 10
         testdb.flush()
         testdb.commit()
         self.get(selenium, base_url + '/plaid-update')
@@ -344,22 +336,18 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             )
         )
         div = selenium.find_element_by_class_name('unreconciled-alert')
-        assert div.text == '13 Unreconciled OFXTransactions.'
+        assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
-        assert texts == [
-            [
-                "First Platypus Bank "
-                f"({self.plaid_accts['credit']['item_id']})",
-                '13',
-                '0',
-                'None',
-                ''
-            ],
-            ['Total', '13', '0', '', '']
-        ]
+        assert texts[0][0] == f"First Platypus Bank (" \
+                           f"{self.plaid_accts['credit']['item_id']})"
+        assert 10 < int(texts[0][1]) < 20
+        assert texts[0][2] == '0'
+        assert texts[0][3] == 'None'
+        assert texts[0][4] == ''
+        assert texts[1][0] == 'Total'
         assert len(testdb.query(OFXStatement).all()) == 4
-        assert len(testdb.query(OFXTransaction).all()) == 13
+        assert len(testdb.query(OFXTransaction).all()) > 10
         new_updated: datetime = testdb.query(PlaidItem).get(
             self.plaid_accts['checking']['item_id']
         ).last_updated
@@ -429,7 +417,10 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         acct_ids = sorted([x.account_id for x in all_accts])
         assert acct_ids == sorted(self.plaid_acct_ids)
 
-    def test_16_plaid_api_set_item_needs_login(self):
+    def test_16_plaid_api_set_item_needs_login(self, testdb):
+        pitem: PlaidItem = testdb.query(PlaidItem).all()[0]
+        assert pitem.access_token is not None
+        assert pitem.access_token != ''
         client: Client = Client(
             client_id=os.environ['PLAID_CLIENT_ID'],
             secret=os.environ['PLAID_SECRET'],
@@ -437,9 +428,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             environment=os.environ['PLAID_ENV'],
             api_version='2019-05-29'
         )
-        res = client.Sandbox.item.reset_login(self.plaid_item_access_token)
-        # xfail - let's see what the response is
-        assert res == {}
+        res = client.Sandbox.item.reset_login(pitem.access_token)
+        print(f'Reset login response: {res}')
+        assert res.get('reset_login') is True
 
     def test_17_try_update_transactions_expect_error(self, base_url, selenium):
         self.get(selenium, base_url + '/plaid-update')
@@ -456,24 +447,124 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         )
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
-        print(texts)
-        assert texts == [
-            [
-                "First Platypus Bank ("
-                f"{self.plaid_accts['credit']['item_id']})",
-                '0',
-                '13',
-                'None',
-                ''
-            ],
-            ['Total', '0', '13', '', '']
-        ]
+        assert texts[0][0] == f"First Platypus Bank (" \
+                           f"{self.plaid_accts['credit']['item_id']})"
+        assert texts[0][1] == '0'
+        assert texts[0][2] == '0'
+        assert 'the login details of this item have changed' in texts[0][3]
+        assert texts[0][4] == ''
+        assert texts[1][0] == 'Total'
 
-    def test_18_update_item_relogin(self):
-        raise NotImplementedError()
+    def test_18_update_item_relogin(self, base_url, selenium, testdb):
+        item_id = self.plaid_accts['checking']['item_id']
+        assert len(testdb.query(OFXStatement).all()) == 4
+        num_txns = len(testdb.query(OFXTransaction).all())
+        assert num_txns > 10
+        testdb.flush()
+        testdb.commit()
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        button = selenium.find_element_by_css_selector(
+            f'a[onclick="plaidUpdate(\'{item_id}\')"]'
+        )
+        button.click()
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 30).until(
+            EC.frame_to_be_available_and_switch_to_it(
+                (By.ID, 'plaid-link-iframe-1')
+            )
+        )
+        # inside iframe
+        # click Continue button
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//button[normalize-space()="Continue"]')
+            )
+        ).click()
+        # enter username
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-input-0'))
+        )
+        user = selenium.find_element_by_id('aut-input-0')
+        user.clear()
+        user.send_keys(SANDBOX_USERNAME)
+        # enter password
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-input-1'))
+        )
+        passwd = selenium.find_element_by_id('aut-input-1')
+        passwd.clear()
+        passwd.send_keys(SANDBOX_PASSWORD)
+        # click submit
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-button'))
+        ).click()
+        # wait for accounts confirmation screen
+        WebDriverWait(selenium, 10).until(
+            EC.text_to_be_present_in_element(
+                (By.ID, 'a11y-title'), 'Success'
+            )
+        )
+        # click continue
+        WebDriverWait(selenium, 10).until(
+            EC.element_to_be_clickable((By.ID, 'aut-button'))
+        ).click()
+        # verify that it shows up
+        selenium.switch_to.default_content()
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located((By.ID, 'table-items-plaid'))
+        )
+        WebDriverWait(selenium, 10).until(
+            EC.presence_of_element_located((By.ID, 'table-items-plaid'))
+        )
+        WebDriverWait(selenium, 30).until(
+            EC.text_to_be_present_in_element(
+                (By.ID, 'table-items-plaid'),
+                'First Platypus Bank'
+            )
+        )
+        new_updated: datetime = testdb.query(PlaidItem).get(
+            self.plaid_accts['checking']['item_id']
+        ).last_updated
 
-    def test_19_verify_item_updated_in_db(self):
-        raise NotImplementedError()
-
-    def test_20_update_transactions(self):
-        raise NotImplementedError()
+    def test_19_update_transactions(self, base_url, selenium, testdb):
+        orig_updated: datetime = testdb.query(PlaidItem).get(
+            self.plaid_accts['checking']['item_id']
+        ).last_updated
+        assert len(testdb.query(OFXStatement).all()) == 4
+        num_txns = len(testdb.query(OFXTransaction).all())
+        assert num_txns > 10
+        testdb.flush()
+        testdb.commit()
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element_by_id('btn_plaid_txns').click()
+        self.wait_for_jquery_done(selenium)
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located(
+                (By.ID, 'table-accounts-plaid')
+            )
+        )
+        div = selenium.find_element_by_class_name('unreconciled-alert')
+        assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
+        table = selenium.find_element_by_id('table-accounts-plaid')
+        texts = self.tbody2textlist(table)
+        assert texts[0][0] == f"First Platypus Bank (" \
+                              f"{self.plaid_accts['credit']['item_id']})"
+        assert 10 < int(texts[0][1]) < 20
+        assert texts[0][2] == '0'
+        assert texts[0][3] == 'None'
+        assert texts[0][4] == ''
+        assert texts[1][0] == 'Total'
+        assert len(testdb.query(OFXStatement).all()) == 6
+        assert len(testdb.query(OFXTransaction).all()) == num_txns
+        new_updated: datetime = testdb.query(PlaidItem).get(
+            self.plaid_accts['checking']['item_id']
+        ).last_updated
+        assert new_updated > orig_updated
