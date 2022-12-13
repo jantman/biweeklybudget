@@ -85,11 +85,13 @@ Testing is done via `pytest <https://docs.pytest.org/en/latest/>`_, driven by `t
 
 * If you want to pass additional arguments to pytest, add them to the tox command line after "--". i.e., for verbose pytext output on py27 tests: ``tox -e py27 -- -v``
 
-For rapid iteration on tests, you can either use my
-`toxit <https://github.com/jantman/misc-scripts/blob/master/toxit.py>`_ script
-to re-run the test commands in an existing tox environment, or you can use
-the ``bin/t`` and ``bin/ta`` scripts to run unit or acceptance tests,
-respectively, on only one module.
+For rapid iteration on tests, you can run only one module at a time like:
+
+``tox -e plaid -- biweeklybudget/tests/acceptance/test_plaidlink.py``
+
+Or even just one class by specifying its name with ``-k`` like:
+
+``tox -e plaid -- -k TestClassName biweeklybudget/tests/acceptance/test_plaidlink.py``
 
 Unit Tests
 ++++++++++

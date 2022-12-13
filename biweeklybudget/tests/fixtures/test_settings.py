@@ -71,7 +71,7 @@ STALE_DATA_TIMEDELTA = timedelta(days=2)
 #: to the specified integer timestamp. Used for acceptance tests only. Do NOT
 #: set this outside of acceptance testing.
 # Tests run as 1501223084 - Friday, July 28, 2017 6:24:44 AM UTC
-BIWEEKLYBUDGET_TEST_TIMESTAMP = 1501223084
+BIWEEKLYBUDGET_TEST_TIMESTAMP = os.environ.get('BIWEEKLYBUDGET_TEST_TIMESTAMP')
 PAY_PERIOD_START_DATE = date(2017, 7, 21)
 
 #: When listing unreconciled transactions that need to be reconciled, any
@@ -86,13 +86,13 @@ DEFAULT_ACCOUNT_ID = 1
 FUEL_BUDGET_ID = 2
 
 #: Plaid Client ID
-PLAID_CLIENT_ID = 'plaidCID'
+PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID', 'plaidCID')
 
 #: Plaid Secret (client secret)
-PLAID_SECRET = 'plaidSecret'
+PLAID_SECRET = os.environ.get('PLAID_SECRET', 'plaidSecret')
 
 #: Plaid Public Key
-PLAID_PUBLIC_KEY = 'plaidPubKey'
+PLAID_PUBLIC_KEY = os.environ.get('PLAID_PUBLIC_KEY', 'plaidPubKey')
 
 #: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
 #: environment (username: user_good, password: pass_good). Use `development` to

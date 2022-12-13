@@ -36,6 +36,7 @@ jobs:
         run: tox -e ${{ github.job }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
           path: |
@@ -109,7 +110,7 @@ jobs:
         run: python dev/setup_test_db.py
       - name: Run tests
         run: tox -e ${{ github.job }}
-  acceptance310:
+  acceptance:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -144,6 +145,7 @@ jobs:
         run: tox -e ${{ github.job }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
           if-no-files-found: ignore
@@ -158,6 +160,53 @@ jobs:
           files: ./coverage-acceptance.xml
           name: coverage-${{ github.job }}
           fail_ci_if_error: true
+  plaid:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '13306'
+      MYSQL_USER: root
+      MYSQL_PASS: dbroot
+      MYSQL_DBNAME: budgettest
+      MYSQL_DBNAME_LEFT: alembicLeft
+      MYSQL_DBNAME_RIGHT: alembicRight
+      PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+      PLAID_COUNTRY_CODES: ${{ secrets.PLAID_COUNTRY_CODES }}
+      PLAID_ENV: ${{ secrets.PLAID_ENV }}
+      PLAID_PRODUCTS: ${{ secrets.PLAID_PRODUCTS }}
+      PLAID_PUBLIC_KEY: ${{ secrets.PLAID_PUBLIC_KEY }}
+      PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+    services:
+      mariadb:
+        image: 'mariadb:10.4.7'
+        ports:
+          - 13306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: dbroot
+          MYSQL_ROOT_HOST: '%'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox pymysql
+      - name: Setup test DB
+        run: python dev/setup_test_db.py
+      - name: Run tests
+        run: tox -e ${{ github.job }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: test-results-and-coverage-${{ github.job }}
+          if-no-files-found: ignore
+          path: |
+            results/
   docker:
     runs-on: ubuntu-latest
     strategy:
@@ -193,6 +242,7 @@ jobs:
         run: tox -e ${{ github.job }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
           if-no-files-found: ignore
@@ -235,6 +285,7 @@ jobs:
         run: tox -e ${{ github.job }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
           if-no-files-found: ignore
