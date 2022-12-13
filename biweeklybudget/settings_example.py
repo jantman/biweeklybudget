@@ -88,9 +88,6 @@ PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
 #: Plaid Secret (client secret)
 PLAID_SECRET = os.environ.get('PLAID_SECRET')
 
-#: Plaid Public Key
-PLAID_PUBLIC_KEY = os.environ.get('PLAID_PUBLIC_KEY')
-
 #: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
 #: environment (username: user_good, password: pass_good). Use `development` to
 #: test with live users and credentials and `production` to go live

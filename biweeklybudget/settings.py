@@ -77,7 +77,6 @@ _STRING_VARS = [
     'FUEL_ECO_ABBREVIATION',
     'PLAID_CLIENT_ID',
     'PLAID_SECRET',
-    'PLAID_PUBLIC_KEY',
     'PLAID_ENV',
     'PLAID_PRODUCTS',
     'PLAID_COUNTRY_CODES',
@@ -174,9 +173,6 @@ PLAID_CLIENT_ID = None
 
 #: Plaid Secret (client secret)
 PLAID_SECRET = None
-
-#: Plaid Public Key
-PLAID_PUBLIC_KEY = None
 
 #: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
 #: environment (username: user_good, password: pass_good). Use `development` to

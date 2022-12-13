@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 from textwrap import dedent
 from datetime import datetime, timezone
 from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
-from plaid.errors import PlaidError
+from plaid import ApiException
 
 from biweeklybudget import settings
 from biweeklybudget.version import VERSION
@@ -273,8 +273,8 @@ class TestPlaidHandleLink:
             }
         }
         mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.side_effect = PlaidError(
-            'foo', 123, 'bar', 'foobar'
+        mock_client.Item.public_token.exchange.side_effect = ApiException(
+            reason='foo', status=123
         )
         mock_sess = Mock()
 
@@ -315,7 +315,7 @@ class TestPlaidHandleLink:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: foo'
+                'message': 'Exception: (123)\nReason: foo\n'
             })
         ]
         assert mock_json.mock_calls == []
@@ -366,11 +366,9 @@ class TestPlaidPublicToken:
         mock_json = Mock()
         mock_req = Mock(form={'item_id': 'Item1'})
         mock_client = MagicMock()
-        mock_client.Item.public_token.create.side_effect = PlaidError(
-            'some error message',
-            'API_ERROR',
-            999,
-            'Some Displayed Error Message'
+        mock_client.Item.public_token.create.side_effect = ApiException(
+            reason='some error message',
+            status=999,
         )
         mock_item = Mock(item_id='Item1', access_token='aToken')
         mock_db = Mock()
@@ -386,7 +384,10 @@ class TestPlaidPublicToken:
                         res = PlaidPublicToken().post()
         assert res == mock_json
         assert m_jsonify.mock_calls == [
-            call({'success': False, 'message': 'Exception: some error message'})
+            call({
+                'success': False,
+                'message': 'Exception: (999)\nReason: some error message\n'
+            })
         ]
         assert mock_json.mock_calls == []
         assert mock_json.status_code == 400
@@ -519,8 +520,8 @@ class TestPlaidRefreshAccounts:
             'item_id': 'IID1'
         }
         mock_client = MagicMock()
-        mock_client.Accounts.get.side_effect = PlaidError(
-            'fooerror', 'bar', 'baz', 'blam'
+        mock_client.Accounts.get.side_effect = ApiException(
+            reason='fooerror', status=500
         )
         m_acct1 = Mock(account_id='AID1')
         m_acct2 = Mock(account_id='AID2')
@@ -570,7 +571,7 @@ class TestPlaidRefreshAccounts:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: fooerror'
+                'message': 'Exception: (500)\nReason: fooerror\n'
             })
         ]
         assert mock_json.mock_calls == []
@@ -698,8 +699,8 @@ class TestPlaidUpdateItemInfo:
                     }
                 }
             if token == 'accToken2':
-                raise PlaidError(
-                    'foo', 123, 'bar', 'baz'
+                raise ApiException(
+                    reason='foo', status=123
                 )
             if token == 'accToken3':
                 return {
@@ -747,7 +748,10 @@ class TestPlaidUpdateItemInfo:
         assert m_item1.institution_id == 'inst1'
         assert m_item1.institution_name == 'name1'
         assert mocks['jsonify'].mock_calls == [
-            call({'success': False, 'message': 'Exception: foo'})
+            call({
+                'success': False,
+                'message': 'Exception: (123)\nReason: foo\n'
+            })
         ]
         assert mock_json.status_code == 400
         assert mock_json.mock_calls == []
@@ -768,7 +772,6 @@ class TestPlaidConfigJS:
         var BIWEEKLYBUDGET_VERSION = "{VERSION}";
         var PLAID_ENV = "{settings.PLAID_ENV}";
         var PLAID_PRODUCTS = "{settings.PLAID_PRODUCTS}";
-        var PLAID_PUBLIC_KEY = "{settings.PLAID_PUBLIC_KEY}";
         var PLAID_COUNTRY_CODES = "{settings.PLAID_COUNTRY_CODES}";
         """)
 

@@ -51,8 +51,8 @@ from biweeklybudget.models import (
     Account, Transaction, BudgetTransaction, PlaidAccount, PlaidItem,
     OFXTransaction, OFXStatement
 )
-from biweeklybudget.utils import dtnow
-from plaid import Client
+from biweeklybudget.utils import dtnow, plaid_client
+from plaid.api.plaid_api import PlaidApi
 
 SANDBOX_USERNAME: str = 'user_good'
 SANDBOX_PASSWORD: str = 'pass_good'
@@ -421,10 +421,11 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         pitem: PlaidItem = testdb.query(PlaidItem).all()[0]
         assert pitem.access_token is not None
         assert pitem.access_token != ''
+        raise NotImplementedError('plaid client update')
+        # plaid_client()
         client: Client = Client(
             client_id=os.environ['PLAID_CLIENT_ID'],
             secret=os.environ['PLAID_SECRET'],
-            public_key=os.environ['PLAID_PUBLIC_KEY'],
             environment=os.environ['PLAID_ENV'],
             api_version='2019-05-29'
         )

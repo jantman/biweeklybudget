@@ -40,7 +40,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
-from plaid import Client
+from plaid.api.plaid_api import PlaidApi
 from datetime import datetime
 from decimal import Decimal
 from pytz import UTC
@@ -112,7 +112,7 @@ class TestAvailableItems:
 class PlaidUpdaterTester:
 
     def setup_method(self):
-        self.mock_client = MagicMock(spec_set=Client)
+        self.mock_client = MagicMock(spec_set=PlaidApi)
         with patch(f'{pbm}.plaid_client') as m_pc:
             m_pc.return_value = self.mock_client
             self.cls = PlaidUpdater()

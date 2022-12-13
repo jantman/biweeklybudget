@@ -40,7 +40,7 @@ import logging
 from textwrap import dedent
 from flask.views import MethodView
 from flask import jsonify, request, redirect, render_template
-from plaid.errors import PlaidError
+from plaid import ApiException
 from typing import List, Dict
 
 from biweeklybudget import settings
@@ -80,7 +80,7 @@ class PlaidHandleLink(MethodView):
         logger.debug('Plaid token exchange for public token: %s', public_token)
         try:
             exchange_response = client.Item.public_token.exchange(public_token)
-        except PlaidError as e:
+        except ApiException as e:
             logger.error(
                 'Plaid error exchanging token %s: %s',
                 public_token, e, exc_info=True
@@ -137,7 +137,7 @@ class PlaidPublicToken(MethodView):
         )
         try:
             response = client.Item.public_token.create(item.access_token)
-        except PlaidError as e:
+        except ApiException as e:
             logger.error(
                 'Plaid error creating token for %s: %s',
                 item.access_token, e, exc_info=True
@@ -170,7 +170,7 @@ class PlaidRefreshAccounts(MethodView):
         )
         try:
             response = client.Accounts.get(item.access_token)
-        except PlaidError as e:
+        except ApiException as e:
             logger.error(
                 'Plaid error getting accounts for %s: %s',
                 item.access_token, e, exc_info=True
@@ -227,7 +227,7 @@ class PlaidUpdateItemInfo(MethodView):
             )
             try:
                 response = client.Item.get(item.access_token)
-            except PlaidError as e:
+            except ApiException as e:
                 logger.error(
                     'Plaid error getting item %s: %s',
                     item, e, exc_info=True
@@ -387,7 +387,6 @@ class PlaidConfigJS(MethodView):
         var BIWEEKLYBUDGET_VERSION = "{VERSION}";
         var PLAID_ENV = "{settings.PLAID_ENV}";
         var PLAID_PRODUCTS = "{settings.PLAID_PRODUCTS}";
-        var PLAID_PUBLIC_KEY = "{settings.PLAID_PUBLIC_KEY}";
         var PLAID_COUNTRY_CODES = "{settings.PLAID_COUNTRY_CODES}";
         """)
 

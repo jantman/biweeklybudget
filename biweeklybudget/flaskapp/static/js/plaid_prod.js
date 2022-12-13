@@ -9,7 +9,6 @@ function plaidLink() {
         clientName: 'github.com/jantman/biweeklybudget ' + BIWEEKLYBUDGET_VERSION,
         env: PLAID_ENV,
         product: PLAID_PRODUCTS,
-        key: PLAID_PUBLIC_KEY,
         countryCodes: PLAID_COUNTRY_CODES.split(','),
         onSuccess: function(public_token, metadata) {
             console.log("plaidLink onSuccess public_token=" + public_token + " metadata=" + metadata);
@@ -50,7 +49,6 @@ function plaidUpdate(item_id) {
                 clientName: 'github.com/jantman/biweeklybudget ' + BIWEEKLYBUDGET_VERSION,
                 env: PLAID_ENV,
                 product: PLAID_PRODUCTS,
-                key: PLAID_PUBLIC_KEY,
                 token: data.public_token,
                 countryCodes: PLAID_COUNTRY_CODES.split(','),
                 onSuccess: function() {

@@ -33,6 +33,10 @@ Unreleased Changes
 * Move CI from TravisCI to GitHub Actions and remove all traces of TravisCI.
 * Add acceptance test coverage of the Plaid Link process.
 * Updates for ``tox`` 4.0.6.
+* Update Plaid API client to latest version
+
+  * Valid values for the ``PLAID_ENV`` setting / environment variable are now the strings "Production", "Development", or "Sandbox" to match the attribute names of :py:class:`plaid.configuration.Environment`.
+  * The ``PLAID_PUBLIC_KEY`` setting / environment variable has been removed.
 
 1.0.0 (2018-07-07)
 ------------------
