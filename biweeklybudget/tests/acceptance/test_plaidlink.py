@@ -282,7 +282,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
-                           f"{self.plaid_accts['credit']['item_id']})"
+                              f"{self.plaid_accts['credit']['item_id']})"
         assert texts[0][1] == '0'
         assert 10 < int(texts[0][2]) < 20
         assert texts[0][3] == 'None'
@@ -340,7 +340,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
-                           f"{self.plaid_accts['credit']['item_id']})"
+                              f"{self.plaid_accts['credit']['item_id']})"
         assert 10 < int(texts[0][1]) < 20
         assert texts[0][2] == '0'
         assert texts[0][3] == 'None'
@@ -448,7 +448,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         table = selenium.find_element_by_id('table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
-                           f"{self.plaid_accts['credit']['item_id']})"
+                              f"{self.plaid_accts['credit']['item_id']})"
         assert texts[0][1] == '0'
         assert texts[0][2] == '0'
         assert 'the login details of this item have changed' in texts[0][3]
