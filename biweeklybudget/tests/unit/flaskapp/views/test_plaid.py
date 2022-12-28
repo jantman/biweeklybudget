@@ -434,7 +434,7 @@ class TestPlaidRefreshAccounts:
             'item_id': 'IID1'
         }
         mock_client = MagicMock()
-        mock_client.Accounts.get.return_value = {
+        mock_client.accounts_get.return_value = {
             'accounts': [
                 {
                     'account_id': 'AID1',
@@ -467,6 +467,8 @@ class TestPlaidRefreshAccounts:
             all_accounts=[m_acct2, m_acct4]
         )
 
+        m_agr = Mock()
+
         def se_item(**kwargs):
             return mock_item
 
@@ -488,20 +490,25 @@ class TestPlaidRefreshAccounts:
                 plaid_client=DEFAULT,
                 PlaidItem=DEFAULT,
                 PlaidAccount=DEFAULT,
+                AccountsGetRequest=DEFAULT,
                 db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
             mocks['PlaidItem'].side_effect = se_item
             mocks['PlaidAccount'].side_effect = se_acct
+            mocks['AccountsGetRequest'].return_value = m_agr
             res = PlaidRefreshAccounts().post()
         assert res == mock_json
+        assert mocks['AccountsGetRequest'].mock_calls == [
+            call(access_token='accToken')
+        ]
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Accounts.get('accToken')
+            call().accounts_get(m_agr)
         ]
         assert mock_client.mock_calls == [
-            call.Accounts.get('accToken')
+            call.accounts_get(m_agr)
         ]
         assert mocks['jsonify'].mock_calls == [
             call({'success': True})
@@ -543,7 +550,7 @@ class TestPlaidRefreshAccounts:
             'item_id': 'IID1'
         }
         mock_client = MagicMock()
-        mock_client.Accounts.get.side_effect = ApiException(
+        mock_client.accounts_get.side_effect = ApiException(
             reason='fooerror', status=500
         )
         m_acct1 = Mock(account_id='AID1')
@@ -554,6 +561,8 @@ class TestPlaidRefreshAccounts:
             item_id='IID1', access_token='accToken',
             all_accounts=[m_acct2, m_acct4]
         )
+
+        m_agr = Mock()
 
         def se_item(**kwargs):
             return mock_item
@@ -576,20 +585,25 @@ class TestPlaidRefreshAccounts:
                 plaid_client=DEFAULT,
                 PlaidItem=DEFAULT,
                 PlaidAccount=DEFAULT,
+                AccountsGetRequest=DEFAULT,
                 db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
             mocks['PlaidItem'].side_effect = se_item
             mocks['PlaidAccount'].side_effect = se_acct
+            mocks['AccountsGetRequest'].return_value = m_agr
             res = PlaidRefreshAccounts().post()
         assert res == mock_json
+        assert mocks['AccountsGetRequest'].mock_calls == [
+            call(access_token='accToken')
+        ]
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Accounts.get('accToken')
+            call().accounts_get(m_agr)
         ]
         assert mock_client.mock_calls == [
-            call.Accounts.get('accToken')
+            call.accounts_get(m_agr)
         ]
         assert mocks['jsonify'].mock_calls == [
             call({
@@ -1211,7 +1225,9 @@ class TestPlaidUpdate:
 class TestPlaidLinkToken:
 
     @patch.dict('os.environ', {}, clear=True)
-    def test_normal(self):
+    def test_initial_link(self):
+        mock_req = Mock()
+        mock_req.get_json.return_value = {}
         mock_json = Mock()
         mock_client = MagicMock()
         link_token = 'fooToken'
@@ -1224,14 +1240,20 @@ class TestPlaidLinkToken:
         mock_country = Mock()
         mock_ltcr = Mock()
         mock_user = Mock()
+
+        mock_sess = MagicMock()
+
         with patch.multiple(
             pbm,
+            request=mock_req,
             jsonify=DEFAULT,
             plaid_client=DEFAULT,
             LinkTokenCreateRequest=DEFAULT,
+            PlaidItem=DEFAULT,
             Products=DEFAULT,
             CountryCode=DEFAULT,
             LinkTokenCreateRequestUser=DEFAULT,
+            db_session=mock_sess,
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
@@ -1264,9 +1286,88 @@ class TestPlaidLinkToken:
                 user=mock_user,
             )
         ]
+        assert mock_sess.mock_calls == []
 
     @patch.dict('os.environ', {}, clear=True)
-    def test_exception(self):
+    def test_update(self):
+        mock_req = Mock()
+        mock_req.get_json.return_value = {'item_id': 'IID1'}
+        mock_json = Mock()
+        mock_client = MagicMock()
+        link_token = 'fooToken'
+        expiration = dtnow() + timedelta(hours=1)
+        req_id = 'requestId'
+        mock_client.link_token_create.return_value = LinkTokenCreateResponse(
+            link_token, expiration, req_id
+        )
+        mock_product = Mock()
+        mock_country = Mock()
+        mock_ltcr = Mock()
+        mock_user = Mock()
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[]
+        )
+
+        mock_sess = MagicMock()
+        mock_sess.query.return_value.get.return_value = mock_item
+
+        def se_item(**kwargs):
+            return mock_item
+
+        with patch.multiple(
+            pbm,
+            request=mock_req,
+            jsonify=DEFAULT,
+            plaid_client=DEFAULT,
+            LinkTokenCreateRequest=DEFAULT,
+            Products=DEFAULT,
+            CountryCode=DEFAULT,
+            PlaidItem=DEFAULT,
+            LinkTokenCreateRequestUser=DEFAULT,
+            db_session=mock_sess,
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['LinkTokenCreateRequest'].return_value = mock_ltcr
+            mocks['Products'].return_value = mock_product
+            mocks['CountryCode'].return_value = mock_country
+            mocks['LinkTokenCreateRequestUser'].return_value = mock_user
+            mocks['PlaidItem'].side_effect = se_item
+            res = PlaidLinkToken().post()
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({'link_token': 'fooToken'})
+        ]
+
+        assert mock_json.mock_calls == []
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().link_token_create(mock_ltcr)
+        ]
+        assert mocks['Products'].mock_calls == [call('transactions')]
+        assert mocks['CountryCode'].mock_calls == [call('US')]
+        assert mocks['LinkTokenCreateRequestUser'].mock_calls == [
+            call(client_user_id='1')
+        ]
+        assert mocks['LinkTokenCreateRequest'].mock_calls == [
+            call(
+                products=[mock_product],
+                client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+                country_codes=[mock_country],
+                language='en',
+                user=mock_user,
+                access_token='accToken'
+            )
+        ]
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1')
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_initial_link_exception(self):
+        mock_req = Mock()
+        mock_req.get_json.return_value = {}
         mock_json = Mock()
         mock_client = MagicMock()
         mock_client.link_token_create.side_effect = ApiException(
@@ -1277,14 +1378,20 @@ class TestPlaidLinkToken:
         mock_country = Mock()
         mock_ltcr = Mock()
         mock_user = Mock()
+
+        mock_sess = MagicMock()
+
         with patch.multiple(
             pbm,
+            request=mock_req,
             jsonify=DEFAULT,
             plaid_client=DEFAULT,
             LinkTokenCreateRequest=DEFAULT,
             Products=DEFAULT,
+            PlaidItem=DEFAULT,
             CountryCode=DEFAULT,
             LinkTokenCreateRequestUser=DEFAULT,
+            db_session=mock_sess,
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
@@ -1320,3 +1427,4 @@ class TestPlaidLinkToken:
                 user=mock_user,
             )
         ]
+        assert mock_sess.mock_calls == []

@@ -46,25 +46,21 @@ from typing import List, Dict
 from biweeklybudget import settings
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import plaid_client, dtnow
-from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.plaid_updater import PlaidUpdater, PlaidUpdateResult
+from biweeklybudget.plaid_updater import PlaidUpdater
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
 
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_create_request_auth import \
-    LinkTokenCreateRequestAuth
 from plaid.model.item_public_token_exchange_request import \
     ItemPublicTokenExchangeRequest
-from plaid.model.item_public_token_exchange_response import \
-    ItemPublicTokenExchangeResponse
 from plaid.model.link_token_create_request_user import \
     LinkTokenCreateRequestUser
 from plaid.model.item_get_request import ItemGetRequest
 from plaid.model.institutions_get_by_id_request import \
     InstitutionsGetByIdRequest
+from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.link_token_create_response import LinkTokenCreateResponse
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
@@ -186,7 +182,9 @@ class PlaidRefreshAccounts(MethodView):
             'Plaid refresh accounts for %s', item
         )
         try:
-            response = client.Accounts.get(item.access_token)
+            response = client.accounts_get(
+                AccountsGetRequest(access_token=item.access_token)
+            )
         except ApiException as e:
             logger.error(
                 'Plaid error getting accounts for %s: %s',
@@ -424,26 +422,31 @@ class PlaidLinkToken(MethodView):
     """
 
     def post(self):
+        data = request.get_json()
         client = plaid_client()
         logger.debug('Plaid create link token')
+        kwargs = dict(
+            products=[
+                Products(x) for x in settings.PLAID_PRODUCTS.split(',')
+            ],
+            client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+            country_codes=[
+                CountryCode(x)
+                for x in settings.PLAID_COUNTRY_CODES.split(',')
+            ],
+            language="en",
+            user=LinkTokenCreateRequestUser(
+                client_user_id=settings.PLAID_USER_ID
+            ),
+        )
+        if 'item_id' in data:
+            item_id = data['item_id']
+            item: PlaidItem = db_session.query(PlaidItem).get(item_id)
+            logger.info('PlaidLinkToken for updating item %s', item_id)
+            kwargs['access_token'] = item.access_token
         try:
-            request = LinkTokenCreateRequest(
-                products=[
-                    Products(x) for x in settings.PLAID_PRODUCTS.split(',')
-                ],
-                client_name=f'github.com/jantman/biweeklybudget {VERSION}',
-                country_codes=[
-                    CountryCode(x)
-                    for x in settings.PLAID_COUNTRY_CODES.split(',')
-                ],
-                language="en",
-                user=LinkTokenCreateRequestUser(
-                    client_user_id=settings.PLAID_USER_ID
-                ),
-            )
-            response: LinkTokenCreateResponse = client.link_token_create(
-                request
-            )
+            req = LinkTokenCreateRequest(**kwargs)
+            response: LinkTokenCreateResponse = client.link_token_create(req)
             logger.debug('Plaid link_token_create response: %s', response)
         except ApiException as e:
             logger.error(
