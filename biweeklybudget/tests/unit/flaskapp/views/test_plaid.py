@@ -45,7 +45,7 @@ from biweeklybudget.version import VERSION
 from biweeklybudget.flaskapp.views.plaid import (
     PlaidJs, PlaidPublicToken, PlaidHandleLink, set_url_rules,
     PlaidConfigJS, PlaidUpdate, PlaidRefreshAccounts,
-    PlaidUpdateItemInfo
+    PlaidUpdateItemInfo, PlaidLinkToken
 )
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
@@ -64,6 +64,7 @@ class TestSetUrlRules:
         m_pu_view = Mock()
         m_pra_view = Mock()
         m_puii_view = Mock()
+        m_plt_view = Mock()
         m_app = Mock()
         with patch.multiple(
             pbm,
@@ -74,6 +75,7 @@ class TestSetUrlRules:
             PlaidUpdate=DEFAULT,
             PlaidRefreshAccounts=DEFAULT,
             PlaidUpdateItemInfo=DEFAULT,
+            PlaidLinkToken=DEFAULT,
             new_callable=MagicMock
         ) as mocks:
             mocks['PlaidHandleLink'].return_value = m_phl_view
@@ -83,6 +85,7 @@ class TestSetUrlRules:
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
             mocks['PlaidRefreshAccounts'].return_value = m_pra_view
             mocks['PlaidUpdateItemInfo'].return_value = m_puii_view
+            mocks['PlaidLinkToken'].return_value = m_plt_view
             set_url_rules(m_app)
         assert m_app.mock_calls == [
             call.add_url_rule(
@@ -114,6 +117,12 @@ class TestSetUrlRules:
                 '/ajax/plaid/update_item_info',
                 view_func=mocks['PlaidUpdateItemInfo'].as_view(
                     'plaid_update_item_info'
+                )
+            ),
+            call.add_url_rule(
+                '/ajax/plaid/create_link_token',
+                view_func=mocks['PlaidLinkToken'].as_view(
+                    'plaid_link_token'
                 )
             )
         ]
@@ -1133,4 +1142,116 @@ class TestPlaidUpdate:
         assert mock_db.mock_calls == [
             call.query(PlaidItem),
             call.query().get('Item1'),
+        ]
+
+
+class TestPlaidLinkToken:
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_normal(self):
+        mock_json = Mock()
+        mock_client = MagicMock()
+        mock_client.link_token_create.return_value = {
+            'link_token': 'fooToken',
+            'expiration': 'exp'
+        }
+        mock_product = Mock()
+        mock_country = Mock()
+        mock_ltcr = Mock()
+        mock_user = Mock()
+        with patch.multiple(
+            pbm,
+            jsonify=DEFAULT,
+            plaid_client=DEFAULT,
+            LinkTokenCreateRequest=DEFAULT,
+            Products=DEFAULT,
+            CountryCode=DEFAULT,
+            LinkTokenCreateRequestUser=DEFAULT,
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['LinkTokenCreateRequest'].return_value = mock_ltcr
+            mocks['Products'].return_value = mock_product
+            mocks['CountryCode'].return_value = mock_country
+            mocks['LinkTokenCreateRequestUser'].return_value = mock_user
+            res = PlaidLinkToken().post()
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({'link_token': 'fooToken', 'expiration': 'exp'})
+        ]
+
+        assert mock_json.mock_calls == []
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().link_token_create(mock_ltcr)
+        ]
+        assert mocks['Products'].mock_calls == [call('transactions')]
+        assert mocks['CountryCode'].mock_calls == [call('US')]
+        assert mocks['LinkTokenCreateRequestUser'].mock_calls == [
+            call(client_user_id='1')
+        ]
+        assert mocks['LinkTokenCreateRequest'].mock_calls == [
+            call(
+                products=[mock_product],
+                client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+                country_codes=[mock_country],
+                language='en',
+                user=mock_user,
+            )
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_exception(self):
+        mock_json = Mock()
+        mock_client = MagicMock()
+        mock_client.link_token_create.side_effect = ApiException(
+            reason='some error message',
+            status=999,
+        )
+        mock_product = Mock()
+        mock_country = Mock()
+        mock_ltcr = Mock()
+        mock_user = Mock()
+        with patch.multiple(
+            pbm,
+            jsonify=DEFAULT,
+            plaid_client=DEFAULT,
+            LinkTokenCreateRequest=DEFAULT,
+            Products=DEFAULT,
+            CountryCode=DEFAULT,
+            LinkTokenCreateRequestUser=DEFAULT,
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['LinkTokenCreateRequest'].return_value = mock_ltcr
+            mocks['Products'].return_value = mock_product
+            mocks['CountryCode'].return_value = mock_country
+            mocks['LinkTokenCreateRequestUser'].return_value = mock_user
+            res = PlaidLinkToken().post()
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'Exception: (999)\nReason: some error message\n'
+            })
+        ]
+        assert mock_json.mock_calls == []
+        assert mock_json.status_code == 400
+        assert mocks['plaid_client'].mock_calls == [
+            call(),
+            call().link_token_create(mock_ltcr)
+        ]
+        assert mocks['Products'].mock_calls == [call('transactions')]
+        assert mocks['CountryCode'].mock_calls == [call('US')]
+        assert mocks['LinkTokenCreateRequestUser'].mock_calls == [
+            call(client_user_id='1')
+        ]
+        assert mocks['LinkTokenCreateRequest'].mock_calls == [
+            call(
+                products=[mock_product],
+                client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+                country_codes=[mock_country],
+                language='en',
+                user=mock_user,
+            )
         ]

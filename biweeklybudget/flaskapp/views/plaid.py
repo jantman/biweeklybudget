@@ -54,8 +54,10 @@ from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
 
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_create_request_auth import LinkTokenCreateRequestAuth
-from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.link_token_create_request_auth import \
+    LinkTokenCreateRequestAuth
+from plaid.model.link_token_create_request_user import \
+    LinkTokenCreateRequestUser
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
 
@@ -464,6 +466,10 @@ def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/update_item_info',
         view_func=PlaidUpdateItemInfo.as_view('plaid_update_item_info')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/create_link_token',
+        view_func=PlaidLinkToken.as_view('plaid_link_token')
     )
 
 
