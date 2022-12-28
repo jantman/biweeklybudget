@@ -53,6 +53,12 @@ from biweeklybudget.plaid_updater import PlaidUpdater, PlaidUpdateResult
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
 
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_auth import LinkTokenCreateRequestAuth
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.products import Products
+from plaid.model.country_code import CountryCode
+
 logger = logging.getLogger(__name__)
 
 
@@ -389,6 +395,48 @@ class PlaidConfigJS(MethodView):
         var PLAID_PRODUCTS = "{settings.PLAID_PRODUCTS}";
         var PLAID_COUNTRY_CODES = "{settings.PLAID_COUNTRY_CODES}";
         """)
+
+
+class PlaidLinkToken(MethodView):
+    """
+    Handle POST /ajax/plaid/create_link_token endpoint.
+    """
+
+    def post(self):
+        client = plaid_client()
+        logger.debug('Plaid create link token')
+        try:
+            request = LinkTokenCreateRequest(
+                products=[
+                    Products(x) for x in settings.PLAID_PRODUCTS.split(',')
+                ],
+                client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+                country_codes=[
+                    CountryCode(x)
+                    for x in settings.PLAID_COUNTRY_CODES.split(',')
+                ],
+                language="en",
+                user=LinkTokenCreateRequestUser(
+                    client_user_id=settings.PLAID_USER_ID
+                ),
+            )
+            response = client.link_token_create(request)
+            logger.debug('Plaid link_token_create response: %s', response)
+        except ApiException as e:
+            logger.error(
+                'Plaid error creating Link token: %s', e, exc_info=True
+            )
+            resp = jsonify({
+                'success': False,
+                'message': 'Exception: %s' % str(e)
+            })
+            resp.status_code = 400
+            return resp
+        logger.info(
+            'Plaid Link token creation: link_token=%s expiration=%s',
+            response['link_token'], response['expiration']
+        )
+        return jsonify(response)
 
 
 def set_url_rules(a):

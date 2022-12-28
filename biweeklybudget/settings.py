@@ -80,6 +80,7 @@ _STRING_VARS = [
     'PLAID_ENV',
     'PLAID_PRODUCTS',
     'PLAID_COUNTRY_CODES',
+    'PLAID_USER_ID',
 ]
 
 #: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
@@ -187,6 +188,10 @@ PLAID_PRODUCTS = None
 #: PLAID_COUNTRY_CODES is a comma-separated list of countries for which users
 #: will be able to select institutions from.
 PLAID_COUNTRY_CODES = None
+
+#: PLAID_USER_ID is a unique per-user ID for users of Plaid applications.
+#: Since this is a single-user app, we just hard-code to "1"
+PLAID_USER_ID = '1'
 
 if 'SETTINGS_MODULE' in os.environ:
     logger.debug('Attempting to import settings module %s',
