@@ -56,8 +56,13 @@ from biweeklybudget.db import db_session
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_auth import \
     LinkTokenCreateRequestAuth
+from plaid.model.item_public_token_exchange_request import \
+    ItemPublicTokenExchangeRequest
+from plaid.model.item_public_token_exchange_response import \
+    ItemPublicTokenExchangeResponse
 from plaid.model.link_token_create_request_user import \
     LinkTokenCreateRequestUser
+from plaid.model.link_token_create_response import LinkTokenCreateResponse
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
 
@@ -87,7 +92,8 @@ class PlaidHandleLink(MethodView):
         public_token = data['public_token']
         logger.debug('Plaid token exchange for public token: %s', public_token)
         try:
-            exchange_response = client.Item.public_token.exchange(public_token)
+            req = ItemPublicTokenExchangeRequest(public_token=public_token)
+            exchange_response = client.item_public_token_exchange(req)
         except ApiException as e:
             logger.error(
                 'Plaid error exchanging token %s: %s',
@@ -422,7 +428,9 @@ class PlaidLinkToken(MethodView):
                     client_user_id=settings.PLAID_USER_ID
                 ),
             )
-            response = client.link_token_create(request)
+            response: LinkTokenCreateResponse = client.link_token_create(
+                request
+            )
             logger.debug('Plaid link_token_create response: %s', response)
         except ApiException as e:
             logger.error(
@@ -435,10 +443,9 @@ class PlaidLinkToken(MethodView):
             resp.status_code = 400
             return resp
         logger.info(
-            'Plaid Link token creation: link_token=%s expiration=%s',
-            response['link_token'], response['expiration']
+            'Plaid Link token creation: %s', response
         )
-        return jsonify(response)
+        return jsonify({'link_token': response.link_token})
 
 
 def set_url_rules(a):

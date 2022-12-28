@@ -36,9 +36,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from textwrap import dedent
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
 from plaid import ApiException
+from plaid.models import LinkTokenCreateResponse
 
 from biweeklybudget import settings
 from biweeklybudget.version import VERSION
@@ -47,6 +48,7 @@ from biweeklybudget.flaskapp.views.plaid import (
     PlaidConfigJS, PlaidUpdate, PlaidRefreshAccounts,
     PlaidUpdateItemInfo, PlaidLinkToken
 )
+from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
@@ -143,6 +145,7 @@ class TestPlaidHandleLink:
     @patch.dict('os.environ', {}, clear=True)
     def test_normal(self):
         mock_json = Mock()
+        mock_ipter = Mock()
         mock_req = MagicMock()
         mock_req.get_json.return_value = {
             'public_token': 'pubToken',
@@ -169,7 +172,7 @@ class TestPlaidHandleLink:
             }
         }
         mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.return_value = {
+        mock_client.item_public_token_exchange.return_value = {
             'item_id': 'itemId',
             'access_token': 'accToken'
         }
@@ -194,20 +197,25 @@ class TestPlaidHandleLink:
             plaid_client=DEFAULT,
             PlaidItem=DEFAULT,
             PlaidAccount=DEFAULT,
+            ItemPublicTokenExchangeRequest=DEFAULT,
             db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
             mocks['PlaidItem'].side_effect = se_item
             mocks['PlaidAccount'].side_effect = se_acct
+            mocks['ItemPublicTokenExchangeRequest'].return_value = mock_ipter
             res = PlaidHandleLink().post()
         assert res == mock_json
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Item.public_token.exchange('pubToken')
+            call().item_public_token_exchange(mock_ipter)
+        ]
+        assert mocks['ItemPublicTokenExchangeRequest'].mock_calls == [
+            call(public_token='pubToken')
         ]
         assert mock_client.mock_calls == [
-            call.Item.public_token.exchange('pubToken')
+            call.item_public_token_exchange(mock_ipter)
         ]
         assert mocks['jsonify'].mock_calls == [
             call({
@@ -256,6 +264,7 @@ class TestPlaidHandleLink:
     @patch.dict('os.environ', {}, clear=True)
     def test_exception(self):
         mock_json = Mock()
+        mock_ipter = Mock()
         mock_req = MagicMock()
         mock_req.get_json.return_value = {
             'public_token': 'pubToken',
@@ -282,7 +291,7 @@ class TestPlaidHandleLink:
             }
         }
         mock_client = MagicMock()
-        mock_client.Item.public_token.exchange.side_effect = ApiException(
+        mock_client.item_public_token_exchange.side_effect = ApiException(
             reason='foo', status=123
         )
         mock_sess = Mock()
@@ -306,20 +315,25 @@ class TestPlaidHandleLink:
             plaid_client=DEFAULT,
             PlaidItem=DEFAULT,
             PlaidAccount=DEFAULT,
+            ItemPublicTokenExchangeRequest=DEFAULT,
             db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
             mocks['PlaidItem'].side_effect = se_item
             mocks['PlaidAccount'].side_effect = se_acct
+            mocks['ItemPublicTokenExchangeRequest'].return_value = mock_ipter
             res = PlaidHandleLink().post()
         assert res == mock_json
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Item.public_token.exchange('pubToken')
+            call().item_public_token_exchange(mock_ipter)
+        ]
+        assert mocks['ItemPublicTokenExchangeRequest'].mock_calls == [
+            call(public_token='pubToken')
         ]
         assert mock_client.mock_calls == [
-            call.Item.public_token.exchange('pubToken')
+            call.item_public_token_exchange(mock_ipter)
         ]
         assert mocks['jsonify'].mock_calls == [
             call({
@@ -1151,10 +1165,12 @@ class TestPlaidLinkToken:
     def test_normal(self):
         mock_json = Mock()
         mock_client = MagicMock()
-        mock_client.link_token_create.return_value = {
-            'link_token': 'fooToken',
-            'expiration': 'exp'
-        }
+        link_token = 'fooToken'
+        expiration = dtnow() + timedelta(hours=1)
+        req_id = 'requestId'
+        mock_client.link_token_create.return_value = LinkTokenCreateResponse(
+            link_token, expiration, req_id
+        )
         mock_product = Mock()
         mock_country = Mock()
         mock_ltcr = Mock()
@@ -1177,7 +1193,7 @@ class TestPlaidLinkToken:
             res = PlaidLinkToken().post()
         assert res == mock_json
         assert mocks['jsonify'].mock_calls == [
-            call({'link_token': 'fooToken', 'expiration': 'exp'})
+            call({'link_token': 'fooToken'})
         ]
 
         assert mock_json.mock_calls == []
