@@ -62,6 +62,9 @@ from plaid.model.item_public_token_exchange_response import \
     ItemPublicTokenExchangeResponse
 from plaid.model.link_token_create_request_user import \
     LinkTokenCreateRequestUser
+from plaid.model.item_get_request import ItemGetRequest
+from plaid.model.institutions_get_by_id_request import \
+    InstitutionsGetByIdRequest
 from plaid.model.link_token_create_response import LinkTokenCreateResponse
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
@@ -240,7 +243,9 @@ class PlaidUpdateItemInfo(MethodView):
                 'Plaid refresh item: %s', item
             )
             try:
-                response = client.Item.get(item.access_token)
+                response = client.item_get(
+                    ItemGetRequest(access_token=item.access_token)
+                )
             except ApiException as e:
                 logger.error(
                     'Plaid error getting item %s: %s',
@@ -254,7 +259,15 @@ class PlaidUpdateItemInfo(MethodView):
                 return resp
             logger.info('Plaid item info item %s: %s', item, response)
             item.institution_id = response['item']['institution_id']
-            inst = client.Institutions.get_by_id(item.institution_id)
+            inst = client.institutions_get_by_id(
+                InstitutionsGetByIdRequest(
+                    institution_id=response['item']['institution_id'],
+                    country_codes=[
+                        CountryCode(x)
+                        for x in settings.PLAID_COUNTRY_CODES.split(',')
+                    ]
+                )
+            )
             item.institution_name = inst['institution']['name']
             db_session.add(item)
         db_session.commit()

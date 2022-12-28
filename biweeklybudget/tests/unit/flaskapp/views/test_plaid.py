@@ -621,43 +621,64 @@ class TestPlaidUpdateItemInfo:
             m_item1, m_item2, m_item3
         ]
 
-        def se_get(token):
-            if token == 'accToken1':
+        m_at1 = Mock(access_token='accToken1')
+        m_at2 = Mock(access_token='accToken2')
+        m_at3 = Mock(access_token='accToken3')
+
+        m_iid1 = Mock(institution_id='inst1')
+        m_iid2 = Mock(institution_id='inst2')
+
+        def se_igr(access_token=None):
+            if access_token == 'accToken1':
+                return m_at1
+            if access_token == 'accToken2':
+                return m_at2
+            if access_token == 'accToken3':
+                return m_at3
+
+        def se_igbir(institution_id=None, country_codes=None):
+            if institution_id == 'inst1':
+                return m_iid1
+            if institution_id == 'inst2':
+                return m_iid2
+
+        def se_get(igr):
+            if igr.access_token == 'accToken1':
                 return {
                     'item': {
                         'institution_id': 'inst1'
                     }
                 }
-            if token == 'accToken2':
+            if igr.access_token == 'accToken2':
                 return {
                     'item': {
                         'institution_id': 'inst2'
                     }
                 }
-            if token == 'accToken3':
+            if igr.access_token == 'accToken3':
                 return {
                     'item': {
                         'institution_id': 'inst1'
                     }
                 }
 
-        mock_client.Item.get.side_effect = se_get
+        mock_client.item_get.side_effect = se_get
 
-        def se_inst(inst_id):
-            if inst_id == 'inst1':
+        def se_inst(data):
+            if data.institution_id == 'inst1':
                 return {
                     'institution': {
                         'name': 'name1'
                     }
                 }
-            if inst_id == 'inst2':
+            if data.institution_id == 'inst2':
                 return {
                     'institution': {
                         'name': 'name2'
                     }
                 }
 
-        mock_client.Institutions.get_by_id.side_effect = se_inst
+        mock_client.institutions_get_by_id.side_effect = se_inst
 
         with patch.multiple(
                 pbm,
@@ -665,20 +686,24 @@ class TestPlaidUpdateItemInfo:
                 plaid_client=DEFAULT,
                 PlaidItem=DEFAULT,
                 PlaidAccount=DEFAULT,
+                ItemGetRequest=DEFAULT,
+                InstitutionsGetByIdRequest=DEFAULT,
                 db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
+            mocks['ItemGetRequest'].side_effect = se_igr
+            mocks['InstitutionsGetByIdRequest'].side_effect = se_igbir
             res = PlaidUpdateItemInfo().post()
         assert res == mock_json
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Item.get('accToken1'),
-            call().Institutions.get_by_id('inst1'),
-            call().Item.get('accToken2'),
-            call().Institutions.get_by_id('inst2'),
-            call().Item.get('accToken3'),
-            call().Institutions.get_by_id('inst1'),
+            call().item_get(m_at1),
+            call().institutions_get_by_id(m_iid1),
+            call().item_get(m_at2),
+            call().institutions_get_by_id(m_iid2),
+            call().item_get(m_at3),
+            call().institutions_get_by_id(m_iid1),
         ]
         assert m_item1.institution_id == 'inst1'
         assert m_item1.institution_name == 'name1'
@@ -714,41 +739,62 @@ class TestPlaidUpdateItemInfo:
             m_item1, m_item2, m_item3
         ]
 
-        def se_get(token):
-            if token == 'accToken1':
+        m_at1 = Mock(access_token='accToken1')
+        m_at2 = Mock(access_token='accToken2')
+        m_at3 = Mock(access_token='accToken3')
+
+        m_iid1 = Mock(institution_id='inst1')
+        m_iid2 = Mock(institution_id='inst2')
+
+        def se_igr(access_token=None):
+            if access_token == 'accToken1':
+                return m_at1
+            if access_token == 'accToken2':
+                return m_at2
+            if access_token == 'accToken3':
+                return m_at3
+
+        def se_igbir(institution_id=None, country_codes=None):
+            if institution_id == 'inst1':
+                return m_iid1
+            if institution_id == 'inst2':
+                return m_iid2
+
+        def se_get(igr):
+            if igr.access_token == 'accToken1':
                 return {
                     'item': {
                         'institution_id': 'inst1'
                     }
                 }
-            if token == 'accToken2':
+            if igr.access_token == 'accToken2':
                 raise ApiException(
                     reason='foo', status=123
                 )
-            if token == 'accToken3':
+            if igr.access_token == 'accToken3':
                 return {
                     'item': {
                         'institution_id': 'inst1'
                     }
                 }
 
-        mock_client.Item.get.side_effect = se_get
+        mock_client.item_get.side_effect = se_get
 
-        def se_inst(inst_id):
-            if inst_id == 'inst1':
+        def se_inst(data):
+            if data.institution_id == 'inst1':
                 return {
                     'institution': {
                         'name': 'name1'
                     }
                 }
-            if inst_id == 'inst2':
+            if data.institution_id == 'inst2':
                 return {
                     'institution': {
                         'name': 'name2'
                     }
                 }
 
-        mock_client.Institutions.get_by_id.side_effect = se_inst
+        mock_client.institutions_get_by_id.side_effect = se_inst
 
         with patch.multiple(
                 pbm,
@@ -756,17 +802,21 @@ class TestPlaidUpdateItemInfo:
                 plaid_client=DEFAULT,
                 PlaidItem=DEFAULT,
                 PlaidAccount=DEFAULT,
+                ItemGetRequest=DEFAULT,
+                InstitutionsGetByIdRequest=DEFAULT,
                 db_session=mock_sess
         ) as mocks:
             mocks['jsonify'].return_value = mock_json
             mocks['plaid_client'].return_value = mock_client
+            mocks['ItemGetRequest'].side_effect = se_igr
+            mocks['InstitutionsGetByIdRequest'].side_effect = se_igbir
             res = PlaidUpdateItemInfo().post()
         assert res == mock_json
         assert mocks['plaid_client'].mock_calls == [
             call(),
-            call().Item.get('accToken1'),
-            call().Institutions.get_by_id('inst1'),
-            call().Item.get('accToken2'),
+            call().item_get(m_at1),
+            call().institutions_get_by_id(m_iid1),
+            call().item_get(m_at2),
         ]
         assert m_item1.institution_id == 'inst1'
         assert m_item1.institution_name == 'name1'
@@ -776,7 +826,6 @@ class TestPlaidUpdateItemInfo:
                 'message': 'Exception: (123)\nReason: foo\n'
             })
         ]
-        assert mock_json.status_code == 400
         assert mock_json.mock_calls == []
         assert mock_sess.mock_calls == [
             call.query(mocks['PlaidItem']),
