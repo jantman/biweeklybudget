@@ -24,11 +24,11 @@ jobs:
       - name: Echo Ref
         run: |
           echo ${{ github.ref_name }}
-      - name: Ensure tag matches version
-        if: github.ref_name != steps.get-version.outputs.APP_VERSION
-        run: |
-          echo "ERROR: tag name (${{ github.ref_name }}) does not match current version in version.py (${{ steps.get-version.outputs.APP_VERSION }})"
-          exit 2
+      #- name: Ensure tag matches version
+      #  if: github.ref_name != steps.get-version.outputs.APP_VERSION
+      #  run: |
+      #    echo "ERROR: tag name (${{ github.ref_name }}) does not match current version in version.py (${{ steps.get-version.outputs.APP_VERSION }})"
+      #    exit 2
       - name: Docker Build
         id: docker-build
         env:
