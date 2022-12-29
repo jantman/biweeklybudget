@@ -4,6 +4,17 @@ Changelog
 Unreleased Changes
 ------------------
 
+Breaking Changes
+++++++++++++++++
+
+* Support for Python versions prior to 3.8 have been dropped; Docker image and testing is now done against Python 3.10.
+* Valid values for the ``PLAID_ENV`` setting / environment variable are now the strings "Production", "Development", or "Sandbox" to match the attribute names of ``plaid.configuration.Environment``. Previously these were lower-case instead of capitalized.
+* The ``PLAID_PUBLIC_KEY`` setting / environment variable has been removed.
+* OFX support is now **deprecated**; going forward, only Plaid will be supported.
+
+All Changes
++++++++++++
+
 * **Drop Python 2 Support and Python 3.5 Support** - biweeklybudget no longer supports Python 2 (2.7) or Python 3.5. Python versions 3.6-3.8 are tested, and development is now done on 3.8.
 * `Issue #201 <https://github.com/jantman/biweeklybudget/issues/201>`_ - Fix **major** bug in calculation of "Remaining" amount for pay periods, when one or more periodic budgets have a greater amount spent than allocated and a $0 starting balance. In that case, we were using the allocated amount instead of the spent amount (i.e. if we had a periodic budget with a $0 starting balance and a $2 ScheduledTransaction, and converted that ScheduledTransaction to a $1000 Transaction, the overall PayPeriod remaining amount would be based on the $2 not the $1000).
 * Add testing for Python 3.7 and 3.8, and make 3.8 the default for tests and tox environments.
