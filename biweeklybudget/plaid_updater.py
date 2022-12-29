@@ -36,7 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from decimal import Decimal, ROUND_HALF_DOWN
 from typing import Optional, List, Dict
 
@@ -49,6 +49,10 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.utils import plaid_client, dtnow
+
+from plaid.models import (
+    ItemGetRequest, TransactionsGetRequest, TransactionsGetRequestOptions
+)
 
 logger = logging.getLogger(__name__)
 
@@ -144,37 +148,35 @@ class PlaidUpdater:
         logger.info('Plaid update for %s', item)
         try:
             end_date: datetime = dtnow()
-            end_ds: str = end_date.strftime('%Y-%m-%d')
             start_date: datetime = end_date - timedelta(days=days)
-            start_ds: str = start_date.strftime('%Y-%m-%d')
+            iteminfo = self.client.item_get(
+                ItemGetRequest(access_token=item.access_token)
+            )
+            logger.info(
+                'Item %s transactions status: %s', item,
+                iteminfo.get('status', {}).get('transactions')
+            )
             logger.debug(
                 'Downloading Plaid transactions for item: %s from %s to %s',
-                item, start_ds, end_ds
+                item, start_date, end_date
             )
-            txns: dict = self.client.Transactions.get(
-                item.access_token, start_ds, end_ds
+            txns: List[dict]
+            accts: Dict
+            txns, accts = self._get_transactions(
+                item.access_token, start_date, end_date
             )
-            logger.debug('Plaid Transactions API result: %s', txns)
-            if len(txns['transactions']) != txns['total_transactions']:
-                raise RuntimeError(
-                    f"ERROR: Plaid API reported {txns['total_transactions']} "
-                    "total transactions but only returned "
-                    f"{len(txns['transactions'])}."
-                )
             accounts: Dict[str, PlaidAccount] = {}
             pa: PlaidAccount
             for pa in db_session.query(PlaidAccount).filter(
                 PlaidAccount.item_id == item.item_id
             ).all():
                 accounts[pa.account_id] = pa
+            logger.info('Accounts: %s', accounts)  # DEBUG - remove me
             stmt_ids: List[int] = []
             added: int = 0
             updated: int = 0
-            accts: Dict[str, dict] = {
-                a['account_id']: a for a in txns['accounts']
-            }
             txns_per_acct: Dict[str, list] = {}
-            for t in txns['transactions']:
+            for t in txns:
                 if t['account_id'] not in txns_per_acct:
                     txns_per_acct[t['account_id']] = []
                 txns_per_acct[t['account_id']].append(t)
@@ -208,6 +210,41 @@ class PlaidUpdater:
             return PlaidUpdateResult(
                 item, False, 0, 0, ex, None
             )
+
+    def _get_transactions(
+            self, access_token: str, start_dt: datetime, end_dt: datetime
+    ):
+        kwargs = {
+            'access_token': access_token,
+            'start_date': start_dt.date(),
+            'end_date': end_dt.date(),
+            'options': TransactionsGetRequestOptions()
+        }
+        txns: List[dict] = []
+        accts: dict = {}
+        req = TransactionsGetRequest(**kwargs)
+        logger.debug('Issuing transactions get request')
+        resp = self.client.transactions_get(req)
+        txns = resp['transactions']
+        for acct in resp['accounts']:
+            accts[acct['account_id']] = acct
+        logger.debug(
+            'Got %d transactions; expecting %d total',
+            len(txns), resp['total_transactions']
+        )
+        while len(txns) < resp['total_transactions']:
+            kwargs['options'] = TransactionsGetRequestOptions(
+                offset=len(txns)
+            )
+            req = TransactionsGetRequest(**kwargs)
+            logger.debug(
+                'Issuing transactions get request with offset=%d', len(txns)
+            )
+            resp = self.client.transactions_get(req)
+            txns.extend(resp['transactions'])
+            for acct in resp['accounts']:
+                accts[acct['account_id']] = acct
+        return txns, accts
 
     def _stmt_for_acct(
         self, account: Account, plaid_acct_info: dict, plaid_txns: List[dict],
@@ -312,9 +349,9 @@ class PlaidUpdater:
                 'amount': Decimal(str(pt['amount'])).quantize(
                     Decimal('.01'), rounding=ROUND_HALF_DOWN
                 ),
-                'date_posted': datetime.strptime(
-                    pt["date"], '%Y-%m-%d'
-                ).replace(tzinfo=UTC),
+                'date_posted': datetime.combine(
+                    pt["date"], time(0, 0, 0), tzinfo=UTC
+                ),
                 'fitid': pt['payment_meta']['reference_number'],
                 'name': pt['name'],
                 'account_id': account.id,

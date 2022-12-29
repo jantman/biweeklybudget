@@ -41,7 +41,7 @@ from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
 from plaid.api.plaid_api import PlaidApi
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from pytz import UTC
 
@@ -112,7 +112,7 @@ class TestAvailableItems:
 class PlaidUpdaterTester:
 
     def setup_method(self):
-        self.mock_client = MagicMock(spec_set=PlaidApi)
+        self.mock_client = MagicMock()
         with patch(f'{pbm}.plaid_client') as m_pc:
             m_pc.return_value = self.mock_client
             self.cls = PlaidUpdater()
@@ -182,36 +182,45 @@ class TestDoItem(PlaidUpdaterTester):
             item_id='Item1', access_token='Token1',
             last_updated=datetime(2019, 1, 1, 1, 1, 1)
         )
-        mock_get = Mock()
-        type(self.mock_client).Transactions = mock_get
-        mock_get.get.return_value = {
-            'total_transactions': 3,
-            'transactions': [
+        self.mock_client.item_get.return_value = {
+            'item': {},
+            'status': {'transactions': {'foo': 'bar'}}
+        }
+        txns = [
+            [
                 {'account_id': 1, 'amount': 10},
                 {'account_id': 1, 'amount': 11},
                 {'account_id': 3, 'amount': 30}
             ],
-            'accounts': [
-                {'account_id': 1, 'foo': 'bar'},
-                {'account_id': 3, 'baz': 'blam'}
-            ]
-        }
-        mock_acct = Mock(item_id='Item1')
+            {
+                1: {'account_id': 1, 'foo': 'bar'},
+                3: {'account_id': 3, 'baz': 'blam'}
+            }
+        ]
+
+        mock_igr = Mock()
 
         def se_sfa(_, acct, *args):
             if acct['account_id'] == 1:
                 return 'sid1', 1, 4
             return 'sid2', 2, 3
 
-        with patch(f'{pbm}.db_session') as mock_db:
-            with patch(f'{pbm}.PlaidAccount', mock_acct):
-                mock_db.query.return_value.filter.return_value.all \
-                    .return_value = accts
-                with patch(f'{pb}._stmt_for_acct') as m_sfa:
-                    m_sfa.side_effect = se_sfa
-                    with patch(f'{pbm}.dtnow') as m_dtnow:
-                        m_dtnow.return_value = datetime(2020, 5, 25, 0, 0, 0)
-                        res = self.cls._do_item(mock_item, 15)
+        with patch.multiple(
+            pbm,
+            db_session=DEFAULT,
+            PlaidAccount=DEFAULT,
+            dtnow=DEFAULT,
+            ItemGetRequest=DEFAULT,
+        ) as mocks:
+            mocks['db_session'].query.return_value.filter. \
+                return_value.all.return_value = accts
+            mocks['ItemGetRequest'].return_value = mock_igr
+            with patch(f'{pb}._stmt_for_acct') as m_sfa:
+                m_sfa.side_effect = se_sfa
+                mocks['dtnow'].return_value = datetime(2020, 5, 25, 0, 0, 0)
+                with patch(f'{pb}._get_transactions') as m_gt:
+                    m_gt.return_value = txns
+                    res = self.cls._do_item(mock_item, 15)
         assert isinstance(res, PlaidUpdateResult)
         assert res.item == mock_item
         assert res.updated == 7
@@ -219,9 +228,6 @@ class TestDoItem(PlaidUpdaterTester):
         assert res.success is True
         assert res.exc is None
         assert res.stmt_ids == ['sid1', 'sid2']
-        assert mock_get.mock_calls == [
-            call.get('Token1', '2020-05-10', '2020-05-25')
-        ]
         assert m_sfa.mock_calls == [
             call(
                 acctA,
@@ -242,75 +248,23 @@ class TestDoItem(PlaidUpdaterTester):
             )
         ]
         assert mock_item.last_updated == datetime(2020, 5, 25, 0, 0, 0)
-        assert mock_db.mock_calls == [
-            call.query(mock_acct),
-            call.query().filter(True),
+        assert mocks['db_session'].mock_calls == [
+            call.query(mocks['PlaidAccount']),
+            call.query().filter(False),
             call.query().filter().all(),
             call.add(mock_item),
             call.commit()
         ]
-
-    def test_invalid_transaction_count(self):
-        acctA = Mock(spec_set=Account)
-        acctB = Mock(spec_set=Account)
-        accts = [
-            Mock(
-                spec_set=PlaidAccount, item_id='Item1', account_id=1,
-                account=acctA
-            ),
-            Mock(
-                spec_set=PlaidAccount, item_id='Item1', account_id=3,
-                account=acctB
-            ),
+        assert mocks['ItemGetRequest'].mock_calls == [
+            call(access_token='Token1')
         ]
-        mock_item = Mock(
-            item_id='Item1', access_token='Token1',
-            last_updated=datetime(2019, 1, 1, 1, 1, 1)
-        )
-        mock_get = Mock()
-        type(self.mock_client).Transactions = mock_get
-        mock_get.get.return_value = {
-            'total_transactions': 456,
-            'transactions': [
-                {'account_id': 1, 'amount': 10},
-                {'account_id': 1, 'amount': 11},
-                {'account_id': 3, 'amount': 30}
-            ],
-            'accounts': [
-                {'account_id': 1, 'foo': 'bar'},
-                {'account_id': 3, 'baz': 'blam'}
-            ]
-        }
-        mock_acct = Mock(item_id='Item1')
-
-        def se_sfa(_, acct, *args):
-            if acct['account_id'] == 1:
-                return 'sid1', 1, 4
-            return 'sid2', 2, 3
-
-        with patch(f'{pbm}.db_session') as mock_db:
-            with patch(f'{pbm}.PlaidAccount', mock_acct):
-                mock_db.query.return_value.filter.return_value.all \
-                    .return_value = accts
-                with patch(f'{pb}._stmt_for_acct') as m_sfa:
-                    m_sfa.side_effect = se_sfa
-                    with patch(f'{pbm}.dtnow') as m_dtnow:
-                        m_dtnow.return_value = datetime(2020, 5, 25, 0, 0, 0)
-                        res = self.cls._do_item(mock_item, 15)
-        assert isinstance(res, PlaidUpdateResult)
-        assert res.item == mock_item
-        assert res.success is False
-        assert res.added == 0
-        assert res.updated == 0
-        exp = 'ERROR: Plaid API reported 456 total transactions but only ' \
-              'returned 3.'
-        assert isinstance(res.exc, RuntimeError)
-        assert res.exc.args[0] == exp
-        assert mock_get.mock_calls == [
-            call.get('Token1', '2020-05-10', '2020-05-25')
+        assert m_gt.mock_calls == [
+            call(
+                'Token1',
+                datetime(2020, 5, 10, 0, 0, 0),
+                datetime(2020, 5, 25, 0, 0, 0)
+            )
         ]
-        assert m_sfa.mock_calls == []
-        assert mock_db.mock_calls == []
 
     def test_acct_none(self):
         acctA = Mock(spec_set=Account)
@@ -328,36 +282,45 @@ class TestDoItem(PlaidUpdaterTester):
             item_id='Item1', access_token='Token1',
             last_updated=datetime(2019, 1, 1, 1, 1, 1)
         )
-        mock_get = Mock()
-        type(self.mock_client).Transactions = mock_get
-        mock_get.get.return_value = {
-            'total_transactions': 3,
-            'transactions': [
+        self.mock_client.item_get.return_value = {
+            'item': {},
+            'status': {'transactions': {'foo': 'bar'}}
+        }
+        txns = [
+            [
                 {'account_id': 1, 'amount': 10},
                 {'account_id': 1, 'amount': 11},
                 {'account_id': 3, 'amount': 30}
             ],
-            'accounts': [
-                {'account_id': 1, 'foo': 'bar'},
-                {'account_id': 3, 'baz': 'blam'}
-            ]
-        }
-        mock_acct = Mock(item_id='Item1')
+            {
+                1: {'account_id': 1, 'foo': 'bar'},
+                3: {'account_id': 3, 'baz': 'blam'}
+            }
+        ]
+
+        mock_igr = Mock()
 
         def se_sfa(_, acct, *args):
             if acct['account_id'] == 1:
                 return 'sid1', 1, 4
             return 'sid2', 2, 3
 
-        with patch(f'{pbm}.db_session') as mock_db:
-            with patch(f'{pbm}.PlaidAccount', mock_acct):
-                mock_db.query.return_value.filter.return_value.all \
-                    .return_value = accts
-                with patch(f'{pb}._stmt_for_acct') as m_sfa:
-                    m_sfa.side_effect = se_sfa
-                    with patch(f'{pbm}.dtnow') as m_dtnow:
-                        m_dtnow.return_value = datetime(2020, 5, 25, 0, 0, 0)
-                        res = self.cls._do_item(mock_item, 15)
+        with patch.multiple(
+            pbm,
+            db_session=DEFAULT,
+            PlaidAccount=DEFAULT,
+            dtnow=DEFAULT,
+            ItemGetRequest=DEFAULT,
+        ) as mocks:
+            mocks['db_session'].query.return_value.filter.\
+                return_value.all.return_value = accts
+            mocks['ItemGetRequest'].return_value = mock_igr
+            with patch(f'{pb}._stmt_for_acct') as m_sfa:
+                m_sfa.side_effect = se_sfa
+                mocks['dtnow'].return_value = datetime(2020, 5, 25, 0, 0, 0)
+                with patch(f'{pb}._get_transactions') as m_gt:
+                    m_gt.return_value = txns
+                    res = self.cls._do_item(mock_item, 15)
         assert isinstance(res, PlaidUpdateResult)
         assert res.item == mock_item
         assert res.updated == 4
@@ -365,9 +328,6 @@ class TestDoItem(PlaidUpdaterTester):
         assert res.success is True
         assert res.exc is None
         assert res.stmt_ids == ['sid1']
-        assert mock_get.mock_calls == [
-            call.get('Token1', '2020-05-10', '2020-05-25')
-        ]
         assert m_sfa.mock_calls == [
             call(
                 acctA,
@@ -380,12 +340,235 @@ class TestDoItem(PlaidUpdaterTester):
             )
         ]
         assert mock_item.last_updated == datetime(2020, 5, 25, 0, 0, 0)
-        assert mock_db.mock_calls == [
-            call.query(mock_acct),
-            call.query().filter(True),
+        assert mocks['db_session'].mock_calls == [
+            call.query(mocks['PlaidAccount']),
+            call.query().filter(False),
             call.query().filter().all(),
             call.add(mock_item),
             call.commit()
+        ]
+        assert mocks['ItemGetRequest'].mock_calls == [
+            call(access_token='Token1')
+        ]
+        assert m_gt.mock_calls == [
+            call(
+                'Token1',
+                datetime(2020, 5, 10, 0, 0, 0),
+                datetime(2020, 5, 25, 0, 0, 0)
+            )
+        ]
+
+    def test_exception(self):
+        acctA = Mock(spec_set=Account)
+        acctB = Mock(spec_set=Account)
+        accts = [
+            Mock(
+                spec_set=PlaidAccount, item_id='Item1', account_id=1,
+                account=acctA
+            ),
+            Mock(
+                spec_set=PlaidAccount, item_id='Item1', account_id=3,
+                account=acctB
+            ),
+        ]
+        mock_item = Mock(
+            item_id='Item1', access_token='Token1',
+            last_updated=datetime(2019, 1, 1, 1, 1, 1)
+        )
+        self.mock_client.item_get.return_value = {
+            'item': {},
+            'status': {'transactions': {'foo': 'bar'}}
+        }
+        txns = [
+            [
+                {'account_id': 1, 'amount': 10},
+                {'account_id': 1, 'amount': 11},
+                {'account_id': 3, 'amount': 30}
+            ],
+            {
+                1: {'account_id': 1, 'foo': 'bar'},
+                3: {'account_id': 3, 'baz': 'blam'}
+            }
+        ]
+
+        mock_igr = Mock()
+
+        def se_sfa(_, acct, *args):
+            if acct['account_id'] == 1:
+                return 'sid1', 1, 4
+            return 'sid2', 2, 3
+
+        ex = RuntimeError('foo')
+        with patch.multiple(
+            pbm,
+            db_session=DEFAULT,
+            PlaidAccount=DEFAULT,
+            dtnow=DEFAULT,
+            ItemGetRequest=DEFAULT,
+        ) as mocks:
+            mocks['db_session'].query.return_value.filter. \
+                return_value.all.return_value = accts
+            mocks['ItemGetRequest'].return_value = mock_igr
+            with patch(f'{pb}._stmt_for_acct') as m_sfa:
+                m_sfa.side_effect = se_sfa
+                mocks['dtnow'].return_value = datetime(2020, 5, 25, 0, 0, 0)
+                with patch(f'{pb}._get_transactions') as m_gt:
+                    m_gt.side_effect = ex
+                    res = self.cls._do_item(mock_item, 15)
+        assert isinstance(res, PlaidUpdateResult)
+        assert res.item == mock_item
+        assert res.updated == 0
+        assert res.added == 0
+        assert res.success is False
+        assert res.exc == ex
+        assert res.stmt_ids is None
+        assert m_sfa.mock_calls == []
+        assert mocks['db_session'].mock_calls == []
+        assert mocks['ItemGetRequest'].mock_calls == [
+            call(access_token='Token1')
+        ]
+        assert m_gt.mock_calls == [
+            call(
+                'Token1',
+                datetime(2020, 5, 10, 0, 0, 0),
+                datetime(2020, 5, 25, 0, 0, 0)
+            )
+        ]
+
+
+class TestGetTransactions(PlaidUpdaterTester):
+
+    def test_happy_path_no_paginate(self):
+        self.mock_client.transactions_get.return_value = {
+            'transactions': [
+                {'trans': 1}, {'trans': 2}, {'trans': 3}
+            ],
+            'accounts': [
+                {'account_id': 1, 'foo': 'bar'},
+                {'account_id': 3, 'baz': 'blam'}
+            ],
+            'total_transactions': 3
+        }
+
+        mock_tgr1 = Mock()
+        mock_tgro1 = Mock()
+
+        with patch.multiple(
+            pbm,
+            TransactionsGetRequest=DEFAULT,
+            TransactionsGetRequestOptions=DEFAULT,
+        ) as mocks:
+            mocks['TransactionsGetRequest'].side_effect = [mock_tgr1]
+            mocks['TransactionsGetRequestOptions'].side_effect = [mock_tgro1]
+            res = self.cls._get_transactions(
+                'aToken', datetime(2020, 5, 10, 0, 0, 0),
+                datetime(2020, 5, 25, 0, 0, 0)
+            )
+        assert res == (
+            [{'trans': 1}, {'trans': 2}, {'trans': 3}],
+            {
+                1: {'account_id': 1, 'foo': 'bar'},
+                3: {'account_id': 3, 'baz': 'blam'}
+            }
+        )
+        assert mocks['TransactionsGetRequest'].mock_calls == [
+            call(
+                access_token='aToken',
+                start_date=date(2020, 5, 10),
+                end_date=date(2020, 5, 25),
+                options=mock_tgro1
+            )
+        ]
+        assert mocks['TransactionsGetRequestOptions'].mock_calls == [call()]
+
+    def test_happy_path_paginate(self):
+        self.mock_client.transactions_get.side_effect = [
+            {
+                'transactions': [
+                    {'trans': 1}, {'trans': 2}
+                ],
+                'accounts': [
+                    {'account_id': 1, 'foo': 'bar'},
+                    {'account_id': 3, 'baz': 'blam'}
+                ],
+                'total_transactions': 5
+            },
+            {
+                'transactions': [
+                    {'trans': 3}, {'trans': 4}
+                ],
+                'accounts': [
+                    {'account_id': 1, 'foo': 'bar'},
+                    {'account_id': 3, 'baz': 'blam'}
+                ],
+                'total_transactions': 5
+            },
+            {
+                'transactions': [
+                    {'trans': 5}
+                ],
+                'accounts': [
+                    {'account_id': 1, 'foo': 'bar'},
+                    {'account_id': 3, 'baz': 'blam'}
+                ],
+                'total_transactions': 5
+            },
+        ]
+
+        mock_tgr1 = Mock()
+        mock_tgro1 = Mock()
+        mock_tgr2 = Mock()
+        mock_tgro2 = Mock()
+        mock_tgr3 = Mock()
+        mock_tgro3 = Mock()
+
+        with patch.multiple(
+            pbm,
+            TransactionsGetRequest=DEFAULT,
+            TransactionsGetRequestOptions=DEFAULT,
+        ) as mocks:
+            mocks['TransactionsGetRequest'].side_effect = [
+                mock_tgr1, mock_tgr2, mock_tgr3
+            ]
+            mocks['TransactionsGetRequestOptions'].side_effect = [
+                mock_tgro1, mock_tgro2, mock_tgro3
+            ]
+            res = self.cls._get_transactions(
+                'aToken', datetime(2020, 5, 10, 0, 0, 0),
+                datetime(2020, 5, 25, 0, 0, 0)
+            )
+        assert res == (
+            [
+                {'trans': 1}, {'trans': 2}, {'trans': 3}, {'trans': 4},
+                {'trans': 5}
+            ],
+            {
+                1: {'account_id': 1, 'foo': 'bar'},
+                3: {'account_id': 3, 'baz': 'blam'}
+            }
+        )
+        assert mocks['TransactionsGetRequest'].mock_calls == [
+            call(
+                access_token='aToken',
+                start_date=date(2020, 5, 10),
+                end_date=date(2020, 5, 25),
+                options=mock_tgro1
+            ),
+            call(
+                access_token='aToken',
+                start_date=date(2020, 5, 10),
+                end_date=date(2020, 5, 25),
+                options=mock_tgro2
+            ),
+            call(
+                access_token='aToken',
+                start_date=date(2020, 5, 10),
+                end_date=date(2020, 5, 25),
+                options=mock_tgro3
+            )
+        ]
+        assert mocks['TransactionsGetRequestOptions'].mock_calls == [
+            call(), call(offset=2), call(offset=4)
         ]
 
 
@@ -726,7 +909,7 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             {
                 'pending': False,
                 'amount': 123.4567,
-                'date': '2020-02-23',
+                'date': date(2020, 2, 23),
                 'payment_meta': {
                     'reference_number': None
                 },
@@ -736,7 +919,7 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             {
                 'pending': False,
                 'amount': 482.86392,
-                'date': '2020-03-15',
+                'date': date(2020, 3, 15),
                 'payment_meta': {
                     'reference_number': '456def'
                 },
@@ -806,7 +989,7 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             {
                 'pending': False,
                 'amount': 123.4567,
-                'date': '2020-02-23',
+                'date': date(2020, 2, 23),
                 'payment_meta': {
                     'reference_number': None
                 },
@@ -816,7 +999,7 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             {
                 'pending': False,
                 'amount': 482.86392,
-                'date': '2020-03-15',
+                'date': date(2020, 3, 15),
                 'payment_meta': {
                     'reference_number': '456def'
                 },

@@ -52,18 +52,11 @@ from biweeklybudget.plaid_updater import PlaidUpdater
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
 
-from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.item_public_token_exchange_request import \
-    ItemPublicTokenExchangeRequest
-from plaid.model.link_token_create_request_user import \
-    LinkTokenCreateRequestUser
-from plaid.model.item_get_request import ItemGetRequest
-from plaid.model.institutions_get_by_id_request import \
-    InstitutionsGetByIdRequest
-from plaid.model.accounts_get_request import AccountsGetRequest
-from plaid.model.link_token_create_response import LinkTokenCreateResponse
-from plaid.model.products import Products
-from plaid.model.country_code import CountryCode
+from plaid.models import (
+    LinkTokenCreateRequest, ItemPublicTokenExchangeRequest,
+    LinkTokenCreateRequestUser, ItemGetRequest, InstitutionsGetByIdRequest,
+    AccountsGetRequest, LinkTokenCreateResponse, Products, CountryCode
+)
 
 logger = logging.getLogger(__name__)
 
