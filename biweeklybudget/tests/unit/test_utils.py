@@ -40,26 +40,50 @@ from pytz import utc
 from datetime import datetime
 from freezegun import freeze_time
 
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, call, Mock, DEFAULT
+
+pbm: str = 'biweeklybudget.utils'
 
 
 class TestPlaidClient:
 
     def test_happy_path(self):
         mock_client = Mock()
-        with patch(f'biweeklybudget.utils.Client', autospec=True) as m_client:
-            m_client.return_value = mock_client
+        mock_config = Mock()
+        mock_api = Mock()
+
+        class MockEnv:
+            Production = 'prodEnv'
+            Development = 'devEnv'
+            Sandbox = 'sandEnv'
+
+        with patch.multiple(
+            pbm,
+            Configuration=DEFAULT,
+            ApiClient=DEFAULT,
+            Environment=MockEnv,
+            PlaidApi=DEFAULT
+        ) as mocks:
+            mocks['Configuration'].return_value = mock_config
+            mocks['ApiClient'].return_value = mock_client
+            mocks['PlaidApi'].return_value = mock_api
             res = plaid_client()
-        assert res == mock_client
-        assert m_client.mock_calls == [
+        assert mocks['Configuration'].mock_calls == [
             call(
-                client_id='plaidCID',
-                secret='plaidSecret',
-                public_key='plaidPubKey',
-                environment='sandbox',
-                api_version='2019-05-29'
+                host='sandEnv',
+                api_key={
+                    'clientId': 'plaidCID',
+                    'secret': 'plaidSecret'
+                }
             )
         ]
+        assert mocks['ApiClient'].mock_calls == [
+            call(mock_config)
+        ]
+        assert mocks['PlaidApi'].mock_calls == [
+            call(mock_client)
+        ]
+        assert res == mock_api
 
 
 class TestDtNow(object):

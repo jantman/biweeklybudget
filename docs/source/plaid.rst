@@ -20,8 +20,7 @@ biweeklybudget needs to be configured with your Plaid credentials. I highly reco
 
 * ``PLAID_CLIENT_ID`` - Your Client ID credential, provided by Plaid.
 * ``PLAID_SECRET`` - Your Secret credential, provided by Plaid.
-* ``PLAID_PUBLIC_KEY`` - Your Public Key credential, provided by Plaid.
-* ``PLAID_ENV`` - The Plaid environment name to connect to. This must be one of "sandbox", "development", or "production", and must match the environment that your credentials are for.
+* ``PLAID_ENV`` - The Plaid environment name to connect to. This must be one of "Sandbox", "Development", or "Production", and must match the environment that your credentials are for.
 * ``PLAID_PRODUCTS`` - The Plaid products you are requesting access to. Right now, for biweeklybudget, this should be ``transactions``.
 * ``PLAID_COUNTRY_CODES`` - A comma-separated list of country codes that you want to be able to select institutions from. Only ``US`` has been tested.
 

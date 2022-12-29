@@ -91,13 +91,10 @@ PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID', 'plaidCID')
 #: Plaid Secret (client secret)
 PLAID_SECRET = os.environ.get('PLAID_SECRET', 'plaidSecret')
 
-#: Plaid Public Key
-PLAID_PUBLIC_KEY = os.environ.get('PLAID_PUBLIC_KEY', 'plaidPubKey')
-
 #: Plaid environment name. Use 'sandbox' to test with Plaid's Sandbox
 #: environment (username: user_good, password: pass_good). Use `development` to
 #: test with live users and credentials and `production` to go live
-PLAID_ENV = 'sandbox'
+PLAID_ENV = 'Sandbox'
 
 #: PLAID_PRODUCTS is a comma-separated list of products to use when initializing
 #: Link. Note that this list must contain 'assets' in order for the app to be
@@ -107,3 +104,7 @@ PLAID_PRODUCTS = 'transactions'
 #: PLAID_COUNTRY_CODES is a comma-separated list of countries for which users
 #: will be able to select institutions from.
 PLAID_COUNTRY_CODES = 'US'
+
+#: PLAID_USER_ID is a unique per-user ID for users of Plaid applications.
+#: Since this is a single-user app, we just hard-code to "1"
+PLAID_USER_ID = '1'

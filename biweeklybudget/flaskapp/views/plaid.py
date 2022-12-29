@@ -40,18 +40,23 @@ import logging
 from textwrap import dedent
 from flask.views import MethodView
 from flask import jsonify, request, redirect, render_template
-from plaid.errors import PlaidError
+from plaid import ApiException
 from typing import List, Dict
 
 from biweeklybudget import settings
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import plaid_client, dtnow
-from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.plaid_updater import PlaidUpdater, PlaidUpdateResult
+from biweeklybudget.plaid_updater import PlaidUpdater
 from biweeklybudget.version import VERSION
 from biweeklybudget.db import db_session
+
+from plaid.models import (
+    LinkTokenCreateRequest, ItemPublicTokenExchangeRequest,
+    LinkTokenCreateRequestUser, ItemGetRequest, InstitutionsGetByIdRequest,
+    AccountsGetRequest, LinkTokenCreateResponse, Products, CountryCode
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +84,9 @@ class PlaidHandleLink(MethodView):
         public_token = data['public_token']
         logger.debug('Plaid token exchange for public token: %s', public_token)
         try:
-            exchange_response = client.Item.public_token.exchange(public_token)
-        except PlaidError as e:
+            req = ItemPublicTokenExchangeRequest(public_token=public_token)
+            exchange_response = client.item_public_token_exchange(req)
+        except ApiException as e:
             logger.error(
                 'Plaid error exchanging token %s: %s',
                 public_token, e, exc_info=True
@@ -123,38 +129,6 @@ class PlaidHandleLink(MethodView):
         })
 
 
-class PlaidPublicToken(MethodView):
-    """
-    Handle POST /ajax/plaid/create_public_token endpoint.
-    """
-
-    def post(self):
-        client = plaid_client()
-        item_id = request.form['item_id']
-        item: PlaidItem = db_session.query(PlaidItem).get(item_id)
-        logger.debug(
-            'Plaid create public token for %s', item
-        )
-        try:
-            response = client.Item.public_token.create(item.access_token)
-        except PlaidError as e:
-            logger.error(
-                'Plaid error creating token for %s: %s',
-                item.access_token, e, exc_info=True
-            )
-            resp = jsonify({
-                'success': False,
-                'message': 'Exception: %s' % str(e)
-            })
-            resp.status_code = 400
-            return resp
-        logger.info(
-            'Plaid token creation: access_token=%s response=%s',
-            item.access_token, response
-        )
-        return jsonify(response)
-
-
 class PlaidRefreshAccounts(MethodView):
     """
     Handle POST /ajax/plaid/refresh_item_accounts endpoint.
@@ -169,8 +143,10 @@ class PlaidRefreshAccounts(MethodView):
             'Plaid refresh accounts for %s', item
         )
         try:
-            response = client.Accounts.get(item.access_token)
-        except PlaidError as e:
+            response = client.accounts_get(
+                AccountsGetRequest(access_token=item.access_token)
+            )
+        except ApiException as e:
             logger.error(
                 'Plaid error getting accounts for %s: %s',
                 item.access_token, e, exc_info=True
@@ -189,6 +165,7 @@ class PlaidRefreshAccounts(MethodView):
             'Plaid reported %d accounts for the item', len(response['accounts'])
         )
         for acct in response['accounts']:
+            acct = acct.to_dict()
             if acct['account_id'] in all_accts:
                 curr_acct_ids.append(acct['account_id'])
                 continue
@@ -226,8 +203,10 @@ class PlaidUpdateItemInfo(MethodView):
                 'Plaid refresh item: %s', item
             )
             try:
-                response = client.Item.get(item.access_token)
-            except PlaidError as e:
+                response = client.item_get(
+                    ItemGetRequest(access_token=item.access_token)
+                )
+            except ApiException as e:
                 logger.error(
                     'Plaid error getting item %s: %s',
                     item, e, exc_info=True
@@ -240,7 +219,15 @@ class PlaidUpdateItemInfo(MethodView):
                 return resp
             logger.info('Plaid item info item %s: %s', item, response)
             item.institution_id = response['item']['institution_id']
-            inst = client.Institutions.get_by_id(item.institution_id)
+            inst = client.institutions_get_by_id(
+                InstitutionsGetByIdRequest(
+                    institution_id=response['item']['institution_id'],
+                    country_codes=[
+                        CountryCode(x)
+                        for x in settings.PLAID_COUNTRY_CODES.split(',')
+                    ]
+                )
+            )
             item.institution_name = inst['institution']['name']
             db_session.add(item)
         db_session.commit()
@@ -376,20 +363,52 @@ class PlaidUpdate(MethodView):
         )
 
 
-class PlaidConfigJS(MethodView):
+class PlaidLinkToken(MethodView):
     """
-    Handle GET /plaid_config.js endpoint.
+    Handle POST /ajax/plaid/create_link_token endpoint.
     """
 
-    def get(self):
-        return dedent(f"""
-        // generated by utils.PlaidConfigJS
-        var BIWEEKLYBUDGET_VERSION = "{VERSION}";
-        var PLAID_ENV = "{settings.PLAID_ENV}";
-        var PLAID_PRODUCTS = "{settings.PLAID_PRODUCTS}";
-        var PLAID_PUBLIC_KEY = "{settings.PLAID_PUBLIC_KEY}";
-        var PLAID_COUNTRY_CODES = "{settings.PLAID_COUNTRY_CODES}";
-        """)
+    def post(self):
+        data = request.get_json()
+        client = plaid_client()
+        logger.debug('Plaid create link token')
+        kwargs = dict(
+            products=[
+                Products(x) for x in settings.PLAID_PRODUCTS.split(',')
+            ],
+            client_name=f'github.com/jantman/biweeklybudget {VERSION}',
+            country_codes=[
+                CountryCode(x)
+                for x in settings.PLAID_COUNTRY_CODES.split(',')
+            ],
+            language="en",
+            user=LinkTokenCreateRequestUser(
+                client_user_id=settings.PLAID_USER_ID
+            ),
+        )
+        if 'item_id' in data:
+            item_id = data['item_id']
+            item: PlaidItem = db_session.query(PlaidItem).get(item_id)
+            logger.info('PlaidLinkToken for updating item %s', item_id)
+            kwargs['access_token'] = item.access_token
+        try:
+            req = LinkTokenCreateRequest(**kwargs)
+            response: LinkTokenCreateResponse = client.link_token_create(req)
+            logger.debug('Plaid link_token_create response: %s', response)
+        except ApiException as e:
+            logger.error(
+                'Plaid error creating Link token: %s', e, exc_info=True
+            )
+            resp = jsonify({
+                'success': False,
+                'message': 'Exception: %s' % str(e)
+            })
+            resp.status_code = 400
+            return resp
+        logger.info(
+            'Plaid Link token creation: %s', response
+        )
+        return jsonify({'link_token': response.link_token})
 
 
 def set_url_rules(a):
@@ -397,18 +416,10 @@ def set_url_rules(a):
         '/ajax/plaid/handle_link',
         view_func=PlaidHandleLink.as_view('plaid_handle_link')
     )
-    a.add_url_rule(
-        '/ajax/plaid/create_public_token',
-        view_func=PlaidPublicToken.as_view('plaid_public_token')
-    )
     a.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
     a.add_url_rule(
         '/plaid-update',
         view_func=PlaidUpdate.as_view('plaid_update')
-    )
-    a.add_url_rule(
-        '/plaid_config.js',
-        view_func=PlaidConfigJS.as_view('plaid_config_js')
     )
     a.add_url_rule(
         '/ajax/plaid/refresh_item_accounts',
@@ -417,6 +428,10 @@ def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/update_item_info',
         view_func=PlaidUpdateItemInfo.as_view('plaid_update_item_info')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/create_link_token',
+        view_func=PlaidLinkToken.as_view('plaid_link_token')
     )
 
 
