@@ -32,7 +32,7 @@ jobs:
       - name: Docker Build
         id: docker-build
         env:
-          TEST_DOCKER: "false""
+          TEST_DOCKER: "false"
         run: |
           tox -e docker
       - name: Echo Docker Image
