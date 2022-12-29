@@ -60,7 +60,6 @@ class TestSetUrlRules:
 
     def test_rules(self):
         m_phl_view = Mock()
-        m_ppt_view = Mock()
         m_pjs_view = Mock()
         m_pu_view = Mock()
         m_pra_view = Mock()
@@ -79,7 +78,6 @@ class TestSetUrlRules:
             new_callable=MagicMock
         ) as mocks:
             mocks['PlaidHandleLink'].return_value = m_phl_view
-            mocks['PlaidPublicToken'].as_view.return_value = m_ppt_view
             mocks['PlaidJs'].as_view.return_value = m_pjs_view
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
             mocks['PlaidRefreshAccounts'].return_value = m_pra_view
@@ -90,10 +88,6 @@ class TestSetUrlRules:
             call.add_url_rule(
                 '/ajax/plaid/handle_link',
                 view_func=mocks['PlaidHandleLink'].as_view('plaid_handle_link')
-            ),
-            call.add_url_rule(
-                '/ajax/plaid/create_public_token',
-                view_func=m_ppt_view
             ),
             call.add_url_rule(
                 '/plaid.js',

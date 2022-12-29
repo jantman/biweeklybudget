@@ -129,38 +129,6 @@ class PlaidHandleLink(MethodView):
         })
 
 
-class PlaidPublicToken(MethodView):
-    """
-    Handle POST /ajax/plaid/create_public_token endpoint.
-    """
-
-    def post(self):
-        client = plaid_client()
-        item_id = request.form['item_id']
-        item: PlaidItem = db_session.query(PlaidItem).get(item_id)
-        logger.debug(
-            'Plaid create public token for %s', item
-        )
-        try:
-            response = client.Item.public_token.create(item.access_token)
-        except ApiException as e:
-            logger.error(
-                'Plaid error creating token for %s: %s',
-                item.access_token, e, exc_info=True
-            )
-            resp = jsonify({
-                'success': False,
-                'message': 'Exception: %s' % str(e)
-            })
-            resp.status_code = 400
-            return resp
-        logger.info(
-            'Plaid token creation: access_token=%s response=%s',
-            item.access_token, response
-        )
-        return jsonify(response)
-
-
 class PlaidRefreshAccounts(MethodView):
     """
     Handle POST /ajax/plaid/refresh_item_accounts endpoint.
@@ -446,10 +414,6 @@ def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/handle_link',
         view_func=PlaidHandleLink.as_view('plaid_handle_link')
-    )
-    a.add_url_rule(
-        '/ajax/plaid/create_public_token',
-        view_func=PlaidPublicToken.as_view('plaid_public_token')
     )
     a.add_url_rule('/plaid.js', view_func=PlaidJs.as_view('plaid_js'))
     a.add_url_rule(
