@@ -41,9 +41,11 @@ jobs:
       - name: Build Python package
         run: python -m build
       - name: Convert CHANGES to markdown
-        uses: docker://pandoc/core:2.9
+        uses: docker://pandoc/core:2.19
         with:
           args: -f rst -t markdown --wrap=none --markdown-headings=atx --output=CHANGES.md CHANGES.rst
       - name: Generate release changelog
         run: python dev/get_changelog.py
+      - name: cat changes
+        run: cat release_log.md
       # generates release_log.md
