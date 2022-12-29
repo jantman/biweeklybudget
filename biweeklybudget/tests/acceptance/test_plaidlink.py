@@ -51,8 +51,10 @@ from biweeklybudget.models import (
     Account, Transaction, BudgetTransaction, PlaidAccount, PlaidItem,
     OFXTransaction, OFXStatement
 )
-from biweeklybudget.utils import dtnow, plaid_client
+from biweeklybudget.utils import dtnow
+from plaid import Configuration, ApiClient, Environment
 from plaid.api.plaid_api import PlaidApi
+from plaid.models import SandboxItemResetLoginRequest
 
 SANDBOX_USERNAME: str = 'user_good'
 SANDBOX_PASSWORD: str = 'pass_good'
@@ -421,15 +423,18 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         pitem: PlaidItem = testdb.query(PlaidItem).all()[0]
         assert pitem.access_token is not None
         assert pitem.access_token != ''
-        raise NotImplementedError('plaid client update')
-        # plaid_client()
-        client: Client = Client(
-            client_id=os.environ['PLAID_CLIENT_ID'],
-            secret=os.environ['PLAID_SECRET'],
-            environment=os.environ['PLAID_ENV'],
-            api_version='2019-05-29'
+        configuration = Configuration(
+            host=getattr(Environment, os.environ['PLAID_ENV']),
+            api_key={
+                'clientId': os.environ['PLAID_CLIENT_ID'],
+                'secret': os.environ['PLAID_SECRET'],
+            }
         )
-        res = client.Sandbox.item.reset_login(pitem.access_token)
+        api_client = ApiClient(configuration)
+        client = PlaidApi(api_client)
+        res = client.sandbox_item_reset_login(
+            SandboxItemResetLoginRequest(access_token=pitem.access_token)
+        )
         print(f'Reset login response: {res}')
         assert res.get('reset_login') is True
 
