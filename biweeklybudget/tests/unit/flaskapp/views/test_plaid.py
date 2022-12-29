@@ -62,7 +62,6 @@ class TestSetUrlRules:
         m_phl_view = Mock()
         m_ppt_view = Mock()
         m_pjs_view = Mock()
-        m_pj_view = Mock()
         m_pu_view = Mock()
         m_pra_view = Mock()
         m_puii_view = Mock()
@@ -73,7 +72,6 @@ class TestSetUrlRules:
             PlaidHandleLink=DEFAULT,
             PlaidPublicToken=DEFAULT,
             PlaidJs=DEFAULT,
-            PlaidConfigJS=DEFAULT,
             PlaidUpdate=DEFAULT,
             PlaidRefreshAccounts=DEFAULT,
             PlaidUpdateItemInfo=DEFAULT,
@@ -83,7 +81,6 @@ class TestSetUrlRules:
             mocks['PlaidHandleLink'].return_value = m_phl_view
             mocks['PlaidPublicToken'].as_view.return_value = m_ppt_view
             mocks['PlaidJs'].as_view.return_value = m_pjs_view
-            mocks['PlaidConfigJS'].as_view.return_value = m_pj_view
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
             mocks['PlaidRefreshAccounts'].return_value = m_pra_view
             mocks['PlaidUpdateItemInfo'].return_value = m_puii_view
@@ -105,9 +102,6 @@ class TestSetUrlRules:
             call.add_url_rule(
                 '/plaid-update',
                 view_func=m_pu_view
-            ),
-            call.add_url_rule(
-                '/plaid_config.js', view_func=m_pj_view
             ),
             call.add_url_rule(
                 '/ajax/plaid/refresh_item_accounts',
