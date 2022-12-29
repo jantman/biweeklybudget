@@ -344,29 +344,31 @@ class TestPlaidRefreshAccounts:
             'item_id': 'IID1'
         }
         mock_client = MagicMock()
+        mock_acct1 = Mock()
+        mock_acct1.to_dict.return_value = {
+            'account_id': 'AID1',
+            'name': 'Name1',
+            'mask': 'XXX1',
+            'type': 'depository',
+            'subtype': 'checking',
+        }
+        mock_acct2 = Mock()
+        mock_acct2.to_dict.return_value = {
+            'account_id': 'AID2',
+            'name': 'Name2',
+            'mask': 'XXX2',
+            'type': 'depository',
+            'subtype': 'savings',
+        }
+        mock_acct3 = Mock()
+        mock_acct3.to_dict.return_value = {
+            'account_id': 'AID3',
+            'name': 'Name3',
+            'mask': 'XXX3',
+            'type': 'credit',
+        }
         mock_client.accounts_get.return_value = {
-            'accounts': [
-                {
-                    'account_id': 'AID1',
-                    'name': 'Name1',
-                    'mask': 'XXX1',
-                    'type': 'depository',
-                    'subtype': 'checking',
-                },
-                {
-                    'account_id': 'AID2',
-                    'name': 'Name2',
-                    'mask': 'XXX2',
-                    'type': 'depository',
-                    'subtype': 'savings',
-                },
-                {
-                    'account_id': 'AID3',
-                    'name': 'Name3',
-                    'mask': 'XXX3',
-                    'type': 'credit',
-                }
-            ]
+            'accounts': [mock_acct1, mock_acct2, mock_acct3]
         }
         m_acct1 = Mock(account_id='AID1')
         m_acct2 = Mock(account_id='AID2')

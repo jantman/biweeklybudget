@@ -165,6 +165,7 @@ class PlaidRefreshAccounts(MethodView):
             'Plaid reported %d accounts for the item', len(response['accounts'])
         )
         for acct in response['accounts']:
+            acct = acct.to_dict()
             if acct['account_id'] in all_accts:
                 curr_acct_ids.append(acct['account_id'])
                 continue
