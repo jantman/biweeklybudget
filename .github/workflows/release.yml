@@ -1,0 +1,49 @@
+name: Release on Tag
+on: [push]
+#on:
+#  push:
+#    tags:
+#    - '*'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install tox build
+      - name: Get Version
+        id: get-version
+        run: echo -e "\$(cat biweeklybudget/version.py)\nprint(f'::set-output name=APP_VERSION::{VERSION}')\n" | python3 -
+      - name: Echo Version
+        run: |
+          echo ${{ steps.get-version.outputs.APP_VERSION }}
+      - name: Echo Ref
+        run: |
+          echo ${{ github.ref_name }}
+      - name: Ensure tag matches version
+        if: github.ref_name != steps.get-version.outputs.APP_VERSION
+        run: |
+          echo "ERROR: tag name (${{ github.ref_name }}) does not match current version in version.py (${{ steps.get-version.outputs.APP_VERSION }})"
+          exit 2
+      - name: Docker Build
+        id: docker-build
+        env:
+          TEST_DOCKER: "false""
+        run: |
+          tox -e docker
+      - name: Echo Docker Image
+        run: |
+          echo ${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
+      - name: Build Python package
+        run: python -m build
+      - name: Convert CHANGES to markdown
+        uses: docker://pandoc/core:2.9
+        with:
+          args: -f rst -t markdown --wrap=none --markdown-headings=atx --output=CHANGES.md CHANGES.rst
+      - name: Generate release changelog
+        run: python dev/get_changelog.py
+      # generates release_log.md
