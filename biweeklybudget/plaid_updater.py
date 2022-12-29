@@ -171,7 +171,6 @@ class PlaidUpdater:
                 PlaidAccount.item_id == item.item_id
             ).all():
                 accounts[pa.account_id] = pa
-            logger.info('Accounts: %s', accounts)  # DEBUG - remove me
             stmt_ids: List[int] = []
             added: int = 0
             updated: int = 0
