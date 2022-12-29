@@ -19,4 +19,5 @@ def get_version():
 
 ver = get_version()
 print(f'App version: {ver}')
-print(f'::set-output name=APP_VERSION::{ver}')
+with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+    fh.write(f'APP_VERSION={ver}\n')
