@@ -17,7 +17,7 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox build
       - name: Get Version
         id: get-version
-        run: echo -e "\$(cat biweeklybudget/version.py)\nprint(f'::set-output name=APP_VERSION::{VERSION}')\n" | python3 -
+        run: python dev/get_version.py
       - name: Echo Version
         run: |
           echo ${{ steps.get-version.outputs.APP_VERSION }}
