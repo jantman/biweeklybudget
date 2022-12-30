@@ -771,7 +771,7 @@ class TestPlaidUpdate:
 
     def test_post(self):
         mock_update = Mock()
-        mock_request = Mock(form=None, args={'account_ids': 'id1,id2'})
+        mock_request = Mock(form=None, args={'item_ids': 'id1,id2'})
         with patch(f'{pbm}.request', mock_request):
             with patch(f'{self.pb}._update') as m_update:
                 with patch(f'{pbm}.jsonify') as m_jsonify:
@@ -807,7 +807,7 @@ class TestPlaidUpdate:
         assert m_update.mock_calls == []
         assert m_jsonify.mock_calls == [
             call({
-                'success': False, 'message': 'Missing parameter: account_ids'
+                'success': False, 'message': 'Missing parameter: item_ids'
             })
         ]
 
@@ -826,7 +826,7 @@ class TestPlaidUpdate:
         assert m_update.mock_calls == []
 
     def test_get_update(self):
-        mock_req = Mock(args={'account_ids': '1,2,3'})
+        mock_req = Mock(args={'item_ids': '1,2,3'})
         mock_form = Mock()
         mock_update = Mock()
         with patch(f'{self.pb}._form', autospec=True) as m_form:

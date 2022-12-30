@@ -240,27 +240,28 @@ class PlaidUpdate(MethodView):
 
     This single endpoint has multiple functions:
 
-    * If called with no query parameters, displays a form template to use to
+    * If GET with no query parameters, displays a form template to use to
       interactively update Plaid accounts.
-    * If called with an ``item_ids`` query argument, performs a Plaid update
-      of the specified CSV list of Plaid Item IDs, or all Plaid-enabled accounts
-      if the value is ``ALL``. The response from this endpoint can be in one of
-      three forms:
+    * If GET or POST with an ``item_ids`` query parameter, performs a Plaid
+      update (via :py:meth:`~._update`) of the specified CSV list of Plaid Item
+      IDs, or all Plaid Items if the value is ``ALL``. The response from this
+      endpoint can be in one of three forms:
 
       * If the ``Accept`` HTTP header is set to ``application/json``, return a
         JSON list of update results. Each list item is the JSON-ified value of
         :py:attr:`~.PlaidUpdateResult.as_dict`.
       * If the ``Accept`` HTTP header is set to ``text/plain``, return a plain
         text human-readable summary of the update operation.
-      * Otherwise, return a templated view of the update operation results.
+      * Otherwise, return a templated view of the update operation results, as
+        would be returned to a browser.
     """
 
     def post(self):
         """
-        Handle POST. If the ``account_ids`` query parameter is set, then return
+        Handle POST. If the ``item_ids`` query parameter is set, then return
         :py:meth:`~._update`, else return a HTTP 400.
         """
-        ids = request.args.get('account_ids')
+        ids = request.args.get('item_ids')
         if ids is None and request.form:
             ids = ','.join([
                 x.replace('item_', '') for x in request.form.keys()
@@ -268,22 +269,31 @@ class PlaidUpdate(MethodView):
         if ids is None:
             return jsonify({
                 'success': False,
-                'message': 'Missing parameter: account_ids'
+                'message': 'Missing parameter: item_ids'
             }), 400
         return self._update(ids)
 
     def get(self):
         """
-        Handle GET. If the ``account_ids`` query parameter is set, then return
+        Handle GET. If the ``item_ids`` query parameter is set, then return
         :py:meth:`~._update`, else return :py:meth:`~._form`.
         """
-        ids = request.args.get('account_ids')
+        ids = request.args.get('item_ids')
         if ids is None:
             return self._form()
         return self._update(ids)
 
     def _update(self, ids):
-        """Handle an update for Plaid accounts."""
+        """
+        Handle an update for Plaid accounts by instantiating a
+        :py:class:`~.PlaidUpdater`, calling its :py:meth:`~.PlaidUpdater.update`
+        method with the proper arguments, and then returning the result in a
+        form determined by the ``Accept`` header.
+
+        :param ids: a comma-separated string listing the :py:class:`~.PlaidItem`
+        IDs to update, or the string ``ALL`` to update all Items.
+        :type ids: str
+        """
         logger.info('Handle Plaid Update request; item_ids=%s', ids)
         updater = PlaidUpdater()
         if ids == 'ALL':
