@@ -239,7 +239,7 @@ jobs:
       - name: Setup test DB
         run: python dev/setup_test_db.py
       - name: Login to Docker Hub if master branch
-        if: github.ref_type == "branch" && github.ref_name == "master"
+        if: github.ref_type == 'branch' && github.ref_name == 'master'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -257,7 +257,7 @@ jobs:
             coverage.xml
             htmlcov/
       - name: Docker Push if master
-        if: github.ref_type == "branch" && github.ref_name == "master"
+        if: github.ref_type == 'branch' && github.ref_name == 'master'
         run: |
           docker push jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
   migrations:
