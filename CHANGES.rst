@@ -7,6 +7,9 @@ Unreleased Changes
 * Docker build - don't include ``-dirty`` in version/tag when building in GHA
 * Document how to change Plaid environments
 * GHA - Push built Docker images to Docker Hub, for builds of master branch
+* Document triggering a Plaid update via the ``/plaid-update`` endpoint.
+* Change ``/plaid-update`` endpoint argument name from ``account_ids`` to ``item_ids``.
+* Add ``num_days`` parameter support to ``/plaid-update`` endpoint.
 
 1.1.0 (2022-12-29)
 ------------------

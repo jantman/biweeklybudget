@@ -244,8 +244,10 @@ class PlaidUpdate(MethodView):
       interactively update Plaid accounts.
     * If GET or POST with an ``item_ids`` query parameter, performs a Plaid
       update (via :py:meth:`~._update`) of the specified CSV list of Plaid Item
-      IDs, or all Plaid Items if the value is ``ALL``. The response from this
-      endpoint can be in one of three forms:
+      IDs, or all Plaid Items if the value is ``ALL``. The POST method also
+      accepts an optional ``num_days`` parameter specifying an integer number of
+      days of transactions to update. The response from this endpoint can be in
+      one of three forms:
 
       * If the ``Accept`` HTTP header is set to ``application/json``, return a
         JSON list of update results. Each list item is the JSON-ified value of
@@ -259,7 +261,8 @@ class PlaidUpdate(MethodView):
     def post(self):
         """
         Handle POST. If the ``item_ids`` query parameter is set, then return
-        :py:meth:`~._update`, else return a HTTP 400.
+        :py:meth:`~._update`, else return a HTTP 400. If the optional
+        ``num_days`` query parameter is set, pass that on to the update method.
         """
         ids = request.args.get('item_ids')
         if ids is None and request.form:
@@ -271,7 +274,10 @@ class PlaidUpdate(MethodView):
                 'success': False,
                 'message': 'Missing parameter: item_ids'
             }), 400
-        return self._update(ids)
+        kwargs = {}
+        if 'num_days' in request.args:
+            kwargs['num_days'] = int(request.args['num_days'])
+        return self._update(ids, **kwargs)
 
     def get(self):
         """
@@ -281,9 +287,12 @@ class PlaidUpdate(MethodView):
         ids = request.args.get('item_ids')
         if ids is None:
             return self._form()
-        return self._update(ids)
+        kwargs = {}
+        if 'num_days' in request.args:
+            kwargs['num_days'] = int(request.args['num_days'])
+        return self._update(ids, **kwargs)
 
-    def _update(self, ids):
+    def _update(self, ids: str, num_days: int = 30):
         """
         Handle an update for Plaid accounts by instantiating a
         :py:class:`~.PlaidUpdater`, calling its :py:meth:`~.PlaidUpdater.update`
@@ -291,10 +300,15 @@ class PlaidUpdate(MethodView):
         form determined by the ``Accept`` header.
 
         :param ids: a comma-separated string listing the :py:class:`~.PlaidItem`
-        IDs to update, or the string ``ALL`` to update all Items.
+          IDs to update, or the string ``ALL`` to update all Items.
         :type ids: str
+        :param num_days: number of days to retrieve transactions for; default 30
+        :type num_days: int
         """
-        logger.info('Handle Plaid Update request; item_ids=%s', ids)
+        logger.info(
+            'Handle Plaid Update request; item_ids=%s num_days=%d',
+            ids, num_days
+        )
         updater = PlaidUpdater()
         if ids == 'ALL':
             items = PlaidUpdater.available_items()
@@ -303,7 +317,7 @@ class PlaidUpdate(MethodView):
             items = [
                 db_session.query(PlaidItem).get(x) for x in ids
             ]
-        results = updater.update(items=items)
+        results = updater.update(items=items, days=num_days)
         if request.headers.get('accept') == 'text/plain':
             s = ''
             num_updated = 0

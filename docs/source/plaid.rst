@@ -11,6 +11,8 @@ The Plaid component uses the same "OFX" models in biweeklybudget that the older 
 
 **IMPORTANT** As of late 2022, a handful of financial institutions, Chase being the most notable, require `OAuth2 integration via Plaid <https://plaid.com/docs/link/oauth/>`__. This requires that your Plaid account request and be approved for Production environment access, which is a non-trivial process that requires additional legal agreements and a security and privacy review. In addition, Chase has their own partner review process that includes a security review. While it is *possible* for an individual to pass these reviews for a personal project, it's far from trivial. I would only recommend this for folks who have professional experience developing and operating applications that handle financial data, and who intend to operate biweeklybudget in a similar fashion.
 
+.. _plaid.configuration:
+
 Configuration
 -------------
 
@@ -24,28 +26,73 @@ biweeklybudget needs to be configured with your Plaid credentials. I highly reco
 * ``PLAID_PRODUCTS`` - The Plaid products you are requesting access to. Right now, for biweeklybudget, this should be ``transactions``.
 * ``PLAID_COUNTRY_CODES`` - A comma-separated list of country codes that you want to be able to select institutions from. Only ``US`` has been tested.
 
+.. _plaid.usage:
+
 Usage
 -----
+
+.. _plaid.linking:
 
 Linking Accounts to Plaid
 +++++++++++++++++++++++++
 
-To link an account via Plaid, open the Account modal (by clicking on any link to the account, such as those on the ``/accounts`` view) and scroll down to the bottom.
+**TBD**
+
+.. _plaid.update-ui:
 
 Updating Transactions via UI
 ++++++++++++++++++++++++++++
 
-TBD.
+Updating through the UI will retrieve transactions for the last 30 days. If you want to retrieve more than that, you must do so :ref:`via the API <plaid.update-api>`.
+
+1. Click the "Plaid Update" link in the left navigation menu.
+2. In the "Plaid Update Transactions" table, select the Plaid Items that you want to update transactions for.
+3. Click the "Update Transactions" button at the bottom of the table.
+4. When the update is complete, you will be redirected to a page showing results in a table.
+
+.. _plaid.update-api:
 
 Updating Transactions via API
 +++++++++++++++++++++++++++++
 
-TBD.
+Transactions can be updated via a simple API at the same ``/plaid-update`` endpoint. This API can return either a JSON or human-readable plain-text output depending on the ``Accept`` header. For full documentation, see the documentation of :py:class:`~.PlaidUpdate` and :py:meth:`~.PlaidUpdate.post`.
+
+In short, the endpoint takes a POST or GET request that specifies an ``item_ids`` parameter as a string comma-separated list of :py:class:`~.PlaidItem` IDs to update, or the special string ``ALL`` to update all Items. Optionally, you can specify a ``num_days`` parameter to retrieve transactions for something other than the last 30 days. The response is either JSON if the ``Accept`` header is set to ``application/json`` or human-readable plain text if set to ``text/plain`` (if set to any other value, it will return the full HTML that would be sent to the browser).
+
+The following examples assume that biweeklybudget is available at ``http://127.0.0.1:8080``
+
+To update transactions for all Plaid Items via a GET request and return human-readable text:
+
+.. code-block:: bash
+
+    curl -H 'Accept: text/plain' 'http://127.0.0.1:8080/plaid-update?account_ids=ALL'
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+
+      0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+      0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+      0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+      0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+      0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+    100   874  100   874    0     0    231      0  0:00:03  0:00:03 --:--:--   232
+    AcctOne (plaidItemId1): 23 updated, 0 added (stmts: [21728])
+    AcctTwo (plaidItemId2): 31 updated, 0 added (stmts: [21729])
+    AcctThree (plaidItemId3): 35 updated, 3 added (stmts: [21730])
+    TOTAL: 89 updated, 3 added, 0 account(s) failed
+
+To update transactions for Plaid Items with IDs plaidItemId1 and plaidItemId2 for the last 60 days via a POST, and return JSON:
+
+**TBD**
+
+.. _plaid.troubleshooting:
 
 Troubleshooting
 ---------------
 
 API responses from Plaid are logged at debug-level. The UI process of linking an account via Plaid happens mostly in client-side JavaScript, which logs pertinent information to the browser's console log. The `Plaid Dashboard <https://dashboard.plaid.com/>`__ also provides some useful debug information, espeically when correlated with the ``link_token`` and/or ``item_id`` that should be logged by biweeklybudget.
+
+.. _plaid.change-env:
 
 Changing Plaid Environments
 ---------------------------
