@@ -166,6 +166,8 @@ class DockerImageBuilder(object):
         repo = Repo(path=self._gitdir, search_parent_directories=False)
         res['sha'] = repo.head.commit.hexsha
         res['dirty'] = repo.is_dirty(untracked_files=True)
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            res['dirty'] = False
         res['tag'] = None
         for tag in repo.tags:
             # each is a git.Tag object
