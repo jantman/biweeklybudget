@@ -50,7 +50,9 @@ API responses from Plaid are logged at debug-level. The UI process of linking an
 Changing Plaid Environments
 ---------------------------
 
-It may be necessary to change Plaid environments, such as if you started using the Development environment and then switched to Production for OAuth2 integrations. This process is relatively manual and will not affect transactions, but will require setting up Plaid again.
+It may be necessary to change Plaid environments, such as if you started using the Development environment and then switched to Production for OAuth2 integrations. This process will require setting up Plaid again.
+
+Also **note** that Plaid ``transaction_id`` (our ``fitid``) _will_ change between environments. As such, you should update transactions in the old environment immediately before switching environments, then update transactions in the new environment, and you will need to manually ignore any transactions that are duplicates.
 
 1. Un-associate all of your Accounts from Plaid Accounts. This can be done manually via the Account edit modal or by running the following SQL query directly against the database: ``UPDATE accounts SET plaid_item_id=NULL, plaid_account_id=NULL;``
 2. Delete all of your Plaid Accounts and Plaid Items from the database: ``DELETE FROM plaid_accounts; DELETE FROM plaid_items;``
