@@ -1,12 +1,11 @@
 Changelog
 =========
 
-1.1.1 (2022-12-30)
+Unreleased Changes
 ------------------
 
 * Docker build - don't include ``-dirty`` in version/tag when building in GHA
 * Document how to change Plaid environments
-* Bug Fix (1.1.0) - Plaid Link javascript broken by undefined variable ``BIWEEKLYBUDGET_VERSION``
 
 1.1.0 (2022-12-29)
 ------------------
