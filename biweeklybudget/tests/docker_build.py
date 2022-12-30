@@ -187,9 +187,6 @@ class DockerImageBuilder(object):
             logger.debug('build_ver %s based on DOCKER_BUILD_VER env var',
                          env_ver)
             return env_ver
-        if self._gitinfo['tag'] is not None:
-            logger.debug('build_ver %s based on git tag', self._gitinfo['tag'])
-            return self._gitinfo['tag']
         return None
 
     def _tag_for_local(self):
