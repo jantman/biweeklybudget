@@ -45,4 +45,14 @@ TBD.
 Troubleshooting
 ---------------
 
-API responses from Plaid are logged at debug-level. The UI process of linking an account via Plaid happens mostly in client-side JavaScript, which logs pertinent information to the browser's console log. The Plaid Dashboard (accessed by logging in to plaid.com) also provides some useful debug information.
+API responses from Plaid are logged at debug-level. The UI process of linking an account via Plaid happens mostly in client-side JavaScript, which logs pertinent information to the browser's console log. The `Plaid Dashboard <https://dashboard.plaid.com/>`__ also provides some useful debug information, espeically when correlated with the ``link_token`` and/or ``item_id`` that should be logged by biweeklybudget.
+
+Changing Plaid Environments
+---------------------------
+
+It may be necessary to change Plaid environments, such as if you started using the Development environment and then switched to Production for OAuth2 integrations. This process is relatively manual and will not affect transactions, but will require setting up Plaid again.
+
+1. Un-associate all of your Accounts from Plaid Accounts. This can be done manually via the Account edit modal or by running the following SQL query directly against the database: ``UPDATE accounts SET plaid_item_id=NULL, plaid_account_id=NULL;``
+2. Delete all of your Plaid Accounts and Plaid Items from the database: ``DELETE FROM plaid_accounts; DELETE FROM plaid_items;``
+3. Update your configuration / environment variables for the new ``PLAID_ENV`` that you want to use and your ``PLAID_SECRET`` for that environment.
+4. Re-link all of your Plaid items, and then re-associate them with your Accounts.
