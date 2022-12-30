@@ -219,4 +219,9 @@ To updated the vendored projects:
 Release Checklist
 -----------------
 
-Run ``dev/release.py``.
+1. Ensure that ``CHANGES.rst`` has entries for all changes.
+2. Ensure that the version in ``version.py`` has been incremented.
+3. Update the header in ``CHANGES.rst`` to have the new version number and release date.
+4. Regenerate all docs with ``tox -e docs -e jsdoc -e screenshots`` and commit the results.
+5. Merge all of the above to master.
+6. To cut release, tag master.
