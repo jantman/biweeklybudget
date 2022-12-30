@@ -36,7 +36,13 @@ Usage
 Linking Accounts to Plaid
 +++++++++++++++++++++++++
 
-**TBD**
+1. Click the "Plaid Update" link in the left navigation menu.
+2. Click the "Link (Add Plaid Item)" button under the "Plaid Items" table. This will connect to one of your financial institution logins via Plaid (an "Item" in Plaid parlance). Note that one Item (institution login) may have multiple accounts.
+3. When the Plaid Link process is complete the new item will be shown in the Plaid Items table.
+4. Click the "Accounts" link in the left navigation menu.
+5. Click the name of the Account that you want to link to one of the new Plaid Accounts.
+6. In the Edit Account modal, scroll to the bottom and select the appropriate Item and Account in the "Plaid Account" dropdown.
+7. Click "Save changes".
 
 .. _plaid.update-ui:
 
@@ -65,7 +71,7 @@ To update transactions for all Plaid Items via a GET request and return human-re
 
 .. code-block:: bash
 
-    curl -H 'Accept: text/plain' 'http://127.0.0.1:8080/plaid-update?account_ids=ALL'
+    $ curl -H 'Accept: text/plain' 'http://127.0.0.1:8080/plaid-update?item_ids=ALL'
 
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                      Dload  Upload   Total   Spent    Left  Speed
@@ -81,9 +87,13 @@ To update transactions for all Plaid Items via a GET request and return human-re
     AcctThree (plaidItemId3): 35 updated, 3 added (stmts: [21730])
     TOTAL: 89 updated, 3 added, 0 account(s) failed
 
-To update transactions for Plaid Items with IDs plaidItemId1 and plaidItemId2 for the last 60 days via a POST, and return JSON:
+To update transactions for Plaid Item with IDs plaidItemId1 for the last 60 days via a POST, and return JSON:
 
-**TBD**
+.. code-block:: bash
+
+    $ curl -XPOST -H 'Accept: application/json' -d 'item_ids=plaidItemId1&num_days=60' http://127.0.0.1:8080/plaid-update
+    [{"added":0,"exception":"None","item_id":"plaidItemId1","statement_ids":[21747],"success":true,"updated":35}]
+
 
 .. _plaid.troubleshooting:
 

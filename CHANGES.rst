@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Unreleased Changes
+1.1.1 (2022-12-30)
 ------------------
 
 * Docker build - don't include ``-dirty`` in version/tag when building in GHA
