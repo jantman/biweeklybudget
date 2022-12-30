@@ -220,6 +220,10 @@ class DockerImageBuilder(object):
         if self._needs_test:
             self.test(img_tag)
         logger.info('Image "%s" built and tested.', img_tag)
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                fh.write(f'DOCKER_IMG_TAG={img_tag}\n')
+            return img_tag
         if self.build_ver is not None:
             print("To push release image to Docker Hub:")
             print('docker tag %s:%s %s:%s' % (
