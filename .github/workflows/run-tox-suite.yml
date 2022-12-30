@@ -245,6 +245,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Run tests
+        id: run-tests
         run: tox -e ${{ github.job }}
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
@@ -259,7 +260,7 @@ jobs:
       - name: Docker Push if master
         if: github.ref_type == 'branch' && github.ref_name == 'master'
         run: |
-          docker push jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
+          docker push jantman/biweeklybudget:${{ steps.run-tests.outputs.DOCKER_IMG_TAG }}
   migrations:
     runs-on: ubuntu-latest
     strategy:
