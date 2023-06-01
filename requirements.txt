@@ -14,7 +14,7 @@ babel==2.8.0
 beautifulsoup4==4.8.2
 cffi==1.15.1
 click==7.0
-cryptography==2.8
+cryptography==41.0.0
 datatables==0.4.9
 httplib2==0.17.0
 humanize==0.5.1
