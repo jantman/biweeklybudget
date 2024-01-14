@@ -9,7 +9,7 @@ Running Flask Development Server
 Flask comes bundled with a builtin development server for fast local development and testing.
 This is an easy way to take biweeklybudget for a spin, but carries some important and critical
 warnings if you use it with real data. For upstream documentation, see the
-`Flask Development Server docs <http://flask.pocoo.org/docs/0.12/server/>`_. Please note that
+`Flask Development Server docs <https://flask.palletsprojects.com/en/1.1.x/server/>`_. Please note that
 the development server is a single process and defaults to single-threaded, and is only realistically
 usable by one user.
 

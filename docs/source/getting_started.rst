@@ -198,29 +198,29 @@ Host-Local MySQL Example
 ++++++++++++++++++++++++
 
 It is also possible to use a MySQL server on the physical (Docker) host system. To do so,
-you'll need to know the host system's IP address. On Linux when using the default "bridge"
-Docker networking mode, this will coorespond to a ``docker0`` interface on the host system.
-The Docker documentation on `adding entries to the Container's hosts file <https://docs.docker.com/engine/reference/commandline/run/#add-entries-to-container-hosts-file---add-host>`_
-provides a helpful snippet for this (on my systems, this results in ``172.17.0.1``):
-
-.. code-block:: none
-
-    ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1
-
-In our ``biweeklybudget.env``, we would specify the database connection string that uses the "dockerhost" hosts file entry, created by the ``--add-host`` option:
+you'll need to know the host system's IP address (as seen from the container). On Linux when
+using the default "bridge" Docker networking mode, this will coorespond to the container's
+gateway (the gateway of the Docker network that the container is in) and will usually be
+``172.x.0.1``. Using the special ``host-gateway`` option available in the
+`docker run command --add-host option <https://docs.docker.com/engine/reference/commandline/run/#add-host>`_,
+we can add ``--add-host=host.docker.internal:host-gateway`` to our ``docker run`` command and
+then use that as the hostname in the DB connection string:
 
 .. code-block:: none
 
     # "dockerhost" is added to /etc/hosts via the `--add-host` docker run option
-    DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@dockerhost:3306/DBNAME?charset=utf8mb4
+    DB_CONNSTRING=mysql+pymysql://USERNAME:PASSWORD@host.docker.internal:3306/DBNAME?charset=utf8mb4
 
 So using that, we could run biweeklybudget listening on port 8080 and using our host's MySQL server (on port 3306):
 
 .. code-block:: none
 
-    docker run --name biweeklybudget --env-file biweeklybudget.env \
-    --add-host="dockerhost:$(ip -4 addr show scope global dev docker0 | grep inet | awk '{print $2}' | cut -d / -f 1)" \
-    -p 8080:80 jantman/biweeklybudget:latest
+    docker run \
+        --name biweeklybudget \
+        --env-file biweeklybudget.env \
+        --add-host="host.docker.internal:host-gateway" \
+        -p 8080:80 \
+        jantman/biweeklybudget:latest
 
 You may need to adjust those commands depending on your operating system, Docker networking mode, and MySQL server.
 
@@ -236,7 +236,7 @@ Settings Module Example
 
 If you need to provide biweeklybudget with more complicated configuration, this is
 still possible via a Python settings module. The easiest way to inject one into the
-Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only>`_
+Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#read-only>`_
 a python module directly into the biweeklybudget package directory. Assuming you have
 a custom settings module on your local machine at ``/opt/biweeklybudget-settings.py``, you would
 run the container as shown below to mount the custom settings module into the container and use it.
@@ -252,7 +252,7 @@ MySQL running on the Docker host:
 Note on Locales
 +++++++++++++++
 
-biweeklybudget uses Python's `locale <https://docs.python.org/3.6/library/locale.html>`_ module
+biweeklybudget uses Python's `locale <https://docs.python.org/3/library/locale.html>`_ module
 to format currency. This requires an appropriate locale installed on the system. The docker image
 distributed for this package only includes the ``en_US.UTF-8`` locale. If you need a different one,
 please cut a pull request against ``docker_build.py``.
