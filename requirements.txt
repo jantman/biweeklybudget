@@ -34,7 +34,7 @@ python-dateutil==2.8.1
 python-editor==1.0.4
 pytz
 requests
-selenium==3.141.0
+selenium
 six==1.14.0
 versionfinder>=1.0.0
 wishlist==0.2.2
