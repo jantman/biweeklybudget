@@ -133,7 +133,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         sb.send_keys('First Platypus')
         # click on First Platypus Bank
         WebDriverWait(selenium, 10).until(
-            EC.element_to_be_clickable((By.ID, 'aut-First Platypus Bank'))
+            EC.element_to_be_clickable((By.ID, 'aut-ins_109508'))
         ).click()
         # click on the non-OAuth institution
         WebDriverWait(selenium, 10).until(

@@ -486,15 +486,14 @@ class DockerImageBuilder(object):
         ]
         for cmd_info in test_cmds:
             logger.debug('Running: %s', cmd_info['cmd'])
-            res = container.exec_run(cmd_info['cmd']).decode().strip()
-            logger.debug('Command output:\n%s', res)
-            if 'output' in cmd_info:
-                if cmd_info['output'] not in res:
-                    raise RuntimeError(
-                        'Expected %s output to include "%s" but it did not' % (
-                            cmd_info['cmd'], cmd_info['output']
-                        )
+            ecode, res = container.exec_run(cmd_info['cmd'])
+            logger.debug('Command exited %d; output:\n%s', ecode, res)
+            if 'output' in cmd_info and cmd_info['output'] not in res.decode():
+                raise RuntimeError(
+                    'Expected %s output to include "%s" but it did not' % (
+                        cmd_info['cmd'], cmd_info['output']
                     )
+                )
         logger.info('script tests SUCCEEDED')
 
     def _run_mysql(self):
@@ -527,11 +526,12 @@ class DockerImageBuilder(object):
         while count < 10:
             count += 1
             logger.info('Creating database...')
-            cmd = '/usr/bin/mysql -uroot -proot -e "CREATE DATABASE budgetfoo;"'
+            cmd = ('/usr/bin/mysql -uroot -proot -h 127.0.0.1 '
+                   '-e "CREATE DATABASE budgetfoo;"')
             logger.debug('Running: %s', cmd)
-            res = cont.exec_run(cmd)
-            logger.debug('Command output:\n%s', res)
-            if 'ERROR' not in res.decode():
+            ecode, res = cont.exec_run(cmd)
+            logger.debug('Command exited %d; output:\n%s', ecode, res)
+            if 'ERROR' not in res.decode() and ecode == 0:
                 logger.info('Database creation appears successful.')
                 break
             logger.warning('Database creation errored; sleep 5s and retry')
@@ -555,17 +555,15 @@ class DockerImageBuilder(object):
             'quiet': False,
             'nocache': True,
             'rm': True,
-            'stream': True,
             'pull': True,
             'dockerfile': '/Dockerfile',
             'buildargs': {'version': tag},
             'decode': True
         }
         logger.info('Running docker build with args: %s', kwargs)
-        res = self._docker.api.build(**kwargs)
         logger.info('Build running; output:')
         error = None
-        for line in res:
+        for line in self._docker.api.build(**kwargs):
             if 'errorDetail' in line:
                 error = line['errorDetail']
             try:
