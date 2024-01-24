@@ -527,11 +527,11 @@ class DockerImageBuilder(object):
         while count < 10:
             count += 1
             logger.info('Creating database...')
-            cmd = '/usr/bin/mysql -uroot -proot -e "CREATE DATABASE budgetfoo;"'
+            cmd = '/usr/bin/mysql -uroot -proot -h 127.0.0.1 -e "CREATE DATABASE budgetfoo;"'
             logger.debug('Running: %s', cmd)
-            res = cont.exec_run(cmd)
-            logger.debug('Command output:\n%s', res)
-            if 'ERROR' not in res.decode():
+            ecode, res = cont.exec_run(cmd)
+            logger.debug('Command exited %d; output:\n%s', ecode, res)
+            if 'ERROR' not in res.decode() and ecode == 0:
                 logger.info('Database creation appears successful.')
                 break
             logger.warning('Database creation errored; sleep 5s and retry')
@@ -555,17 +555,15 @@ class DockerImageBuilder(object):
             'quiet': False,
             'nocache': True,
             'rm': True,
-            'stream': True,
             'pull': True,
             'dockerfile': '/Dockerfile',
             'buildargs': {'version': tag},
             'decode': True
         }
         logger.info('Running docker build with args: %s', kwargs)
-        res = self._docker.api.build(**kwargs)
         logger.info('Build running; output:')
         error = None
-        for line in res:
+        for line in self._docker.api.build(**kwargs):
             if 'errorDetail' in line:
                 error = line['errorDetail']
             try:
