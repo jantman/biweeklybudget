@@ -486,15 +486,14 @@ class DockerImageBuilder(object):
         ]
         for cmd_info in test_cmds:
             logger.debug('Running: %s', cmd_info['cmd'])
-            res = container.exec_run(cmd_info['cmd']).decode().strip()
-            logger.debug('Command output:\n%s', res)
-            if 'output' in cmd_info:
-                if cmd_info['output'] not in res:
-                    raise RuntimeError(
-                        'Expected %s output to include "%s" but it did not' % (
-                            cmd_info['cmd'], cmd_info['output']
-                        )
+            ecode, res = container.exec_run(cmd_info['cmd'])
+            logger.debug('Command exited %d; output:\n%s', ecode, res)
+            if 'output' in cmd_info and cmd_info['output'] not in res.decode():
+                raise RuntimeError(
+                    'Expected %s output to include "%s" but it did not' % (
+                        cmd_info['cmd'], cmd_info['output']
                     )
+                )
         logger.info('script tests SUCCEEDED')
 
     def _run_mysql(self):
