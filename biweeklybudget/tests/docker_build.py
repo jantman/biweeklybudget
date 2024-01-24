@@ -527,7 +527,8 @@ class DockerImageBuilder(object):
         while count < 10:
             count += 1
             logger.info('Creating database...')
-            cmd = '/usr/bin/mysql -uroot -proot -h 127.0.0.1 -e "CREATE DATABASE budgetfoo;"'
+            cmd = ('/usr/bin/mysql -uroot -proot -h 127.0.0.1 '
+                   '-e "CREATE DATABASE budgetfoo;"')
             logger.debug('Running: %s', cmd)
             ecode, res = cont.exec_run(cmd)
             logger.debug('Command exited %d; output:\n%s', ecode, res)
