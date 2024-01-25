@@ -6,6 +6,8 @@ Changelog
 
 * Add tracking of sales tax paid on each transaction.
 * Minor build fixes to get this building again.
+* Various test fixes
+* Move build, test, development, and Docker image to Python 3.11.
 
 1.1.1 (2022-12-30)
 ------------------
