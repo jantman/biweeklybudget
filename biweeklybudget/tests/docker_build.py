@@ -93,7 +93,7 @@ COPY entrypoint.sh /tmp/entrypoint.sh
 {copy}
 
 RUN /usr/local/bin/pip install virtualenv
-RUN /usr/local/bin/virtualenv /app
+RUN /usr/local/bin/virtualenv --system-site-packages /app
 RUN set -ex \
     && apk add --no-cache \
         fontconfig \
@@ -103,6 +103,7 @@ RUN set -ex \
         libxslt-dev \
         tini \
         git \
+        py3-cryptography \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libffi-dev \
