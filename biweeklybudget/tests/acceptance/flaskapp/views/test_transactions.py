@@ -98,6 +98,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'Periodic1 (1)',
                 'Yes (1)',
                 '$111.11',
+                '',
                 'Yes (1)'
             ],
             [
@@ -107,6 +108,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'BankTwoStale (2)',
                 'Standing1 (4)',
                 'Yes (3)',
+                '',
                 '',
                 ''
             ],
@@ -118,6 +120,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'Periodic2 (2)',
                 '',
                 '',
+                '$12.34',
                 ''
             ],
             [
@@ -128,6 +131,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 'Periodic2 (2) ($222.22)\nPeriodic1 (1) ($100.10)',
                 '',
                 '',
+                '$34.56',
                 ''
             ]
         ]
@@ -137,7 +141,7 @@ class TestTransactionsDefault(AcceptanceHelper):
                 c[3].get_attribute('innerHTML'),
                 c[4].get_attribute('innerHTML'),
                 c[5].get_attribute('innerHTML'),
-                c[7].get_attribute('innerHTML')
+                c[8].get_attribute('innerHTML')
             ]
             for c in elems
         ]
@@ -324,6 +328,7 @@ class TestTransModalByURL(AcceptanceHelper):
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 2
         assert t.budget_transactions[0].amount == Decimal('222.22')
+        assert t.sales_tax == Decimal('12.34')
 
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
@@ -338,6 +343,8 @@ class TestTransModalByURL(AcceptanceHelper):
             dtnow() - timedelta(days=2)).date().strftime('%Y-%m-%d')
         assert body.find_element_by_id(
             'trans_frm_amount').get_attribute('value') == '222.22'
+        assert body.find_element_by_id(
+            'trans_frm_sales_tax').get_attribute('value') == '12.34'
         assert body.find_element_by_id(
             'trans_frm_description').get_attribute('value') == 'T3'
         acct_sel = Select(body.find_element_by_id('trans_frm_account'))
@@ -387,6 +394,7 @@ class TestTransModal(AcceptanceHelper):
         assert t.account_id == 2
         assert t.scheduled_trans_id == 3
         assert t.notes == 'notesT2'
+        assert t.sales_tax == Decimal('0.0')
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 4
         assert t.budget_transactions[0].amount == Decimal('-333.33')
@@ -407,6 +415,8 @@ class TestTransModal(AcceptanceHelper):
         ).strftime('%Y-%m-%d')
         assert body.find_element_by_id(
             'trans_frm_amount').get_attribute('value') == '-333.33'
+        assert body.find_element_by_id(
+            'trans_frm_sales_tax').get_attribute('value') == '0'
         assert body.find_element_by_id(
             'trans_frm_description').get_attribute('value') == 'T2'
         acct_sel = Select(body.find_element_by_id('trans_frm_account'))
@@ -464,6 +474,9 @@ class TestTransModal(AcceptanceHelper):
         budget_sel.select_by_value('5')
         notes = selenium.find_element_by_id('trans_frm_notes')
         notes.send_keys('edited')
+        tax = body.find_element_by_id('trans_frm_sales_tax')
+        tax.clear()
+        tax.send_keys('45.67')
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -492,6 +505,7 @@ class TestTransModal(AcceptanceHelper):
         assert t.planned_budget_id == 4
         assert t.scheduled_trans_id == 3
         assert t.notes == 'notesT2edited'
+        assert t.sales_tax == Decimal('45.67')
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 5
         assert t.budget_transactions[0].amount == Decimal('-123.45')
@@ -641,6 +655,7 @@ class TestTransModal(AcceptanceHelper):
         assert t.planned_budget_id is None
         assert t.scheduled_trans_id is None
         assert t.notes == 'NewTransNotes'
+        assert t.sales_tax == Decimal('0.0')
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 2
         assert t.budget_transactions[0].amount == Decimal('123.45')
@@ -679,6 +694,8 @@ class TestTransModal(AcceptanceHelper):
         budget_sel.select_by_value('5')
         notes = selenium.find_element_by_id('trans_frm_notes')
         notes.send_keys('NewTransNotes')
+        tax = selenium.find_element_by_id('trans_frm_sales_tax')
+        tax.send_keys('67.89')
         # submit the form
         selenium.find_element_by_id('modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -707,6 +724,7 @@ class TestTransModal(AcceptanceHelper):
         assert t.planned_budget_id is None
         assert t.scheduled_trans_id is None
         assert t.notes == 'NewTransNotes'
+        assert t.sales_tax == Decimal('67.89')
         assert len(t.budget_transactions) == 1
         assert t.budget_transactions[0].budget_id == 5
         assert t.budget_transactions[0].amount == Decimal('345.67')
@@ -1163,6 +1181,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert t.account_id == 3
         assert t.scheduled_trans_id is None
         assert t.notes == 'notesT4split'
+        assert t.sales_tax == Decimal('34.56')
         assert {bt.budget_id: bt.amount for bt in t.budget_transactions} == {
             1: Decimal('100.10'),
             2: Decimal('222.22')
@@ -1181,7 +1200,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'budgets': {
                     '2': '222.22',
                     '1': '100.10'
-                }
+                },
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1202,6 +1222,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert t.account_id == 3
         assert t.scheduled_trans_id is None
         assert t.notes == 'notesT4split'
+        assert t.sales_tax == Decimal('34.56')
         assert {bt.budget_id: bt.amount for bt in t.budget_transactions} == {
             1: Decimal('100.10'),
             2: Decimal('222.22')
@@ -1219,7 +1240,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'account': '3',
                 'budgets': {
                     '2': '422.32'
-                }
+                },
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1235,7 +1257,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'date': [],
                 'description': [],
                 'id': [],
-                'notes': []
+                'notes': [],
+                'sales_tax': []
             }
         }
 
@@ -1252,7 +1275,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'budgets': {
                     '1': '222.32',
                     '2': '200.12'
-                }
+                },
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1268,7 +1292,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'date': [],
                 'description': [],
                 'id': [],
-                'notes': []
+                'notes': [],
+                'sales_tax': []
             }
         }
 
@@ -1282,7 +1307,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'description': 'T4split',
                 'notes': 'notesT4split',
                 'account': '3',
-                'budgets': {}
+                'budgets': {},
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1297,7 +1323,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'date': [],
                 'description': [],
                 'id': [],
-                'notes': []
+                'notes': [],
+                'sales_tax': []
             }
         }
 
@@ -1310,7 +1337,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'description': 'T4split',
                 'notes': 'notesT4split',
                 'account': '3',
-                'budgets': {'99': '322.32'}
+                'budgets': {'99': '322.32'},
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1324,7 +1352,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 ],
                 'date': [],
                 'description': [],
-                'notes': []
+                'notes': [],
+                'sales_tax': []
             }
         }
 
@@ -1337,7 +1366,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'description': 'T4split',
                 'notes': 'notesT4split',
                 'account': '3',
-                'budgets': {'3': '322.32'}
+                'budgets': {'3': '322.32'},
+                'sales_tax': '34.56'
             }
         )
         assert res.status_code == 200
@@ -1352,7 +1382,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 ],
                 'date': [],
                 'description': [],
-                'notes': []
+                'notes': [],
+                'sales_tax': []
             }
         }
 
