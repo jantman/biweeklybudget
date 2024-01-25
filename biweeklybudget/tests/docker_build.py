@@ -74,11 +74,11 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
     _log.setLevel(logging.CRITICAL)
     _log.propagate = True
 
-if sys.version_info[0:2] < (3, 7):
-    raise SystemExit('ERROR: Docker build can only run under py >= 3.7')
+if sys.version_info[0:2] < (3, 6):
+    raise SystemExit('ERROR: Docker build can only run under py >= 3.6')
 
-DOCKER_IMG = 'python:3.11-alpine3.18'
-PY_VERSION = '3.11'
+DOCKER_IMG = 'python:3.10-alpine3.16'
+PY_VERSION = '3.10'
 ACCEPTANCE_ENV = 'acceptance'
 
 DOCKERFILE_TEMPLATE = """

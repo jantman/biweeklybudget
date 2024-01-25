@@ -77,7 +77,7 @@ Requirements
 Using the dockerized version will eliminate all of these dependencies aside from MySQL (which you can run in another container) and
 Vault (if you choose to take advantage of the OFX downloading), which you can also run in another container.
 
-* Python 3.7+ (currently tested and developed with 3.11).
+* Python 3.7+ (currently tested and developed with 3.10).
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the automated Plaid transaction downloading functionality, a valid `Plaid <https://plaid.com/>`__ account.
@@ -90,12 +90,12 @@ Installation
 ------------
 
 It's recommended that you run from the Docker image, as that's what I do. If you
-don't want to do that, you can also install in a virtualenv using Python 3.11:
+don't want to do that, you can also install in a virtualenv using Python 3.10:
 
 .. code-block:: bash
 
     mkdir biweeklybudget
-    python3.11 -mvenv venv
+    python3.10 -mvenv venv
     source venv/bin/activate
     pip install biweeklybudget
 
