@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2022 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
