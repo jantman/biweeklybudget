@@ -131,6 +131,11 @@ class Transaction(Base, ModelAsDict):
         "Transaction", remote_side=[id], post_update=True, uselist=False
     )
 
+    #: Amount of sales tax paid on this transaction.
+    sales_tax = Column(
+        Numeric(precision=10, scale=4), nullable=False, default=0.0
+    )
+
     def __init__(self, **kwargs):
         """
         Custom constructor for Transaction class to allow setting/syncing

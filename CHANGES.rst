@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.2.0 (2024-01-25)
+------------------
+
+* Add tracking of sales tax paid on each transaction.
+* Minor build fixes to get this building again.
+
 1.1.1 (2022-12-30)
 ------------------
 

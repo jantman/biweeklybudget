@@ -165,7 +165,7 @@ class TransactionsAjax(SearchableAjaxView):
 
     def get(self):
         """
-        Render and return JSON response for GET /ajax/ofx
+        Render and return JSON response for GET /ajax/transactions
         """
         args = request.args.to_dict()
         args_dict = self._args_dict(args)
@@ -195,6 +195,11 @@ class TransactionsAjax(SearchableAjaxView):
                 ),
                 (
                     'budgeted_amount'
+                ),
+                (
+                    'sales_tax',
+                    'sales_tax',
+                    lambda a: float(a.sales_tax)
                 ),
                 (
                     'reconcile_id',
@@ -358,6 +363,10 @@ class TransactionFormHandler(FormHandlerView):
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.account_id = int(data['account'])
         trans.notes = data['notes'].strip()
+        if data['sales_tax'].strip() != '':
+            trans.sales_tax = Decimal(data['sales_tax'])
+        else:
+            trans.sales_tax = Decimal('0.0')
         budg_amts = {}
         for bid, budg_amt in data['budgets'].items():
             budg = db_session.query(Budget).get(int(bid))

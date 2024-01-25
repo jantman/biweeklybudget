@@ -115,6 +115,20 @@ $(document).ready(function() {
                 }
             },
             {
+                data: "sales_tax",
+                "render": function(data, type, row) {
+                    if(type === "display" || type === "filter") {
+                        if(data === null || data === '' || data === 0) {
+                            return '&nbsp';
+                        } else {
+                            return fmt_currency(data);
+                        }
+                    } else {
+                        return data;
+                    }
+                }
+            },
+            {
                 data: "reconcile_id",
                 "render": function(data, type, row) {
                     if(data != null) {

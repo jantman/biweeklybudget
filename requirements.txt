@@ -26,7 +26,7 @@ lxml==4.9.1
 nulltype==2.3.1
 ofxhome==0.3.3
 ofxparse==0.20
-packaging==22.0
+packaging
 plaid-python==11.3.0
 pycparser==2.19
 pyparsing==2.4.6
