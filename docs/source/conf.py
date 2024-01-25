@@ -16,6 +16,7 @@ import sys
 import os
 import re
 import glob
+from datetime import datetime
 # to let sphinx find the actual source...
 sys.path.insert(0, os.path.abspath("../.."))
 from biweeklybudget.version import VERSION, PROJECT_URL
@@ -71,9 +72,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'biweeklybudget'
-copyright = u'2017 Jason Antman'
-author = u'Jason Antman'
+project = 'biweeklybudget'
+copyright = f'{datetime.now().strftime("Y%")} Jason Antman'
+author = 'Jason Antman'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

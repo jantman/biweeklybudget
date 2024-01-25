@@ -1,6 +1,6 @@
 """
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 

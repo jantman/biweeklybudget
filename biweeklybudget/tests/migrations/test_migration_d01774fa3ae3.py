@@ -35,16 +35,38 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import os
-from biweeklybudget.settings import PAY_PERIOD_START_DATE
-from biweeklybudget.utils import dtnow
+import pytest
+import logging
+from decimal import Decimal
+from datetime import date
+
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
+
+logger = logging.getLogger(__name__)
 
 
-class Test00UnitSaneSettings(object):
+@pytest.mark.migrations
+class TestAddSalesTaxField(MigrationTest):
+    """
+    Test for revision d01774fa3ae3
+    """
 
-    def test_pay_period_start_date(self):
-        assert PAY_PERIOD_START_DATE < dtnow().date()
+    migration_rev = 'd01774fa3ae3'
 
-    def test_settings_module(self):
-        assert os.environ[
-            'SETTINGS_MODULE'] == 'biweeklybudget.tests.fixtures.test_settings'
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
+
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        conn = engine.connect()
+        columns = conn.execute('SELECT * FROM transactions WHERE 1=2;').keys()
+        conn.close()
+        assert 'sales_tax' not in columns
+
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        conn = engine.connect()
+        columns = conn.execute('SELECT * FROM transactions WHERE 1=2;').keys()
+        conn.close()
+        assert 'sales_tax' in columns

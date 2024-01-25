@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -284,7 +284,8 @@ class SampleDataLoader(object):
                 notes='notesT1',
                 account=self.accounts['BankOne']['account'],
                 scheduled_trans=self.scheduled_transactions[0],
-                planned_budget=self.budgets['Periodic1']
+                planned_budget=self.budgets['Periodic1'],
+                sales_tax=Decimal('0.0')
             ),
             Transaction(
                 date=self.dt.date(),
@@ -301,7 +302,8 @@ class SampleDataLoader(object):
                 budget_amounts={self.budgets['Periodic2']: Decimal('222.22')},
                 description='T3',
                 notes='notesT3',
-                account=self.accounts['CreditOne']['account']
+                account=self.accounts['CreditOne']['account'],
+                sales_tax=Decimal('12.34')
             ),
             Transaction(
                 date=(self.dt - timedelta(days=35)).date(),
@@ -311,7 +313,8 @@ class SampleDataLoader(object):
                 },
                 description='T4split',
                 notes='notesT4split',
-                account=self.accounts['CreditOne']['account']
+                account=self.accounts['CreditOne']['account'],
+                sales_tax=Decimal('34.56')
             )
         ]
         for x in res:

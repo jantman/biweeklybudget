@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -105,6 +105,20 @@ $(document).ready(function() {
                 "render": function(data, type, row) {
                     if(type === "display" || type === "filter") {
                         if(data === row.amount || data === null ) {
+                            return '&nbsp';
+                        } else {
+                            return fmt_currency(data);
+                        }
+                    } else {
+                        return data;
+                    }
+                }
+            },
+            {
+                data: "sales_tax",
+                "render": function(data, type, row) {
+                    if(type === "display" || type === "filter") {
+                        if(data === null || data === '' || data === 0) {
                             return '&nbsp';
                         } else {
                             return fmt_currency(data);

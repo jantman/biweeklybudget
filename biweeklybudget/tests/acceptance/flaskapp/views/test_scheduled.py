@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -39,6 +39,7 @@ import pytest
 from datetime import timedelta, date
 from selenium.webdriver.support.ui import Select
 from decimal import Decimal
+from time import sleep
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -238,6 +239,7 @@ class TestSchedTransDefault(AcceptanceHelper):
             '//input[@type="search"]'
         )
         search.send_keys('ST3')
+        sleep(3)  # yeah, yeah, I know...
         table = self.retry_stale(
             selenium.find_element_by_id,
             'table-scheduled-txn'

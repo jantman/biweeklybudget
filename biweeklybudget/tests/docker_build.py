@@ -19,7 +19,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -93,7 +93,7 @@ COPY entrypoint.sh /tmp/entrypoint.sh
 {copy}
 
 RUN /usr/local/bin/pip install virtualenv
-RUN /usr/local/bin/virtualenv /app
+RUN /usr/local/bin/virtualenv --system-site-packages /app
 RUN set -ex \
     && apk add --no-cache \
         fontconfig \
@@ -103,6 +103,7 @@ RUN set -ex \
         libxslt-dev \
         tini \
         git \
+        py3-cryptography \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libffi-dev \

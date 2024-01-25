@@ -14,7 +14,7 @@ babel==2.8.0
 beautifulsoup4==4.8.2
 cffi==1.15.1
 click==7.0
-cryptography==2.8
+cryptography
 datatables==0.4.9
 httplib2==0.17.0
 humanize==0.5.1
@@ -26,7 +26,7 @@ lxml==4.9.1
 nulltype==2.3.1
 ofxhome==0.3.3
 ofxparse==0.20
-packaging==22.0
+packaging
 plaid-python==11.3.0
 pycparser==2.19
 pyparsing==2.4.6

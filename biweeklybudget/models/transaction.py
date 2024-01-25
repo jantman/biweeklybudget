@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2016 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -129,6 +129,11 @@ class Transaction(Base, ModelAsDict):
     #: half/side of a transfer, if this transaction was for a transfer.
     transfer = relationship(
         "Transaction", remote_side=[id], post_update=True, uselist=False
+    )
+
+    #: Amount of sales tax paid on this transaction.
+    sales_tax = Column(
+        Numeric(precision=10, scale=4), nullable=False, default=0.0
     )
 
     def __init__(self, **kwargs):
