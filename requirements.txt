@@ -2,7 +2,7 @@ Flask==1.1.1
 Jinja2==2.10.3
 Mako==1.1.1
 MarkupSafe==1.1.1
-PyMySQL==0.9.3
+PyMySQL==1.1.1
 SQLAlchemy-Utc==0.10.0
 # NOTE: docs are pinned at this version in conf.py
 SQLAlchemy==1.3.13
