@@ -39,3 +39,4 @@ six==1.14.0
 versionfinder>=1.0.0
 wishlist==0.2.2
 Werkzeug==1.0.1
+urllib3>=2.6.0 # not directly required, pinned by Snyk to avoid a vulnerability
