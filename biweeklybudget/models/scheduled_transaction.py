@@ -60,6 +60,9 @@ class ScheduledTransaction(Base, ModelAsDict):
     #: Amount of the transaction
     amount = Column(Numeric(precision=10, scale=4), nullable=False)
 
+    #: Sales tax paid on this transaction
+    sales_tax = Column(Numeric(precision=10, scale=4), nullable=False, default=0.0)
+
     #: description
     description = Column(String(254), nullable=False, index=True)
 
