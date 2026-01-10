@@ -174,7 +174,14 @@ This application supports Scheduled Transactions which are displayed in the appr
 
 **Commit:** 222f9a7 - "SchedTax - 2.x: Frontend Forms complete"
 
-### Milestone 3: Test Data and Unit Tests - NOT STARTED
+### Milestone 3: Test Data and Unit Tests - COMPLETE
+
+**Completed Tasks:**
+- ✅ 3.1: Updated sample data with sales_tax values for all 6 ScheduledTransaction objects
+- ✅ 3.2: Created migration test test_migration_1bb9e6a1c07c.py
+- ✅ 3.3: Reviewed unit tests - no changes needed (default value 0.0 handles existing code)
+
+**Commit:** 214a22f - "SchedTax - 3.x: Test Data and Unit Tests complete"
 
 ### Milestone 4: Acceptance Tests - NOT STARTED
 
