@@ -55,12 +55,92 @@ pytest --cov=biweeklybudget --cov-report=html
 
 ### Database Setup
 
+#### Quick Setup (Production/Local Development)
 Initialize the database:
 ```bash
 initdb
 ```
 
 The database schema is managed with Alembic migrations in `biweeklybudget/alembic/versions/`.
+
+#### Test Database Setup for Development
+
+**IMPORTANT**: When developing features that require database changes, you must set up a test database BEFORE making model changes if you want to use Alembic's autogenerate feature.
+
+1. **Start Docker test database container:**
+```bash
+docker run -d --name budgettest -p 13306:3306 \
+  --env MYSQL_ROOT_PASSWORD=dbroot \
+  --env MYSQL_ROOT_HOST='%' \
+  mariadb:10.4.7
+```
+
+2. **Set environment variables for test database:**
+```bash
+export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+export SETTINGS_MODULE='biweeklybudget.tests.fixtures.test_settings'
+export MYSQL_HOST=127.0.0.1
+export MYSQL_PORT=13306
+export MYSQL_USER=root
+export MYSQL_PASS=dbroot
+export MYSQL_DBNAME=budgettest
+export MYSQL_DBNAME_LEFT=alembicLeft
+export MYSQL_DBNAME_RIGHT=alembicRight
+```
+
+3. **Create the test databases:**
+```bash
+source venv/bin/activate
+python dev/setup_test_db.py
+```
+
+4. **Initialize the database to current schema:**
+```bash
+initdb
+```
+
+5. **Cleanup when done:**
+```bash
+docker stop budgettest && docker rm budgettest
+```
+
+#### Creating Database Migrations
+
+There are two workflows for creating Alembic migrations:
+
+**Option A: Autogenerate (Preferred)**
+1. Set up test database and run `initdb` BEFORE making any model changes
+2. Make your model changes in `biweeklybudget/models/`
+3. Generate migration: `alembic -c biweeklybudget/alembic/alembic.ini revision --autogenerate -m "description"`
+4. Review and edit the generated migration file in `biweeklybudget/alembic/versions/`
+5. Test the migration: `alembic -c biweeklybudget/alembic/alembic.ini upgrade head`
+
+**Option B: Manual Migration (When autogenerate won't work)**
+1. Make your model changes in `biweeklybudget/models/`
+2. Generate empty migration: `alembic -c biweeklybudget/alembic/alembic.ini revision -m "description"`
+3. Manually write the `upgrade()` and `downgrade()` functions following existing migration patterns
+4. Test the migration: `alembic -c biweeklybudget/alembic/alembic.ini upgrade head`
+
+**Common Migration Commands:**
+```bash
+# See current DB version
+alembic -c biweeklybudget/alembic/alembic.ini current
+
+# See migration history
+alembic -c biweeklybudget/alembic/alembic.ini history
+
+# Upgrade to latest
+alembic -c biweeklybudget/alembic/alembic.ini upgrade head
+
+# Downgrade one revision
+alembic -c biweeklybudget/alembic/alembic.ini downgrade -1
+```
+
+**Migration Patterns:**
+- Adding a column: See `d01774fa3ae3_add_transaction_field_to_store_sales_.py` for sales_tax on Transaction
+- Column should match model definition: `sa.Column('field_name', sa.Type(...), nullable=...)`
+- Always provide both `upgrade()` and `downgrade()` functions
+- Test both upgrade and downgrade paths
 
 ### Running the Flask App
 
