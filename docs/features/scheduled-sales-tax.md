@@ -165,7 +165,14 @@ This application supports Scheduled Transactions which are displayed in the appr
 
 **Commit:** 7de0502 - "SchedTax - 1.x: Database Schema and Backend Model complete"
 
-### Milestone 2: Frontend Forms - NOT STARTED
+### Milestone 2: Frontend Forms - COMPLETE
+
+**Completed Tasks:**
+- ✅ 2.1: Added sales_tax currency field to scheduled transaction add/edit modal (scheduled_modal.js)
+- ✅ 2.2: Added sales_tax currency field to scheduled→transaction conversion modal (payperiod_modal.js)
+- ✅ 2.3: Updated SchedToTransFormHandler.submit() to read and transfer sales_tax to new Transaction
+
+**Commit:** 222f9a7 - "SchedTax - 2.x: Frontend Forms complete"
 
 ### Milestone 3: Test Data and Unit Tests - NOT STARTED
 
