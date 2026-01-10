@@ -90,6 +90,7 @@ function schedModalDivForm() {
         )
         .addDatePicker('sched_frm_date', 'date', 'Specific Date', { groupHtml: ' style="display: none;"' })
         .addCurrency('sched_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
+        .addCurrency('sched_frm_sales_tax', 'sales_tax', 'Sales Tax', { helpBlock: 'Sales tax for this transaction (default 0.0).' })
         .addLabelToValueSelect('sched_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
         .addLabelToValueSelect('sched_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
         .addText('sched_frm_notes', 'notes', 'Notes')
@@ -123,6 +124,7 @@ function schedModalDivFillAndShow(msg) {
     }
     schedModalDivHandleType();
     $('#sched_frm_amount').val(msg['amount']);
+    $('#sched_frm_sales_tax').val(msg['sales_tax']);
     $('#sched_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#sched_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
     $('#sched_frm_notes').val(msg['notes']);
