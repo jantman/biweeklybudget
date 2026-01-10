@@ -154,7 +154,16 @@ This application supports Scheduled Transactions which are displayed in the appr
 
 ## Implementation Progress
 
-### Milestone 1: Database Schema and Backend Model - NOT STARTED
+### Milestone 1: Database Schema and Backend Model - COMPLETE
+
+**Completed Tasks:**
+- ✅ 1.1: Added sales_tax column to ScheduledTransaction model (Numeric(10,4), nullable=False, default=0.0)
+- ✅ 1.2: Created Alembic migration 1bb9e6a1c07c_add_scheduledtransaction_sales_tax_field
+- ✅ 1.3: Updated ScheduledAjax view to include sales_tax in DataTable response
+- ✅ 1.4: OneScheduledAjax automatically includes sales_tax via ModelAsDict.as_dict()
+- ✅ 1.5: Updated SchedTransFormHandler.submit() to handle sales_tax from form data
+
+**Commit:** 7de0502 - "SchedTax - 1.x: Database Schema and Backend Model complete"
 
 ### Milestone 2: Frontend Forms - NOT STARTED
 
