@@ -183,6 +183,40 @@ This application supports Scheduled Transactions which are displayed in the appr
 
 **Commit:** 214a22f - "SchedTax - 3.x: Test Data and Unit Tests complete"
 
-### Milestone 4: Acceptance Tests - NOT STARTED
+### Milestone 4: Acceptance Tests - COMPLETE
 
-### Milestone 5: Final Testing and Documentation - NOT STARTED
+**Completed Tasks:**
+- ✅ 4.1: Added sales_tax tests to scheduled transaction CRUD (test_scheduled.py lines 724-807)
+  - test_50_sales_tax_verify_db - Verifies initial sales_tax values
+  - test_51_sales_tax_edit_modal - Tests editing sales_tax in modal
+  - test_52_sales_tax_verify_db_after_edit - Verifies edit persisted
+  - test_53_sales_tax_add_with_sales_tax - Tests adding with sales_tax
+  - test_54_sales_tax_verify_db_after_add - Verifies add persisted
+- ✅ 4.2: Added sales_tax transfer test to conversion (test_payperiods.py lines 1842-1901)
+  - test_07_modal_schedtrans_to_trans_with_sales_tax - Tests field populated and editable in conversion modal
+  - test_08_verify_db_sales_tax_transferred - Verifies sales_tax transferred to Transaction
+- ✅ 4.3: Migration tests pass (test_migration_1bb9e6a1c07c.py)
+
+**Commits:**
+- c444983 - "SchedTax - 4.1: Add sales_tax tests to scheduled transaction CRUD"
+- 97d0ecb - "SchedTax - 4.2: Add sales_tax transfer test to conversion"
+
+### Milestone 5: Final Testing and Documentation - COMPLETE
+
+**Completed Tasks:**
+- ✅ 5.1: Migration tests verified passing
+  - All migration tests pass including test_migration_1bb9e6a1c07c.py
+  - Alembic verify tests confirm schema matches models
+- ✅ 5.2: Feature implementation verified complete
+  - Database model includes sales_tax field
+  - Alembic migration created and tested (1bb9e6a1c07c)
+  - Backend views handle sales_tax in CRUD and conversion
+  - Frontend modals include sales_tax fields
+  - Sample data updated with sales_tax values
+  - Unit and acceptance tests added and verified
+- ✅ 5.3: Documentation updated
+  - Feature document updated with completion status
+
+## Feature Status: COMPLETE ✅
+
+All milestones have been completed successfully. The scheduled transaction sales_tax feature is fully implemented and tested.
