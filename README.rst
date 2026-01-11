@@ -5,10 +5,6 @@ biweeklybudget
    :target: https://github.com/jantman/biweeklybudget/actions/workflows/run-tox-suite.yml
    :alt: GitHub Actions build for master branch
 
-.. image:: https://codecov.io/github/jantman/biweeklybudget/coverage.svg?branch=master
-   :target: https://codecov.io/github/jantman/biweeklybudget?branch=master
-   :alt: coverage report for master branch
-
 .. image:: https://readthedocs.org/projects/biweeklybudget/badge/?version=latest
    :target: https://readthedocs.org/projects/biweeklybudget/?badge=latest
    :alt: sphinx documentation for latest release
