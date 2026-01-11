@@ -138,7 +138,7 @@ end with a trailing slash.
 Database Migration Tests
 ++++++++++++++++++++++++
 
-There is a ``migrations`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
+There is a ``migrations`` tox environment that runs `alembic-verify <https://github.com/gianchub/alembic-verify>`_
 tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
 in order, and also tests that the latest (head) migration revision matches the current state of the models.
 
