@@ -1843,8 +1843,10 @@ class TestMakeTransModal(AcceptanceHelper):
         self, base_url, selenium, testdb
     ):
         """Test that sales_tax is transferred from ScheduledTransaction"""
-        # Set ST2 sales_tax to 4.56 for this test (ST3 already used in test_01)
-        st = testdb.query(ScheduledTransaction).get(2)
+        # Activate ST6 and set sales_tax (ST6 has num_per_period=3 so appears
+        # reliably; ST1 and ST3 already used in test_01)
+        st = testdb.query(ScheduledTransaction).get(6)
+        st.is_active = True
         st.sales_tax = Decimal('4.56')
         testdb.flush()
         testdb.commit()
@@ -1856,11 +1858,11 @@ class TestMakeTransModal(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         link = selenium.find_elements_by_xpath(
-            '//a[@href="javascript:schedToTransModal(2, \'%s\');"]'
+            '//a[@href="javascript:schedToTransModal(6, \'%s\');"]'
             '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        # verify sales_tax field is populated with ST2's value
+        # verify sales_tax field is populated with ST6's value
         sales_tax_elem = body.find_element_by_id('schedtotrans_frm_sales_tax')
         assert sales_tax_elem.get_attribute('value') == '4.56'
         # modify sales_tax value
@@ -1883,7 +1885,7 @@ class TestMakeTransModal(AcceptanceHelper):
         x = body.find_elements_by_tag_name('div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully created Transaction 8 for ' \
-                                 'ScheduledTransaction 2.'
+                                 'ScheduledTransaction 6.'
         # dismiss the modal
         selenium.find_element_by_id('modalCloseButton').click()
         self.wait_for_load_complete(selenium)
@@ -1891,17 +1893,17 @@ class TestMakeTransModal(AcceptanceHelper):
     def test_08_verify_db_sales_tax_transferred(self, testdb):
         """Verify sales_tax was transferred to new Transaction"""
         # verify ScheduledTransaction unchanged
-        st = testdb.query(ScheduledTransaction).get(2)
+        st = testdb.query(ScheduledTransaction).get(6)
         assert st is not None
-        assert st.description == 'ST2'
+        assert st.description == 'ST6'
         assert st.sales_tax == Decimal('4.56')  # value we set in test_07
         # verify new Transaction has modified sales_tax
         t = testdb.query(Transaction).get(8)
         assert t is not None
-        assert t.description == 'ST2 with tax'
+        assert t.description == 'ST6 with tax'
         assert t.sales_tax == Decimal('8.99')  # modified value
         assert t.actual_amount == Decimal('99.99')
-        assert t.scheduled_trans_id == 2
+        assert t.scheduled_trans_id == 6
 
 
 @pytest.mark.acceptance
