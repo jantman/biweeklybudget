@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.filters module
-========================================
+biweeklybudget.flaskapp.filters module
+======================================
 
 .. automodule:: biweeklybudget.flaskapp.filters
     :members:

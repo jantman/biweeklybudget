@@ -318,11 +318,14 @@ linkcheck_ignore = [
     r'https?://github\.com/jantman/biweeklybudget/issues/.*',
     r'https?://www\.lastpass\.com.*',
     r'https?://www\.ofx\.net/',
+    r'https?://en\.wikipedia\.org/.*',  # Wikipedia blocks automated requests
 ]
 
 nitpick_ignore = [
     ('py:class', 'flask.views.MethodView'),
     ('py:class', 'sqlalchemy.ext.declarative.api.Base'),
+    ('py:class', 'string'),
+    ('py:class', 'datetime'),
     ('py:class', 'enum.Enum'),
     ('py:class', 'Exception'),
     ('py:class', 'json.encoder.JSONEncoder'),

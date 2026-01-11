@@ -1,5 +1,5 @@
-biweeklybudget\.models\.plaid\_items module
-===========================================
+biweeklybudget.models.plaid\_items module
+=========================================
 
 .. automodule:: biweeklybudget.models.plaid_items
     :members:

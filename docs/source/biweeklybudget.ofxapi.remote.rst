@@ -1,5 +1,5 @@
-biweeklybudget\.ofxapi\.remote module
-=====================================
+biweeklybudget.ofxapi.remote module
+===================================
 
 .. automodule:: biweeklybudget.ofxapi.remote
     :members:

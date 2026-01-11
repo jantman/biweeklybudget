@@ -1,5 +1,5 @@
-biweeklybudget\.cliutils module
-===============================
+biweeklybudget.cliutils module
+==============================
 
 .. automodule:: biweeklybudget.cliutils
     :members:

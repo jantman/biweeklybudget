@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.formhandlerview module
-=======================================================
+biweeklybudget.flaskapp.views.formhandlerview module
+====================================================
 
 .. automodule:: biweeklybudget.flaskapp.views.formhandlerview
     :members:

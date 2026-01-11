@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.searchableajaxview module
-==========================================================
+biweeklybudget.flaskapp.views.searchableajaxview module
+=======================================================
 
 .. automodule:: biweeklybudget.flaskapp.views.searchableajaxview
     :members:

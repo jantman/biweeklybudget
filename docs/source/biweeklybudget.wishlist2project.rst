@@ -1,5 +1,5 @@
-biweeklybudget\.wishlist2project module
-=======================================
+biweeklybudget.wishlist2project module
+======================================
 
 .. automodule:: biweeklybudget.wishlist2project
     :members:

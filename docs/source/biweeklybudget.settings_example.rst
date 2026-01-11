@@ -1,5 +1,5 @@
-biweeklybudget\.settings\_example module
-========================================
+biweeklybudget.settings\_example module
+=======================================
 
 .. automodule:: biweeklybudget.settings_example
     :members:

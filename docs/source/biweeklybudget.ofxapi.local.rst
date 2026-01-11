@@ -1,5 +1,5 @@
-biweeklybudget\.ofxapi\.local module
-====================================
+biweeklybudget.ofxapi.local module
+==================================
 
 .. automodule:: biweeklybudget.ofxapi.local
     :members:

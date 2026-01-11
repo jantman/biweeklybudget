@@ -1,5 +1,5 @@
-biweeklybudget\.settings module
-===============================
+biweeklybudget.settings module
+==============================
 
 .. automodule:: biweeklybudget.settings
     :members:

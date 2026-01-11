@@ -19,14 +19,14 @@ biweeklybudget provides a base :py:class:`~biweeklybudget.screenscraper.ScreenSc
 class that can be used to develop a `selenium <http://selenium-python.readthedocs.io/>`_-based
 tool to automate logging in to your bank's site and downloading the OFX file.
 
-In order to use either of these methods, you must have an instance of `Hashicorp Vault <https://www.vaultproject.io/>`_
+In order to use either of these methods, you must have an instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_
 running and have your login credentials stored in it.
 
 Important Note on Transaction Downloading
 -----------------------------------------
 
 biweeklybudget includes support for automatically downloading transaction data
-from your bank. Credentials are stored in an instance of `Hashicorp Vault <https://www.vaultproject.io/>`_,
+from your bank. Credentials are stored in an instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_,
 as that is a project the author has familiarity with, and was chosen as the most
 secure way of storing and retrieving secrets non-interactively. Please keep in mind
 that it is your decision and your decision alone how secure your banking credentials

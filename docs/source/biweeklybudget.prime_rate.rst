@@ -1,5 +1,5 @@
-biweeklybudget\.prime\_rate module
-==================================
+biweeklybudget.prime\_rate module
+=================================
 
 .. automodule:: biweeklybudget.prime_rate
     :members:

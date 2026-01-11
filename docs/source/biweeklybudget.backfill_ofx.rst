@@ -1,5 +1,5 @@
-biweeklybudget\.backfill\_ofx module
-====================================
+biweeklybudget.backfill\_ofx module
+===================================
 
 .. automodule:: biweeklybudget.backfill_ofx
     :members:

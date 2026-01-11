@@ -1,5 +1,5 @@
-biweeklybudget\.vault module
-============================
+biweeklybudget.vault module
+===========================
 
 .. automodule:: biweeklybudget.vault
     :members:

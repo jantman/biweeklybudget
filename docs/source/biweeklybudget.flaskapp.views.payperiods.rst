@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.payperiods module
-==================================================
+biweeklybudget.flaskapp.views.payperiods module
+===============================================
 
 .. automodule:: biweeklybudget.flaskapp.views.payperiods
     :members:

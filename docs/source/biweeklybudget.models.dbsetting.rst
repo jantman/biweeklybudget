@@ -1,5 +1,5 @@
-biweeklybudget\.models\.dbsetting module
-========================================
+biweeklybudget.models.dbsetting module
+======================================
 
 .. automodule:: biweeklybudget.models.dbsetting
     :members:
