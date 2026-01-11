@@ -60,13 +60,19 @@ class TestAddScheduledTransactionSalesTaxField(MigrationTest):
     def verify_before(self, engine):
         """method to verify data before forward migration, and after reverse"""
         conn = engine.connect()
-        columns = conn.execute('SELECT * FROM scheduled_transactions WHERE 1=2;').keys()
+        result = conn.execute(
+            'SELECT * FROM scheduled_transactions WHERE 1=2;'
+        )
+        columns = result.keys()
         conn.close()
         assert 'sales_tax' not in columns
 
     def verify_after(self, engine):
         """method to verify data after forward migration"""
         conn = engine.connect()
-        columns = conn.execute('SELECT * FROM scheduled_transactions WHERE 1=2;').keys()
+        result = conn.execute(
+            'SELECT * FROM scheduled_transactions WHERE 1=2;'
+        )
+        columns = result.keys()
         conn.close()
         assert 'sales_tax' in columns
