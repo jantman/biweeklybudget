@@ -85,7 +85,9 @@ def do_mysqldump(dumpdir, eng, with_data=True):
         ]
     if not mysqldump_is_mariadb:
         args.append('--column-statistics=0')
-    args.append('--skip-ssl')
+        args.append('--ssl-mode=DISABLED')
+    else:
+        args.append('--skip-ssl')
     args.append('--host=%s' % eng.url.host)
     args.append('--port=%s' % eng.url.port)
     args.append('--user=%s' % eng.url.username)
