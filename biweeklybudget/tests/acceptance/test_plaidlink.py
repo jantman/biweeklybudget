@@ -45,6 +45,7 @@ import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models import (
@@ -116,21 +117,19 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             )
         )
         # inside iframe
-        # click Continue button
+        # click Continue as guest button
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable(
-                (By.XPATH, '//button[normalize-space()="Continue"]')
+                (By.XPATH, '//button[normalize-space()="Continue as guest"]')
             )
         ).click()
-        # search box
-        WebDriverWait(selenium, 10).until(
+        # search box - wait for it to be clickable
+        sb = WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'search-input'))
-        ).click()
-        # enter search item
-        sb = selenium.find_element_by_id('search-input')
-        assert sb.is_displayed()
-        sb.clear()
-        sb.send_keys('First Platypus')
+        )
+        # Use ActionChains to interact with the custom search input
+        actions = ActionChains(selenium)
+        actions.move_to_element(sb).click().send_keys('First Platypus').perform()
         # click on First Platypus Bank
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-ins_109508'))
@@ -139,20 +138,18 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-ins_109508'))
         ).click()
-        # enter username
-        WebDriverWait(selenium, 10).until(
+        # enter username - use ActionChains for custom input fields
+        user = WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-input-0'))
         )
-        user = selenium.find_element_by_id('aut-input-0')
-        user.clear()
-        user.send_keys(SANDBOX_USERNAME)
+        actions = ActionChains(selenium)
+        actions.move_to_element(user).click().send_keys(SANDBOX_USERNAME).perform()
         # enter password
-        WebDriverWait(selenium, 10).until(
+        passwd = WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-input-1'))
         )
-        passwd = selenium.find_element_by_id('aut-input-1')
-        passwd.clear()
-        passwd.send_keys(SANDBOX_PASSWORD)
+        actions = ActionChains(selenium)
+        actions.move_to_element(passwd).click().send_keys(SANDBOX_PASSWORD).perform()
         # click submit
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-button'))
@@ -175,12 +172,13 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 'Your account has been successfully linked to '
             )
         )
-        # click continue
+        # Click "Finish without saving" button to close the iframe
         WebDriverWait(selenium, 10).until(
-            EC.element_to_be_clickable((By.ID, 'aut-button'))
+            EC.element_to_be_clickable((By.ID, 'aut-secondary-button'))
         ).click()
-        # verify that it shows up
+        # Switch back to main content and wait for app to process
         selenium.switch_to.default_content()
+        time.sleep(2)  # Give the app time to process the Plaid callback
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
         WebDriverWait(selenium, 10).until(
@@ -200,9 +198,12 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert len(texts) == 1
         assert texts[0][1] == 'First Platypus Bank (ins_109508)'
         assert texts[0][2] == 'Plaid 401k (6666), ' \
+                              'Plaid Business Credit Card (9999), ' \
                               'Plaid CD (2222), ' \
+                              'Plaid Cash Management (9002), ' \
                               'Plaid Checking (0000), ' \
                               'Plaid Credit Card (3333), ' \
+                              'Plaid HSA (9001), ' \
                               'Plaid IRA (5555), ' \
                               'Plaid Money Market (4444), ' \
                               'Plaid Mortgage (8888), ' \
@@ -218,7 +219,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert pitems[0].institution_id == 'ins_109508'
         assert dtnow() - pitems[0].last_updated < ONE_HOUR
         paccts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
-        assert len(paccts) == 9
+        assert len(paccts) == 12
         # find and check the checking and credit accounts
         checking = None
         credit = None
@@ -381,7 +382,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         assert pitems[0].institution_id == 'ins_109508'
 
     def test_13_break_some_plaid_accounts(self, testdb):
-        assert len(testdb.query(PlaidAccount).all()) == 9
+        assert len(testdb.query(PlaidAccount).all()) == 12
         item_id = self.plaid_accts['checking']['item_id']
         chk_acct_id = self.plaid_accts['checking']['acct_id']
         credit_acct_id = self.plaid_accts['credit']['acct_id']
@@ -396,7 +397,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         testdb.flush()
         testdb.commit()
         all_accts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
-        assert len(all_accts) == 8
+        assert len(all_accts) == 11
         assert 'fooBarBaz' in [x.account_id for x in all_accts]
 
     def test_14_refresh_plaid_accounts_for_item(self, base_url, selenium):
@@ -415,7 +416,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     def test_15_verify_accounts_updated_in_db(self, testdb):
         all_accts: List[PlaidAccount] = testdb.query(PlaidAccount).all()
-        assert len(all_accts) == 9
+        assert len(all_accts) == 12
         acct_ids = sorted([x.account_id for x in all_accts])
         assert acct_ids == sorted(self.plaid_acct_ids)
 
@@ -482,42 +483,39 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             )
         )
         # inside iframe
-        # click Continue button
+        # click Continue as guest button
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable(
-                (By.XPATH, '//button[normalize-space()="Continue"]')
+                (By.XPATH, '//button[normalize-space()="Continue as guest"]')
             )
         ).click()
-        # enter username
-        WebDriverWait(selenium, 10).until(
+        # enter username - use ActionChains for custom input fields
+        user = WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-input-0'))
         )
-        user = selenium.find_element_by_id('aut-input-0')
-        user.clear()
-        user.send_keys(SANDBOX_USERNAME)
+        actions = ActionChains(selenium)
+        actions.move_to_element(user).click().send_keys(SANDBOX_USERNAME).perform()
         # enter password
-        WebDriverWait(selenium, 10).until(
+        passwd = WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-input-1'))
         )
-        passwd = selenium.find_element_by_id('aut-input-1')
-        passwd.clear()
-        passwd.send_keys(SANDBOX_PASSWORD)
+        actions = ActionChains(selenium)
+        actions.move_to_element(passwd).click().send_keys(SANDBOX_PASSWORD).perform()
         # click submit
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-button'))
         ).click()
-        # wait for accounts confirmation screen
+        # For re-login flow, Plaid goes directly to "Save" dialog
+        # Click "Finish without saving" button to close the iframe
         WebDriverWait(selenium, 10).until(
-            EC.text_to_be_present_in_element(
-                (By.ID, 'a11y-title'), 'Success'
-            )
-        )
-        # click continue
-        WebDriverWait(selenium, 10).until(
-            EC.element_to_be_clickable((By.ID, 'aut-button'))
+            EC.element_to_be_clickable((By.ID, 'aut-secondary-button'))
         ).click()
-        # verify that it shows up
+        # Switch back to main content
         selenium.switch_to.default_content()
+        time.sleep(2)  # Give the app time to process the Plaid callback
+        # Handle success alert
+        WebDriverWait(selenium, 10).until(EC.alert_is_present())
+        selenium.switch_to.alert.accept()
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
         WebDriverWait(selenium, 10).until(
