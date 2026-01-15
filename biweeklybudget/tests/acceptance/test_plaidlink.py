@@ -165,14 +165,23 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-button'))
         ).click()
-        # Success message appears briefly, then Plaid auto-advances to "Save with Plaid" screen
-        # Don't wait for success message - it disappears too quickly
-        # Click "Finish without saving" button to close the iframe
-        WebDriverWait(selenium, 10).until(
-            EC.element_to_be_clickable((By.ID, 'aut-secondary-button'))
-        ).click()
-        # Switch back to main content and wait for app to process
-        selenium.switch_to.default_content()
+        # Success message appears briefly, then Plaid may:
+        # 1. Auto-advance to "Save with Plaid" screen (shows "Finish without saving" button), or
+        # 2. Auto-close the iframe and complete successfully
+        # Try to click "Finish without saving" button if it appears, otherwise continue
+        try:
+            WebDriverWait(selenium, 15).until(
+                EC.element_to_be_clickable((By.ID, 'aut-secondary-button'))
+            ).click()
+            # Switch back to main content after closing iframe
+            selenium.switch_to.default_content()
+        except Exception:
+            # Button didn't appear - Plaid may have auto-completed the flow
+            # Try to switch back to main content (may already be there)
+            try:
+                selenium.switch_to.default_content()
+            except Exception:
+                pass
         time.sleep(2)  # Give the app time to process the Plaid callback
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
