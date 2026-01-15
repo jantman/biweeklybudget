@@ -32,13 +32,16 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
+      - name: Archive test results and artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
+          if-no-files-found: ignore
           path: |
             results/
             coverage.xml
@@ -135,9 +138,11 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
+      - name: Archive test results and artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -147,6 +152,7 @@ jobs:
             results/
             coverage-acceptance.xml
             htmlcov-acceptance/
+            .tox/acceptance/liveserver.log
   plaid:
     runs-on: ubuntu-latest
     strategy:
@@ -184,9 +190,11 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
+      - name: Archive test results and artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -194,6 +202,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             results/
+            .tox/plaid/liveserver.log
   docker:
     runs-on: ubuntu-latest
     strategy:
@@ -225,6 +234,8 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Login to Docker Hub if master branch
         if: github.ref_type == 'branch' && github.ref_name == 'master'
         uses: docker/login-action@v2
@@ -234,7 +245,7 @@ jobs:
       - name: Run tests
         id: run-tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
+      - name: Archive test results and artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -279,9 +290,11 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
+      - name: Archive test results and artifacts
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:

@@ -376,6 +376,11 @@ if HAVE_PYTEST_SELENIUM:
 def chrome_options(chrome_options: 'ChromeOptions') -> 'ChromeOptions':
     chrome_options.add_argument('headless')
     chrome_options.add_argument('window-size=1920x1080')
+    # Add stability options for CI environments
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-software-rasterizer')
     return chrome_options
 
 
