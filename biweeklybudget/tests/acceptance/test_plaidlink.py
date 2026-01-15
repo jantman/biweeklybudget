@@ -66,6 +66,15 @@ ONE_HOUR = timedelta(hours=1)
 @pytest.mark.plaid
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 @pytest.mark.incremental
+@pytest.mark.xfail(
+    os.environ.get('CI') == 'true',
+    reason="Plaid Link iframe flow incompatible with headless Chrome in CI. "
+           "After clicking Continue on 'Your accounts' screen, Plaid's JavaScript "
+           "fails to advance to the 'Save with Plaid' screen in headless mode, "
+           "causing timeout waiting for 'Finish without saving' button. "
+           "Flow works correctly in non-headless Chrome. "
+           "See: https://github.com/jantman/biweeklybudget/pull/306#issuecomment-<ID>"
+)
 class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     plaid_accts = {}
