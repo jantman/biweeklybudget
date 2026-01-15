@@ -165,13 +165,8 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-button'))
         ).click()
-        # wait for success message
-        WebDriverWait(selenium, 10).until(
-            EC.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, 'div.Content-module__content'),
-                'Your account has been successfully linked to '
-            )
-        )
+        # Success message appears briefly, then Plaid auto-advances to "Save with Plaid" screen
+        # Don't wait for success message - it disappears too quickly
         # Click "Finish without saving" button to close the iframe
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'aut-secondary-button'))
