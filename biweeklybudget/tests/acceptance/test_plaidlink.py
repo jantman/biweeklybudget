@@ -73,7 +73,7 @@ ONE_HOUR = timedelta(hours=1)
            "fails to advance to the 'Save with Plaid' screen in headless mode, "
            "causing timeout waiting for 'Finish without saving' button. "
            "Flow works correctly in non-headless Chrome. "
-           "See: https://github.com/jantman/biweeklybudget/pull/306#issuecomment-<ID>"
+           "See: https://github.com/jantman/biweeklybudget/pull/306#issuecomment-3757057657"
 )
 class TestLinkAndUpdateSimple(AcceptanceHelper):
 
