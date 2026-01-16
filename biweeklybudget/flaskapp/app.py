@@ -38,6 +38,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import os
 
+if os.environ.get('NEW_RELIC_LICENSE_KEY', '') != '':
+    import newrelic.agent
+    newrelic.agent.initialize()
+
 # workaround for https://github.com/jantman/versionfinder/issues/5
 # caused by versionfinder import in ``views/help.py``
 try:
