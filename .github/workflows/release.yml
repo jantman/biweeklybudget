@@ -33,6 +33,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker Build
         id: docker-build
         env:
@@ -51,11 +57,20 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Docker Push
         run: |
+          # Push to Docker Hub
           docker push jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
           docker tag jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }} jantman/biweeklybudget:${{ steps.get-version.outputs.APP_VERSION }}
           docker push jantman/biweeklybudget:${{ steps.get-version.outputs.APP_VERSION }}
           docker tag jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }} jantman/biweeklybudget:latest
           docker push jantman/biweeklybudget:latest
+          
+          # Tag and push to GitHub Container Registry
+          docker tag jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }} ghcr.io/${{ github.repository }}:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
+          docker push ghcr.io/${{ github.repository }}:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }}
+          docker tag jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }} ghcr.io/${{ github.repository }}:${{ steps.get-version.outputs.APP_VERSION }}
+          docker push ghcr.io/${{ github.repository }}:${{ steps.get-version.outputs.APP_VERSION }}
+          docker tag jantman/biweeklybudget:${{ steps.docker-build.outputs.DOCKER_IMG_TAG }} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:latest
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
