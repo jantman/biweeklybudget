@@ -45,11 +45,23 @@ To run a Dockerized database for your test environment:
 Test Database Setup
 -------------------
 
-After starting your test database (i.e. :ref:`development.docker_database` above or by running a local MySQL / MariaDB server) and exporting your connection string and MySQL-related variables, i.e.:
+After starting your test database (i.e. :ref:`development.docker_database` above or by running a local MySQL / MariaDB server) and exporting your connection string and MySQL-related variables:
 
-``export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME=budgettest; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight``
+.. code-block:: bash
+
+   export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
+   export SETTINGS_MODULE='biweeklybudget.tests.fixtures.test_settings'
+   export MYSQL_HOST=127.0.0.1
+   export MYSQL_PORT=13306
+   export MYSQL_USER=root
+   export MYSQL_PASS=dbroot
+   export MYSQL_DBNAME=budgettest
+   export MYSQL_DBNAME_LEFT=alembicLeft
+   export MYSQL_DBNAME_RIGHT=alembicRight
 
 you can set up the test databases by running ``dev/setup_test_db.py``
+
+**Note:** The ``SETTINGS_MODULE`` environment variable is required when running migrations or ``initdb`` to use the test settings which include the ``PAY_PERIOD_START_DATE`` required by the application.
 
 .. _development.loading_data:
 
@@ -126,7 +138,7 @@ end with a trailing slash.
 Database Migration Tests
 ++++++++++++++++++++++++
 
-There is a ``migrations`` tox environment that runs `alembic-verify <http://alembic-verify.readthedocs.io/en/latest/>`_
+There is a ``migrations`` tox environment that runs `alembic-verify <https://github.com/gianchub/alembic-verify>`_
 tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
 in order, and also tests that the latest (head) migration revision matches the current state of the models.
 
@@ -147,12 +159,57 @@ Alembic DB Migrations
 ---------------------
 
 This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
-for DB migrations:
+for DB migrations.
 
-* To generate migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini revision --autogenerate -m "message"`` and examine/edit then commit the resulting file(s). This must be run *before* the model changes are applied to the DB. If adding new models, make sure to import the model class in ``models/__init__.py``.
-* To apply migrations, run ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``.
-* To see the current DB version, run ``alembic -c biweeklybudget/alembic/alembic.ini current``.
-* To see migration history, run ``alembic -c biweeklybudget/alembic/alembic.ini history``.
+.. important::
+   **CRITICAL**: When using Alembic's autogenerate feature, you must set up a test database and run ``initdb`` to initialize it to the current schema **BEFORE** making any model changes. If you make model changes first, initdb will create the tables with your new fields, and autogenerate will not detect any differences.
+
+**Two Workflows for Creating Migrations:**
+
+**Option A: Autogenerate (Recommended)**
+
+1. Set up test database (see :ref:`development.docker_database`)
+2. Export environment variables (DB_CONNSTRING, SETTINGS_MODULE, etc.)
+3. Run ``initdb`` to initialize database to current HEAD revision
+4. Make your model changes in ``biweeklybudget/models/``
+5. Generate migration: ``alembic -c biweeklybudget/alembic/alembic.ini revision --autogenerate -m "descriptive message"``
+6. Review and edit the generated migration file in ``biweeklybudget/alembic/versions/``
+7. Test upgrade: ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``
+8. Test downgrade: ``alembic -c biweeklybudget/alembic/alembic.ini downgrade -1``
+9. Re-test upgrade: ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``
+
+**Option B: Manual Migration (When autogenerate won't work)**
+
+If you've already made model changes or autogenerate produces an empty migration:
+
+1. Make your model changes in ``biweeklybudget/models/``
+2. Generate empty migration: ``alembic -c biweeklybudget/alembic/alembic.ini revision -m "descriptive message"``
+3. Manually write the ``upgrade()`` and ``downgrade()`` functions following patterns from existing migrations
+4. Example pattern for adding a column (see ``d01774fa3ae3_add_transaction_field_to_store_sales_.py``):
+
+   .. code-block:: python
+
+      def upgrade():
+          op.add_column('table_name', sa.Column('field_name', sa.Type(...), nullable=...))
+
+      def downgrade():
+          op.drop_column('table_name', 'field_name')
+
+5. Test both upgrade and downgrade paths
+
+**Common Migration Commands:**
+
+* To see the current DB version: ``alembic -c biweeklybudget/alembic/alembic.ini current``
+* To see migration history: ``alembic -c biweeklybudget/alembic/alembic.ini history``
+* To apply migrations: ``alembic -c biweeklybudget/alembic/alembic.ini upgrade head``
+* To downgrade one revision: ``alembic -c biweeklybudget/alembic/alembic.ini downgrade -1``
+
+**Important Notes:**
+
+* If adding new models, make sure to import the model class in ``models/__init__.py`` so Alembic can detect it
+* Always test both upgrade and downgrade paths before committing
+* Migration tests in ``biweeklybudget/tests/migrations/`` verify that migrations work correctly
+* Column definitions in migrations should exactly match the model definitions
 
 Database Debugging
 ------------------

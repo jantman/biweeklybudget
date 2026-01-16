@@ -1,5 +1,5 @@
-biweeklybudget\.models\.fuel module
-===================================
+biweeklybudget.models.fuel module
+=================================
 
 .. automodule:: biweeklybudget.models.fuel
     :members:

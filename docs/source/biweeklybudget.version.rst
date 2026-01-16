@@ -1,5 +1,5 @@
-biweeklybudget\.version module
-==============================
+biweeklybudget.version module
+=============================
 
 .. automodule:: biweeklybudget.version
     :members:

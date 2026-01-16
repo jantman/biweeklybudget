@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.ofx module
-===========================================
+biweeklybudget.flaskapp.views.ofx module
+========================================
 
 .. automodule:: biweeklybudget.flaskapp.views.ofx
     :members:

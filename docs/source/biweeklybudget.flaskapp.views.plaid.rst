@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.plaid module
-=============================================
+biweeklybudget.flaskapp.views.plaid module
+==========================================
 
 .. automodule:: biweeklybudget.flaskapp.views.plaid
     :members:

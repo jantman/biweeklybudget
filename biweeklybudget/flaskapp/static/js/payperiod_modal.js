@@ -44,6 +44,7 @@ function schedToTransModalDivForm() {
         .addHidden('schedtotrans_frm_pp_date', 'payperiod_start_date', '')
         .addDatePicker('schedtotrans_frm_date', 'date', 'Date')
         .addCurrency('schedtotrans_frm_amount', 'amount', 'Amount')
+        .addCurrency('schedtotrans_frm_sales_tax', 'sales_tax', 'Sales Tax')
         .addText('schedtotrans_frm_description', 'description', 'Description')
         .addText('schedtotrans_frm_notes', 'notes', 'Notes')
         .render();
@@ -61,6 +62,7 @@ function schedToTransModalDivFillAndShow(msg) {
       $('#schedtotrans_frm_date').val(msg['date']['str']);
     }
     $('#schedtotrans_frm_amount').val(msg['amount']);
+    $('#schedtotrans_frm_sales_tax').val(msg['sales_tax']);
     $('#schedtotrans_frm_notes').val(msg['notes']);
     $("#modalDiv").modal('show');
 }

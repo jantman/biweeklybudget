@@ -220,6 +220,7 @@ class SampleDataLoader(object):
         res = [
             ScheduledTransaction(
                 amount=Decimal('111.11'),
+                sales_tax=Decimal('1.23'),
                 description='ST1',
                 notes='notesST1',
                 account=self.accounts['BankOne']['account'],
@@ -228,6 +229,7 @@ class SampleDataLoader(object):
             ),
             ScheduledTransaction(
                 amount=Decimal('222.22'),
+                sales_tax=Decimal('0.0'),
                 description='ST2',
                 notes='notesST2',
                 account=self.accounts['BankOne']['account'],
@@ -236,6 +238,7 @@ class SampleDataLoader(object):
             ),
             ScheduledTransaction(
                 amount=Decimal('-333.33'),
+                sales_tax=Decimal('4.56'),
                 description='ST3',
                 notes='notesST3',
                 account=self.accounts['BankTwoStale']['account'],
@@ -244,6 +247,7 @@ class SampleDataLoader(object):
             ),
             ScheduledTransaction(
                 amount=Decimal('444.44'),
+                sales_tax=Decimal('0.0'),
                 description='ST4',
                 notes='notesST4',
                 account=self.accounts['BankOne']['account'],
@@ -253,6 +257,7 @@ class SampleDataLoader(object):
             ),
             ScheduledTransaction(
                 amount=Decimal('555.55'),
+                sales_tax=Decimal('7.89'),
                 description='ST5',
                 notes='notesST5',
                 account=self.accounts['BankOne']['account'],
@@ -262,6 +267,7 @@ class SampleDataLoader(object):
             ),
             ScheduledTransaction(
                 amount=Decimal('666.66'),
+                sales_tax=Decimal('0.0'),
                 description='ST6',
                 notes='notesST6',
                 account=self.accounts['BankTwoStale']['account'],

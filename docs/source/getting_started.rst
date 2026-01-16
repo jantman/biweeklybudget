@@ -18,7 +18,7 @@ Vault (the latter only if you choose to take advantage of the OFX downloading), 
 * To use the new :ref:`Plaid <plaid>` automated transaction downloading functionality, a valid Plaid account.
 * To use the (old) automated OFX transaction downloading functionality:
 
-  * A running, reachable instance of `Hashicorp Vault <https://www.vaultproject.io/>`_ with your financial institution web credentials stored in it.
+  * A running, reachable instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_ with your financial institution web credentials stored in it.
   * If your bank does not support OFX remote access ("Direct Connect"), you will need to write a custom screen-scraper class using Selenium and a browser.
 
 Installation

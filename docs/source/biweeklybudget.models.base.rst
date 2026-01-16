@@ -1,5 +1,5 @@
-biweeklybudget\.models\.base module
-===================================
+biweeklybudget.models.base module
+=================================
 
 .. automodule:: biweeklybudget.models.base
     :members:

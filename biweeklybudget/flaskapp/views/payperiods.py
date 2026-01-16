@@ -251,10 +251,15 @@ class SchedToTransFormHandler(FormHandlerView):
         st_id = int(data['id'])
         st = db_session.query(ScheduledTransaction).get(st_id)
         d = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        if data.get('sales_tax', '').strip() == '':
+            sales_tax = Decimal('0.0')
+        else:
+            sales_tax = Decimal(data['sales_tax'])
         t = Transaction(
             date=d,
             budget_amounts={st.budget: Decimal(data['amount'])},
             budgeted_amount=st.amount,
+            sales_tax=sales_tax,
             description=data['description'],
             notes=data['notes'],
             account=st.account,

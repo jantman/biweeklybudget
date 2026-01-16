@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.scheduled module
-=================================================
+biweeklybudget.flaskapp.views.scheduled module
+==============================================
 
 .. automodule:: biweeklybudget.flaskapp.views.scheduled
     :members:

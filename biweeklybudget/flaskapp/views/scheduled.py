@@ -162,6 +162,10 @@ class ScheduledAjax(SearchableAjaxView):
                     'amount',
                     lambda a: float(a.amount)
                 ),
+                (
+                    'sales_tax',
+                    lambda a: float(a.sales_tax)
+                ),
                 'description',
                 (
                     'account',
@@ -266,6 +270,10 @@ class SchedTransFormHandler(FormHandlerView):
             # date
             trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.amount = Decimal(data['amount'])
+        if data.get('sales_tax', '').strip() == '':
+            trans.sales_tax = Decimal('0.0')
+        else:
+            trans.sales_tax = Decimal(data['sales_tax'])
         trans.account_id = int(data['account'])
         trans.budget_id = int(data['budget'])
         trans.notes = data['notes'].strip()

@@ -1,5 +1,5 @@
-biweeklybudget\.biweeklypayperiod module
-========================================
+biweeklybudget.biweeklypayperiod module
+=======================================
 
 .. automodule:: biweeklybudget.biweeklypayperiod
     :members:

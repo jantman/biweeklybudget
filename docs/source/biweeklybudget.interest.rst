@@ -1,5 +1,5 @@
-biweeklybudget\.interest module
-===============================
+biweeklybudget.interest module
+==============================
 
 .. automodule:: biweeklybudget.interest
     :members:

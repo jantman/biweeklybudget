@@ -1,5 +1,5 @@
-biweeklybudget\.ofxapi\.exceptions module
-=========================================
+biweeklybudget.ofxapi.exceptions module
+=======================================
 
 .. automodule:: biweeklybudget.ofxapi.exceptions
     :members:

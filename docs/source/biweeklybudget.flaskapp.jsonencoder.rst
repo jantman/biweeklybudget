@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.jsonencoder module
-============================================
+biweeklybudget.flaskapp.jsonencoder module
+==========================================
 
 .. automodule:: biweeklybudget.flaskapp.jsonencoder
     :members:

@@ -35,67 +35,44 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import pytest
 import logging
-import os
+from decimal import Decimal
+from datetime import date
 
-if os.environ.get('NEW_RELIC_LICENSE_KEY', '') != '':
-    import newrelic.agent
-    newrelic.agent.initialize()
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
 
-# workaround for https://github.com/jantman/versionfinder/issues/5
-# caused by versionfinder import in ``views/help.py``
-try:
-    import pip  # noqa
-except (ImportError, KeyError):
-    pass
-
-from flask import Flask
-
-from biweeklybudget.db import init_db, cleanup_db
-from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
-from biweeklybudget.utils import fix_werkzeug_logger
-
-format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
-         "%(name)s.%(funcName)s() ] %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=format)
-logger = logging.getLogger()
-
-if 'BIWEEKLYBUDGET_LOG_FILE' in os.environ:
-    # mainly for acceptance tests
-    fhandler = logging.FileHandler(os.environ['BIWEEKLYBUDGET_LOG_FILE'])
-    fhandler.setLevel(logging.DEBUG)
-    fhandler.setFormatter(logging.Formatter(fmt=format))
-    logger.addHandler(fhandler)
-
-fix_werkzeug_logger()
-
-app = Flask(__name__)
-app.jinja_env.add_extension('jinja2.ext.loopcontrols')
-app.json_encoder = MagicJSONEncoder
-init_db()
+logger = logging.getLogger(__name__)
 
 
-def before_request():
+@pytest.mark.migrations
+class TestAddScheduledTransactionSalesTaxField(MigrationTest):
     """
-    When running in debug mode, clear jinja cache.
+    Test for revision 1bb9e6a1c07c
     """
-    logger.warning('DEBUG MODE - Clearing jinja cache')
-    app.jinja_env.cache = {}
 
+    migration_rev = '1bb9e6a1c07c'
 
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    cleanup_db()
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
 
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        conn = engine.connect()
+        result = conn.execute(
+            'SELECT * FROM scheduled_transactions WHERE 1=2;'
+        )
+        columns = result.keys()
+        conn.close()
+        assert 'sales_tax' not in columns
 
-if app.debug:
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.before_request(before_request)
-    app.jinja_env.auto_reload = True
-
-
-from biweeklybudget.flaskapp.views import *  # noqa
-from biweeklybudget.flaskapp.filters import *  # noqa
-from biweeklybudget.flaskapp.jinja_tests import *  # noqa
-from biweeklybudget.flaskapp.context_processors import *  # noqa
-from biweeklybudget.flaskapp.cli_commands import *  # noqa
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        conn = engine.connect()
+        result = conn.execute(
+            'SELECT * FROM scheduled_transactions WHERE 1=2;'
+        )
+        columns = result.keys()
+        conn.close()
+        assert 'sales_tax' in columns

@@ -720,3 +720,87 @@ class TestSchedTransModal(AcceptanceHelper):
             '<a href="/accounts/1">BankOne (1)</a>'
         assert elems[1][6].get_attribute('innerHTML') == '' \
             '<a href="/budgets/7">Income (income) (7)</a>'
+
+    def test_50_sales_tax_verify_db(self, testdb):
+        """Verify initial sales_tax values in database"""
+        t = testdb.query(ScheduledTransaction).get(1)
+        assert t is not None
+        assert t.description == 'ST1'
+        assert t.sales_tax == Decimal('1.23')
+
+    def test_51_sales_tax_edit_modal(self, base_url, selenium):
+        """Test editing sales_tax value in modal"""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/scheduled/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Scheduled Transaction 1'
+        # verify sales_tax field is present and populated
+        sales_tax_elem = body.find_element_by_id('sched_frm_sales_tax')
+        assert sales_tax_elem.get_attribute('value') == '1.23'
+        # change sales_tax value
+        sales_tax_elem.clear()
+        sales_tax_elem.send_keys('9.87')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 1 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+
+    def test_52_sales_tax_verify_db_after_edit(self, testdb):
+        """Verify sales_tax was updated in database"""
+        t = testdb.query(ScheduledTransaction).get(1)
+        assert t is not None
+        assert t.description == 'ST1'
+        assert t.sales_tax == Decimal('9.87')
+
+    def test_53_sales_tax_add_with_sales_tax(self, base_url, selenium):
+        """Test adding new scheduled transaction with sales_tax"""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/scheduled')
+        link = selenium.find_element_by_id('btn_add_sched')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Scheduled Transaction'
+        desc = body.find_element_by_id('sched_frm_description')
+        desc.send_keys('NewSTWithSalesTax')
+        _type = body.find_element_by_id('sched_frm_type_monthly')
+        _type.click()
+        dom = body.find_element_by_id('sched_frm_day_of_month')
+        dom.send_keys('15')
+        amt = body.find_element_by_id('sched_frm_amount')
+        amt.send_keys('250.00')
+        sales_tax = body.find_element_by_id('sched_frm_sales_tax')
+        sales_tax.send_keys('12.50')
+        acct_sel = Select(body.find_element_by_id('sched_frm_account'))
+        acct_sel.select_by_value('1')
+        budget_sel = Select(body.find_element_by_id('sched_frm_budget'))
+        budget_sel.select_by_value('1')
+        # submit the form
+        selenium.find_element_by_id('modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        # check that we got positive confirmation
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements_by_tag_name('div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved ScheduledTransaction 11 ' \
+                                 'in database.'
+        # dismiss the modal
+        selenium.find_element_by_id('modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+
+    def test_54_sales_tax_verify_db_after_add(self, testdb):
+        """Verify new scheduled transaction with sales_tax in database"""
+        t = testdb.query(ScheduledTransaction).get(11)
+        assert t is not None
+        assert t.description == 'NewSTWithSalesTax'
+        assert t.amount == Decimal('250.00')
+        assert t.sales_tax == Decimal('12.50')
+        assert t.day_of_month == 15

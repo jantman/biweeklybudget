@@ -1,5 +1,5 @@
-biweeklybudget\.models\.txn\_reconcile module
-=============================================
+biweeklybudget.models.txn\_reconcile module
+===========================================
 
 .. automodule:: biweeklybudget.models.txn_reconcile
     :members:

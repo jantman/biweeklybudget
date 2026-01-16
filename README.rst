@@ -5,10 +5,6 @@ biweeklybudget
    :target: https://github.com/jantman/biweeklybudget/actions/workflows/run-tox-suite.yml
    :alt: GitHub Actions build for master branch
 
-.. image:: https://codecov.io/github/jantman/biweeklybudget/coverage.svg?branch=master
-   :target: https://codecov.io/github/jantman/biweeklybudget?branch=master
-   :alt: coverage report for master branch
-
 .. image:: https://readthedocs.org/projects/biweeklybudget/badge/?version=latest
    :target: https://readthedocs.org/projects/biweeklybudget/?badge=latest
    :alt: sphinx documentation for latest release
@@ -40,7 +36,7 @@ it's time to just bite the bullet and write something that isn't a pain.
 
 **Intended Audience:** This is decidedly not an end-user application. You should be familiar with Python/Flask/MySQL. If
 you're going to use the OFX-baseed automatic transaction download functionality (as opposed to Plaid), you should be
-familiar with `Hashicorp Vault <https://www.vaultproject.io/>`_
+familiar with `Hashicorp Vault <https://developer.hashicorp.com/vault>`_
 and how to run a reasonably secure installation of it. I personally don't recommend running this on anything other than
 your own computer that you physically control, given the sensitivity of the information. I also don't recommend making the
 application available to anything other than localhost, but if you do, you need to be aware of the security implications. This
@@ -83,7 +79,7 @@ Vault (if you choose to take advantage of the OFX downloading), which you can al
 * To use the automated Plaid transaction downloading functionality, a valid `Plaid <https://plaid.com/>`__ account.
 * To use the automated OFX Direct Connect transaction downloading functionality:
 
-  * A running, reachable instance of `Hashicorp Vault <https://www.vaultproject.io/>`_ with your financial institution web credentials stored in it.
+  * A running, reachable instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_ with your financial institution web credentials stored in it.
   * If your bank does not support OFX remote access ("Direct Connect"), you will need to write a custom screen-scraper class using Selenium and a browser.
 
 Installation

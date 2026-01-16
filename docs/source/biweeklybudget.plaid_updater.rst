@@ -1,5 +1,5 @@
-biweeklybudget\.plaid\_updater module
-=====================================
+biweeklybudget.plaid\_updater module
+====================================
 
 .. automodule:: biweeklybudget.plaid_updater
     :members:

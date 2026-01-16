@@ -1,5 +1,5 @@
-biweeklybudget\.flaskapp\.views\.reconcile module
-=================================================
+biweeklybudget.flaskapp.views.reconcile module
+==============================================
 
 .. automodule:: biweeklybudget.flaskapp.views.reconcile
     :members:

@@ -1,6 +1,57 @@
 Changelog
 =========
 
+1.3.0 (2026-01-16)
+------------------
+
+Main Feature
+++++++++++++
+
+* **Add sales_tax field to ScheduledTransaction** - ScheduledTransaction now tracks sales tax separately, allowing scheduled transactions to store sales tax values that are automatically transferred to Transactions when converted. This provides consistency with the existing sales tax tracking on Transactions and enables better budgeting for purchases that include sales tax.
+
+Infrastructure and CI Improvements
++++++++++++++++++++++++++++++++++++
+
+* Replace Codecov with custom PR coverage comments in GitHub Actions
+* Update GitHub Actions workflow to only run CI on PRs and master branch pushes
+* Add NewRelic APM agent support (automatically initialized if ``NEW_RELIC_LICENSE_KEY`` environment variable is set)
+* Improve test artifact collection and GitHub Actions upload behavior
+* Enhance Chrome stability options for CI test environments
+
+Testing Improvements
+++++++++++++++++++++
+
+* Fix Plaid Link integration tests for updated Plaid UI using ActionChains for custom input fields
+* Mark Plaid Link tests as xfail in CI due to headless Chrome incompatibility with Plaid's JavaScript flow
+* Improve test reliability with better handling of Plaid modal flows and success messages
+* Fix acceptance test timeouts and race conditions
+* Update sample data to include sales_tax values for comprehensive testing
+
+Bug Fixes and Maintenance
+++++++++++++++++++++++++++
+
+* Fix mysqldump SSL flag differences between MySQL and MariaDB in test helpers
+* Fix pycodestyle line length violations (increased max line length to 100)
+* Update Sphinx from 1.5.5 to 1.8.5 to fix documentation build
+* Fix documentation link checker exclusions for sites that block automated requests (Wikipedia, NIST NVD, Flaticon)
+* Update Hashicorp Vault documentation URLs from www.vaultproject.io to developer.hashicorp.com/vault
+* Update copyright years to 2016-2024
+* Bump newrelic to version 11.2.0
+
+Documentation
++++++++++++++
+
+* Add comprehensive ``CLAUDE.md`` file with development guidance for AI coding assistants
+* Add ``docs/features/`` directory structure for feature planning and tracking
+* Add detailed database migration workflows and troubleshooting guidance to development documentation
+* Document the importance of setting up test database before model changes when using Alembic autogenerate
+* Add Claude Code configuration file (``.claude/settings.json``) with approved command permissions
+
+Database Migration
+++++++++++++++++++
+
+* Migration ``1bb9e6a1c07c_add_scheduledtransaction_sales_tax_field`` adds the ``sales_tax`` column (Numeric(10,4), nullable=False, default=0.0) to the ``scheduled_transactions`` table
+
 1.2.0 (2024-01-25)
 ------------------
 

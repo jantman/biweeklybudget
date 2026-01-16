@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(tox:*)",
+      "Bash(pytest:*)",
+      "Bash(py.test:*)",
+      "Bash(python dev/setup_test_db.py:*)",
+      "Bash(python -m pytest:*)"
+    ]
+  }
+}

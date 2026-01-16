@@ -1,5 +1,10 @@
 name: Run Tox Suite
-on: [push, pull_request, workflow_dispatch]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 jobs:
   py310:
     runs-on: ubuntu-latest
@@ -32,23 +37,20 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+      - name: Archive test results and artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
+          if-no-files-found: ignore
           path: |
             results/
             coverage.xml
             htmlcov/
-      - name: CodeCov Upload
-        uses: codecov/codecov-action@v3
-        with:
-          flags: unittests
-          name: coverage-${{ github.job }}
-          fail_ci_if_error: true
   docs:
     runs-on: ubuntu-latest
     strategy:
@@ -141,10 +143,12 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+      - name: Archive test results and artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -153,13 +157,7 @@ jobs:
             results/
             coverage-acceptance.xml
             htmlcov-acceptance/
-      - name: CodeCov Upload
-        uses: codecov/codecov-action@v3
-        with:
-          flags: acceptance
-          files: ./coverage-acceptance.xml
-          name: coverage-${{ github.job }}
-          fail_ci_if_error: true
+            .tox/acceptance/liveserver.log
   plaid:
     runs-on: ubuntu-latest
     strategy:
@@ -197,16 +195,19 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+      - name: Archive test results and artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
           if-no-files-found: ignore
           path: |
             results/
+            .tox/plaid/liveserver.log
   docker:
     runs-on: ubuntu-latest
     strategy:
@@ -238,6 +239,8 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Login to Docker Hub if master branch
         if: github.ref_type == 'branch' && github.ref_name == 'master'
         uses: docker/login-action@v2
@@ -247,8 +250,8 @@ jobs:
       - name: Run tests
         id: run-tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+      - name: Archive test results and artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -292,10 +295,12 @@ jobs:
         run: python -m pip install --upgrade pip && pip install tox pymysql
       - name: Setup test DB
         run: python dev/setup_test_db.py
+      - name: Create results directory
+        run: mkdir -p results
       - name: Run tests
         run: tox -e ${{ github.job }}
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v3
+      - name: Archive test results and artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -304,4 +309,85 @@ jobs:
             results/
             coverage.xml
             htmlcov/
+  coverage:
+    runs-on: ubuntu-latest
+    needs: py310
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-and-coverage-py310
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(python -c "
+          import xml.etree.ElementTree as ET
+          try:
+              tree = ET.parse('coverage.xml')
+              root = tree.getroot()
+              coverage = root.attrib.get('line-rate', '0')
+              percentage = round(float(coverage) * 100, 1)
+              print(f'COVERAGE_PERCENTAGE={percentage}')
+          except:
+              print('COVERAGE_PERCENTAGE=0')
+          " | grep COVERAGE_PERCENTAGE | cut -d= -f2)
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+
+          # Generate coverage summary
+          echo "## 📊 Code Coverage Report" > coverage_comment.md
+          echo "" >> coverage_comment.md
+          echo "**Coverage: ${COVERAGE}%**" >> coverage_comment.md
+          echo "" >> coverage_comment.md
+
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            echo "✅ Coverage meets minimum threshold of 80%" >> coverage_comment.md
+          else
+            echo "⚠️ Coverage below minimum threshold of 80%" >> coverage_comment.md
+          fi
+
+          echo "" >> coverage_comment.md
+          echo "📁 **Detailed Report**: Check the \`test-results-and-coverage-py310\` artifact for full HTML report" >> coverage_comment.md
+          echo "" >> coverage_comment.md
+          echo "🔍 **Generated by**: Unit tests (\`tox -e py310\`)" >> coverage_comment.md
+      - name: Comment PR with coverage
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('coverage_comment.md', 'utf8');
+
+            // Find existing coverage comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('📊 Code Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
 
