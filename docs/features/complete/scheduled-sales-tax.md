@@ -137,7 +137,7 @@ This application supports Scheduled Transactions which are displayed in the appr
 **Prefix: SchedTax - 5.x**
 
 5.1. Run complete test suites
-   - `tox -e py310` - Unit tests
+   - `tox -e py314` - Unit tests
    - `tox -e acceptance` - Acceptance tests (increase timeout if needed)
    - `tox -e migrations` - Migration tests
    - `tox -e docker` - Docker build tests

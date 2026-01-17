@@ -77,8 +77,8 @@ for lname in ['versionfinder', 'pip', 'git', 'requests', 'docker']:
 if sys.version_info[0:2] < (3, 6):
     raise SystemExit('ERROR: Docker build can only run under py >= 3.6')
 
-DOCKER_IMG = 'python:3.10-alpine3.16'
-PY_VERSION = '3.10'
+DOCKER_IMG = 'python:3.14-alpine3.23'
+PY_VERSION = '3.14'
 ACCEPTANCE_ENV = 'acceptance'
 
 DOCKERFILE_TEMPLATE = """

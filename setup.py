@@ -64,7 +64,7 @@ classifiers = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.14',
     'Topic :: Office/Business :: Financial'
 ]
 

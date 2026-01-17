@@ -12,7 +12,7 @@ Requirements
 Using the dockerized version will eliminate all of these dependencies aside from MySQL and
 Vault (the latter only if you choose to take advantage of the OFX downloading), both of which you can also run in containers.
 
-* Python 3.6+ (currently tested with 3.6, 3.7, 3.8 and developed with 3.8). **Python 2 is not supported.**
+* Python 3.10+ (currently developed and tested with 3.14).
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_ ). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the new :ref:`Plaid <plaid>` automated transaction downloading functionality, a valid Plaid account.
@@ -28,12 +28,12 @@ It's recommended that you install into a virtual environment (virtualenv /
 venv). See the `virtualenv usage documentation <http://www.virtualenv.org/en/latest/>`_
 for information on how to create a venv.
 
-This app is developed against Python 3.8. It does not support Python3 < 3.4.
+This app is developed against Python 3.14. It does not support Python3 < 3.8.
 
 .. code-block:: bash
 
     mkdir biweeklybudget
-    virtualenv --python=python3.8 .
+    virtualenv --python=python3.14 .
     source bin/activate
     pip install biweeklybudget
 
@@ -144,7 +144,7 @@ The only dependencies for a Docker installation are:
 is backed up and will not be removed.
 
 The `image <https://hub.docker.com/r/jantman/biweeklybudget/>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
-wrapper and uses `gunicorn <http://gunicorn.org/>`_ under Python 3.6 to serve the web UI, exposed on port 80. Note that,
+wrapper and uses `gunicorn <http://gunicorn.org/>`_ under Python 3.14 to serve the web UI, exposed on port 80. Note that,
 while it runs with 4 worker threads, there is no HTTP proxy in front of Gunicorn and this image is intended for local network
 use by a single user/client. The image also automatically runs database migrations in a safe manner at start, before starting
 the Flask application.
@@ -246,7 +246,7 @@ MySQL running on the Docker host:
 .. code-block:: none
 
     docker run --name biweeklybudget -e SETTINGS_MODULE=biweeklybudget.mysettings \
-    -v /opt/biweeklybudget-settings.py:/app/lib/python3.6/site-packages/biweeklybudget/mysettings.py \
+    -v /opt/biweeklybudget-settings.py:/app/lib/python3.14/site-packages/biweeklybudget/mysettings.py \
     -p 8080:80 --link mysql jantman/biweeklybudget:latest
 
 Note on Locales
