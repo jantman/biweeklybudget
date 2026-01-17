@@ -94,7 +94,7 @@ class TestIndexAccounts(AcceptanceHelper):
         ]
         assert self.tbody2textlist(table) == [
             ['BankOne', '$12,789.01 (14 hours ago)', '$0.00', '$12,789.01'],
-            ['BankTwoStale', '$100.23 (18 days ago)', '-$333.33', '$433.56']
+            ['BankTwoStale', '$100.23 (a month ago)', '-$333.33', '$433.56']
         ]
         links = []
         tbody = table.find_element(By.TAG_NAME, 'tbody')
@@ -113,7 +113,7 @@ class TestIndexAccounts(AcceptanceHelper):
         rows = tbody.find_elements(By.TAG_NAME, 'tr')
         bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[1]
         bal_span = bankTwoStale_bal_td.find_elements(By.TAG_NAME, 'span')[1]
-        assert bal_span.text == '(18 days ago)'
+        assert bal_span.text == '(a month ago)'
         assert bal_span.get_attribute('class') == 'data_age text-danger'
 
     def test_credit_table(self, selenium):
@@ -472,7 +472,7 @@ class TestAccountTransfer(AcceptanceHelper):
             ],
             [
                 'BankTwoStale',
-                '$100.23 (18 days ago)',
+                '$100.23 (a month ago)',
                 '-$333.33',
                 '$433.56'
             ]
@@ -579,7 +579,7 @@ class TestAccountTransfer(AcceptanceHelper):
             ],
             [
                 'BankTwoStale',
-                '$100.23 (18 days ago)',
+                '$100.23 (a month ago)',
                 '-$456.78',
                 '$557.01'
             ]

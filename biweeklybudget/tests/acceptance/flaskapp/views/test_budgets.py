@@ -132,7 +132,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P1desc'
         assert selenium.find_element(By.ID, 
-            'budget_frm_starting_balance').get_attribute('value') == '100'
+            'budget_frm_starting_balance').get_attribute('value') == '100.0000'
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
@@ -213,7 +213,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P2desc'
         assert selenium.find_element(By.ID, 
-            'budget_frm_starting_balance').get_attribute('value') == '234'
+            'budget_frm_starting_balance').get_attribute('value') == '234.0000'
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
@@ -243,7 +243,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P3desc'
         assert selenium.find_element(By.ID, 
-            'budget_frm_starting_balance').get_attribute('value') == '10.23'
+            'budget_frm_starting_balance').get_attribute('value') == '10.2300'
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
@@ -276,7 +276,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element(By.ID, 
-            'budget_frm_current_balance').get_attribute('value') == '1284.23'
+            'budget_frm_current_balance').get_attribute('value') == '1284.2300'
         assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
@@ -304,7 +304,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element(By.ID, 
-            'budget_frm_current_balance').get_attribute('value') == '9482.29'
+            'budget_frm_current_balance').get_attribute('value') == '9482.2900'
         assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
@@ -334,7 +334,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
         assert selenium.find_element(By.ID, 
-            'budget_frm_current_balance').get_attribute('value') == '-92.29'
+            'budget_frm_current_balance').get_attribute('value') == '-92.2900'
         assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
@@ -370,7 +370,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'IncomeDesc'
         assert selenium.find_element(By.ID, 
-            'budget_frm_starting_balance').get_attribute('value') == '2345.67'
+            'budget_frm_starting_balance').get_attribute('value') == '2345.6700'
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
@@ -450,7 +450,7 @@ class TestBudgetModals(AcceptanceHelper):
         assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'EditedP1desc'
         assert selenium.find_element(By.ID, 
-            'budget_frm_starting_balance').get_attribute('value') == '2345.67'
+            'budget_frm_starting_balance').get_attribute('value') == '2345.6700'
         assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
         assert selenium.find_element(By.ID, 
