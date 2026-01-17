@@ -110,7 +110,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     def test_02_plaid_items_table_is_empty(self, base_url, selenium):
         self.get(selenium, base_url + '/plaid-update')
-        table = selenium.find_element_by_id('table-items-plaid')
+        table = selenium.find_element(By.ID, 'table-items-plaid')
         texts = self.tbody2textlist(table)
         assert texts == []
 
@@ -118,7 +118,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        selenium.find_element_by_id('btn_link_plaid').click()
+        selenium.find_element(By.ID, 'btn_link_plaid').click()
         self.wait_for_jquery_done(selenium)
         WebDriverWait(selenium, 30).until(
             EC.frame_to_be_available_and_switch_to_it(
@@ -206,7 +206,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 'First Platypus Bank'
             )
         )
-        table = selenium.find_element_by_id('table-items-plaid')
+        table = selenium.find_element(By.ID, 'table-items-plaid')
         texts = self.tbody2textlist(table)
         assert len(texts) == 1
         assert texts[0][1] == 'First Platypus Bank (ins_109508)'
@@ -284,7 +284,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.wait_for_jquery_done(selenium)
         print('Waiting 30 seconds for item to be ready...')
         time.sleep(30)
-        selenium.find_element_by_id('btn_plaid_txns').click()
+        selenium.find_element(By.ID, 'btn_plaid_txns').click()
         self.wait_for_jquery_done(selenium)
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
@@ -293,9 +293,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 (By.ID, 'table-accounts-plaid')
             )
         )
-        div = selenium.find_element_by_class_name('unreconciled-alert')
+        div = selenium.find_element(By.CLASS_NAME, 'unreconciled-alert')
         assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
-        table = selenium.find_element_by_id('table-accounts-plaid')
+        table = selenium.find_element(By.ID, 'table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
                               f"{self.plaid_accts['credit']['item_id']})"
@@ -342,7 +342,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        selenium.find_element_by_id('btn_plaid_txns').click()
+        selenium.find_element(By.ID, 'btn_plaid_txns').click()
         self.wait_for_jquery_done(selenium)
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
@@ -351,9 +351,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 (By.ID, 'table-accounts-plaid')
             )
         )
-        div = selenium.find_element_by_class_name('unreconciled-alert')
+        div = selenium.find_element(By.CLASS_NAME, 'unreconciled-alert')
         assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
-        table = selenium.find_element_by_id('table-accounts-plaid')
+        table = selenium.find_element(By.ID, 'table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
                               f"{self.plaid_accts['credit']['item_id']})"
@@ -381,7 +381,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        button = selenium.find_element_by_id('btn_import_plaid')
+        button = selenium.find_element(By.ID, 'btn_import_plaid')
         button.click()
         # wait for page reload, indicated by staleness of element
         WebDriverWait(selenium, 20).until(
@@ -418,7 +418,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
         item_id = self.plaid_accts['checking']['item_id']
-        button = selenium.find_element_by_css_selector(
+        button = selenium.find_element(By.CSS_SELECTOR, 
             f'a[onclick="plaidRefresh(\'{item_id}\')"]'
         )
         button.click()
@@ -456,7 +456,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        selenium.find_element_by_id('btn_plaid_txns').click()
+        selenium.find_element(By.ID, 'btn_plaid_txns').click()
         self.wait_for_jquery_done(selenium)
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
@@ -465,7 +465,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 (By.ID, 'table-accounts-plaid')
             )
         )
-        table = selenium.find_element_by_id('table-accounts-plaid')
+        table = selenium.find_element(By.ID, 'table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
                               f"{self.plaid_accts['credit']['item_id']})"
@@ -485,7 +485,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        button = selenium.find_element_by_css_selector(
+        button = selenium.find_element(By.CSS_SELECTOR, 
             f'a[onclick="plaidUpdate(\'{item_id}\')"]'
         )
         button.click()
@@ -568,7 +568,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        selenium.find_element_by_id('btn_plaid_txns').click()
+        selenium.find_element(By.ID, 'btn_plaid_txns').click()
         self.wait_for_jquery_done(selenium)
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
@@ -577,9 +577,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
                 (By.ID, 'table-accounts-plaid')
             )
         )
-        div = selenium.find_element_by_class_name('unreconciled-alert')
+        div = selenium.find_element(By.CLASS_NAME, 'unreconciled-alert')
         assert re.match(r'\d{2} Unreconciled OFXTransactions\.', div.text)
-        table = selenium.find_element_by_id('table-accounts-plaid')
+        table = selenium.find_element(By.ID, 'table-accounts-plaid')
         texts = self.tbody2textlist(table)
         assert texts[0][0] == f"First Platypus Bank (" \
                               f"{self.plaid_accts['credit']['item_id']})"

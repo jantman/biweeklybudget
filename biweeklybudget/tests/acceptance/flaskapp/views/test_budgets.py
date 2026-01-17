@@ -43,6 +43,7 @@ from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.utils import dtnow
 
@@ -57,24 +58,24 @@ class TestBudgets(AcceptanceHelper):
         self.get(selenium, base_url + '/budgets')
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Budgets - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
     def test_initial_data(self, selenium):
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert ptexts == [
             ['yes', 'Income (7) (income)', '$2,345.67'],
@@ -118,69 +119,69 @@ class TestBudgetModals(AcceptanceHelper):
 
     def test_01_budget_modal_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Periodic1 (1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Periodic1'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P1desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == '100'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_02_budget_modal_update_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Periodic1 (1)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Periodic1 (1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        name = selenium.find_element_by_id('budget_frm_name')
+        name = selenium.find_element(By.ID, 'budget_frm_name')
         name.clear()
         name.send_keys('EditedPeriodic1')
-        desc = selenium.find_element_by_id('budget_frm_description')
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
         desc.clear()
         desc.send_keys('EditedP1desc')
-        sb = selenium.find_element_by_id('budget_frm_starting_balance')
+        sb = selenium.find_element(By.ID, 'budget_frm_starting_balance')
         assert sb.is_displayed()
         sb.clear()
         sb.send_keys('2345.67')
-        selenium.find_element_by_id('budget_frm_active').click()
-        assert selenium.find_element_by_id(
+        selenium.find_element(By.ID, 'budget_frm_active').click()
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Budget 1 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-periodic-budgets')
         # test that updated budget was removed from the page
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         pelems = self.tbody2elemlist(ptable)
         assert pelems[0][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(1, null)">' \
@@ -199,148 +200,148 @@ class TestBudgetModals(AcceptanceHelper):
 
     def test_10_populate_edit_periodic_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Periodic2 (2)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Periodic2 (2)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 2'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Periodic2'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P2desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == '234'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_11_populate_edit_periodic_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath(
+        link = selenium.find_element(By.XPATH, 
             '//a[text()="Periodic3 Inactive (3)"]'
         )
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 3'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Periodic3 Inactive'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'P3desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == '10.23'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_12_populate_edit_standing_1_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Standing1 (4)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 4'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Standing1'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'S1desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == '1284.23'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is True
 
     def test_13_populate_edit_standing_2_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Standing2 (5)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing2 (5)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 5'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Standing2'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'S2desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == '9482.29'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_14_populate_edit_standing_3_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath(
+        link = selenium.find_element(By.XPATH, 
             '//a[text()="Standing3 Inactive (6)"]'
         )
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 6'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Standing3 Inactive'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'S3desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == '-92.29'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_20_income_verify_db(self, testdb):
@@ -356,68 +357,68 @@ class TestBudgetModals(AcceptanceHelper):
 
     def test_21_populate_income_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Income (7)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 7'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'Income'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'IncomeDesc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == '2345.67'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id('budget_frm_active').is_selected()
-        assert selenium.find_element_by_id('budget_frm_income').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 'budget_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'budget_frm_income').is_selected()
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is True
 
     def test_22_update_income_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_xpath('//a[text()="Income (7)"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Income (7)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        name = selenium.find_element_by_id('budget_frm_name')
+        name = selenium.find_element(By.ID, 'budget_frm_name')
         name.clear()
         name.send_keys('EditedIncome')
-        desc = selenium.find_element_by_id('budget_frm_description')
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
         desc.send_keys('edited')
-        sb = selenium.find_element_by_id('budget_frm_starting_balance')
+        sb = selenium.find_element(By.ID, 'budget_frm_starting_balance')
         assert sb.is_displayed()
         sb.clear()
         sb.send_keys('123.45')
-        selenium.find_element_by_id('budget_frm_active').click()
-        assert selenium.find_element_by_id(
+        selenium.find_element(By.ID, 'budget_frm_active').click()
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is True
-        selenium.find_element_by_id('budget_frm_omit_from_graphs').click()
+        selenium.find_element(By.ID, 'budget_frm_omit_from_graphs').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Budget 7 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-periodic-budgets')
         # test that updated budget was removed from the page
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         pelems = self.tbody2elemlist(ptable)
         assert pelems[0][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(7, null)">' \
@@ -440,67 +441,67 @@ class TestBudgetModals(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Budget 1'
-        assert selenium.find_element_by_id('budget_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
             'value') == 'EditedPeriodic1'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_periodic').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_type_standing').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_description').get_attribute('value') == 'EditedP1desc'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance').get_attribute('value') == '2345.67'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_starting_balance_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_current_balance_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
 
     def test_41_add_standing_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_id('btn_add_budget')
+        link = selenium.find_element(By.ID, 'btn_add_budget')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        name = selenium.find_element_by_id('budget_frm_name')
+        name = selenium.find_element(By.ID, 'budget_frm_name')
         name.clear()
         name.send_keys('NewStanding')
-        standing = selenium.find_element_by_id('budget_frm_type_standing')
+        standing = selenium.find_element(By.ID, 'budget_frm_type_standing')
         standing.click()
-        desc = selenium.find_element_by_id('budget_frm_description')
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
         desc.clear()
         desc.send_keys('Newly Added Standing')
-        sb = selenium.find_element_by_id('budget_frm_current_balance')
+        sb = selenium.find_element(By.ID, 'budget_frm_current_balance')
         assert sb.is_displayed()
         sb.clear()
         sb.send_keys('6789.12')
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_income').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Budget 8 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-periodic-budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         selems = self.tbody2elemlist(stable)
         assert selems[0][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(8, null)">' \
@@ -520,43 +521,43 @@ class TestBudgetModals(AcceptanceHelper):
     def test_51_add_income_modal(self, base_url, selenium):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
-        link = selenium.find_element_by_id('btn_add_budget')
+        link = selenium.find_element(By.ID, 'btn_add_budget')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        name = selenium.find_element_by_id('budget_frm_name')
+        name = selenium.find_element(By.ID, 'budget_frm_name')
         name.clear()
         name.send_keys('NewIncome')
-        periodic = selenium.find_element_by_id('budget_frm_type_periodic')
+        periodic = selenium.find_element(By.ID, 'budget_frm_type_periodic')
         periodic.click()
-        desc = selenium.find_element_by_id('budget_frm_description')
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
         desc.clear()
         desc.send_keys('Newly Added Income')
-        sb = selenium.find_element_by_id('budget_frm_starting_balance')
+        sb = selenium.find_element(By.ID, 'budget_frm_starting_balance')
         assert sb.is_displayed()
         sb.clear()
         sb.send_keys('123.45')
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_active').is_selected()
-        income = selenium.find_element_by_id('budget_frm_income')
+        income = selenium.find_element(By.ID, 'budget_frm_income')
         income.click()
         assert income.is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'budget_frm_omit_from_graphs').is_selected() is False
-        selenium.find_element_by_id('budget_frm_omit_from_graphs').click()
+        selenium.find_element(By.ID, 'budget_frm_omit_from_graphs').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Budget 9 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-periodic-budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-periodic-budgets')
+        stable = selenium.find_element(By.ID, 'table-periodic-budgets')
         selems = self.tbody2elemlist(stable)
         assert selems[2][1].get_attribute(
             'innerHTML') == '<a href="javascript:budgetModal(9, null)">' \
@@ -594,23 +595,23 @@ class TestBudgetTransfer(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29']
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
-        link = selenium.find_element_by_id('btn_budget_txfr')
+        link = selenium.find_element(By.ID, 'btn_budget_txfr')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'budg_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
-        amt = body.find_element_by_id('budg_txfr_frm_amount')
+        amt = body.find_element(By.ID, 'budg_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
-        acct_sel = Select(body.find_element_by_id('budg_txfr_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'budg_txfr_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -625,7 +626,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         from_budget_sel = Select(
-            body.find_element_by_id('budg_txfr_frm_from_budget')
+            body.find_element(By.ID, 'budg_txfr_frm_from_budget')
         )
         opts = []
         for o in from_budget_sel.options:
@@ -642,7 +643,7 @@ class TestBudgetTransfer(AcceptanceHelper):
             'value') == 'None'
         from_budget_sel.select_by_value('2')
         to_budget_sel = Select(
-            body.find_element_by_id('budg_txfr_frm_to_budget')
+            body.find_element(By.ID, 'budg_txfr_frm_to_budget')
         )
         opts = []
         for o in from_budget_sel.options:
@@ -658,27 +659,27 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert to_budget_sel.first_selected_option.get_attribute(
             'value') == 'None'
         to_budget_sel.select_by_value('5')
-        notes = selenium.find_element_by_id('budg_txfr_frm_notes')
+        notes = selenium.find_element(By.ID, 'budg_txfr_frm_notes')
         notes.clear()
         notes.send_keys('Budget Transfer Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-standing-budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts[1] == ['yes', 'Standing2 (5)', '$9,605.74']
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
 
@@ -737,10 +738,10 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29']
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
         pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
@@ -749,17 +750,17 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert pp.budget_sums[2]['remaining'] == Decimal('11.78')
         assert pp.budget_sums[2]['spent'] == Decimal('222.22')
         assert pp.budget_sums[2]['trans_total'] == Decimal('222.22')
-        link = selenium.find_element_by_id('btn_budget_txfr')
+        link = selenium.find_element(By.ID, 'btn_budget_txfr')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'budg_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
-        amt = body.find_element_by_id('budg_txfr_frm_amount')
+        amt = body.find_element(By.ID, 'budg_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
-        acct_sel = Select(body.find_element_by_id('budg_txfr_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'budg_txfr_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -774,7 +775,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         from_budget_sel = Select(
-            body.find_element_by_id('budg_txfr_frm_from_budget')
+            body.find_element(By.ID, 'budg_txfr_frm_from_budget')
         )
         opts = []
         for o in from_budget_sel.options:
@@ -791,7 +792,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
             'value') == 'None'
         from_budget_sel.select_by_value('5')
         to_budget_sel = Select(
-            body.find_element_by_id('budg_txfr_frm_to_budget')
+            body.find_element(By.ID, 'budg_txfr_frm_to_budget')
         )
         opts = []
         for o in from_budget_sel.options:
@@ -807,27 +808,27 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert to_budget_sel.first_selected_option.get_attribute(
             'value') == 'None'
         to_budget_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('budg_txfr_frm_notes')
+        notes = selenium.find_element(By.ID, 'budg_txfr_frm_notes')
         notes.clear()
         notes.send_keys('Budget Transfer Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-standing-budgets')
         # test that updated budget was removed from the page
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts[1] == ['yes', 'Standing2 (5)', '$9,358.84']
-        ptable = selenium.find_element_by_id('table-periodic-budgets')
+        ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
 

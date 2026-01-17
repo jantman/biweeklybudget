@@ -206,17 +206,17 @@ class TestReconcile(AcceptanceHelper):
         self.get(selenium, base_url + '/reconcile')
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Reconcile Transactions - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -515,10 +515,10 @@ class TestColumns(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+            for x in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -644,10 +644,10 @@ class TestColumns(ReconcileHelper):
 
     def test_10_ofxtrans(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -717,10 +717,10 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_06_transactions(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+            for x in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -780,10 +780,10 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_07_ofxtrans(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -853,10 +853,10 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_09_transactions(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+            for x in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -880,10 +880,10 @@ class TestAccountReconcileFalse(ReconcileHelper):
 
     def test_10_ofxtrans(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -942,34 +942,34 @@ class TestTransactionEditModal(ReconcileHelper):
     def test_07_edit(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        link = selenium.find_element_by_xpath('//a[text()="Trans 1"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Trans 1"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '1'
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('-123.45')
-        desc = body.find_element_by_id('trans_frm_description')
+        desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('edited')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 1 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that updated budget was removed from the page
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(t.get_attribute('outerHTML'))
-            for t in trans_div.find_elements_by_class_name('reconcile-trans')
+            for t in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -1036,17 +1036,17 @@ class TestDragLimitations(ReconcileHelper):
     def test_06_success(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-2-OFX3')
-        tgt = selenium.find_element_by_id(
-            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-2-OFX3')
+        tgt = selenium.find_element(By.ID, 
+            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
         # ensure that the OFX div was hidden in the OFX column
-        src = selenium.find_element_by_id('ofx-2-OFX3')
+        src = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert src.is_displayed() is False
         # ensure that the OFX div was placed in the drop target
-        tgt = selenium.find_element_by_id('trans-3')
+        tgt = selenium.find_element(By.ID, 'trans-3')
         expected = txn_div(
             3,
             date(2017, 4, 11),
@@ -1077,18 +1077,18 @@ class TestDragLimitations(ReconcileHelper):
     def test_07_already_has_ofx(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-2-OFXT6')
-        src2 = selenium.find_element_by_id('ofx-2-OFXT7')
-        tgt = selenium.find_element_by_id(
-            'trans-5').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-2-OFXT6')
+        src2 = selenium.find_element(By.ID, 'ofx-2-OFXT7')
+        tgt = selenium.find_element(By.ID, 
+            'trans-5').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
         # ensure that the OFX div was hidden in the OFX column
-        src = selenium.find_element_by_id('ofx-2-OFXT6')
+        src = selenium.find_element(By.ID, 'ofx-2-OFXT6')
         assert src.is_displayed() is False
         # ensure that the OFX div was placed in the drop target
-        tgt = selenium.find_element_by_id('trans-5')
+        tgt = selenium.find_element(By.ID, 'trans-5')
         expected = txn_div(
             5,
             date(2017, 4, 16),
@@ -1112,9 +1112,9 @@ class TestDragLimitations(ReconcileHelper):
             5: [2, 'OFXT6']
         }
         # get the innerHTML of both columns
-        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+        trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML')
         # attempt to drag the other OFX
         chain = ActionChains(selenium)
@@ -1122,9 +1122,9 @@ class TestDragLimitations(ReconcileHelper):
         # sleep a bit for the drag to stop
         sleep(1)
         # ensure both columns are still the same
-        assert selenium.find_element_by_id('trans-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML') == trans_div
-        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML') == ofxtrans_div
         # ensure reconciled JS var is still the same
         assert self.get_reconciled(selenium) == {
@@ -1134,13 +1134,13 @@ class TestDragLimitations(ReconcileHelper):
     def test_08_wrong_account(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-1-OFXT4')
-        tgt = selenium.find_element_by_id(
-            'trans-4').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
+        tgt = selenium.find_element(By.ID, 
+            'trans-4').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
-        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+        trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML')
         # drag and drop
         chain = ActionChains(selenium)
@@ -1148,9 +1148,9 @@ class TestDragLimitations(ReconcileHelper):
         # sleep a bit for the drag to stop
         sleep(1)
         # ensure both columns are still the same
-        assert selenium.find_element_by_id('trans-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML') == trans_div
-        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML') == ofxtrans_div
         # ensure reconciled JS var is still the same
         assert self.get_reconciled(selenium) == {}
@@ -1158,13 +1158,13 @@ class TestDragLimitations(ReconcileHelper):
     def test_09_wrong_amount(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-1-OFXT4')
-        tgt = selenium.find_element_by_id(
-            'trans-1').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
+        tgt = selenium.find_element(By.ID, 
+            'trans-1').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
-        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+        trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML')
         # drag and drop
         chain = ActionChains(selenium)
@@ -1172,9 +1172,9 @@ class TestDragLimitations(ReconcileHelper):
         # sleep a bit for the drag to stop
         sleep(1)
         # ensure both columns are still the same
-        assert selenium.find_element_by_id('trans-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML') == trans_div
-        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML') == ofxtrans_div
         # ensure reconciled JS var is still the same
         assert self.get_reconciled(selenium) == {}
@@ -1182,13 +1182,13 @@ class TestDragLimitations(ReconcileHelper):
     def test_10_wrong_acct_and_amount(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-1-OFXT4')
-        tgt = selenium.find_element_by_id(
-            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
+        tgt = selenium.find_element(By.ID, 
+            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
-        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+        trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML')
         # drag and drop
         chain = ActionChains(selenium)
@@ -1196,9 +1196,9 @@ class TestDragLimitations(ReconcileHelper):
         # sleep a bit for the drag to stop
         sleep(1)
         # ensure both columns are still the same
-        assert selenium.find_element_by_id('trans-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML') == trans_div
-        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML') == ofxtrans_div
         # ensure reconciled JS var is still the same
         assert self.get_reconciled(selenium) == {}
@@ -1206,17 +1206,17 @@ class TestDragLimitations(ReconcileHelper):
     def test_11_unreconcile(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
-        src = selenium.find_element_by_id('ofx-2-OFX3')
-        tgt = selenium.find_element_by_id(
-            'trans-3').find_element_by_class_name('reconcile-drop-target')
+        src = selenium.find_element(By.ID, 'ofx-2-OFX3')
+        tgt = selenium.find_element(By.ID, 
+            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
         # ensure that the OFX div was hidden in the OFX column
-        src = selenium.find_element_by_id('ofx-2-OFX3')
+        src = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert src.is_displayed() is False
         # ensure that the OFX div was placed in the drop target
-        tgt = selenium.find_element_by_id('trans-3')
+        tgt = selenium.find_element(By.ID, 'trans-3')
         expected = txn_div(
             3,
             date(2017, 4, 11),
@@ -1244,10 +1244,10 @@ class TestDragLimitations(ReconcileHelper):
             3: [2, 'OFX3']
         }
         # unreconcile
-        link = tgt.find_element_by_xpath('//a[text()="Unreconcile"]')
+        link = tgt.find_element(By.XPATH, '//a[text()="Unreconcile"]')
         link.click()
-        src = selenium.find_element_by_id('ofx-2-OFX3')
-        tgt = selenium.find_element_by_id('trans-3')
+        src = selenium.find_element(By.ID, 'ofx-2-OFX3')
+        tgt = selenium.find_element(By.ID, 'trans-3')
         assert src.is_displayed() is True
         assert self.normalize_html(src.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
@@ -1257,7 +1257,7 @@ class TestDragLimitations(ReconcileHelper):
             'OFX3',
             'ofx3-trans2-st1'
         )
-        assert tgt.find_element_by_class_name(
+        assert tgt.find_element(By.CLASS_NAME, 
             'reconcile-drop-target').get_attribute('innerHTML') == ''
         assert self.get_reconciled(selenium) == {}
         expected = txn_div(
@@ -1294,10 +1294,10 @@ class TestDragAndDropReconcile(ReconcileHelper):
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-2-OFX3'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-2-OFX3'),
+            selenium.find_element(By.ID, 
                 'trans-3'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         """
         IMPORTANT - 2022-10-22
@@ -1335,32 +1335,32 @@ class TestDragAndDropReconcile(ReconcileHelper):
         )
         sleep(2)
         chain.move_to_element(
-            selenium.find_element_by_id('trans-1')
+            selenium.find_element(By.ID, 'trans-1')
         ).perform()
         # END DEBUG
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX1'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-1-OFX1'),
+            selenium.find_element(By.ID, 
                 'trans-1'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX2'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-1-OFX2'),
+            selenium.find_element(By.ID, 
                 'trans-2'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-2-OFXT6'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-2-OFXT6'),
+            selenium.find_element(By.ID, 
                 'trans-5'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-2-OFXT7'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-2-OFXT7'),
+            selenium.find_element(By.ID, 
                 'trans-6'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -1371,11 +1371,11 @@ class TestDragAndDropReconcile(ReconcileHelper):
             6: [2, 'OFXT7']
         }
         # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Successfully reconciled 5 transactions'
         assert 'alert-success' in msg.get_attribute('class')
 
@@ -1384,20 +1384,20 @@ class TestDragAndDropReconcile(ReconcileHelper):
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
         # get the innerHTML of both columns
-        trans_div = selenium.find_element_by_id('trans-panel').get_attribute(
+        trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel').get_attribute(
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML')
         # attempt to drag the other OFX
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         # ensure both columns are still the same
-        assert selenium.find_element_by_id('trans-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML') == trans_div
-        assert selenium.find_element_by_id('ofx-panel').get_attribute(
+        assert selenium.find_element(By.ID, 'ofx-panel').get_attribute(
             'innerHTML') == ofxtrans_div
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Warning: No reconciled transactions; ' \
                            'did not submit form.'
         assert 'alert-warning' in msg.get_attribute('class')
@@ -1447,37 +1447,37 @@ class TestUIReconcileMulti(ReconcileHelper):
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-2-OFX3'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-2-OFX3'),
+            selenium.find_element(By.ID, 
                 'trans-3'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3']
         }
         # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Successfully reconciled 1 transactions'
         assert 'alert-success' in msg.get_attribute('class')
         # reconcile 2 more
         self.wait_for_id(selenium, 'ofx-1-OFX2')
         chain = ActionChains(selenium)
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX1'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-1-OFX1'),
+            selenium.find_element(By.ID, 
                 'trans-1'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-1-OFX2'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-1-OFX2'),
+            selenium.find_element(By.ID, 
                 'trans-2'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -1485,11 +1485,11 @@ class TestUIReconcileMulti(ReconcileHelper):
             2: [1, 'OFX2']
         }
         # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Successfully reconciled 2 transactions'
         assert 'alert-success' in msg.get_attribute('class')
 
@@ -1502,13 +1502,13 @@ class TestUIReconcileMulti(ReconcileHelper):
             1234: [4, "OFXNONE"]
         }
         # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {
             1234: [4, "OFXNONE"]
         }
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Error 400: Invalid Transaction ID: 1234'
         assert 'alert-danger' in msg.get_attribute('class')
 
@@ -1617,12 +1617,12 @@ class TestReconcileBackend(ReconcileHelper):
         txn_id = res[-1].txn_id
         self.get(selenium, base_url + '/transactions')
         modal, title, body = self.try_click_and_get_modal(
-            selenium, selenium.find_element_by_link_text('Yes (%s)' % txn_id)
+            selenium, selenium.find_element(By.LINK_TEXT, 'Yes (%s)' % txn_id)
         )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile %s' % txn_id
         assert 'Foo Bar Baz' in body.text
-        assert body.find_elements_by_class_name('col-lg-6')[1].text == \
+        assert body.find_elements(By.CLASS_NAME, 'col-lg-6')[1].text == \
             'No OFX Transaction'
 
 
@@ -1761,20 +1761,20 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
 
     def test_08_trans_from_ofx(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX2')
-        link = ofxdiv.find_element_by_xpath('//a[text()="(make trans)"]')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX2')
+        link = ofxdiv.find_element(By.XPATH, '//a[text()="(make trans)"]')
         # test the modal population
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Transaction for OFX (2, OFX2)'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == date(
             2017, 4, 11).strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '-251.23'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'ofx2-trans1'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1784,7 +1784,7 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
             ['2', 'BankTwo']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '2'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1795,33 +1795,33 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
             ['3', '3Periodic']
         ]
         budget_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes = selenium.find_element(By.ID, 'trans_frm_notes')
         assert notes.get_attribute(
             'value') == 'created from OFXTransaction(2, OFX2)'
         notes.send_keys('foo')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 2 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # ensure that the original OFX div is hidden
-        assert selenium.find_element_by_id('ofx-2-OFX2').is_displayed() is False
+        assert selenium.find_element(By.ID, 'ofx-2-OFX2').is_displayed() is False
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             2: [2, 'OFX2']
         }
         # ensure that the Transaction was added, and the ofx moved to it
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(t.get_attribute('outerHTML'))
-            for t in trans_div.find_elements_by_class_name('reconcile-trans')
+            for t in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -1859,11 +1859,11 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'reconcile-submit'))
         )
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Successfully reconciled 1 transactions'
         assert 'alert-success' in msg.get_attribute('class')
 
@@ -1925,10 +1925,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
 
     def test_32_verify_columns(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -1952,22 +1952,22 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
 
     def test_33_ignore_ofx(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
-        link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX31')
+        link = ofxdiv.find_element(By.XPATH, '//a[text()="(ignore)"]')
         # test the modal population
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX31")'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_acct_id').get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_fitid').get_attribute('value') == 'OFX31'
-        notes = selenium.find_element_by_id('trans_frm_note')
+        notes = selenium.find_element(By.ID, 'trans_frm_note')
         assert notes.get_attribute(
             'value') == ''
         notes.send_keys('My Note')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         sleep(1)
         # check that modal was hidden
@@ -1977,10 +1977,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
         assert json.loads(res.strip()) == {'2%OFX31': 'My Note'}
         # check that the OFX div has been updated
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2003,7 +2003,7 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         ]
         assert expected_ofx == actual_ofx
         # check that the OFX div is no longer draggable
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX31')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX31')
         assert 'ui-draggable-disabled' in ofxdiv.get_attribute('class')
         # wait for submit button to be visible and clickable, and click it
         self.wait_for_jquery_done(selenium)
@@ -2013,10 +2013,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         WebDriverWait(selenium, 10).until(
             EC.element_to_be_clickable((By.ID, 'reconcile-submit'))
         )
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Successfully reconciled 1 transactions'
         assert 'alert-success' in msg.get_attribute('class')
 
@@ -2033,10 +2033,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
 
     def test_35_verify_columns(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2053,10 +2053,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
     def test_36_ignore_and_unignore_ofx(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         # check that the OFX div has been updated
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2070,22 +2070,22 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         ]
         assert expected_ofx == actual_ofx
         # ignore
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
-        link = ofxdiv.find_element_by_xpath('//a[text()="(ignore)"]')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX30')
+        link = ofxdiv.find_element(By.XPATH, '//a[text()="(ignore)"]')
         # test the modal population
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX30")'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_acct_id').get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_fitid').get_attribute('value') == 'OFX30'
-        notes = selenium.find_element_by_id('trans_frm_note')
+        notes = selenium.find_element(By.ID, 'trans_frm_note')
         assert notes.get_attribute(
             'value') == ''
         notes.send_keys('My Note')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         sleep(1)
         # check that modal was hidden
@@ -2096,10 +2096,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         assert json.loads(res.strip()) == {'2%OFX30': 'My Note'}
         # check that the OFX div has been updated
         self.wait_for_jquery_done(selenium)
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2114,21 +2114,21 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         ]
         assert expected_ofx == actual_ofx
         # check that the OFX div is no longer draggable
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX30')
         assert 'ui-draggable-disabled' in ofxdiv.get_attribute('class')
         # ok, now Unignore
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
-        link = ofxdiv.find_element_by_xpath('//a[text()="Unignore"]')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX30')
+        link = ofxdiv.find_element(By.XPATH, '//a[text()="Unignore"]')
         link.click()
         # and test that everything was reverted...
         res = selenium.execute_script('return JSON.stringify(ofxIgnored);')
         assert json.loads(res.strip()) == {}
         # check that the OFX div has been updated
         self.wait_for_jquery_done(selenium)
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2142,7 +2142,7 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         ]
         assert expected_ofx == actual_ofx
         # check that the OFX div is no longer draggable
-        ofxdiv = selenium.find_element_by_id('ofx-2-OFX30')
+        ofxdiv = selenium.find_element(By.ID, 'ofx-2-OFX30')
         assert 'ui-draggable-disabled' not in ofxdiv.get_attribute('class')
 
 
@@ -2153,10 +2153,10 @@ class TestTransReconcileNoOfx(ReconcileHelper):
 
     def test_06_transactions_column(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        trans_div = selenium.find_element_by_id('trans-panel')
+        trans_div = selenium.find_element(By.ID, 'trans-panel')
         actual_trans = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in trans_div.find_elements_by_class_name('reconcile-trans')
+            for x in trans_div.find_elements(By.CLASS_NAME, 'reconcile-trans')
         ]
         expected_trans = [
             txn_div(
@@ -2216,10 +2216,10 @@ class TestTransReconcileNoOfx(ReconcileHelper):
 
     def test_07_ofx_column(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
-        ofxtrans_div = selenium.find_element_by_id('ofx-panel')
+        ofxtrans_div = selenium.find_element(By.ID, 'ofx-panel')
         actual_ofx = [
             self.normalize_html(x.get_attribute('outerHTML'))
-            for x in ofxtrans_div.find_elements_by_class_name('reconcile-ofx')
+            for x in ofxtrans_div.find_elements(By.CLASS_NAME, 'reconcile-ofx')
         ]
         expected_ofx = [
             ofx_div(
@@ -2284,7 +2284,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
     def test_08_reconcile_unreconcile_noOFX_visible(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         # check Trans and OFX
-        trans = selenium.find_element_by_id('trans-3')
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
@@ -2297,7 +2297,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             None,
             'trans2'
         )
-        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        ofx = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             Decimal('600.00'),
@@ -2309,17 +2309,17 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(
-            selenium.find_element_by_id('ofx-2-OFX3'),
-            selenium.find_element_by_id(
+            selenium.find_element(By.ID, 'ofx-2-OFX3'),
+            selenium.find_element(By.ID, 
                 'trans-3'
-            ).find_element_by_class_name('reconcile-drop-target')
+            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3']
         }
         # check Trans and OFX
-        trans = selenium.find_element_by_id('trans-3')
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
@@ -2341,14 +2341,14 @@ class TestTransReconcileNoOfx(ReconcileHelper):
                 trans_id=3
             )
         )
-        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        ofx = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert ofx.is_displayed() is False
         # unreconcile
-        trans.find_element_by_xpath('//a[text()="Unreconcile"]').click()
+        trans.find_element(By.XPATH, '//a[text()="Unreconcile"]').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         # check Trans and OFX
-        trans = selenium.find_element_by_id('trans-3')
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
@@ -2361,7 +2361,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             None,
             'trans2'
         )
-        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        ofx = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             Decimal('600.00'),
@@ -2373,11 +2373,11 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {}
         # click submit button
-        selenium.find_element_by_id('reconcile-submit').click()
+        selenium.find_element(By.ID, 'reconcile-submit').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         assert self.get_reconciled(selenium) == {}
-        msg = selenium.find_element_by_id('reconcile-msg')
+        msg = selenium.find_element(By.ID, 'reconcile-msg')
         assert msg.text == 'Warning: No reconciled transactions; ' \
             'did not submit form.'
         assert 'alert-warning' in msg.get_attribute('class')
@@ -2385,7 +2385,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
     def test_09_reconcile_unreconcile_noOFX(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         # check Trans and OFX
-        trans = selenium.find_element_by_id('trans-3')
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
@@ -2398,7 +2398,7 @@ class TestTransReconcileNoOfx(ReconcileHelper):
             None,
             'trans2'
         )
-        ofx = selenium.find_element_by_id('ofx-2-OFX3')
+        ofx = selenium.find_element(By.ID, 'ofx-2-OFX3')
         assert self.normalize_html(ofx.get_attribute('outerHTML')) == ofx_div(
             date(2017, 4, 9),
             Decimal('600.00'),
@@ -2410,28 +2410,28 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         assert self.get_reconciled(selenium) == {}
         # reconcile as noOFX
         modal, title, body = self.try_click_and_get_modal(
-            selenium, trans.find_element_by_link_text('(no OFX)')
+            selenium, trans.find_element(By.LINK_TEXT, '(no OFX)')
         )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Reconcile Transaction 3 Without OFX'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '3'
-        note = body.find_element_by_id('trans_frm_note')
+        note = body.find_element(By.ID, 'trans_frm_note')
         note.clear()
         note.send_keys('My Trans Note')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         sleep(1)
         self.wait_for_jquery_done(selenium)
         # assert modal is hidden
-        assert selenium.find_element_by_id('modalDiv').is_displayed() is False
+        assert selenium.find_element(By.ID, 'modalDiv').is_displayed() is False
         # test trans div was updated
         noofx_div = '<div style="text-align: right;"><a href="' \
                     'javascript:reconcileDoUnreconcileNoOfx(3)">' \
                     'Unreconcile</a></div><div class="reconcile" ' \
                     'id="trans-3-noOFX" style=""><p><strong>No OFX:</strong>' \
                     ' My Trans Note</p></div>'
-        trans = selenium.find_element_by_id('trans-3')
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),
@@ -2448,8 +2448,8 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         # test that reconciled var was updated
         assert self.get_reconciled(selenium) == {3: 'My Trans Note'}
         # unreconcile
-        trans.find_element_by_link_text('Unreconcile').click()
-        trans = selenium.find_element_by_id('trans-3')
+        trans.find_element(By.LINK_TEXT, 'Unreconcile').click()
+        trans = selenium.find_element(By.ID, 'trans-3')
         assert self.normalize_html(trans.get_attribute('outerHTML')) == txn_div(
             3,
             date(2017, 4, 11),

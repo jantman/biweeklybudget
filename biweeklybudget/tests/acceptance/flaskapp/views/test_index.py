@@ -41,6 +41,7 @@ from pytz import UTC
 from decimal import Decimal
 
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump
@@ -60,17 +61,17 @@ class TestIndexNavigation(AcceptanceHelper):
         self.get(selenium, base_url)
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -85,7 +86,7 @@ class TestIndexAccounts(AcceptanceHelper):
         self.get(selenium, base_url)
 
     def test_bank_table(self, selenium):
-        table = selenium.find_element_by_xpath(
+        table = selenium.find_element(By.XPATH, 
             "//div[@id='panel-bank-accounts']//table"
         )
         assert self.thead2list(table) == [
@@ -96,9 +97,9 @@ class TestIndexAccounts(AcceptanceHelper):
             ['BankTwoStale', '$100.23 (18 days ago)', '-$333.33', '$433.56']
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="/accounts/1">BankOne</a>',
@@ -106,17 +107,17 @@ class TestIndexAccounts(AcceptanceHelper):
         ]
 
     def test_bank_stale_span(self, selenium):
-        tbody = selenium.find_element_by_xpath(
+        tbody = selenium.find_element(By.XPATH, 
             "//div[@id='panel-bank-accounts']//table/tbody"
         )
-        rows = tbody.find_elements_by_tag_name('tr')
-        bankTwoStale_bal_td = rows[1].find_elements_by_tag_name('td')[1]
-        bal_span = bankTwoStale_bal_td.find_elements_by_tag_name('span')[1]
+        rows = tbody.find_elements(By.TAG_NAME, 'tr')
+        bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[1]
+        bal_span = bankTwoStale_bal_td.find_elements(By.TAG_NAME, 'span')[1]
         assert bal_span.text == '(18 days ago)'
         assert bal_span.get_attribute('class') == 'data_age text-danger'
 
     def test_credit_table(self, selenium):
-        table = selenium.find_element_by_xpath(
+        table = selenium.find_element(By.XPATH, 
             "//div[@id='panel-credit-cards']//table"
         )
         assert self.thead2list(table) == [
@@ -127,9 +128,9 @@ class TestIndexAccounts(AcceptanceHelper):
             ['CreditTwo', '-$5,498.65 (a day ago)', '$1.35', '$1.35']
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="/accounts/3">CreditOne</a>',
@@ -137,7 +138,7 @@ class TestIndexAccounts(AcceptanceHelper):
         ]
 
     def test_investment_table(self, selenium):
-        table = selenium.find_element_by_xpath(
+        table = selenium.find_element(By.XPATH, 
             "//div[@id='panel-investment']//table"
         )
         assert self.thead2list(table) == ['Account', 'Value']
@@ -145,9 +146,9 @@ class TestIndexAccounts(AcceptanceHelper):
             ['InvestmentOne', '$10,362.91 (13 days ago)']
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="/accounts/5">InvestmentOne</a>'
@@ -164,7 +165,7 @@ class TestIndexBudgets(AcceptanceHelper):
         self.get(selenium, base_url + '/')
 
     def test_budgets_table(self, selenium):
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
             ['Standing1 (4)', '$1,284.23'],
@@ -380,7 +381,7 @@ class TestIndexPayPeriods(AcceptanceHelper):
     def test_5_pay_periods_table(self, base_url, selenium, testdb):
         periods = self.pay_periods(testdb)
         self.get(selenium, base_url + '/')
-        table = selenium.find_element_by_id('pay-period-table')
+        table = selenium.find_element(By.ID, 'pay-period-table')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
         expected = [
@@ -427,8 +428,8 @@ class TestIndexPayPeriods(AcceptanceHelper):
         assert elems[0][3].get_attribute('innerHTML') == '<span ' \
             'class="text-danger">-$1,050.00</span>'
         # test highlighted row for current period
-        tbody = table.find_element_by_tag_name('tbody')
-        trs = tbody.find_elements_by_tag_name('tr')
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        trs = tbody.find_elements(By.TAG_NAME, 'tr')
         assert trs[0].get_attribute('class') == 'info'
 
 
@@ -460,7 +461,7 @@ class TestAccountTransfer(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/')
         # check the table content on the page
-        btable = selenium.find_element_by_id('table-accounts-bank')
+        btable = selenium.find_element(By.ID, 'table-accounts-bank')
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
@@ -476,7 +477,7 @@ class TestAccountTransfer(AcceptanceHelper):
                 '$433.56'
             ]
         ]
-        itable = selenium.find_element_by_id('table-accounts-investment')
+        itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
@@ -485,18 +486,18 @@ class TestAccountTransfer(AcceptanceHelper):
             ]
         ]
         # open the modal to do a transfer
-        link = selenium.find_element_by_id('btn_acct_txfr_bank')
+        link = selenium.find_element(By.ID, 'btn_acct_txfr_bank')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Account Transfer'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'acct_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
-        amt = body.find_element_by_id('acct_txfr_frm_amount')
+        amt = body.find_element(By.ID, 'acct_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
         budget_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_budget')
+            body.find_element(By.ID, 'acct_txfr_frm_budget')
         )
         opts = []
         for o in budget_sel.options:
@@ -513,7 +514,7 @@ class TestAccountTransfer(AcceptanceHelper):
             'value') == 'None'
         budget_sel.select_by_value('2')
         from_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_from_account')
+            body.find_element(By.ID, 'acct_txfr_frm_from_account')
         )
         opts = []
         for o in from_acct_sel.options:
@@ -532,7 +533,7 @@ class TestAccountTransfer(AcceptanceHelper):
         ) == 'None'
         from_acct_sel.select_by_value('1')
         to_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_to_account')
+            body.find_element(By.ID, 'acct_txfr_frm_to_account')
         )
         opts = []
         for o in to_acct_sel.options:
@@ -550,24 +551,24 @@ class TestAccountTransfer(AcceptanceHelper):
             'value'
         ) == 'None'
         to_acct_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('acct_txfr_frm_notes')
+        notes = selenium.find_element(By.ID, 'acct_txfr_frm_notes')
         notes.clear()
         notes.send_keys('Account Transfer Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-accounts-bank')
         # ensure that the page content updated after refreshing
-        btable = selenium.find_element_by_id('table-accounts-bank')
+        btable = selenium.find_element(By.ID, 'table-accounts-bank')
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
@@ -583,7 +584,7 @@ class TestAccountTransfer(AcceptanceHelper):
                 '$557.01'
             ]
         ]
-        itable = selenium.find_element_by_id('table-accounts-investment')
+        itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [

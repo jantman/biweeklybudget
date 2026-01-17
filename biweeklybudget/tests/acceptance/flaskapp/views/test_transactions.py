@@ -39,6 +39,7 @@ import pytest
 from datetime import timedelta, date, datetime
 from pytz import UTC
 from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from decimal import Decimal
 import requests
@@ -60,17 +61,17 @@ class TestTransactions(AcceptanceHelper):
         self.get(selenium, base_url + '/transactions')
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Transactions - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -86,7 +87,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         self.get(selenium, base_url + '/transactions')
 
     def test_table(self, selenium):
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
         assert texts == [
@@ -178,7 +179,7 @@ class TestTransactionsDefault(AcceptanceHelper):
 
     def test_acct_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/transactions')
-        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        acct_filter = Select(selenium.find_element(By.ID, 'account_filter'))
         # find the options
         opts = []
         for o in acct_filter.options:
@@ -202,19 +203,17 @@ class TestTransactionsDefault(AcceptanceHelper):
         ]
         self.get(selenium, self.baseurl + '/transactions')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
         # check sanity
         assert trans == p1trans
-        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        acct_filter = Select(selenium.find_element(By.ID, 'account_filter'))
         # select BankOne (1)
         acct_filter.select_by_value('1')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -222,8 +221,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         # select back to all
         acct_filter.select_by_value('None')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -231,7 +229,7 @@ class TestTransactionsDefault(AcceptanceHelper):
 
     def test_budg_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/transactions')
-        budg_filter = Select(selenium.find_element_by_id('budget_filter'))
+        budg_filter = Select(selenium.find_element(By.ID, 'budget_filter'))
         # find the options
         opts = []
         for o in budg_filter.options:
@@ -256,19 +254,17 @@ class TestTransactionsDefault(AcceptanceHelper):
         ]
         self.get(selenium, self.baseurl + '/transactions')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
         # check sanity
         assert trans == p1trans
-        budg_filter = Select(selenium.find_element_by_id('budget_filter'))
+        budg_filter = Select(selenium.find_element(By.ID, 'budget_filter'))
         # select Periodic2 (2)
         budg_filter.select_by_value('2')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -276,8 +272,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         # select Standing1 (4)
         budg_filter.select_by_value('4')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -285,8 +280,7 @@ class TestTransactionsDefault(AcceptanceHelper):
         # select back to all
         budg_filter.select_by_value('None')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -295,14 +289,12 @@ class TestTransactionsDefault(AcceptanceHelper):
     def test_search(self, selenium):
         self.get(selenium, self.baseurl + '/transactions')
         search = self.retry_stale(
-            selenium.find_element_by_xpath,
-            '//input[@type="search"]'
+            lambda: selenium.find_element(By.XPATH, '//input[@type="search"]')
         )
         search.send_keys('foo')
         self.wait_for_jquery_done(selenium)
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-transactions'
+            lambda: selenium.find_element(By.ID, 'table-transactions')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[2] for t in texts]
@@ -336,18 +328,18 @@ class TestTransModalByURL(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == (
             dtnow() - timedelta(days=2)).date().strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '222.22'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_sales_tax').get_attribute('value') == '12.34'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'T3'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -361,7 +353,7 @@ class TestTransModalByURL(AcceptanceHelper):
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '3'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -374,7 +366,7 @@ class TestTransModalByURL(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_notes').get_attribute('value') == 'notesT3'
 
 
@@ -404,22 +396,22 @@ class TestTransModal(AcceptanceHelper):
     def test_01_simple_modal_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T2"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T2"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == dtnow().date(
         ).strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '-333.33'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_sales_tax').get_attribute('value') == '0'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'T2'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -433,7 +425,7 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '2'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -446,51 +438,51 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_notes').get_attribute('value') == 'notesT2'
 
     def test_02_simple_modal_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T2"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T2"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '2'
-        d = body.find_element_by_id('trans_frm_date')
+        d = body.find_element(By.ID, 'trans_frm_date')
         d.clear()
         d.send_keys(
             (dtnow() - timedelta(days=3)).date().strftime('%Y-%m-%d')
         )
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('-123.45')
-        desc = body.find_element_by_id('trans_frm_description')
+        desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('edited')
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         acct_sel.select_by_value('4')
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         budget_sel.select_by_value('5')
-        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes = selenium.find_element(By.ID, 'trans_frm_notes')
         notes.send_keys('edited')
-        tax = body.find_element_by_id('trans_frm_sales_tax')
+        tax = body.find_element(By.ID, 'trans_frm_sales_tax')
         tax.clear()
         tax.send_keys('45.67')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 2 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that updated budget was removed from the page
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'T2edited' in texts
 
@@ -530,20 +522,20 @@ class TestTransModal(AcceptanceHelper):
     def test_11_cant_edit_reconciled_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T1foo"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == (
             dtnow() + timedelta(days=4)).date().strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '111.13'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'T1foo'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -557,7 +549,7 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -570,76 +562,76 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_notes').get_attribute('value') == 'notesT1'
 
     def test_12_cant_edit_reconciled_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T1foo"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T1foo"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '1'
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-danger' in x.get_attribute('class')
         assert x.text.strip() == 'Server Error: Transaction 1 is already ' \
                                  'reconciled; cannot be edited.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
 
     def test_22_modal_add(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_id('btn_add_trans')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
-        date_input = body.find_element_by_id('trans_frm_date')
+        date_input = body.find_element(By.ID, 'trans_frm_date')
         # BEGIN select the 15th of this month from the popup
         dnow = dtnow()
         expected_date = date(year=dnow.year, month=dnow.month, day=15)
         date_input.click()
-        date_number = body.find_element_by_xpath(
+        date_number = body.find_element(By.XPATH, 
             '//td[@class="day" and text()="15"]'
         )
         date_number.click()
         assert date_input.get_attribute(
             'value') == expected_date.strftime('%Y-%m-%d')
         # END date chooser popup
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
-        desc = body.find_element_by_id('trans_frm_description')
+        desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('NewTrans5')
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         budget_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes = selenium.find_element(By.ID, 'trans_frm_notes')
         notes.send_keys('NewTransNotes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 5 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that new trans was added to the table
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'NewTrans5' in texts
 
@@ -662,7 +654,7 @@ class TestTransModal(AcceptanceHelper):
 
     def test_31_verify_index_budgets_table(self, base_url, selenium):
         self.get(selenium, base_url + '/')
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
             ['Standing1 (4)', '$950.90'],
@@ -674,42 +666,42 @@ class TestTransModal(AcceptanceHelper):
             updates the balance on the standing budget."""
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_id('btn_add_trans')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
-        date_input = body.find_element_by_id('trans_frm_date')
+        date_input = body.find_element(By.ID, 'trans_frm_date')
         assert date_input.get_attribute(
             'value') == dtnow().strftime('%Y-%m-%d')
         # END date chooser popup
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('345.67')
-        desc = body.find_element_by_id('trans_frm_description')
+        desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('NewTrans6')
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         budget_sel.select_by_value('5')
-        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes = selenium.find_element(By.ID, 'trans_frm_notes')
         notes.send_keys('NewTransNotes')
-        tax = selenium.find_element_by_id('trans_frm_sales_tax')
+        tax = selenium.find_element(By.ID, 'trans_frm_sales_tax')
         tax.send_keys('67.89')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 6 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that new trans was added to the table
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'NewTrans6' in texts
 
@@ -731,7 +723,7 @@ class TestTransModal(AcceptanceHelper):
 
     def test_34_verify_index_budgets_table(self, base_url, selenium):
         self.get(selenium, base_url + '/')
-        stable = selenium.find_element_by_id('table-standing-budgets')
+        stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
         assert stexts == [
             ['Standing1 (4)', '$950.90'],
@@ -750,28 +742,28 @@ class TestTransModal(AcceptanceHelper):
         """
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="NewTrans6"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="NewTrans6"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '6'
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '345.67'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '5'
         budget_sel.select_by_value('4')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 6 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_42_simple_modal_verify_db(self, testdb):
         t = testdb.query(Transaction).get(6)
@@ -874,25 +866,25 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
     def test_02_modal_populate_split(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets1"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="InactiveBudgets1"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 5'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '5'
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         # there should be three split budget input groups
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
         # BUDGET 0
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_0'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_0'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -906,10 +898,10 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['3', 'Periodic3 Inactive']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_0').get_attribute('value') == '120.11'
         # BUDGET 1
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_1'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -922,10 +914,10 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_1').get_attribute('value') == '102.11'
         # BUDGET 2
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_2'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_2'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -938,28 +930,28 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_2').get_attribute('value') == '100.1'
 
     def test_03_modal_populate_nonsplit_active(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets2"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="InactiveBudgets2"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '6'
         # NOT Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '322.32'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
         opts = []
         for o in budget_sel.options:
@@ -976,22 +968,22 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
     def test_04_modal_populate_nonsplit_inactive(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="InactiveBudgets3"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="InactiveBudgets3"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 7'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '7'
         # NOT Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '322.32'
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '3'
         opts = []
         for o in budget_sel.options:
@@ -1024,17 +1016,17 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath(
+        link = selenium.find_element(By.XPATH, 
             '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
-        dl = body.find_element_by_tag_name('dl')
+        dl = body.find_element(By.TAG_NAME, 'dl')
         assert dl.get_attribute('innerHTML') == '\n' \
             '<dt>Date Reconciled</dt><dd>2017-04-10 08:09:11 UTC</dd>\n' \
             '<dt>Note</dt><dd>reconcile notes</dd>\n' \
             '<dt>Rule</dt><dd>null</dd>\n'
-        trans_tbl = body.find_element_by_id('txnReconcileModal-trans')
+        trans_tbl = body.find_element(By.ID, 'txnReconcileModal-trans')
         trans_texts = self.tbody2textlist(trans_tbl)
         assert trans_texts == [
             ['Transaction'],
@@ -1057,7 +1049,7 @@ class TestTransReconciledModal(AcceptanceHelper):
             '"/budgets/1">Periodic1 (1)</a>'
         assert trans_elems[8][1].get_attribute('innerHTML') == '<a href=' \
             '"/scheduled/1">Yes (1)</a>'
-        ofx_tbl = body.find_element_by_id('txnReconcileModal-ofx')
+        ofx_tbl = body.find_element(By.ID, 'txnReconcileModal-ofx')
         ofx_texts = self.tbody2textlist(ofx_tbl)
         assert ofx_texts == [
             ['OFX Transaction'],
@@ -1100,17 +1092,17 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_3_split_trans_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath(
+        link = selenium.find_element(By.XPATH, 
             '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
-        dl = body.find_element_by_tag_name('dl')
+        dl = body.find_element(By.TAG_NAME, 'dl')
         assert dl.get_attribute('innerHTML') == '\n' \
             '<dt>Date Reconciled</dt><dd>2017-04-10 08:09:11 UTC</dd>\n' \
             '<dt>Note</dt><dd>reconcile notes</dd>\n' \
             '<dt>Rule</dt><dd>null</dd>\n'
-        trans_tbl = body.find_element_by_id('txnReconcileModal-trans')
+        trans_tbl = body.find_element(By.ID, 'txnReconcileModal-trans')
         trans_texts = self.tbody2textlist(trans_tbl)
         assert trans_texts == [
             ['Transaction'],
@@ -1134,7 +1126,7 @@ class TestTransReconciledModal(AcceptanceHelper):
             '"/budgets/2">Periodic2 (2) ($1.11)</a>'
         assert trans_elems[8][1].get_attribute('innerHTML') == '<a href=' \
             '"/scheduled/1">Yes (1)</a>'
-        ofx_tbl = body.find_element_by_id('txnReconcileModal-ofx')
+        ofx_tbl = body.find_element(By.ID, 'txnReconcileModal-ofx')
         ofx_texts = self.tbody2textlist(ofx_tbl)
         assert ofx_texts == [
             ['OFX Transaction'],
@@ -1395,7 +1387,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         # get validate count
         c = driver.execute_script('return validation_count;')
         # change focus
-        driver.find_element_by_id('trans_frm_description').click()
+        driver.find_element(By.ID, 'trans_frm_description').click()
         # wait for validate count to increase
         try:
             WebDriverWait(driver, 5).until(
@@ -1403,15 +1395,15 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             )
         except TimeoutException:
             pass
-        assert driver.find_element_by_id('budget-split-feedback').text == msg
-        assert driver.find_element_by_id(
+        assert driver.find_element(By.ID, 'budget-split-feedback').text == msg
+        assert driver.find_element(By.ID, 
             'modalSaveButton').is_enabled() is False
 
     def assert_budget_split_does_not_have_error(self, driver):
         # get validate count
         c = driver.execute_script('return validation_count;')
         # change focus
-        driver.find_element_by_id('trans_frm_description').click()
+        driver.find_element(By.ID, 'trans_frm_description').click()
         # wait for validate count to increase
         try:
             WebDriverWait(driver, 5).until(
@@ -1419,55 +1411,55 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             )
         except TimeoutException:
             pass
-        assert driver.find_element_by_id('budget-split-feedback').text == ''
-        assert driver.find_element_by_id('modalSaveButton').is_enabled()
+        assert driver.find_element(By.ID, 'budget-split-feedback').text == ''
+        assert driver.find_element(By.ID, 'modalSaveButton').is_enabled()
 
     def test_20_modal_frontend_validation(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_id('btn_add_trans')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
         # set an amount
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('200.22')
         # assert budget split items are hidden and checkbox is unchecked
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
         # check the budget split checkbox
-        selenium.find_element_by_id('trans_frm_is_split').click()
+        selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         # there should be two split budget input groups
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
         self.assert_budget_split_does_not_have_error(selenium)
         # Select 2 different budgets and valid amounts
         Select(
-            body.find_element_by_id('trans_frm_budget_0')).select_by_value('1')
-        tmp = body.find_element_by_id('trans_frm_budget_amount_0')
+            body.find_element(By.ID, 'trans_frm_budget_0')).select_by_value('1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         tmp.clear()
         tmp.send_keys('100')
         Select(
-            body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
-        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+            body.find_element(By.ID, 'trans_frm_budget_1')).select_by_value('2')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('100.22')
         self.assert_budget_split_does_not_have_error(selenium)
         # change one amount
-        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('100.00')
         self.assert_budget_split_has_error(
@@ -1476,31 +1468,31 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             'transaction amount (200.2200).'
         )
         # fix the amount
-        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('100.22')
         self.assert_budget_split_does_not_have_error(selenium)
         # change one budget to the same as the other
         Select(
-            body.find_element_by_id('trans_frm_budget_1')).select_by_value('1')
+            body.find_element(By.ID, 'trans_frm_budget_1')).select_by_value('1')
         self.assert_budget_split_has_error(
             selenium,
             'Error: A given budget may only be specified once.'
         )
         # fix the budget
         Select(
-            body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
+            body.find_element(By.ID, 'trans_frm_budget_1')).select_by_value('2')
         self.assert_budget_split_does_not_have_error(selenium)
         # click "Add Budget" link
         self.try_click(
-            selenium, selenium.find_element_by_id('trans_frm_add_budget_link')
+            selenium, selenium.find_element(By.ID, 'trans_frm_add_budget_link')
         )
         # there should be three split budget input groups
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
         # decrease an amount in one of the previous groups
-        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('50.11')
         self.assert_budget_split_has_error(
@@ -1509,29 +1501,29 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             'transaction amount (200.2200).'
         )
         # add difference to amount in the third budget group
-        tmp = body.find_element_by_id('trans_frm_budget_amount_2')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_2')
         tmp.clear()
         tmp.send_keys('50.11')
         self.assert_budget_split_does_not_have_error(selenium)
         # select budget in third group, same as second
         Select(
-            body.find_element_by_id('trans_frm_budget_2')).select_by_value('2')
+            body.find_element(By.ID, 'trans_frm_budget_2')).select_by_value('2')
         self.assert_budget_split_has_error(
             selenium,
             'Error: A given budget may only be specified once.'
         )
         # change budget in third group to a unique one
         Select(
-            body.find_element_by_id('trans_frm_budget_2')).select_by_value('4')
+            body.find_element(By.ID, 'trans_frm_budget_2')).select_by_value('4')
         self.assert_budget_split_does_not_have_error(selenium)
         # uncheck the Budget Split checkbox
-        selenium.find_element_by_id('trans_frm_is_split').click()
+        selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are hidden and checkbox is unchecked
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
 
     def test_30_verify_db_before(self, testdb):
@@ -1556,21 +1548,21 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
     def test_31_split_2_modal_populate(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T4split"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T4split"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 4'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '4'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == (
                 dtnow() - timedelta(days=35)
             ).strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '322.32'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'T4split'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1585,17 +1577,17 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '3'
         # Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
         # BUDGET 0
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_0'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_0'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1608,10 +1600,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
         # BUDGET 1
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_1'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1624,90 +1616,90 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_1').get_attribute('value') == '100.1'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_notes').get_attribute('value') == 'notesT4split'
 
     def test_32_new_split_trans(self, base_url, selenium, testdb):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_id('btn_add_trans')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Transaction'
-        date_input = body.find_element_by_id('trans_frm_date')
+        date_input = body.find_element(By.ID, 'trans_frm_date')
         assert date_input.get_attribute(
             'value') == dtnow().strftime('%Y-%m-%d')
         # END date chooser popup
-        amt = body.find_element_by_id('trans_frm_amount')
+        amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('375.00')
-        desc = body.find_element_by_id('trans_frm_description')
+        desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('NewTrans5')
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         acct_sel.select_by_value('1')
         # check the budget split checkbox
-        selenium.find_element_by_id('trans_frm_is_split').click()
+        selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         # there should be two split budget input groups
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
         # set the budgets and amounts
         Select(
-            body.find_element_by_id('trans_frm_budget_0')).select_by_value('1')
-        tmp = body.find_element_by_id('trans_frm_budget_amount_0')
+            body.find_element(By.ID, 'trans_frm_budget_0')).select_by_value('1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         tmp.clear()
         tmp.send_keys('100.00')
         Select(
-            body.find_element_by_id('trans_frm_budget_1')).select_by_value('2')
+            body.find_element(By.ID, 'trans_frm_budget_1')).select_by_value('2')
         # the next value should be populated automatically
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_1').get_attribute('value') == '275.00'
-        tmp = body.find_element_by_id('trans_frm_budget_amount_1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('200')
         # change focus
-        body.find_element_by_id('trans_frm_budget_amount_0').send_keys('')
+        body.find_element(By.ID, 'trans_frm_budget_amount_0').send_keys('')
         # add a row
         self.try_click(
-            selenium, selenium.find_element_by_id('trans_frm_add_budget_link')
+            selenium, selenium.find_element(By.ID, 'trans_frm_add_budget_link')
         )
         # there should be three split budget input groups
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
         # the amount should be populated automatically
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_2').get_attribute('value') == '75.00'
         # fill in the third row
         Select(
-            body.find_element_by_id('trans_frm_budget_2')).select_by_value('4')
+            body.find_element(By.ID, 'trans_frm_budget_2')).select_by_value('4')
         self.assert_budget_split_does_not_have_error(selenium)
-        notes = selenium.find_element_by_id('trans_frm_notes')
+        notes = selenium.find_element(By.ID, 'trans_frm_notes')
         notes.send_keys('NewSplitTransNotes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 5 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that new trans was added to the table
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'NewTrans5' in texts
         t = testdb.query(Transaction).get(5)
@@ -1732,20 +1724,20 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
     def test_33_change_split_trans(self, base_url, selenium, testdb):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="NewTrans5"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="NewTrans5"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 5'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '5'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date'
         ).get_attribute('value') == dtnow().strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '375'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_description').get_attribute('value') == 'NewTrans5'
-        acct_sel = Select(body.find_element_by_id('trans_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1760,17 +1752,17 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         # Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
         # BUDGET 0
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_0'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_0'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1783,10 +1775,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_0').get_attribute('value') == '200'
         # BUDGET 1
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_1'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1799,10 +1791,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_1').get_attribute('value') == '100'
         # BUDGET 2
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget_2'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_2'))
         opts = []
         for o in budget_sel.options:
             opts.append([o.get_attribute('value'), o.text])
@@ -1815,32 +1807,32 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_2').get_attribute('value') == '75'
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_notes').get_attribute('value') == 'NewSplitTransNotes'
         # Ok, now edit it...
-        Select(body.find_element_by_id(
+        Select(body.find_element(By.ID, 
             'trans_frm_budget_1')).select_by_value('None')
-        body.find_element_by_id('trans_frm_budget_amount_1').clear()
-        budget_amt = body.find_element_by_id('trans_frm_budget_amount_0')
+        body.find_element(By.ID, 'trans_frm_budget_amount_1').clear()
+        budget_amt = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         budget_amt.clear()
         budget_amt.send_keys('300')
         self.assert_budget_split_does_not_have_error(selenium)
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 5 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that new trans was added to the table
-        table = selenium.find_element_by_id('table-transactions')
+        table = selenium.find_element(By.ID, 'table-transactions')
         texts = [y[2] for y in self.tbody2textlist(table)]
         assert 'NewTrans5' in texts
         t = testdb.query(Transaction).get(5)
@@ -1880,68 +1872,68 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]) == 5
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T3"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T3"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == (
                 dtnow() - timedelta(days=2)
             ).strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '222.22'
         # NOT Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
         # Ok, click to split it...
         self.try_click(
-            selenium, selenium.find_element_by_id('trans_frm_is_split')
+            selenium, selenium.find_element(By.ID, 'trans_frm_is_split')
         )
         # Should be split now...
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
         # Verify that initial budget was set
         assert Select(
-            body.find_element_by_id('trans_frm_budget_0')
+            body.find_element(By.ID, 'trans_frm_budget_0')
         ).first_selected_option.get_attribute('value') == '2'
         # Verify that amount has been set
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
         # Set the amount
-        budget_amt = body.find_element_by_id('trans_frm_budget_amount_0')
+        budget_amt = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         budget_amt.clear()
         budget_amt.send_keys('100.02')
         # select the second budget
-        Select(body.find_element_by_id(
+        Select(body.find_element(By.ID, 
             'trans_frm_budget_1')).select_by_value('4')
         # Verify that second amount is set
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_budget_amount_1').get_attribute('value') == '122.20'
         self.assert_budget_split_does_not_have_error(selenium)
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 3 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
 
     def test_35_verify_db(self, testdb):
@@ -1983,53 +1975,53 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]) == 5
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath('//a[text()="T3"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T3"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_date').get_attribute('value') == (
                        dtnow() - timedelta(days=2)
                ).strftime('%Y-%m-%d')
-        assert body.find_element_by_id(
+        assert body.find_element(By.ID, 
             'trans_frm_amount').get_attribute('value') == '222.22'
         # Should be split...
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected()
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed()
         assert len(
-            selenium.find_elements_by_class_name('budget_split_row')
+            selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
         # Ok, click to un-split it...
         self.try_click(
-            selenium, selenium.find_element_by_id('trans_frm_is_split')
+            selenium, selenium.find_element(By.ID, 'trans_frm_is_split')
         )
         # NOT Split Budget
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element_by_id(
+        assert selenium.find_element(By.ID, 
             'trans_frm_split_budget_container').is_displayed() is False
         # Ok, now edit it...
-        budget_sel = Select(body.find_element_by_id('trans_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         budget_sel.select_by_value('2')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transaction 3 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
 
     def test_37_verify_db(self, testdb):
