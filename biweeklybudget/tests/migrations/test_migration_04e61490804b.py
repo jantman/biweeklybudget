@@ -39,6 +39,7 @@ import pytest
 import logging
 from decimal import Decimal
 from datetime import date
+from sqlalchemy import text
 
 from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
 
@@ -76,14 +77,15 @@ class TestAddBudgetTransactionModel(MigrationTest):
         conn = engine.connect()
         for s in sql:
             logger.debug('Executing: %s', s)
-            conn.execute(s)
+            conn.execute(text(s))
+        conn.commit()
         conn.close()
 
     def verify_before(self, engine):
         """method to verify data before forward migration, and after reverse"""
         conn = engine.connect()
         txns = [
-            dict(r) for r in conn.execute('SELECT * FROM transactions')
+            dict(r._mapping) for r in conn.execute(text('SELECT * FROM transactions'))
         ]
         conn.close()
         assert txns == [
@@ -129,10 +131,10 @@ class TestAddBudgetTransactionModel(MigrationTest):
         """method to verify data after forward migration"""
         conn = engine.connect()
         txns = [
-            dict(r) for r in conn.execute('SELECT * FROM transactions')
+            dict(r._mapping) for r in conn.execute(text('SELECT * FROM transactions'))
         ]
         bts = [
-            dict(r) for r in conn.execute('SELECT * FROM budget_transactions')
+            dict(r._mapping) for r in conn.execute(text('SELECT * FROM budget_transactions'))
         ]
         conn.close()
         assert txns == [

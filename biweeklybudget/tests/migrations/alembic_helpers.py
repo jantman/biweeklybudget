@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import os
 import logging
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 
 logger = logging.getLogger(__name__)
@@ -61,17 +61,19 @@ def uri_for_db(dbname):
 def empty_db_by_uri(uri):
     logger.info('Emptying database: %s', uri)
     engine = create_engine(uri)
-    tables = [r[0] for r in engine.execute('SHOW TABLES;')]
-    if len(tables) == 0:
-        logger.info('Database already empty.')
-        return
-    logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 0')
-    engine.execute('SET FOREIGN_KEY_CHECKS = 0')
-    sql = 'DROP TABLE %s;' % ', '.join(tables)
-    logger.debug('Executing SQL: %s', sql)
-    engine.execute(sql)
-    logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 1')
-    engine.execute('SET FOREIGN_KEY_CHECKS = 1')
+    with engine.connect() as conn:
+        tables = [r[0] for r in conn.execute(text('SHOW TABLES;'))]
+        if len(tables) == 0:
+            logger.info('Database already empty.')
+            return
+        logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 0')
+        conn.execute(text('SET FOREIGN_KEY_CHECKS = 0'))
+        sql = 'DROP TABLE %s;' % ', '.join(tables)
+        logger.debug('Executing SQL: %s', sql)
+        conn.execute(text(sql))
+        logger.debug('Executing SQL: SET FOREIGN_KEY_CHECKS = 1')
+        conn.execute(text('SET FOREIGN_KEY_CHECKS = 1'))
+        conn.commit()
     engine.dispose()
     logger.info('DB emptied.')
 
@@ -96,8 +98,10 @@ def load_premigration_sql(uri):
     logger.info(
         'Loading SQL from pre-migration DB state into %s', engine.url.database
     )
-    for s in sql:
-        logger.debug('Executing SQL: %s', s)
-        engine.execute(s)
+    with engine.connect() as conn:
+        for s in sql:
+            logger.debug('Executing SQL: %s', s)
+            conn.execute(text(s))
+        conn.commit()
     engine.dispose()
     logger.info('Pre-migration DB state loaded into %s', engine.url.database)
