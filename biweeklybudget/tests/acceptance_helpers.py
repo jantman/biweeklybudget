@@ -87,10 +87,10 @@ class AcceptanceHelper(object):
         :return: list of table heading strings in order left to right
         :rtype: list
         """
-        thead = elem.find_element_by_tag_name('thead')
-        tr = thead.find_element_by_tag_name('tr')
+        thead = elem.find_element(By.TAG_NAME, 'thead')
+        tr = thead.find_element(By.TAG_NAME, 'tr')
         cells = []
-        for th in tr.find_elements_by_tag_name('th'):
+        for th in tr.find_elements(By.TAG_NAME, 'th'):
             cells.append(th.text.strip())
         return cells
 
@@ -104,10 +104,10 @@ class AcceptanceHelper(object):
         :return: list of table heading WebElements in order left to right
         :rtype: list
         """
-        thead = elem.find_element_by_tag_name('thead')
-        tr = thead.find_element_by_tag_name('tr')
+        thead = elem.find_element(By.TAG_NAME, 'thead')
+        tr = thead.find_element(By.TAG_NAME, 'tr')
         cells = []
-        for th in tr.find_elements_by_tag_name('th'):
+        for th in tr.find_elements(By.TAG_NAME, 'th'):
             cells.append(th)
         return cells
 
@@ -122,11 +122,11 @@ class AcceptanceHelper(object):
         :return: list of table rows, each being a list of cell content strings
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
         rows = []
-        for tr in tbody.find_elements_by_tag_name('tr'):
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
             row = []
-            for td in tr.find_elements_by_xpath('*'):
+            for td in tr.find_elements(By.XPATH, '*'):
                 if td.tag_name not in ['td', 'th']:
                     continue
                 row.append(td.text.strip())
@@ -143,8 +143,8 @@ class AcceptanceHelper(object):
         :return: list of ``tr`` WebElements
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
-        return [x for x in tbody.find_elements_by_tag_name('tr')]
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
+        return [x for x in tbody.find_elements(By.TAG_NAME, 'tr')]
 
     def tbody2elemlist(self, elem):
         """
@@ -157,11 +157,11 @@ class AcceptanceHelper(object):
         :return: list of table rows, each being a list of cell WebElements
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
         rows = []
-        for tr in tbody.find_elements_by_tag_name('tr'):
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
             row = []
-            for td in tr.find_elements_by_xpath('*'):
+            for td in tr.find_elements(By.XPATH, '*'):
                 if td.tag_name not in ['td', 'th']:
                     continue
                 row.append(td)
@@ -300,9 +300,9 @@ class AcceptanceHelper(object):
             try:
                 if wait:
                     self.wait_for_modal_shown(selenium)
-                modal = selenium.find_element_by_id('modalDiv')
-                title = selenium.find_element_by_id('modalLabel')
-                body = selenium.find_element_by_id('modalBody')
+                modal = selenium.find_element(By.ID, 'modalDiv')
+                title = selenium.find_element(By.ID, 'modalLabel')
+                body = selenium.find_element(By.ID, 'modalBody')
                 return modal, title, body
             except TimeoutException:
                 if count > 6:
