@@ -2,6 +2,6 @@ biweeklybudget.cliutils module
 ==============================
 
 .. automodule:: biweeklybudget.cliutils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

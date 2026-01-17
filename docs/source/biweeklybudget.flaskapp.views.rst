@@ -2,14 +2,15 @@ biweeklybudget.flaskapp.views package
 =====================================
 
 .. automodule:: biweeklybudget.flaskapp.views
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    biweeklybudget.flaskapp.views.accounts
    biweeklybudget.flaskapp.views.budgets
@@ -28,4 +29,3 @@ Submodules
    biweeklybudget.flaskapp.views.searchableajaxview
    biweeklybudget.flaskapp.views.transactions
    biweeklybudget.flaskapp.views.utils
-
