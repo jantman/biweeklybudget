@@ -18,11 +18,15 @@ Files
    jsdoc.formBuilder
    jsdoc.forms
    jsdoc.fuel
+   jsdoc.fuel_charts
    jsdoc.ofx
    jsdoc.payperiod_modal
+   jsdoc.payperiods
    jsdoc.plaid_prod
    jsdoc.projects
    jsdoc.reconcile
    jsdoc.reconcile_modal
+   jsdoc.scheduled
    jsdoc.scheduled_modal
+   jsdoc.transactions
    jsdoc.transactions_modal

@@ -3,7 +3,7 @@ jsdoc.custom
 
 File: ``biweeklybudget/flaskapp/static/js/custom.js``
 
-.. js:function:: fmt_currency(value)
+.. js:function:: ...........y(value)
 
    Format a float as currency. If ``value`` is null, return ``&nbsp;``.
    Otherwise, construct a new instance of ``Intl.NumberFormat`` and use it to
@@ -12,29 +12,20 @@ File: ``biweeklybudget/flaskapp/static/js/custom.js``
    the header of ``base.html`` using the values specified in the Python
    settings module.
 
-   :param number value: the number to format
+   :param value: the number to format
+   :type value: **number**
    :returns: **string** -- The number formatted as currency
-   
-
-   
-
-.. js:function:: fmt_null(o)
+.. js:function:: .......l(o)
 
    Format a null object as "&nbsp;"
 
-   :param Object|null o: input value
+   :param o: input value
+   :type o: **Object|null**
    :returns: **Object|string** -- o if not null, ``&nbsp;`` if null
-   
-
-   
-
-.. js:function:: isoformat(d)
+.. js:function:: ........t(d)
 
    Format a javascript Date as ISO8601 YYYY-MM-DD
 
-   :param Date d: the date to format
+   :param d: the date to format
+   :type d: **Date**
    :returns: **string** -- YYYY-MM-DD
-   
-
-   
-
