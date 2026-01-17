@@ -232,7 +232,7 @@ def testflask():
         s.close()
         from pytest_flask.fixtures import LiveServer  # noqa
         from biweeklybudget.flaskapp.app import app  # noqa
-        server = LiveServer(app, 'localhost', port)
+        server = LiveServer(app, 'localhost', port, wait=5)
         server.start()
         yield server
         server.stop()
