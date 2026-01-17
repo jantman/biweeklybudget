@@ -174,7 +174,7 @@ class Transaction(Base, ModelAsDict):
         # see: http://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html
         # #correlated-subquery-relationship-hybrid
         return select(
-            [func.sum(BudgetTransaction.amount)]
+            func.sum(BudgetTransaction.amount)
         ).where(
             BudgetTransaction.trans_id.__eq__(cls.id)
         ).label('actual_amount')

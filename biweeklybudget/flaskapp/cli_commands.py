@@ -38,7 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 import time
 from werkzeug.serving import run_simple, WSGIRequestHandler
-from flask.cli import pass_script_info, DispatchingApp
+from flask.cli import pass_script_info
 
 import click
 
@@ -93,13 +93,10 @@ def template_paths():
               help='The interface to bind to.')
 @click.option('--port', '-p', default=5000,
               help='The port to bind to.')
-@click.option('--eager-loading/--lazy-loader', default=None,
-              help='Enable or disable eager loading.  By default eager '
-              'loading is enabled if the reloader is disabled.')
 @click.option('--with-threads/--without-threads', default=False,
               help='Enable or disable multithreading.')
 @pass_script_info
-def rundev_command(info, host, port, eager_loading, with_threads):
+def rundev_command(info, host, port, with_threads):
     """
     Modified from the upstream ``flask.cli.run_command`` to add some debugging
     and reloading features
@@ -116,10 +113,9 @@ def rundev_command(info, host, port, eager_loading, with_threads):
     debug = True
     reload = True
     debugger = True
-    if eager_loading is None:
-        eager_loading = not reload
 
-    app = DispatchingApp(info.load_app, use_eager_loading=eager_loading)
+    # Load the Flask app directly (DispatchingApp was removed in Flask 2.3)
+    app = info.load_app()
 
     # Extra startup messages.  This depends a bit on Werkzeug internals to
     # not double execute when the reloader kicks in.

@@ -178,10 +178,8 @@ class ScheduledTransaction(Base, ModelAsDict):
     @schedule_type.expression
     def schedule_type(cls):
         return case(
-            [
-                (cls.date.isnot(None), 'date'),
-                (cls.day_of_month.isnot(None), 'monthly'),
-                (cls.num_per_period.isnot(None), 'per period')
-            ],
+            (cls.date.isnot(None), 'date'),
+            (cls.day_of_month.isnot(None), 'monthly'),
+            (cls.num_per_period.isnot(None), 'per period'),
             else_=''
         )
