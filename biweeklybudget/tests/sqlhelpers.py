@@ -129,6 +129,10 @@ def restore_mysqldump(dumpdir, eng, with_data=True):
         '--user=%s' % eng.url.username,
         '--database=%s' % eng.url.database
     ]
+    if not mysqldump_is_mariadb:
+        args.append('--ssl-mode=DISABLED')
+    else:
+        args.append('--skip-ssl')
     if eng.url.password is not None:
         args.append('--password=%s' % eng.url.password)
     logger.info('Passing %s to %s', fpath, ' '.join(args))

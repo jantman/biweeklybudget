@@ -44,10 +44,19 @@ import socket
 import json
 from time import time
 import warnings
+import multiprocessing
 
 from retrying import retry
 
 import biweeklybudget.settings
+
+# Python 3.14+ defaults to 'forkserver' multiprocessing start method,
+# but pytest-flask's LiveServer requires 'fork' for pickling
+try:
+    multiprocessing.set_start_method('fork')
+except RuntimeError:
+    # Start method can only be set once
+    pass
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
 from biweeklybudget.tests.selenium_helpers import (
@@ -62,8 +71,6 @@ try:
     from selenium.webdriver.support.event_firing_webdriver import \
         EventFiringWebDriver
     from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWD
-    from selenium.webdriver.common.desired_capabilities import \
-        DesiredCapabilities
     from selenium.webdriver import ChromeOptions
     HAVE_PYTEST_SELENIUM = True
 except ImportError:
@@ -279,17 +286,22 @@ def driver(request, driver_class, driver_kwargs):
     TravisCI. We ripped the original ``driver = driver_class(**driver_kwargs)``
     out and replaced it with the ``get_driver_for_class()`` function, which
     is wrapped in the retrying package's ``@retry`` decorator.
+
+    Updated for Selenium 4.x which removed desired_capabilities parameter.
     """
-    kwargs = driver_kwargs
-    if 'desired_capabilities' not in kwargs:
-        kwargs['desired_capabilities'] = DesiredCapabilities.CHROME
-    kwargs['desired_capabilities']['goog:loggingPrefs'] = {
+    kwargs = driver_kwargs.copy()
+    # Selenium 4.x: desired_capabilities parameter removed, use options instead
+    if 'desired_capabilities' in kwargs:
+        del kwargs['desired_capabilities']
+
+    # Set logging preferences through ChromeOptions for Selenium 4.x
+    if 'options' not in kwargs:
+        kwargs['options'] = ChromeOptions()
+    kwargs['options'].set_capability('goog:loggingPrefs', {
         'browser': 'ALL',
         'driver': 'ALL'
-    }
-    kwargs['desired_capabilities']['loggingPrefs'] = {
-        'browser': 'ALL',
-    }
+    })
+
     driver = get_driver_for_class(driver_class, kwargs)
     event_listener = request.config.getoption('event_listener')
     if event_listener is not None:
