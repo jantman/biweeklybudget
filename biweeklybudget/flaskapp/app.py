@@ -52,7 +52,7 @@ except (ImportError, KeyError):
 from flask import Flask
 
 from biweeklybudget.db import init_db, cleanup_db
-from biweeklybudget.flaskapp.jsonencoder import MagicJSONEncoder
+from biweeklybudget.flaskapp.jsonencoder import MagicJSONProvider
 from biweeklybudget.utils import fix_werkzeug_logger
 
 format = "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - " \
@@ -71,7 +71,9 @@ fix_werkzeug_logger()
 
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')
-app.json_encoder = MagicJSONEncoder
+# Flask 3.x uses json_provider_class instead of json_encoder
+app.json_provider_class = MagicJSONProvider
+app.json = MagicJSONProvider(app)
 init_db()
 
 

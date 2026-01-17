@@ -139,21 +139,20 @@ class ScheduledTransaction(Base, ModelAsDict):
 
     @recurrence_str.expression
     def recurrence_str(cls):
+        # SQLAlchemy 2.0: case() no longer takes a list, pass tuples directly
         return case(
-            [
-                (
-                    cls.date.isnot(None),
-                    func.date_format(cls.date, '%Y-%m-%d')
-                ),
-                (
-                    cls.day_of_month.isnot(None),
-                    cls.day_of_month
-                ),
-                (
-                    cls.num_per_period.isnot(None),
-                    func.concat(cls.num_per_period, ' per period')
-                )
-            ],
+            (
+                cls.date.isnot(None),
+                func.date_format(cls.date, '%Y-%m-%d')
+            ),
+            (
+                cls.day_of_month.isnot(None),
+                cls.day_of_month
+            ),
+            (
+                cls.num_per_period.isnot(None),
+                func.concat(cls.num_per_period, ' per period')
+            ),
             else_=''
         )
 
