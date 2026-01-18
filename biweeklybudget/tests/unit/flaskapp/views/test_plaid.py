@@ -324,7 +324,7 @@ class TestPlaidHandleLink:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: (123)\nReason: foo\n'
+                'message': 'Exception: Status Code: 123\nReason: foo\n'
             })
         ]
         assert mock_json.mock_calls == []
@@ -520,7 +520,7 @@ class TestPlaidRefreshAccounts:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: (500)\nReason: fooerror\n'
+                'message': 'Exception: Status Code: 500\nReason: fooerror\n'
             })
         ]
         assert mock_json.mock_calls == []
@@ -749,7 +749,7 @@ class TestPlaidUpdateItemInfo:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: (123)\nReason: foo\n'
+                'message': 'Exception: Status Code: 123\nReason: foo\n'
             })
         ]
         assert mock_json.mock_calls == []
@@ -875,9 +875,9 @@ class TestPlaidUpdate:
         type(accts[0]).name = 'AName1'
         type(accts[1]).name = 'AName2'
         plaid_accts = [
-            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
-            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
-            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+            Mock(spec=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec=PlaidAccount, mask='XXX3', account=accts[1]),
         ]
         type(plaid_accts[0]).name = 'Acct1'
         type(plaid_accts[1]).name = 'Acct2'
@@ -926,9 +926,9 @@ class TestPlaidUpdate:
         type(accts[0]).name = 'AName1'
         type(accts[1]).name = 'AName2'
         plaid_accts = [
-            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
-            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
-            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+            Mock(spec=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec=PlaidAccount, mask='XXX3', account=accts[1]),
         ]
         type(plaid_accts[0]).name = 'Acct1'
         type(plaid_accts[1]).name = 'Acct2'
@@ -1002,9 +1002,9 @@ class TestPlaidUpdate:
         type(accts[0]).name = 'AName1'
         type(accts[1]).name = 'AName2'
         plaid_accts = [
-            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
-            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
-            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+            Mock(spec=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec=PlaidAccount, mask='XXX3', account=accts[1]),
         ]
         type(plaid_accts[0]).name = 'Acct1'
         type(plaid_accts[1]).name = 'Acct2'
@@ -1076,9 +1076,9 @@ class TestPlaidUpdate:
         type(accts[0]).name = 'AName1'
         type(accts[1]).name = 'AName2'
         plaid_accts = [
-            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
-            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
-            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+            Mock(spec=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec=PlaidAccount, mask='XXX3', account=accts[1]),
         ]
         type(plaid_accts[0]).name = 'Acct1'
         type(plaid_accts[1]).name = 'Acct2'
@@ -1158,9 +1158,9 @@ class TestPlaidUpdate:
         type(accts[0]).name = 'AName1'
         type(accts[1]).name = 'AName2'
         plaid_accts = [
-            Mock(spec_set=PlaidAccount, mask='XXX1', account=accts[0]),
-            Mock(spec_set=PlaidAccount, mask='XXX2', account=None),
-            Mock(spec_set=PlaidAccount, mask='XXX3', account=accts[1]),
+            Mock(spec=PlaidAccount, mask='XXX1', account=accts[0]),
+            Mock(spec=PlaidAccount, mask='XXX2', account=None),
+            Mock(spec=PlaidAccount, mask='XXX3', account=accts[1]),
         ]
         type(plaid_accts[0]).name = 'Acct1'
         type(plaid_accts[1]).name = 'Acct2'
@@ -1414,7 +1414,7 @@ class TestPlaidLinkToken:
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,
-                'message': 'Exception: (999)\nReason: some error message\n'
+                'message': 'Exception: Status Code: 999\nReason: some error message\n'
             })
         ]
         assert mock_json.mock_calls == []

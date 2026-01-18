@@ -41,6 +41,7 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.transaction import Transaction
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from biweeklybudget.utils import dtnow
 import requests
 from time import sleep
@@ -56,17 +57,17 @@ class TestAccountsNavigation(AcceptanceHelper):
         self.get(selenium, base_url + '/accounts')
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Accounts - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -81,20 +82,20 @@ class TestAccountsMainPage(AcceptanceHelper):
         self.get(selenium, base_url + '/accounts')
 
     def test_bank_table(self, selenium):
-        table = selenium.find_element_by_xpath(
-            "//div[@id='panel-bank-accounts']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-bank-accounts']//table"
+                                      )
         assert self.thead2list(table) == [
             'Account', 'Balance', 'Unreconciled', 'Difference'
         ]
         assert self.tbody2textlist(table) == [
             ['BankOne', '$12,789.01 (14 hours ago)', '$0.00', '$12,789.01'],
-            ['BankTwoStale', '$100.23 (18 days ago)', '-$333.33', '$433.56']
+            ['BankTwoStale', '$100.23 (a month ago)', '-$333.33', '$433.56']
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(1, null)">BankOne</a>',
@@ -102,19 +103,19 @@ class TestAccountsMainPage(AcceptanceHelper):
         ]
 
     def test_bank_stale_span(self, selenium):
-        tbody = selenium.find_element_by_xpath(
-            "//div[@id='panel-bank-accounts']//table/tbody"
-        )
-        rows = tbody.find_elements_by_tag_name('tr')
-        bankTwoStale_bal_td = rows[1].find_elements_by_tag_name('td')[1]
-        bal_span = bankTwoStale_bal_td.find_elements_by_tag_name('span')[1]
-        assert bal_span.text == '(18 days ago)'
+        tbody = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-bank-accounts']//table/tbody"
+                                      )
+        rows = tbody.find_elements(By.TAG_NAME, 'tr')
+        bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[1]
+        bal_span = bankTwoStale_bal_td.find_elements(By.TAG_NAME, 'span')[1]
+        assert bal_span.text == '(a month ago)'
         assert bal_span.get_attribute('class') == 'data_age text-danger'
 
     def test_credit_table(self, selenium):
-        table = selenium.find_element_by_xpath(
-            "//div[@id='panel-credit-cards']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-credit-cards']//table"
+                                      )
         assert self.thead2list(table) == [
             'Account', 'Balance', 'Credit Limit', 'Available', 'Unreconciled',
             'Difference'
@@ -130,9 +131,9 @@ class TestAccountsMainPage(AcceptanceHelper):
             ]
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(3, null)">CreditOne</a>',
@@ -140,17 +141,17 @@ class TestAccountsMainPage(AcceptanceHelper):
         ]
 
     def test_investment_table(self, selenium):
-        table = selenium.find_element_by_xpath(
-            "//div[@id='panel-investment']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-investment']//table"
+                                      )
         assert self.thead2list(table) == ['Account', 'Value']
         assert self.tbody2textlist(table) == [
             ['InvestmentOne', '$10,362.91 (13 days ago)']
         ]
         links = []
-        tbody = table.find_element_by_tag_name('tbody')
-        for tr in tbody.find_elements_by_tag_name('tr'):
-            td = tr.find_elements_by_tag_name('td')[0]
+        tbody = table.find_element(By.TAG_NAME, 'tbody')
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+            td = tr.find_elements(By.TAG_NAME, 'td')[0]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(5, null)">InvestmentOne</a>'
@@ -192,87 +193,87 @@ class TestAccountModal(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 1'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == '1'
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == 'BankOne'
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == 'First Bank Account'
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == 'secret/foo/bar/BankOne'
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == '{"foo": "bar"}'
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == 'First Bank Account'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == 'secret/foo/bar/BankOne'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == '{"foo": "bar"}'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected() is True
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
         # BEGIN REs
-        assert selenium.find_element_by_id(
-            'account_frm_re_interest_charge'
-        ).get_attribute('value') == '^interest-charge'
-        assert selenium.find_element_by_id(
-            'account_frm_re_interest_paid'
-        ).get_attribute('value') == '^interest-paid'
-        assert selenium.find_element_by_id(
-            'account_frm_re_payment'
-        ).get_attribute('value') == '^(payment|thank you)'
-        assert selenium.find_element_by_id(
-            'account_frm_re_late_fee'
-        ).get_attribute('value') == '^Late Fee'
-        assert selenium.find_element_by_id(
-            'account_frm_re_other_fee'
-        ).get_attribute('value') == '^re-other-fee'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_interest_charge'
+                                     ).get_attribute('value') == '^interest-charge'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_interest_paid'
+                                     ).get_attribute('value') == '^interest-paid'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_payment'
+                                     ).get_attribute('value') == '^(payment|thank you)'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_late_fee'
+                                     ).get_attribute('value') == '^Late Fee'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_other_fee'
+                                     ).get_attribute('value') == '^re-other-fee'
         # END REs
         assert Select(
-            selenium.find_element_by_id('account_frm_plaid_account')
+            selenium.find_element(By.ID, 'account_frm_plaid_account')
         ).first_selected_option.get_attribute(
             'value'
         ) == 'PlaidItem1,PlaidAcct1'
-        assert selenium.find_element_by_id('account_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
 
     def test_12_edit_acct1(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/1')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 1'
-        selenium.find_element_by_id('account_frm_name').send_keys('Edited')
-        selenium.find_element_by_id('account_frm_plaid_account')
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Edited')
+        selenium.find_element(By.ID, 'account_frm_plaid_account')
         Select(
-            selenium.find_element_by_id('account_frm_plaid_account')
+            selenium.find_element(By.ID, 'account_frm_plaid_account')
         ).select_by_value('PlaidItem1,PlaidAcct4')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 1 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_13_verify_db(self, testdb):
         acct = testdb.query(Account).get(1)
@@ -321,119 +322,119 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_21_get_acct2_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="BankTwoStale"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="BankTwoStale"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 2'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == '2'
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == 'BankTwoStale'
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == 'Stale Bank Account'
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == 'secret/foo/bar/BankTwo'
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == '{"foo": "baz"}'
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is True
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == 'Stale Bank Account'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == 'secret/foo/bar/BankTwo'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == '{"foo": "baz"}'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected() is True
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
         # BEGIN REs
-        assert selenium.find_element_by_id(
-            'account_frm_re_interest_charge'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_re_interest_paid'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_re_payment'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_re_late_fee'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_re_other_fee'
-        ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_interest_charge'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_interest_paid'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_payment'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_late_fee'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_re_other_fee'
+                                     ).get_attribute('value') == ''
         # END REs
         assert Select(
-            selenium.find_element_by_id('account_frm_plaid_account')
+            selenium.find_element(By.ID, 'account_frm_plaid_account')
         ).first_selected_option.get_attribute(
             'value'
         ) == 'null,null'
-        assert selenium.find_element_by_id('account_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
 
     def test_22_edit_acct2(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="BankTwoStale"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="BankTwoStale"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 2'
-        selenium.find_element_by_id('account_frm_name').send_keys('Edited')
-        selenium.find_element_by_id('account_frm_description').clear()
-        selenium.find_element_by_id('account_frm_description').send_keys(
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Edited')
+        selenium.find_element(By.ID, 'account_frm_description').clear()
+        selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a2desc'
         )
-        selenium.find_element_by_id('account_frm_ofx_cat_memo').click()
-        selenium.find_element_by_id('account_frm_vault_creds_path').send_keys(
+        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
+        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
             '/baz'
         )
-        selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).clear()
-        selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).send_keys('{"key": "value"}')
-        selenium.find_element_by_id('account_frm_negate_ofx').click()
-        selenium.find_element_by_id('account_frm_reconcile_trans').click()
-        selenium.find_element_by_id('account_frm_active').click()
+        selenium.find_element(By.ID,
+                              'account_frm_ofxgetter_config_json'
+                              ).clear()
+        selenium.find_element(By.ID,
+                              'account_frm_ofxgetter_config_json'
+                              ).send_keys('{"key": "value"}')
+        selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
+        selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
+        selenium.find_element(By.ID, 'account_frm_active').click()
         # BEGIN REs
-        selenium.find_element_by_id(
-            'account_frm_re_interest_charge'
-        ).send_keys('my-re-ic$')
-        selenium.find_element_by_id(
-            'account_frm_re_interest_paid'
-        ).send_keys('my-re-ip$')
-        selenium.find_element_by_id(
-            'account_frm_re_payment'
-        ).send_keys('my-re-p$')
-        selenium.find_element_by_id(
-            'account_frm_re_late_fee'
-        ).send_keys('my-re-lf$')
+        selenium.find_element(By.ID,
+                              'account_frm_re_interest_charge'
+                              ).send_keys('my-re-ic$')
+        selenium.find_element(By.ID,
+                              'account_frm_re_interest_paid'
+                              ).send_keys('my-re-ip$')
+        selenium.find_element(By.ID,
+                              'account_frm_re_payment'
+                              ).send_keys('my-re-p$')
+        selenium.find_element(By.ID,
+                              'account_frm_re_late_fee'
+                              ).send_keys('my-re-lf$')
         # END REs
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 2 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_23_verify_db(self, testdb):
         acct = testdb.query(Account).get(2)
@@ -487,85 +488,85 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_31_get_acct3_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="CreditOne"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="CreditOne"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 3'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == '3'
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == 'CreditOne'
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == 'First Credit Card, limit 2000'
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == 'First Credit Card, limit 2000'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected()
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').get_attribute('value') == '2000'
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_apr').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_margin').get_attribute('value') == '0.005'
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed()
-        assert Select(selenium.find_element_by_id(
-            'account_frm_int_class_name')
-        ).first_selected_option.get_attribute('value') == 'AdbCompoundedDaily'
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed()
-        assert Select(selenium.find_element_by_id(
-            'account_frm_min_pay_class_name')
-        ).first_selected_option.get_attribute('value') == 'MinPaymentAmEx'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').get_attribute('value') == '2000'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').get_attribute('value') == '0.005'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed()
+        assert Select(selenium.find_element(By.ID,
+                                            'account_frm_int_class_name')
+                      ).first_selected_option.get_attribute('value') == 'AdbCompoundedDaily'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed()
+        assert Select(selenium.find_element(By.ID,
+                                            'account_frm_min_pay_class_name')
+                      ).first_selected_option.get_attribute('value') == 'MinPaymentAmEx'
         # END CREDIT
         assert Select(
-            selenium.find_element_by_id('account_frm_plaid_account')
+            selenium.find_element(By.ID, 'account_frm_plaid_account')
         ).first_selected_option.get_attribute(
             'value'
         ) == 'PlaidItem1,PlaidAcct2'
-        assert selenium.find_element_by_id('account_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
 
     def test_32_edit_acct3(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="CreditOne"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="CreditOne"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 3'
-        selenium.find_element_by_id('account_frm_name').send_keys('Edited')
-        selenium.find_element_by_id('account_frm_margin').clear()
-        selenium.find_element_by_id('account_frm_margin').send_keys('4.21')
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Edited')
+        selenium.find_element(By.ID, 'account_frm_margin').clear()
+        selenium.find_element(By.ID, 'account_frm_margin').send_keys('4.21')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 3 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_33_verify_db(self, testdb):
         acct = testdb.query(Account).get(3)
@@ -620,105 +621,105 @@ class TestAccountModal(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 4'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == '4'
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == 'CreditTwo'
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == 'Credit 2 limit 5500'
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == '/foo/bar'
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == 'Credit 2 limit 5500'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == '/foo/bar'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected()
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').get_attribute('value') == '5500'
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_apr').get_attribute('value') == '0.1'
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed()
-        assert selenium.find_element_by_id(
-            'account_frm_margin').get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed()
-        assert Select(selenium.find_element_by_id(
-            'account_frm_int_class_name')
-        ).first_selected_option.get_attribute('value') == 'AdbCompoundedDaily'
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed()
-        assert Select(selenium.find_element_by_id(
-            'account_frm_min_pay_class_name')
-        ).first_selected_option.get_attribute('value') == 'MinPaymentDiscover'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').get_attribute('value') == '5500'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').get_attribute('value') == '0.1'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed()
+        assert Select(selenium.find_element(By.ID,
+                                            'account_frm_int_class_name')
+                      ).first_selected_option.get_attribute('value') == 'AdbCompoundedDaily'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed()
+        assert Select(selenium.find_element(By.ID,
+                                            'account_frm_min_pay_class_name')
+                      ).first_selected_option.get_attribute('value') == 'MinPaymentDiscover'
         # END CREDIT
-        assert selenium.find_element_by_id('account_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
 
     def test_42_edit_acct4(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/4')
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 4'
-        selenium.find_element_by_id('account_frm_name').send_keys('Edited')
-        selenium.find_element_by_id('account_frm_description').clear()
-        selenium.find_element_by_id('account_frm_description').send_keys(
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Edited')
+        selenium.find_element(By.ID, 'account_frm_description').clear()
+        selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a4desc'
         )
-        selenium.find_element_by_id('account_frm_ofx_cat_memo').click()
-        selenium.find_element_by_id('account_frm_vault_creds_path').send_keys(
+        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
+        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
             '/baz'
         )
-        selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).clear()
-        selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).send_keys('{"key": "value"}')
-        selenium.find_element_by_id('account_frm_negate_ofx').click()
-        selenium.find_element_by_id('account_frm_reconcile_trans').click()
+        selenium.find_element(By.ID,
+                              'account_frm_ofxgetter_config_json'
+                              ).clear()
+        selenium.find_element(By.ID,
+                              'account_frm_ofxgetter_config_json'
+                              ).send_keys('{"key": "value"}')
+        selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
+        selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
         # BEGIN CREDIT
-        selenium.find_element_by_id('account_frm_credit_limit').clear()
-        selenium.find_element_by_id('account_frm_credit_limit').send_keys(
+        selenium.find_element(By.ID, 'account_frm_credit_limit').clear()
+        selenium.find_element(By.ID, 'account_frm_credit_limit').send_keys(
             '123.45'
         )
-        selenium.find_element_by_id('account_frm_apr').clear()
-        selenium.find_element_by_id('account_frm_apr').send_keys('45.67')
-        selenium.find_element_by_id('account_frm_margin').clear()
-        Select(selenium.find_element_by_id(
-            'account_frm_int_class_name')
-        ).select_by_value('AdbCompoundedDaily')
-        Select(selenium.find_element_by_id(
-            'account_frm_min_pay_class_name')
-        ).select_by_value('MinPaymentCiti')
+        selenium.find_element(By.ID, 'account_frm_apr').clear()
+        selenium.find_element(By.ID, 'account_frm_apr').send_keys('45.67')
+        selenium.find_element(By.ID, 'account_frm_margin').clear()
+        Select(selenium.find_element(By.ID,
+                                     'account_frm_int_class_name')
+               ).select_by_value('AdbCompoundedDaily')
+        Select(selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name')
+               ).select_by_value('MinPaymentCiti')
         # END CREDIT
-        selenium.find_element_by_id('account_frm_active').click()
+        selenium.find_element(By.ID, 'account_frm_active').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 4 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_43_verify_db(self, testdb):
         acct = testdb.query(Account).get(4)
@@ -768,66 +769,66 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_51_get_acct5_click(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="InvestmentOne"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="InvestmentOne"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 5'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == '5'
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == 'InvestmentOne'
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == 'Investment One Stale'
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected()
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == 'Investment One Stale'
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected() is False
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
-        assert selenium.find_element_by_id('account_frm_active').is_selected()
+        assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
 
     def test_52_edit_acct5(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_xpath('//a[text()="InvestmentOne"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="InvestmentOne"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Account 5'
-        selenium.find_element_by_id('account_frm_name').send_keys('Edited')
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Edited')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 5 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_53_verify_db(self, testdb):
         acct = testdb.query(Account).get(5)
@@ -860,64 +861,64 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_61_modal_add_bank(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_id('btn_add_acct_bank')
+        link = selenium.find_element(By.ID, 'btn_add_acct_bank')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is True
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected()
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_active').is_selected() is True
-        selenium.find_element_by_id('account_frm_name').send_keys('Acct7')
-        selenium.find_element_by_id('account_frm_description').clear()
-        selenium.find_element_by_id('account_frm_description').send_keys(
+        assert selenium.find_element(By.ID,
+                                     'account_frm_active').is_selected() is True
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Acct7')
+        selenium.find_element(By.ID, 'account_frm_description').clear()
+        selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a7desc'
         )
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 7 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_62_verify_db(self, testdb):
         acct = testdb.query(Account).get(7)
@@ -950,90 +951,90 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_71_modal_add_credit(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_id('btn_add_acct_credit')
+        link = selenium.find_element(By.ID, 'btn_add_acct_credit')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is True
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected()
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_active').is_selected() is True
-        selenium.find_element_by_id('account_frm_name').send_keys('Acct8')
-        selenium.find_element_by_id('account_frm_description').clear()
-        selenium.find_element_by_id('account_frm_description').send_keys(
+        assert selenium.find_element(By.ID,
+                                     'account_frm_active').is_selected() is True
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Acct8')
+        selenium.find_element(By.ID, 'account_frm_description').clear()
+        selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a8desc'
         )
-        selenium.find_element_by_id('account_frm_type_credit').click()
-        selenium.find_element_by_id('account_frm_ofx_cat_memo').click()
-        selenium.find_element_by_id('account_frm_vault_creds_path').send_keys(
+        selenium.find_element(By.ID, 'account_frm_type_credit').click()
+        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
+        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
             '/path/to/creds'
         )
-        selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).send_keys('{"foo": "blam"}')
-        selenium.find_element_by_id('account_frm_negate_ofx').click()
-        selenium.find_element_by_id('account_frm_reconcile_trans').click()
+        selenium.find_element(By.ID,
+                              'account_frm_ofxgetter_config_json'
+                              ).send_keys('{"foo": "blam"}')
+        selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
+        selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
         # BEGIN CREDIT
-        selenium.find_element_by_id('account_frm_credit_limit').clear()
-        selenium.find_element_by_id('account_frm_credit_limit').send_keys(
+        selenium.find_element(By.ID, 'account_frm_credit_limit').clear()
+        selenium.find_element(By.ID, 'account_frm_credit_limit').send_keys(
             '987.65'
         )
-        selenium.find_element_by_id('account_frm_apr').clear()
-        selenium.find_element_by_id('account_frm_apr').send_keys('45.67')
-        selenium.find_element_by_id('account_frm_margin').clear()
-        Select(selenium.find_element_by_id(
-            'account_frm_int_class_name')
-        ).select_by_value('AdbCompoundedDaily')
-        Select(selenium.find_element_by_id(
-            'account_frm_min_pay_class_name')
-        ).select_by_value('MinPaymentCiti')
+        selenium.find_element(By.ID, 'account_frm_apr').clear()
+        selenium.find_element(By.ID, 'account_frm_apr').send_keys('45.67')
+        selenium.find_element(By.ID, 'account_frm_margin').clear()
+        Select(selenium.find_element(By.ID,
+                                     'account_frm_int_class_name')
+               ).select_by_value('AdbCompoundedDaily')
+        Select(selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name')
+               ).select_by_value('MinPaymentCiti')
         # END CREDIT
-        selenium.find_element_by_id('account_frm_active').click()
+        selenium.find_element(By.ID, 'account_frm_active').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 8 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_72_verify_db(self, testdb):
         acct = testdb.query(Account).get(8)
@@ -1066,65 +1067,65 @@ class TestAccountModal(AcceptanceHelper):
 
     def test_81_modal_add_bank(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts')
-        link = selenium.find_element_by_id('btn_add_acct_invest')
+        link = selenium.find_element(By.ID, 'btn_add_acct_invest')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Account'
-        assert selenium.find_element_by_id('account_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_id').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id('account_frm_name').get_attribute(
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
             'value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_description'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_type_bank').is_selected() is True
-        assert selenium.find_element_by_id(
-            'account_frm_type_credit').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_vault_creds_path'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_ofxgetter_config_json'
-        ).get_attribute('value') == ''
-        assert selenium.find_element_by_id(
-            'account_frm_negate_ofx').is_selected() is False
-        assert selenium.find_element_by_id(
-            'account_frm_reconcile_trans').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'account_frm_description'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_bank').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_credit').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_type_investment').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofx_cat_memo').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_vault_creds_path'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_ofxgetter_config_json'
+                                     ).get_attribute('value') == ''
+        assert selenium.find_element(By.ID,
+                                     'account_frm_negate_ofx').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_reconcile_trans').is_selected()
         # BEGIN CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_credit_limit').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_apr').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_margin').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_int_class_name').is_displayed() is False
-        assert selenium.find_element_by_id(
-            'account_frm_min_pay_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_credit_limit').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_apr').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_margin').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_int_class_name').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'account_frm_min_pay_class_name').is_displayed() is False
         # END CREDIT
-        assert selenium.find_element_by_id(
-            'account_frm_active').is_selected() is True
-        selenium.find_element_by_id('account_frm_name').send_keys('Acct9')
-        selenium.find_element_by_id('account_frm_description').clear()
-        selenium.find_element_by_id('account_frm_description').send_keys(
+        assert selenium.find_element(By.ID,
+                                     'account_frm_active').is_selected() is True
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('Acct9')
+        selenium.find_element(By.ID, 'account_frm_description').clear()
+        selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a9desc'
         )
-        selenium.find_element_by_id('account_frm_type_investment').click()
+        selenium.find_element(By.ID, 'account_frm_type_investment').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Account 9 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
 
     def test_82_verify_db(self, testdb):
         acct = testdb.query(Account).get(9)
@@ -1180,7 +1181,7 @@ class TestAccountTransfer(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/accounts')
         # check the table content on the page
-        btable = selenium.find_element_by_id('table-accounts-bank')
+        btable = selenium.find_element(By.ID, 'table-accounts-bank')
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
@@ -1191,12 +1192,12 @@ class TestAccountTransfer(AcceptanceHelper):
             ],
             [
                 'BankTwoStale',
-                '$100.23 (18 days ago)',
+                '$100.23 (a month ago)',
                 '-$333.33',
                 '$433.56'
             ]
         ]
-        itable = selenium.find_element_by_id('table-accounts-investment')
+        itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
@@ -1205,18 +1206,18 @@ class TestAccountTransfer(AcceptanceHelper):
             ]
         ]
         # open the modal to do a transfer
-        link = selenium.find_element_by_id('btn_acct_txfr_bank')
+        link = selenium.find_element(By.ID, 'btn_acct_txfr_bank')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Account Transfer'
-        assert body.find_element_by_id(
-            'acct_txfr_frm_date').get_attribute('value') == dtnow(
+        assert body.find_element(By.ID,
+                                 'acct_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
-        amt = body.find_element_by_id('acct_txfr_frm_amount')
+        amt = body.find_element(By.ID, 'acct_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
         budget_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_budget')
+            body.find_element(By.ID, 'acct_txfr_frm_budget')
         )
         opts = []
         for o in budget_sel.options:
@@ -1233,7 +1234,7 @@ class TestAccountTransfer(AcceptanceHelper):
             'value') == 'None'
         budget_sel.select_by_value('2')
         from_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_from_account')
+            body.find_element(By.ID, 'acct_txfr_frm_from_account')
         )
         opts = []
         for o in from_acct_sel.options:
@@ -1252,7 +1253,7 @@ class TestAccountTransfer(AcceptanceHelper):
         ) == 'None'
         from_acct_sel.select_by_value('1')
         to_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_to_account')
+            body.find_element(By.ID, 'acct_txfr_frm_to_account')
         )
         opts = []
         for o in to_acct_sel.options:
@@ -1270,24 +1271,24 @@ class TestAccountTransfer(AcceptanceHelper):
             'value'
         ) == 'None'
         to_acct_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('acct_txfr_frm_notes')
+        notes = selenium.find_element(By.ID, 'acct_txfr_frm_notes')
         notes.clear()
         notes.send_keys('Account Transfer Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Transactions 5 and 6' \
                                  ' in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-accounts-bank')
         # ensure that the page content updated after refreshing
-        btable = selenium.find_element_by_id('table-accounts-bank')
+        btable = selenium.find_element(By.ID, 'table-accounts-bank')
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
@@ -1298,12 +1299,12 @@ class TestAccountTransfer(AcceptanceHelper):
             ],
             [
                 'BankTwoStale',
-                '$100.23 (18 days ago)',
+                '$100.23 (a month ago)',
                 '-$456.78',
                 '$557.01'
             ]
         ]
-        itable = selenium.find_element_by_id('table-accounts-investment')
+        itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
@@ -1351,18 +1352,18 @@ class TestAccountTransfer(AcceptanceHelper):
         # Fill in the form
         self.get(selenium, base_url + '/accounts')
         # open the modal to do a transfer
-        link = selenium.find_element_by_id('btn_acct_txfr_bank')
+        link = selenium.find_element(By.ID, 'btn_acct_txfr_bank')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Account Transfer'
-        date_box = body.find_element_by_id('acct_txfr_frm_date')
+        date_box = body.find_element(By.ID, 'acct_txfr_frm_date')
         assert date_box.get_attribute('value') == dtnow().strftime('%Y-%m-%d')
         date_box.clear()
-        amt = body.find_element_by_id('acct_txfr_frm_amount')
+        amt = body.find_element(By.ID, 'acct_txfr_frm_amount')
         amt.clear()
         amt.send_keys('123.45')
         budget_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_budget')
+            body.find_element(By.ID, 'acct_txfr_frm_budget')
         )
         opts = []
         for o in budget_sel.options:
@@ -1379,7 +1380,7 @@ class TestAccountTransfer(AcceptanceHelper):
             'value') == 'None'
         budget_sel.select_by_value('2')
         from_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_from_account')
+            body.find_element(By.ID, 'acct_txfr_frm_from_account')
         )
         opts = []
         for o in from_acct_sel.options:
@@ -1398,7 +1399,7 @@ class TestAccountTransfer(AcceptanceHelper):
         ) == 'None'
         from_acct_sel.select_by_value('1')
         to_acct_sel = Select(
-            body.find_element_by_id('acct_txfr_frm_to_account')
+            body.find_element(By.ID, 'acct_txfr_frm_to_account')
         )
         opts = []
         for o in to_acct_sel.options:
@@ -1416,23 +1417,23 @@ class TestAccountTransfer(AcceptanceHelper):
             'value'
         ) == 'None'
         to_acct_sel.select_by_value('2')
-        notes = selenium.find_element_by_id('acct_txfr_frm_notes')
+        notes = selenium.find_element(By.ID, 'acct_txfr_frm_notes')
         notes.clear()
         notes.send_keys('Account Transfer Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_class_name('formfeedback')
+        x = body.find_elements(By.CLASS_NAME, 'formfeedback')
         assert len(x) == 1
         assert x[0].text.strip() == 'Transactions must have a date'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'table-accounts-bank')
         # ensure that the page content updated after refreshing
-        btable = selenium.find_element_by_id('table-accounts-bank')
+        btable = selenium.find_element(By.ID, 'table-accounts-bank')
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
@@ -1443,12 +1444,12 @@ class TestAccountTransfer(AcceptanceHelper):
             ],
             [
                 'BankTwoStale',
-                '$100.23 (18 days ago)',
+                '$100.23 (a month ago)',
                 '-$456.78',
                 '$557.01'
             ]
         ]
-        itable = selenium.find_element_by_id('table-accounts-investment')
+        itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [

@@ -1,6 +1,78 @@
 Changelog
 =========
 
+1.4.0 (2026-01-18)
+------------------
+
+This release upgrades the project from Python 3.10 to Python 3.14 with all dependencies updated to their latest compatible versions.
+
+Breaking Changes
+++++++++++++++++
+
+* **Python 3.14 Required** - This release requires Python 3.14 or later. Python 3.10-3.13 are no longer supported.
+* **SQLAlchemy 2.0** - Upgraded from SQLAlchemy 1.x to 2.0, which includes significant API changes.
+* **Flask 3.x** - Upgraded from Flask 2.x to 3.x with updated JSON handling.
+
+Dependency Updates
+++++++++++++++++++
+
+* Upgrade Python from 3.10 to 3.14
+* Upgrade SQLAlchemy from 1.4.x to 2.0.45
+* Upgrade Flask from 2.x to 3.1.2
+* Upgrade Selenium from 3.x to 4.39.0
+* Upgrade pytest-selenium from 2.x to 4.1.0
+* Upgrade pytest-flask from 1.2.0 to 1.3.0
+* Upgrade Sphinx from 1.8.5 to 8.1.3
+* Upgrade sphinx-js from 3.x to 5.0.2
+* Upgrade humanize from 3.x to 4.15.0
+* Upgrade gunicorn from 19.7.1 to 22.0.0
+* Upgrade all other dependencies to latest compatible versions
+
+SQLAlchemy 2.0 Compatibility
+++++++++++++++++++++++++++++
+
+* Add monkey-patch for ``datatables`` package to fix ``query.join()`` calls that now require relationship attributes instead of string names
+* Add explicit ``session.add()`` call in ``Transaction.set_budgets()`` as SQLAlchemy 2.0 no longer auto-adds objects via relationship cascade
+* Update all query patterns for SQLAlchemy 2.0 compatibility
+
+Flask 3.x Compatibility
++++++++++++++++++++++++
+
+* Change ``request.get_json()`` to ``request.get_json(silent=True)`` in form handlers to handle non-JSON requests gracefully
+* Update JSON provider from ``json_encoder`` to ``json_provider_class`` for Flask 3.x
+
+Selenium 4.x Compatibility
+++++++++++++++++++++++++++
+
+* Remove deprecated ``desired_capabilities`` parameter from WebDriver initialization
+* Update to use ``ChromeOptions`` for all browser configuration
+* Set logging preferences via ``set_capability('goog:loggingPrefs', ...)`` instead of ``desired_capabilities``
+
+Testing Improvements
+++++++++++++++++++++
+
+* Add ``wait_for_datatable_rows()`` helper method to AcceptanceHelper for waiting on DataTables client-side filtering
+* Add retry logic for DataTable cell population timing issues in Docker tests
+* Fix pytest-flask LiveServer fixture for Python 3.14 multiprocessing (set start method to 'fork')
+* Pin alembic-verify to 0.1.4 and sqlalchemy-diff to 0.1.5 for compatibility
+* Update test assertions for humanize 4.15.0 decimal formatting (``intword`` now formats with 1 decimal place)
+
+Docker Test Infrastructure
+++++++++++++++++++++++++++
+
+* Update gunicorn from 19.7.1 to 22.0.0 for Python 3.14 compatibility
+* Fix ``_container_ip()`` method to handle new Docker API structure where IP addresses are in Networks dict
+* Add ``SETTINGS_MODULE`` and ``BIWEEKLYBUDGET_TEST_TIMESTAMP`` environment variables to Docker container
+* Add ``BIWEEKLYBUDGET_TEST_BASE_URL`` to tox passenv for proper Docker test execution
+* Fix ``testflask`` fixture to yield ``None`` when running against external URL
+
+Documentation
++++++++++++++
+
+* Update Sphinx configuration for 8.1.3 compatibility
+* Update sphinx-js integration for 5.0.2 compatibility
+* Regenerate JavaScript documentation with updated tooling
+
 1.3.0 (2026-01-16)
 ------------------
 

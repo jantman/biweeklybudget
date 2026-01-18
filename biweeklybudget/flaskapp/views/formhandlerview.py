@@ -57,7 +57,7 @@ class FormHandlerView(MethodView):
         'success' -> boolean
         'success_message' -> string success message
         """
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if data is None:
             # not JSON, must be form encoded
             data = request.form.to_dict()

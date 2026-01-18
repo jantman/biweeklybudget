@@ -19,8 +19,8 @@ tox
 
 Run specific test environments:
 ```bash
-# Unit tests (Python 3.10)
-tox -e py310
+# Unit tests (Python 3.14)
+tox -e py314
 
 # Acceptance tests (requires Chrome driver)
 tox -e acceptance
@@ -51,6 +51,15 @@ pytest biweeklybudget/tests/unit/test_file.py::TestClass::test_method
 
 # Run with coverage
 pytest --cov=biweeklybudget --cov-report=html
+```
+
+**Important:** When running tests, always redirect output to a scratchpad file instead of piping to `tail`/`head`/`grep`. This allows full examination of test output as needed:
+```bash
+# Good - redirect to scratchpad file
+tox -e acceptance -- -k "TestName" 2>&1 > /path/to/scratchpad/test-output.txt
+
+# Bad - loses full output
+tox -e acceptance -- -k "TestName" 2>&1 | tail -50
 ```
 
 ### Database Setup
@@ -244,7 +253,7 @@ All Python files include a standard copyright header with AGPL v3 license text. 
 
 ## Important Notes
 
-- **Python Version**: Currently targets Python 3.10 (configurable in tox.ini)
+- **Python Version**: Currently targets Python 3.14 (configurable in tox.ini)
 - **Database**: MySQL/MariaDB required (uses MySQL-specific features)
 - **Frontend**: jQuery + Bootstrap 3 + DataTables
 - **Security**: Application not designed for public access - intended for localhost use only
@@ -255,7 +264,7 @@ All Python files include a standard copyright header with AGPL v3 license text. 
 
 ```bash
 # Create virtualenv
-python3.10 -m venv venv
+python3.14 -m venv venv
 source venv/bin/activate
 
 # Install in development mode

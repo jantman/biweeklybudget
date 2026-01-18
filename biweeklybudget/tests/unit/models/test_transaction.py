@@ -135,7 +135,9 @@ class TestSetBudgetAmounts(object):
             assert t.budget_transactions[0].transaction == t
             assert t.budget_transactions[0].budget == b1
             assert t.budget_transactions[0].amount == Decimal('10.00')
-        assert mock_sess.mock_calls == []
+        # SQLAlchemy 2.0 requires explicit session.add() for BudgetTransactions
+        assert len(mock_sess.mock_calls) == 1
+        assert mock_sess.mock_calls[0][0] == 'add'
 
     def test_add_three(self):
         mock_sess = Mock()
@@ -162,7 +164,10 @@ class TestSetBudgetAmounts(object):
                 b2: Decimal('10.00'),
                 b3: Decimal('40.00')
             }
-        assert mock_sess.mock_calls == []
+        # SQLAlchemy 2.0 requires explicit session.add() for BudgetTransactions
+        assert len(mock_sess.mock_calls) == 3
+        for call in mock_sess.mock_calls:
+            assert call[0] == 'add'
 
     def test_sync(self):
         mock_sess = Mock()
@@ -195,7 +200,12 @@ class TestSetBudgetAmounts(object):
             b3: Decimal('60.00')
         }
 
-        assert len(mock_sess.mock_calls) == 1
-        assert mock_sess.mock_calls[0][0] == 'delete'
-        assert mock_sess.mock_calls[0][1][0].budget == b2
-        assert mock_sess.mock_calls[0][1][0].amount == Decimal('90.00')
+        # SQLAlchemy 2.0 requires explicit session.add() for new BudgetTransactions
+        # Expect 1 delete (b2) + 1 add (b3)
+        assert len(mock_sess.mock_calls) == 2
+        call_names = [c[0] for c in mock_sess.mock_calls]
+        assert 'delete' in call_names
+        assert 'add' in call_names
+        delete_call = [c for c in mock_sess.mock_calls if c[0] == 'delete'][0]
+        assert delete_call[1][0].budget == b2
+        assert delete_call[1][0].amount == Decimal('90.00')

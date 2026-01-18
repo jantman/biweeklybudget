@@ -44,10 +44,19 @@ import socket
 import json
 from time import time
 import warnings
+import multiprocessing
 
 from retrying import retry
 
 import biweeklybudget.settings
+
+# Python 3.14+ defaults to 'forkserver' multiprocessing start method,
+# but pytest-flask's LiveServer requires 'fork' for pickling
+try:
+    multiprocessing.set_start_method('fork')
+except RuntimeError:
+    # Start method can only be set once
+    pass
 from biweeklybudget.tests.fixtures.sampledata import SampleDataLoader
 from biweeklybudget.tests.sqlhelpers import restore_mysqldump, do_mysqldump
 from biweeklybudget.tests.selenium_helpers import (
@@ -62,8 +71,6 @@ try:
     from selenium.webdriver.support.event_firing_webdriver import \
         EventFiringWebDriver
     from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWD
-    from selenium.webdriver.common.desired_capabilities import \
-        DesiredCapabilities
     from selenium.webdriver import ChromeOptions
     HAVE_PYTEST_SELENIUM = True
 except ImportError:
@@ -76,6 +83,59 @@ from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
 from biweeklybudget.tests.migrations.alembic_helpers import (
     uri_for_db, empty_db_by_uri  # noqa
 )
+
+# Monkey-patch datatables package for SQLAlchemy 2.0 compatibility
+# The package uses query.join('relationship_name') which no longer works in
+# SQLAlchemy 2.0 - it must pass the actual relationship attribute instead
+import datatables
+from collections import namedtuple
+
+_original_datatable_init = datatables.DataTable.__init__
+
+
+def _patched_datatable_init(self, params, model, query, columns):
+    self.params = params
+    self.model = model
+    self.query = query
+    self.data = {}
+    self.columns = []
+    self.columns_dict = {}
+    self.search_func = lambda qs, s: qs
+
+    DataColumn = namedtuple("DataColumn", ("name", "model_name", "filter"))
+
+    for col in columns:
+        name, model_name, filter_func = None, None, None
+
+        if isinstance(col, datatables.DataColumn):
+            self.columns.append(col)
+            continue
+        elif isinstance(col, tuple):
+            if len(col) == 3:
+                name, model_name, filter_func = col
+            elif len(col) == 2:
+                if callable(col[1]):
+                    name, filter_func = col
+                    model_name = name
+                else:
+                    name, model_name = col
+            else:
+                raise ValueError("Columns must be a tuple of 2 to 3 elements")
+        else:
+            name, model_name = col, col
+
+        d = DataColumn(name=name, model_name=model_name, filter=filter_func)
+        self.columns.append(d)
+        self.columns_dict[d.name] = d
+
+    # SQLAlchemy 2.0 fix: use getattr to get the actual relationship attribute
+    # instead of passing a string to query.join()
+    for column in (col for col in self.columns if "." in col.model_name):
+        relationship_name = column.model_name.split(".")[0]
+        self.query = self.query.join(getattr(self.model, relationship_name))
+
+
+datatables.DataTable.__init__ = _patched_datatable_init
 
 LIVESERVER_LOG_PATH = os.environ.get('BIWEEKLYBUDGET_LOG_FILE')
 
@@ -223,8 +283,15 @@ def testflask():
     """
     This is a version of pytest-flask's live_server fixture, modified for
     session use.
+
+    When BIWEEKLYBUDGET_TEST_BASE_URL is set (e.g., for Docker tests),
+    we don't start a live server - tests run against the external URL instead.
     """
-    if 'BIWEEKLYBUDGET_TEST_BASE_URL' not in os.environ:
+    if 'BIWEEKLYBUDGET_TEST_BASE_URL' in os.environ:
+        # When running against an external URL (e.g., Docker container),
+        # we don't need to start a local server
+        yield None
+    else:
         # Bind to an open port
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('', 0))
@@ -232,7 +299,7 @@ def testflask():
         s.close()
         from pytest_flask.fixtures import LiveServer  # noqa
         from biweeklybudget.flaskapp.app import app  # noqa
-        server = LiveServer(app, 'localhost', port)
+        server = LiveServer(app, 'localhost', port, wait=5)
         server.start()
         yield server
         server.stop()
@@ -279,17 +346,22 @@ def driver(request, driver_class, driver_kwargs):
     TravisCI. We ripped the original ``driver = driver_class(**driver_kwargs)``
     out and replaced it with the ``get_driver_for_class()`` function, which
     is wrapped in the retrying package's ``@retry`` decorator.
+
+    Updated for Selenium 4.x which removed desired_capabilities parameter.
     """
-    kwargs = driver_kwargs
-    if 'desired_capabilities' not in kwargs:
-        kwargs['desired_capabilities'] = DesiredCapabilities.CHROME
-    kwargs['desired_capabilities']['goog:loggingPrefs'] = {
+    kwargs = driver_kwargs.copy()
+    # Selenium 4.x: desired_capabilities parameter removed, use options instead
+    if 'desired_capabilities' in kwargs:
+        del kwargs['desired_capabilities']
+
+    # Set logging preferences through ChromeOptions for Selenium 4.x
+    if 'options' not in kwargs:
+        kwargs['options'] = ChromeOptions()
+    kwargs['options'].set_capability('goog:loggingPrefs', {
         'browser': 'ALL',
         'driver': 'ALL'
-    }
-    kwargs['desired_capabilities']['loggingPrefs'] = {
-        'browser': 'ALL',
-    }
+    })
+
     driver = get_driver_for_class(driver_class, kwargs)
     event_listener = request.config.getoption('event_listener')
     if event_listener is not None:

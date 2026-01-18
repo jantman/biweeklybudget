@@ -39,6 +39,7 @@ import pytest
 import logging
 from decimal import Decimal
 from datetime import date
+from sqlalchemy import text
 
 from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
 
@@ -60,13 +61,13 @@ class TestAddSalesTaxField(MigrationTest):
     def verify_before(self, engine):
         """method to verify data before forward migration, and after reverse"""
         conn = engine.connect()
-        columns = conn.execute('SELECT * FROM transactions WHERE 1=2;').keys()
+        columns = conn.execute(text('SELECT * FROM transactions WHERE 1=2;')).keys()
         conn.close()
         assert 'sales_tax' not in columns
 
     def verify_after(self, engine):
         """method to verify data after forward migration"""
         conn = engine.connect()
-        columns = conn.execute('SELECT * FROM transactions WHERE 1=2;').keys()
+        columns = conn.execute(text('SELECT * FROM transactions WHERE 1=2;')).keys()
         conn.close()
         assert 'sales_tax' in columns

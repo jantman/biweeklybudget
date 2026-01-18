@@ -87,10 +87,10 @@ class AcceptanceHelper(object):
         :return: list of table heading strings in order left to right
         :rtype: list
         """
-        thead = elem.find_element_by_tag_name('thead')
-        tr = thead.find_element_by_tag_name('tr')
+        thead = elem.find_element(By.TAG_NAME, 'thead')
+        tr = thead.find_element(By.TAG_NAME, 'tr')
         cells = []
-        for th in tr.find_elements_by_tag_name('th'):
+        for th in tr.find_elements(By.TAG_NAME, 'th'):
             cells.append(th.text.strip())
         return cells
 
@@ -104,10 +104,10 @@ class AcceptanceHelper(object):
         :return: list of table heading WebElements in order left to right
         :rtype: list
         """
-        thead = elem.find_element_by_tag_name('thead')
-        tr = thead.find_element_by_tag_name('tr')
+        thead = elem.find_element(By.TAG_NAME, 'thead')
+        tr = thead.find_element(By.TAG_NAME, 'tr')
         cells = []
-        for th in tr.find_elements_by_tag_name('th'):
+        for th in tr.find_elements(By.TAG_NAME, 'th'):
             cells.append(th)
         return cells
 
@@ -122,11 +122,11 @@ class AcceptanceHelper(object):
         :return: list of table rows, each being a list of cell content strings
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
         rows = []
-        for tr in tbody.find_elements_by_tag_name('tr'):
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
             row = []
-            for td in tr.find_elements_by_xpath('*'):
+            for td in tr.find_elements(By.XPATH, '*'):
                 if td.tag_name not in ['td', 'th']:
                     continue
                 row.append(td.text.strip())
@@ -143,8 +143,8 @@ class AcceptanceHelper(object):
         :return: list of ``tr`` WebElements
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
-        return [x for x in tbody.find_elements_by_tag_name('tr')]
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
+        return [x for x in tbody.find_elements(By.TAG_NAME, 'tr')]
 
     def tbody2elemlist(self, elem):
         """
@@ -157,11 +157,11 @@ class AcceptanceHelper(object):
         :return: list of table rows, each being a list of cell WebElements
         :rtype: list
         """
-        tbody = elem.find_element_by_tag_name('tbody')
+        tbody = elem.find_element(By.TAG_NAME, 'tbody')
         rows = []
-        for tr in tbody.find_elements_by_tag_name('tr'):
+        for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
             row = []
-            for td in tr.find_elements_by_xpath('*'):
+            for td in tr.find_elements(By.XPATH, '*'):
                 if td.tag_name not in ['td', 'th']:
                     continue
                 row.append(td)
@@ -253,6 +253,44 @@ class AcceptanceHelper(object):
                 (sleep_sec * tries)
             )
 
+    def wait_for_datatable_rows(
+        self, driver, table_id, expected_count, sleep_sec=0.5, tries=10
+    ):
+        """
+        Wait until the DataTable with given ID has the expected number of rows.
+        This is useful for waiting for DataTables search/filter to complete.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param table_id: The ID of the table element
+        :type table_id: str
+        :param expected_count: The expected number of rows
+        :type expected_count: int
+        :param sleep_sec: how long to sleep between tries
+        :type sleep_sec: float
+        :param tries: how many times to try
+        :type tries: int
+        """
+        for count in range(tries):
+            try:
+                table = driver.find_element(By.ID, table_id)
+                rows = table.find_element(
+                    By.TAG_NAME, 'tbody'
+                ).find_elements(By.TAG_NAME, 'tr')
+                if len(rows) == expected_count:
+                    logger.debug(
+                        'DataTable %s has %d rows after %d tries',
+                        table_id, expected_count, count + 1
+                    )
+                    return
+            except StaleElementReferenceException:
+                pass
+            sleep(sleep_sec)
+        raise RuntimeError(
+            f'DataTable {table_id} did not reach {expected_count} rows after '
+            f'{tries} tries ({sleep_sec * tries} seconds)'
+        )
+
     def wait_for_load_complete(self, driver, sleep_sec=0.2, tries=20):
         """
         Wait until ``document.readyState == "complete"``. Tries ``tries`` times
@@ -300,9 +338,9 @@ class AcceptanceHelper(object):
             try:
                 if wait:
                     self.wait_for_modal_shown(selenium)
-                modal = selenium.find_element_by_id('modalDiv')
-                title = selenium.find_element_by_id('modalLabel')
-                body = selenium.find_element_by_id('modalBody')
+                modal = selenium.find_element(By.ID, 'modalDiv')
+                title = selenium.find_element(By.ID, 'modalLabel')
+                body = selenium.find_element(By.ID, 'modalBody')
                 return modal, title, body
             except TimeoutException:
                 if count > 6:

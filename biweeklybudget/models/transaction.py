@@ -174,7 +174,7 @@ class Transaction(Base, ModelAsDict):
         # see: http://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html
         # #correlated-subquery-relationship-hybrid
         return select(
-            [func.sum(BudgetTransaction.amount)]
+            func.sum(BudgetTransaction.amount)
         ).where(
             BudgetTransaction.trans_id.__eq__(cls.id)
         ).label('actual_amount')
@@ -248,4 +248,8 @@ class Transaction(Base, ModelAsDict):
                     amount=budget_amounts[budg]
                 )
                 logger.debug('Adding %s to %s', bt, self)
-                # implicit sess.add() via cascade
+                # SQLAlchemy 2.0 requires explicit add to session when
+                # Transaction is already in a session; when called from
+                # constructor, sess is None and cascade works implicitly
+                if sess is not None:
+                    sess.add(bt)

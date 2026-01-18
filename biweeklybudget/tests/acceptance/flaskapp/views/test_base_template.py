@@ -52,6 +52,7 @@ from biweeklybudget.flaskapp.notifications import NotificationsController
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.utils import dtnow
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from selenium.webdriver.common.by import By
 
 
 @pytest.mark.acceptance
@@ -64,21 +65,21 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
         self.get(selenium, base_url)
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_nav_links(self, selenium):
-        nav = selenium.find_element_by_xpath(
-            "//div[contains(@class, 'sidebar-nav')]/ul"
-        )
+        nav = selenium.find_element(By.XPATH,
+                                    "//div[contains(@class, 'sidebar-nav')]/ul"
+                                    )
         navlinks = []
-        for li in nav.find_elements_by_xpath("//li/a"):
+        for li in nav.find_elements(By.XPATH, "//li/a"):
             if li.text.strip() == '':
                 continue
             navlinks.append(
@@ -111,16 +112,16 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
         self.get(selenium, base_url)
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
     def test_stale_accounts(self, selenium):
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[0]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[0]
         assert div.text == '2 Accounts with stale data. View Accounts.'
-        a = div.find_element_by_tag_name('a')
+        a = div.find_element(By.TAG_NAME, 'a')
         assert self.relurl(a.get_attribute('href')) == '/accounts'
         assert a.text == 'View Accounts'
 
@@ -213,12 +214,12 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
     def test_04_notification(self, selenium, base_url):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_element_by_class_name('unreconciled-alert')
+        div = selenium.find_element(By.CLASS_NAME, 'unreconciled-alert')
         assert div.text == '3 Unreconciled OFXTransactions.'
         assert div.get_attribute(
             'class'
         ) == 'alert alert-warning unreconciled-alert'
-        a = div.find_element_by_tag_name('a')
+        a = div.find_element(By.TAG_NAME, 'a')
         assert self.relurl(a.get_attribute('href')) == '/reconcile'
         assert a.text == 'Unreconciled OFXTransactions'
 
@@ -252,16 +253,16 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
                            'total of $132,617.50 ($132,939.07 standing ' \
                            'budgets; $11.76 current pay period remaining; ' \
                            '-$333.33 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-danger'
-        a = div.find_elements_by_tag_name('a')
+        a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
         assert self.relurl(a[1].get_attribute('href')) == '/budgets'
@@ -337,16 +338,16 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
     def test_2_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
                            'total of $44,778.28 ($11,099.85 standing ' \
                            'budgets; $11.76 current pay period remaining; ' \
                            '$33,666.67 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-danger'
-        a = div.find_elements_by_tag_name('a')
+        a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
         assert self.relurl(a[1].get_attribute('href')) == '/budgets'
@@ -391,16 +392,16 @@ class TestUnderBalanceNotification(AcceptanceHelper):
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements_by_xpath(
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($428,990.47) is more than all allocated funds ' \
                            'total of $10,444.95 ($10,766.52 standing ' \
                            'budgets; $11.76 current pay period remaining; ' \
                            '-$333.33 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-info'
-        a = div.find_elements_by_tag_name('a')
+        a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
         assert self.relurl(a[1].get_attribute('href')) == '/budgets'

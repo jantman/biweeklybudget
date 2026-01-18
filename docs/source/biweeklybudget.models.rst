@@ -2,14 +2,15 @@ biweeklybudget.models package
 =============================
 
 .. automodule:: biweeklybudget.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    biweeklybudget.models.account
    biweeklybudget.models.account_balance
@@ -28,4 +29,3 @@ Submodules
    biweeklybudget.models.transaction
    biweeklybudget.models.txn_reconcile
    biweeklybudget.models.utils
-

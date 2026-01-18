@@ -44,7 +44,14 @@ import os
 import glob
 import socket
 import logging
+import multiprocessing
 from time import sleep
+
+# Python 3.14 changed the default multiprocessing start method on Linux from
+# 'fork' to 'forkserver'. The pytest-flask LiveServer uses a local function
+# that can't be pickled with forkserver. Set to 'fork' for compatibility.
+if sys.version_info >= (3, 14):
+    multiprocessing.set_start_method('fork')
 from random import uniform, choice, randrange
 from datetime import timedelta
 from sqlalchemy import create_engine
@@ -64,6 +71,7 @@ except ImportError:
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from PIL import Image
 
@@ -96,7 +104,7 @@ from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 engine = create_engine(
-    connstr, convert_unicode=True, echo=False,
+    connstr, echo=False,
     connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
     pool_size=10, pool_timeout=120
 )
@@ -390,7 +398,7 @@ class Screenshotter(object):
         sleep(10)
 
     def _reconcile_drag_preshot(self):
-        ofxdiv = self.browser.find_element_by_id('ofx-2-0')
+        ofxdiv = self.browser.find_element(By.ID, 'ofx-2-0')
         logger.info('ofxdiv location: %s size: %s',
                     ofxdiv.location, ofxdiv.size)
         pos_x = (ofxdiv.location['x'] - 400) + (ofxdiv.size['width'] / 4)
@@ -632,7 +640,7 @@ class Screenshotter(object):
             fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
             trans_type='debit',
             date_posted=stmt.as_of,
-            amount=Decimal('46.9061'),
+            amount=Decimal('-46.9061'),
             name='Interest Charged - MANUALLY ENTERED',
             is_interest_charge=True
         )
@@ -726,7 +734,7 @@ class Screenshotter(object):
     def _get_browser(self):
         copt = Options()
         copt.add_argument('--headless')
-        b = webdriver.Chrome(chrome_options=copt)
+        b = webdriver.Chrome(options=copt)
         b.set_window_size(1920, 1080)
         b.implicitly_wait(2)
         return b
@@ -742,7 +750,7 @@ class Screenshotter(object):
         port = s.getsockname()[1]
         s.close()
         logger.info('LiveServer will listen on port %s', port)
-        return LiveServer(app, '127.0.0.1', port)
+        return LiveServer(app, '127.0.0.1', port, wait=5)
 
     @property
     def base_url(self):

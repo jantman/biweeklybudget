@@ -40,6 +40,7 @@ import pytest
 import requests
 from datetime import timedelta, datetime
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from pytz import UTC
 from io import BytesIO
 from sqlalchemy import func
@@ -70,17 +71,17 @@ class TestOFX(AcceptanceHelper):
         self.get(selenium, base_url + '/ofx')
 
     def test_1_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'OFX Transactions - BiweeklyBudget'
 
     def test_2_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_3_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -96,7 +97,7 @@ class TestOFXDefault(AcceptanceHelper):
         self.get(selenium, base_url + '/ofx')
 
     def test_table(self, selenium):
-        table = selenium.find_element_by_id('table-ofx-txn')
+        table = selenium.find_element(By.ID, 'table-ofx-txn')
         texts = self.tbody2textlist(table)
         elems = self.tbody2elemlist(table)
         assert texts[0] == [
@@ -161,7 +162,7 @@ class TestOFXDefault(AcceptanceHelper):
 
     def test_paginate(self, selenium):
         self.get(selenium, self.baseurl + '/ofx')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
@@ -176,11 +177,11 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankOne (1)', 'BankOne.1.3'],
             ['BankOne (1)', 'BankOne.1.4']
         ]
-        page2_link = selenium.find_element_by_xpath(
-            '//li[@class="paginate_button "]/a[text()="2"]'
-        )
+        page2_link = selenium.find_element(By.XPATH,
+                                           '//li[@class="paginate_button "]/a[text()="2"]'
+                                           )
         page2_link.click()
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
@@ -198,7 +199,7 @@ class TestOFXDefault(AcceptanceHelper):
 
     def test_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/ofx')
-        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        acct_filter = Select(selenium.find_element(By.ID, 'account_filter'))
         # find the options
         opts = []
         for o in acct_filter.options:
@@ -227,15 +228,15 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankOne (1)', 'BankOne.1.4']
         ]
         self.get(selenium, self.baseurl + '/ofx')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         # check sanity
         assert trans == p1trans
-        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        acct_filter = Select(selenium.find_element(By.ID, 'account_filter'))
         # select CreditTwo (4)
         acct_filter.select_by_value('4')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
@@ -244,7 +245,7 @@ class TestOFXDefault(AcceptanceHelper):
         ]
         # select back to all
         acct_filter.select_by_value('None')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == p1trans
@@ -259,19 +260,18 @@ class TestOFXDefault(AcceptanceHelper):
         ]
         self.get(selenium, self.baseurl + '/ofx')
         search = self.retry_stale(
-            selenium.find_element_by_xpath,
-            '//input[@type="search"]'
+            lambda: selenium.find_element(By.XPATH, '//input[@type="search"]')
         )
         search.send_keys('inte')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         # check sanity
         assert trans == p1trans
-        acct_filter = Select(selenium.find_element_by_id('account_filter'))
+        acct_filter = Select(selenium.find_element(By.ID, 'account_filter'))
         # select CreditTwo (4)
         acct_filter.select_by_value('4')
-        table = self.retry_stale(selenium.find_element_by_id, 'table-ofx-txn')
+        table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [[t[2], t[7]] for t in texts]
         assert trans == [
@@ -289,7 +289,7 @@ class TestOFXTransModal(AcceptanceHelper):
         self.get(selenium, base_url + '/ofx')
 
     def test_modal_on_click(self, selenium):
-        link = selenium.find_element_by_xpath('//a[text()="T1"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="T1"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'OFXTransaction Account=3 FITID=T1'
@@ -319,8 +319,8 @@ class TestOFXTransModal(AcceptanceHelper):
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
-        assert selenium.find_element_by_id(
-            'modalSaveButton').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'modalSaveButton').is_displayed() is False
 
 
 @pytest.mark.acceptance
@@ -362,8 +362,8 @@ class TestOFXTransURL(AcceptanceHelper):
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
-        assert selenium.find_element_by_id(
-            'modalSaveButton').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'modalSaveButton').is_displayed() is False
 
 
 @pytest.mark.acceptance
@@ -383,17 +383,17 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element_by_xpath(
-            '//a[@href="javascript:txnReconcileModal(1)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
-        dl = body.find_element_by_tag_name('dl')
+        dl = body.find_element(By.TAG_NAME, 'dl')
         assert dl.get_attribute('innerHTML') == '\n' \
             '<dt>Date Reconciled</dt><dd>2017-04-10 08:09:11 UTC</dd>\n' \
             '<dt>Note</dt><dd>reconcile notes</dd>\n' \
             '<dt>Rule</dt><dd>null</dd>\n'
-        trans_tbl = body.find_element_by_id('txnReconcileModal-trans')
+        trans_tbl = body.find_element(By.ID, 'txnReconcileModal-trans')
         trans_texts = self.tbody2textlist(trans_tbl)
         assert trans_texts == [
             ['Transaction'],
@@ -416,7 +416,7 @@ class TestTransReconciledModal(AcceptanceHelper):
             '"/budgets/1">Periodic1 (1)</a>'
         assert trans_elems[8][1].get_attribute('innerHTML') == '<a href=' \
             '"/scheduled/1">Yes (1)</a>'
-        ofx_tbl = body.find_element_by_id('txnReconcileModal-ofx')
+        ofx_tbl = body.find_element(By.ID, 'txnReconcileModal-ofx')
         ofx_texts = self.tbody2textlist(ofx_tbl)
         assert ofx_texts == [
             ['OFX Transaction'],

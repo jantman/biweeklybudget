@@ -2,21 +2,23 @@ biweeklybudget.flaskapp package
 ===============================
 
 .. automodule:: biweeklybudget.flaskapp
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
-    biweeklybudget.flaskapp.views
+   biweeklybudget.flaskapp.views
 
 Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    biweeklybudget.flaskapp.app
    biweeklybudget.flaskapp.cli_commands
@@ -25,4 +27,3 @@ Submodules
    biweeklybudget.flaskapp.jinja_tests
    biweeklybudget.flaskapp.jsonencoder
    biweeklybudget.flaskapp.notifications
-

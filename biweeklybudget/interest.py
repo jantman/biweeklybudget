@@ -460,7 +460,7 @@ class MinPaymentAmEx(_MinPaymentFormula):
         """
         amt = interest + (balance * Decimal('.01'))
         if amt < 35:
-            amt = 35
+            amt = Decimal('35')
         return amt
 
 

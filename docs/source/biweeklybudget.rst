@@ -2,23 +2,25 @@ biweeklybudget package
 ======================
 
 .. automodule:: biweeklybudget
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
-    biweeklybudget.flaskapp
-    biweeklybudget.models
-    biweeklybudget.ofxapi
+   biweeklybudget.flaskapp
+   biweeklybudget.models
+   biweeklybudget.ofxapi
 
 Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    biweeklybudget.backfill_ofx
    biweeklybudget.biweeklypayperiod
@@ -38,4 +40,3 @@ Submodules
    biweeklybudget.vault
    biweeklybudget.version
    biweeklybudget.wishlist2project
-

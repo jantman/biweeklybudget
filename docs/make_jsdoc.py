@@ -39,7 +39,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 import os
 import re
-from sphinx_js.jsdoc import run_jsdoc
+from sphinx_js.jsdoc import jsdoc_output, Analyzer
 from sphinx_js.renderers import AutoFunctionRenderer
 from collections import defaultdict
 
@@ -81,18 +81,38 @@ class JSDocumenter(object):
         )
         self.app = FakeApp()
         self.app.config.js_source_path = self.jsdir
+        self.app.confdir = self.srcdir
 
     def run(self):
         """
         Main entry point to build jsdoc
         """
         self._cleanup()
-        run_jsdoc(self.app)
+        # Use new jsdoc_output API instead of run_jsdoc
+        doclets = jsdoc_output(
+            None,           # cache
+            [self.jsdir],   # abs_source_paths
+            self.toxinidir, # base_dir
+            self.srcdir,    # sphinx_conf_dir
+            None            # config_path
+        )
+
+        # Create an Analyzer instance from the doclets for IR conversion
+        self.analyzer = Analyzer(doclets, self.toxinidir)
+
+        # Build doclets_by_longname dict from the list of doclets
+        self.doclets_by_longname = {}
+        for doclet in doclets:
+            if 'longname' in doclet:
+                self.doclets_by_longname[doclet['longname']] = doclet
+
         # build a dict of files to the list of function longnames in them
         funcs_per_file = defaultdict(type([]))
-        for longname in self.app._sphinxjs_doclets_by_longname.keys():
-            d = self.app._sphinxjs_doclets_by_longname[longname]
-            if d['kind'] not in ['function', 'class']:
+        for longname in self.doclets_by_longname.keys():
+            d = self.doclets_by_longname[longname]
+            if d.get('kind') not in ['function', 'class']:
+                continue
+            if 'meta' not in d or 'filename' not in d['meta']:
                 continue
             funcs_per_file[d['meta']['filename']].append(longname)
         index = index_head
@@ -118,8 +138,8 @@ class JSDocumenter(object):
         print("Documenting %s" % fname)
         shortname = fname.split('.')[0]
         refname = 'jsdoc.%s' % shortname
-        refname_esc = refname.replace('_', '\_')
-        doclet = self.app._sphinxjs_doclets_by_longname[func_longnames[0]]
+        refname_esc = refname.replace('_', r'\_')
+        doclet = self.doclets_by_longname[func_longnames[0]]
         path = os.path.join(doclet['meta']['path'], fname)
         body = "%s\n" % refname_esc
         body += ('=' * len(refname_esc)) + "\n\n"
@@ -127,9 +147,15 @@ class JSDocumenter(object):
             os.path.realpath(self.toxinidir) + '/', ''
         )
         for funcname in sorted(func_longnames):
-            r = AutoFunctionRenderer(None, self.app, arguments=[funcname])
-            doclet = self.app._sphinxjs_doclets_by_longname.get(funcname)
-            body += r.rst(funcname, doclet)
+            r = AutoFunctionRenderer(FakeDirective(), self.app, arguments=[funcname])
+            doclet = self.doclets_by_longname.get(funcname)
+            # Determine the type (function or class) and get the IR object
+            doc_type = 'class' if doclet.get('kind') == 'class' else 'function'
+            try:
+                ir_obj = self.analyzer.get_object(funcname.split('.'), doc_type)
+                body += r.rst(funcname, ir_obj)
+            except Exception as e:
+                print(f"\tWarning: Could not render {funcname}: {e}")
         docpath = os.path.join(self.srcdir, '%s.rst' % refname)
         with open(docpath, 'w') as fh:
             fh.write(body)
@@ -151,13 +177,32 @@ class JSDocumenter(object):
             os.unlink(p)
 
 
+class Settings(object):
+    tab_width = 8
+
+
+class Document(object):
+    settings = Settings()
+
+
+class State(object):
+    document = Document()
+
+
+class FakeDirective(object):
+    state = State()
+
+
 class Config(object):
     jsdoc_config_path = None
     js_source_path = None
+    jsdoc_cache = None
+    ts_type_xref_formatter = None
 
 
 class FakeApp(object):
     config = Config()
+    confdir = None
     _sphinxjs_doclets_by_class = None
     _sphinxjs_doclets_by_longname = None
 

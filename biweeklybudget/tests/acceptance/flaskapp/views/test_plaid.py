@@ -38,6 +38,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from selenium.webdriver.common.by import By
 
 
 @pytest.mark.acceptance
@@ -50,22 +51,22 @@ class TestPlaidUpdateView(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
 
     def test_1_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Plaid Update - BiweeklyBudget'
 
     def test_2_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_3_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
     def test_4_table(self, selenium):
-        table = selenium.find_element_by_id('table-items-plaid')
+        table = selenium.find_element(By.ID, 'table-items-plaid')
         texts = self.tbody2textlist(table)
         assert texts == [
             [

@@ -39,6 +39,7 @@ import pytest
 from decimal import Decimal
 from datetime import timedelta
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -63,17 +64,17 @@ class TestFuel(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
 
     def test_heading(self, selenium):
-        heading = selenium.find_element_by_class_name('navbar-brand')
+        heading = selenium.find_element(By.CLASS_NAME, 'navbar-brand')
         assert heading.text == 'Fuel Log - BiweeklyBudget'
 
     def test_nav_menu(self, selenium):
-        ul = selenium.find_element_by_id('side-menu')
+        ul = selenium.find_element(By.ID, 'side-menu')
         assert ul is not None
         assert 'nav' in ul.get_attribute('class')
         assert ul.tag_name == 'ul'
 
     def test_notifications(self, selenium):
-        div = selenium.find_element_by_id('notifications-row')
+        div = selenium.find_element(By.ID, 'notifications-row')
         assert div is not None
         assert div.get_attribute('class') == 'row'
 
@@ -90,7 +91,7 @@ class TestFuelLogView(AcceptanceHelper):
         self.get(selenium, base_url + '/fuel')
 
     def test_01_table(self, selenium):
-        table = selenium.find_element_by_id('table-fuel-log')
+        table = selenium.find_element(By.ID, 'table-fuel-log')
         texts = self.tbody2textlist(table)
         assert texts == [
             [
@@ -161,7 +162,7 @@ class TestFuelLogView(AcceptanceHelper):
 
     def test_02_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/fuel')
-        veh_filter = Select(selenium.find_element_by_id('vehicle_filter'))
+        veh_filter = Select(selenium.find_element(By.ID, 'vehicle_filter'))
         # find the options
         opts = []
         for o in veh_filter.options:
@@ -181,19 +182,17 @@ class TestFuelLogView(AcceptanceHelper):
         ]
         self.get(selenium, self.baseurl + '/fuel')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-fuel-log'
+            lambda: selenium.find_element(By.ID, 'table-fuel-log')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         odo = [t[2] for t in texts]
         # check sanity
         assert odo == p1odo
-        veh_filter = Select(selenium.find_element_by_id('vehicle_filter'))
+        veh_filter = Select(selenium.find_element(By.ID, 'vehicle_filter'))
         # select Veh1
         veh_filter.select_by_value('1')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-fuel-log'
+            lambda: selenium.find_element(By.ID, 'table-fuel-log')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         odo = [t[2] for t in texts]
@@ -201,8 +200,7 @@ class TestFuelLogView(AcceptanceHelper):
         # select back to all
         veh_filter.select_by_value('None')
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-fuel-log'
+            lambda: selenium.find_element(By.ID, 'table-fuel-log')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         odo = [t[2] for t in texts]
@@ -212,14 +210,12 @@ class TestFuelLogView(AcceptanceHelper):
     def test_04_search(self, selenium):
         self.get(selenium, self.baseurl + '/fuel')
         search = self.retry_stale(
-            selenium.find_element_by_xpath,
-            '//input[@type="search"]'
+            lambda: selenium.find_element(By.XPATH, '//input[@type="search"]')
         )
         search.send_keys('v1 1')
         self.wait_for_jquery_done(selenium)
         table = self.retry_stale(
-            selenium.find_element_by_id,
-            'table-fuel-log'
+            lambda: selenium.find_element(By.ID, 'table-fuel-log')
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         odo = [t[2] for t in texts]
@@ -227,7 +223,7 @@ class TestFuelLogView(AcceptanceHelper):
 
     def test_05_vehicles(self, base_url, selenium):
         self.get(selenium, self.baseurl + '/fuel')
-        table = selenium.find_element_by_id('vehicles-table')
+        table = selenium.find_element(By.ID, 'vehicles-table')
         elems = self.tbody2elemlist(table)
         htmls = []
         for row in elems:
@@ -270,50 +266,50 @@ class TestModals(AcceptanceHelper):
 
     def test_01_vehicle_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_xpath('//a[text()="Veh1"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Veh1"]')
         self.wait_until_clickable(selenium, '//a[text()="Veh1"]', by='xpath')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 1'
-        assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'vehicle_frm_id').get_attribute(
             'value') == '1'
-        assert selenium.find_element_by_id(
-            'vehicle_frm_name').get_attribute('value') == 'Veh1'
-        assert selenium.find_element_by_id('vehicle_frm_active').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_name').get_attribute('value') == 'Veh1'
+        assert selenium.find_element(By.ID, 'vehicle_frm_active').is_selected()
 
     def test_02_vehicle_edit_modal_inactive(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_xpath('//a[text()="Veh3Inactive"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="Veh3Inactive"]')
         self.wait_until_clickable(
             selenium, '//a[text()="Veh3Inactive"]', by='xpath'
         )
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Vehicle 3'
-        assert selenium.find_element_by_id('vehicle_frm_id').get_attribute(
+        assert selenium.find_element(By.ID, 'vehicle_frm_id').get_attribute(
             'value') == '3'
-        assert selenium.find_element_by_id(
-            'vehicle_frm_name').get_attribute('value') == 'Veh3Inactive'
-        assert selenium.find_element_by_id(
-            'vehicle_frm_active').is_selected() is False
-        name = selenium.find_element_by_id('vehicle_frm_name')
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_name').get_attribute('value') == 'Veh3Inactive'
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_active').is_selected() is False
+        name = selenium.find_element(By.ID, 'vehicle_frm_name')
         name.clear()
         name.send_keys('Veh3Edited')
-        selenium.find_element_by_id('vehicle_frm_active').click()
+        selenium.find_element(By.ID, 'vehicle_frm_active').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Vehicle 3 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'vehicles-table')
         # test that the table is updated
-        table = selenium.find_element_by_id('vehicles-table')
+        table = selenium.find_element(By.ID, 'vehicles-table')
         elems = self.tbody2elemlist(table)
         htmls = []
         for row in elems:
@@ -346,29 +342,29 @@ class TestModals(AcceptanceHelper):
 
     def test_04_vehicle_modal_add(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_id('btn-add-vehicle')
+        link = selenium.find_element(By.ID, 'btn-add-vehicle')
         self.wait_until_clickable(selenium, 'btn-add-vehicle')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add New Vehicle'
-        name = selenium.find_element_by_id('vehicle_frm_name')
+        name = selenium.find_element(By.ID, 'vehicle_frm_name')
         name.clear()
         name.send_keys('Vehicle4')
-        selenium.find_element_by_id('vehicle_frm_active').click()
+        selenium.find_element(By.ID, 'vehicle_frm_active').click()
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved Vehicle 4 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_load_complete(selenium)
         self.wait_for_id(selenium, 'vehicles-table')
         # test that the table is updated
-        table = selenium.find_element_by_id('vehicles-table')
+        table = selenium.find_element(By.ID, 'vehicles-table')
         elems = self.tbody2elemlist(table)
         htmls = []
         for row in elems:
@@ -412,47 +408,47 @@ class TestModals(AcceptanceHelper):
 
     def test_11_fuel_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_id('btn-add-fuel')
+        link = selenium.find_element(By.ID, 'btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
-        veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
+        veh_sel = Select(selenium.find_element(By.ID, 'fuel_frm_vehicle'))
         opts = [[o.get_attribute('value'), o.text] for o in veh_sel.options]
         assert opts == [['1', 'Veh1'], ['2', 'Veh2'], ['3', 'Veh3Edited']]
         assert veh_sel.first_selected_option.get_attribute('value') == '1'
-        date = selenium.find_element_by_id('fuel_frm_date')
+        date = selenium.find_element(By.ID, 'fuel_frm_date')
         assert date.get_attribute(
             'value') == dtnow().date().strftime('%Y-%m-%d')
-        odo = selenium.find_element_by_id('fuel_frm_odo_miles')
+        odo = selenium.find_element(By.ID, 'fuel_frm_odo_miles')
         assert odo.get_attribute('value') == ''
-        rep_mi = selenium.find_element_by_id('fuel_frm_reported_miles')
+        rep_mi = selenium.find_element(By.ID, 'fuel_frm_reported_miles')
         assert rep_mi.get_attribute('value') == ''
         lvl_before = Select(
-            selenium.find_element_by_id('fuel_frm_level_before')
+            selenium.find_element(By.ID, 'fuel_frm_level_before')
         )
         opts = [[o.get_attribute('value'), o.text] for o in lvl_before.options]
         assert opts == LEVEL_OPTS
         assert lvl_before.first_selected_option.get_attribute('value') == '0'
         lvl_after = Select(
-            selenium.find_element_by_id('fuel_frm_level_after')
+            selenium.find_element(By.ID, 'fuel_frm_level_after')
         )
         opts = [[o.get_attribute('value'), o.text] for o in lvl_after.options]
         assert opts == LEVEL_OPTS
         assert lvl_after.first_selected_option.get_attribute('value') == '100'
-        fill_loc = selenium.find_element_by_id('fuel_frm_fill_loc')
+        fill_loc = selenium.find_element(By.ID, 'fuel_frm_fill_loc')
         assert fill_loc.get_attribute('value') == ''
-        cpg = selenium.find_element_by_id('fuel_frm_cost_per_gallon')
+        cpg = selenium.find_element(By.ID, 'fuel_frm_cost_per_gallon')
         assert cpg.get_attribute('value') == ''
-        cost = selenium.find_element_by_id('fuel_frm_total_cost')
+        cost = selenium.find_element(By.ID, 'fuel_frm_total_cost')
         assert cost.get_attribute('value') == ''
-        gals = selenium.find_element_by_id('fuel_frm_gallons')
+        gals = selenium.find_element(By.ID, 'fuel_frm_gallons')
         assert gals.get_attribute('value') == ''
-        rep_mpg = selenium.find_element_by_id('fuel_frm_reported_mpg')
+        rep_mpg = selenium.find_element(By.ID, 'fuel_frm_reported_mpg')
         assert rep_mpg.get_attribute('value') == ''
-        add_trans = selenium.find_element_by_id('fuel_frm_add_trans')
+        add_trans = selenium.find_element(By.ID, 'fuel_frm_add_trans')
         assert add_trans.is_selected()
-        acct_sel = Select(body.find_element_by_id('fuel_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'fuel_frm_account'))
         opts = [[o.get_attribute('value'), o.text] for o in acct_sel.options]
         assert opts == [
             ['None', ''],
@@ -464,7 +460,7 @@ class TestModals(AcceptanceHelper):
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
-        budget_sel = Select(body.find_element_by_id('fuel_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'fuel_frm_budget'))
         opts = [[o.get_attribute('value'), o.text] for o in budget_sel.options]
         assert opts == [
             ['None', ''],
@@ -477,81 +473,90 @@ class TestModals(AcceptanceHelper):
             ['6', 'Standing3 Inactive']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        notes = selenium.find_element_by_id('fuel_frm_notes')
+        notes = selenium.find_element(By.ID, 'fuel_frm_notes')
         assert notes.get_attribute('value') == ''
 
     def test_12_fuel_add_no_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_id('btn-add-fuel')
+        link = selenium.find_element(By.ID, 'btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
-        veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
+        veh_sel = Select(selenium.find_element(By.ID, 'fuel_frm_vehicle'))
         veh_sel.select_by_value('2')
-        date = selenium.find_element_by_id('fuel_frm_date')
+        date = selenium.find_element(By.ID, 'fuel_frm_date')
         date.clear()
         date.send_keys(
             (dtnow() - timedelta(days=3)).date().strftime('%Y-%m-%d')
         )
-        odo = selenium.find_element_by_id('fuel_frm_odo_miles')
+        odo = selenium.find_element(By.ID, 'fuel_frm_odo_miles')
         odo.clear()
         odo.send_keys('1123')
-        rep_mi = selenium.find_element_by_id('fuel_frm_reported_miles')
+        rep_mi = selenium.find_element(By.ID, 'fuel_frm_reported_miles')
         rep_mi.clear()
         rep_mi.send_keys('123')
         lvl_before = Select(
-            selenium.find_element_by_id('fuel_frm_level_before')
+            selenium.find_element(By.ID, 'fuel_frm_level_before')
         )
         lvl_before.select_by_value('50')
         lvl_after = Select(
-            selenium.find_element_by_id('fuel_frm_level_after')
+            selenium.find_element(By.ID, 'fuel_frm_level_after')
         )
         lvl_after.select_by_value('90')
-        fill_loc = selenium.find_element_by_id('fuel_frm_fill_loc')
+        fill_loc = selenium.find_element(By.ID, 'fuel_frm_fill_loc')
         fill_loc.clear()
         fill_loc.send_keys('Fill Location')
-        cpg = selenium.find_element_by_id('fuel_frm_cost_per_gallon')
+        cpg = selenium.find_element(By.ID, 'fuel_frm_cost_per_gallon')
         cpg.clear()
         cpg.send_keys('1.239')
-        cost = selenium.find_element_by_id('fuel_frm_total_cost')
+        cost = selenium.find_element(By.ID, 'fuel_frm_total_cost')
         cost.clear()
         cost.send_keys('12.34')
-        gals = selenium.find_element_by_id('fuel_frm_gallons')
+        gals = selenium.find_element(By.ID, 'fuel_frm_gallons')
         gals.clear()
         gals.send_keys('6.789')
-        rep_mpg = selenium.find_element_by_id('fuel_frm_reported_mpg')
+        rep_mpg = selenium.find_element(By.ID, 'fuel_frm_reported_mpg')
         rep_mpg.clear()
         rep_mpg.send_keys('34.5')
-        add_trans = selenium.find_element_by_id('fuel_frm_add_trans')
+        add_trans = selenium.find_element(By.ID, 'fuel_frm_add_trans')
         add_trans.click()
         assert add_trans.is_selected() is False
-        acct_sel = Select(body.find_element_by_id('fuel_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'fuel_frm_account'))
         acct_sel.select_by_value('3')
-        budget_sel = Select(body.find_element_by_id('fuel_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'fuel_frm_budget'))
         budget_sel.select_by_value('1')
-        notes = selenium.find_element_by_id('fuel_frm_notes')
+        notes = selenium.find_element(By.ID, 'fuel_frm_notes')
         notes.clear()
         notes.send_keys('My Notes')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved FuelFill 7 ' \
                                  'in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that datatable was updated
-        table = selenium.find_element_by_id('table-fuel-log')
-        odo_reads = [y[2] for y in self.tbody2textlist(table)]
-        assert odo_reads == [
+        # Wait for DataTable to fully render (may take time in Docker due to
+        # network latency between test and container)
+        expected_odo = [
             '1,011', '1,012', '1,013', '1,001', '1,002', '1,003', '1,123'
         ]
-        notif = selenium.find_element_by_id('last_mpg_notice')
+        for _ in range(10):  # Retry up to 10 times
+            table = selenium.find_element(By.ID, 'table-fuel-log')
+            odo_reads = [y[2] for y in self.tbody2textlist(table)]
+            # Check if all cells are populated (no empty strings)
+            if '' not in odo_reads and odo_reads == expected_odo:
+                break
+            from time import sleep
+            sleep(0.5)
+        assert odo_reads == expected_odo
+        notif = selenium.find_element(By.ID, 'last_mpg_notice')
         assert notif.get_attribute('innerHTML') == 'Last fill MPG: 16.349'
 
     def test_13_fuel_verify_db(self, testdb):
@@ -584,76 +589,85 @@ class TestModals(AcceptanceHelper):
 
     def test_14_fuel_add_with_trans(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
-        link = selenium.find_element_by_id('btn-add-fuel')
+        link = selenium.find_element(By.ID, 'btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Fuel Fill'
-        veh_sel = Select(selenium.find_element_by_id('fuel_frm_vehicle'))
+        veh_sel = Select(selenium.find_element(By.ID, 'fuel_frm_vehicle'))
         veh_sel.select_by_value('1')
-        date = selenium.find_element_by_id('fuel_frm_date')
+        date = selenium.find_element(By.ID, 'fuel_frm_date')
         date.clear()
         date.send_keys(
             (dtnow() - timedelta(days=2)).date().strftime('%Y-%m-%d')
         )
-        odo = selenium.find_element_by_id('fuel_frm_odo_miles')
+        odo = selenium.find_element(By.ID, 'fuel_frm_odo_miles')
         odo.clear()
         odo.send_keys('1256')
-        rep_mi = selenium.find_element_by_id('fuel_frm_reported_miles')
+        rep_mi = selenium.find_element(By.ID, 'fuel_frm_reported_miles')
         rep_mi.clear()
         rep_mi.send_keys('345')
         lvl_before = Select(
-            selenium.find_element_by_id('fuel_frm_level_before')
+            selenium.find_element(By.ID, 'fuel_frm_level_before')
         )
         lvl_before.select_by_value('10')
         lvl_after = Select(
-            selenium.find_element_by_id('fuel_frm_level_after')
+            selenium.find_element(By.ID, 'fuel_frm_level_after')
         )
         lvl_after.select_by_value('100')
-        fill_loc = selenium.find_element_by_id('fuel_frm_fill_loc')
+        fill_loc = selenium.find_element(By.ID, 'fuel_frm_fill_loc')
         fill_loc.clear()
         fill_loc.send_keys('Fill Location2')
-        cpg = selenium.find_element_by_id('fuel_frm_cost_per_gallon')
+        cpg = selenium.find_element(By.ID, 'fuel_frm_cost_per_gallon')
         cpg.clear()
         cpg.send_keys('1.459')
-        cost = selenium.find_element_by_id('fuel_frm_total_cost')
+        cost = selenium.find_element(By.ID, 'fuel_frm_total_cost')
         cost.clear()
         cost.send_keys('14.82')
-        gals = selenium.find_element_by_id('fuel_frm_gallons')
+        gals = selenium.find_element(By.ID, 'fuel_frm_gallons')
         gals.clear()
         gals.send_keys('5.678')
-        rep_mpg = selenium.find_element_by_id('fuel_frm_reported_mpg')
+        rep_mpg = selenium.find_element(By.ID, 'fuel_frm_reported_mpg')
         rep_mpg.clear()
         rep_mpg.send_keys('28.3')
-        add_trans = selenium.find_element_by_id('fuel_frm_add_trans')
+        add_trans = selenium.find_element(By.ID, 'fuel_frm_add_trans')
         assert add_trans.is_selected()
-        acct_sel = Select(body.find_element_by_id('fuel_frm_account'))
+        acct_sel = Select(body.find_element(By.ID, 'fuel_frm_account'))
         acct_sel.select_by_value('3')
-        budget_sel = Select(body.find_element_by_id('fuel_frm_budget'))
+        budget_sel = Select(body.find_element(By.ID, 'fuel_frm_budget'))
         budget_sel.select_by_value('1')
-        notes = selenium.find_element_by_id('fuel_frm_notes')
+        notes = selenium.find_element(By.ID, 'fuel_frm_notes')
         notes.clear()
         notes.send_keys('My Notes2')
         # submit the form
-        selenium.find_element_by_id('modalSaveButton').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
         # check that we got positive confirmation
         _, _, body = self.get_modal_parts(selenium)
-        x = body.find_elements_by_tag_name('div')[0]
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
         assert 'alert-success' in x.get_attribute('class')
         assert x.text.strip() == 'Successfully saved FuelFill 8 ' \
                                  'and Transaction 5 in database.'
         # dismiss the modal
-        selenium.find_element_by_id('modalCloseButton').click()
+        selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that datatable was updated
-        table = selenium.find_element_by_id('table-fuel-log')
-        odo_reads = [y[2] for y in self.tbody2textlist(table)]
-        assert odo_reads == [
+        # Wait for DataTable to fully render (may take time in Docker due to
+        # network latency between test and container)
+        expected_odo = [
             '1,011', '1,012', '1,013',
             '1,001', '1,002', '1,003',
             '1,256', '1,123'
         ]
+        for _ in range(10):  # Retry up to 10 times
+            table = selenium.find_element(By.ID, 'table-fuel-log')
+            odo_reads = [y[2] for y in self.tbody2textlist(table)]
+            # Check if all cells are populated (no empty strings)
+            if '' not in odo_reads and odo_reads == expected_odo:
+                break
+            from time import sleep
+            sleep(0.5)
+        assert odo_reads == expected_odo
 
     def test_15_fuel_verify_db(self, testdb):
         ids = [

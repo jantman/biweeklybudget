@@ -39,6 +39,9 @@ from datetime import date, datetime
 from time import mktime
 from json import JSONEncoder
 from decimal import Decimal
+import enum
+
+from flask.json.provider import DefaultJSONProvider
 
 
 class MagicJSONEncoder(JSONEncoder):
@@ -77,5 +80,54 @@ class MagicJSONEncoder(JSONEncoder):
                 'date': o.day
             }
         if isinstance(o, Decimal):
-            return float(o)
+            # Normalize decimal to remove trailing zeros, then convert to float
+            # This ensures '100.0000' becomes 100, '10.23' stays 10.23
+            return float(o.normalize())
+        # Handle enum types
+        if isinstance(o, enum.Enum):
+            return o.value
         return super(MagicJSONEncoder, self).default(o)
+
+
+class MagicJSONProvider(DefaultJSONProvider):
+    """
+    Flask 3.x JSON provider that uses MagicJSONEncoder.
+    """
+
+    def default(self, o):
+        if hasattr(o, 'as_dict') and isinstance(type(o).as_dict, property):
+            d = o.as_dict
+            d['class'] = o.__class__.__name__
+            return d
+        if isinstance(o, datetime):
+            return {
+                'class': 'datetime',
+                'str': o.strftime('%Y-%m-%d %H:%M:%S'),
+                'ts': mktime(o.timetuple()),
+                'year': o.year,
+                'month': o.month,
+                'date': o.day,
+                'hour': o.hour,
+                'minute': o.minute,
+                'second': o.second,
+                'tzname': o.strftime('%Z'),
+                'tzoffset': o.strftime('%z'),
+                'ymdstr': o.strftime('%Y-%m-%d')
+            }
+        if isinstance(o, date):
+            return {
+                'class': 'date',
+                'str': o.strftime('%Y-%m-%d'),
+                'ts': mktime(o.timetuple()),
+                'year': o.year,
+                'month': o.month,
+                'date': o.day
+            }
+        if isinstance(o, Decimal):
+            # Normalize decimal to remove trailing zeros, then convert to float
+            # This ensures '100.0000' becomes 100, '10.23' stays 10.23
+            return float(o.normalize())
+        # Handle enum types
+        if isinstance(o, enum.Enum):
+            return o.value
+        return super().default(o)
