@@ -71,6 +71,7 @@ except ImportError:
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from PIL import Image
 
@@ -397,7 +398,7 @@ class Screenshotter(object):
         sleep(10)
 
     def _reconcile_drag_preshot(self):
-        ofxdiv = self.browser.find_element_by_id('ofx-2-0')
+        ofxdiv = self.browser.find_element(By.ID, 'ofx-2-0')
         logger.info('ofxdiv location: %s size: %s',
                     ofxdiv.location, ofxdiv.size)
         pos_x = (ofxdiv.location['x'] - 400) + (ofxdiv.size['width'] / 4)
