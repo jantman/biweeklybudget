@@ -44,7 +44,14 @@ import os
 import glob
 import socket
 import logging
+import multiprocessing
 from time import sleep
+
+# Python 3.14 changed the default multiprocessing start method on Linux from
+# 'fork' to 'forkserver'. The pytest-flask LiveServer uses a local function
+# that can't be pickled with forkserver. Set to 'fork' for compatibility.
+if sys.version_info >= (3, 14):
+    multiprocessing.set_start_method('fork')
 from random import uniform, choice, randrange
 from datetime import timedelta
 from sqlalchemy import create_engine
