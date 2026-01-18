@@ -733,7 +733,7 @@ class Screenshotter(object):
     def _get_browser(self):
         copt = Options()
         copt.add_argument('--headless')
-        b = webdriver.Chrome(chrome_options=copt)
+        b = webdriver.Chrome(options=copt)
         b.set_window_size(1920, 1080)
         b.implicitly_wait(2)
         return b
