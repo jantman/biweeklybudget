@@ -273,8 +273,8 @@ class TestModals(AcceptanceHelper):
         assert title.text == 'Edit Vehicle 1'
         assert selenium.find_element(By.ID, 'vehicle_frm_id').get_attribute(
             'value') == '1'
-        assert selenium.find_element(By.ID, 
-            'vehicle_frm_name').get_attribute('value') == 'Veh1'
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_name').get_attribute('value') == 'Veh1'
         assert selenium.find_element(By.ID, 'vehicle_frm_active').is_selected()
 
     def test_02_vehicle_edit_modal_inactive(self, base_url, selenium):
@@ -288,10 +288,10 @@ class TestModals(AcceptanceHelper):
         assert title.text == 'Edit Vehicle 3'
         assert selenium.find_element(By.ID, 'vehicle_frm_id').get_attribute(
             'value') == '3'
-        assert selenium.find_element(By.ID, 
-            'vehicle_frm_name').get_attribute('value') == 'Veh3Inactive'
-        assert selenium.find_element(By.ID, 
-            'vehicle_frm_active').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_name').get_attribute('value') == 'Veh3Inactive'
+        assert selenium.find_element(By.ID,
+                                     'vehicle_frm_active').is_selected() is False
         name = selenium.find_element(By.ID, 'vehicle_frm_name')
         name.clear()
         name.send_keys('Veh3Edited')

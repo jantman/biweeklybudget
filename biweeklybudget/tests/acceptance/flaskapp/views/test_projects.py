@@ -99,10 +99,10 @@ class TestProjectsView(AcceptanceHelper):
 
     def test_01_table(self, base_url, selenium):
         self.get(selenium, base_url + '/projects')
-        assert selenium.find_element(By.ID, 
-            'active-remaining-cost').get_attribute('innerHTML') == '$77.77'
-        assert selenium.find_element(By.ID, 
-            'active-total-cost').get_attribute('innerHTML') == '$2,546.89'
+        assert selenium.find_element(By.ID,
+                                     'active-remaining-cost').get_attribute('innerHTML') == '$77.77'
+        assert selenium.find_element(By.ID,
+                                     'active-total-cost').get_attribute('innerHTML') == '$2,546.89'
         table = selenium.find_element(By.ID, 'table-projects')
         htmls = self.inner_htmls(self.tbody2elemlist(table))
         assert htmls == [
@@ -234,9 +234,9 @@ class TestProjectsView(AcceptanceHelper):
 
     def test_05_deactivate(self, base_url, selenium):
         self.get(selenium, base_url + '/projects')
-        link = selenium.find_element(By.XPATH, 
-            '//a[@onclick="deactivateProject(1);"]'
-        )
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@onclick="deactivateProject(1);"]'
+                                     )
         link.click()
         self.wait_for_jquery_done(selenium)
         table = self.retry_stale(
@@ -308,9 +308,9 @@ class TestProjectsView(AcceptanceHelper):
 
     def test_07_activate(self, base_url, selenium):
         self.get(selenium, base_url + '/projects')
-        link = selenium.find_element(By.XPATH, 
-            '//a[@onclick="activateProject(3);"]'
-        )
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@onclick="activateProject(3);"]'
+                                     )
         link.click()
         self.wait_for_jquery_done(selenium)
         table = self.retry_stale(
@@ -426,12 +426,12 @@ class TestOneProjectView(AcceptanceHelper):
     def test_01_table(self, base_url, selenium):
         self.get(selenium, base_url + '/projects/1')
         # Top headings
-        assert selenium.find_element(By.ID, 
-            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
-        assert selenium.find_element(By.ID, 
-            'div-remaining-amount').get_attribute('innerHTML') == '$77.77'
-        assert selenium.find_element(By.ID, 
-            'div-total-amount').get_attribute('innerHTML') == '$2,546.89'
+        assert selenium.find_element(By.ID,
+                                     'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element(By.ID,
+                                     'div-remaining-amount').get_attribute('innerHTML') == '$77.77'
+        assert selenium.find_element(By.ID,
+                                     'div-total-amount').get_attribute('innerHTML') == '$2,546.89'
         # Table
         table = selenium.find_element(By.ID, 'table-items')
         htmls = self.inner_htmls(self.tbody2elemlist(table))
@@ -504,9 +504,9 @@ class TestOneProjectView(AcceptanceHelper):
 
     def test_03_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/projects/1')
-        editlink = selenium.find_element(By.XPATH, 
-            '//a[@onclick="bomItemModal(3)"]'
-        )
+        editlink = selenium.find_element(By.XPATH,
+                                         '//a[@onclick="bomItemModal(3)"]'
+                                         )
         modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit BoM Item 3'
@@ -529,9 +529,9 @@ class TestOneProjectView(AcceptanceHelper):
 
     def test_04_edit_item(self, base_url, selenium):
         self.get(selenium, base_url + '/projects/1')
-        editlink = selenium.find_element(By.XPATH, 
-            '//a[@onclick="bomItemModal(3)"]'
-        )
+        editlink = selenium.find_element(By.XPATH,
+                                         '//a[@onclick="bomItemModal(3)"]'
+                                         )
         modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit BoM Item 3'
@@ -609,12 +609,12 @@ class TestOneProjectView(AcceptanceHelper):
         assert 'inactive' not in rows[1].get_attribute('class')
         assert 'inactive' not in rows[2].get_attribute('class')
         self.wait_for_jquery_done(selenium)
-        assert selenium.find_element(By.ID, 
-            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
-        assert selenium.find_element(By.ID, 
-            'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
-        assert selenium.find_element(By.ID, 
-            'div-total-amount').get_attribute('innerHTML') == '$84.43'
+        assert selenium.find_element(By.ID,
+                                     'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element(By.ID,
+                                     'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
+        assert selenium.find_element(By.ID,
+                                     'div-total-amount').get_attribute('innerHTML') == '$84.43'
 
     def test_05_verify_db(self, testdb):
         b = testdb.query(Project).get(1)
@@ -742,12 +742,12 @@ class TestOneProjectView(AcceptanceHelper):
         assert 'inactive' not in rows[0].get_attribute('class')
         assert 'inactive' not in rows[1].get_attribute('class')
         assert 'inactive' not in rows[2].get_attribute('class')
-        assert selenium.find_element(By.ID, 
-            'div-notes').get_attribute('innerHTML') == 'ProjectOne'
-        assert selenium.find_element(By.ID, 
-            'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
-        assert selenium.find_element(By.ID, 
-            'div-total-amount').get_attribute('innerHTML') == '$146.13'
+        assert selenium.find_element(By.ID,
+                                     'div-notes').get_attribute('innerHTML') == 'ProjectOne'
+        assert selenium.find_element(By.ID,
+                                     'div-remaining-amount').get_attribute('innerHTML') == '$84.43'
+        assert selenium.find_element(By.ID,
+                                     'div-total-amount').get_attribute('innerHTML') == '$146.13'
 
     def test_07_verify_db(self, testdb):
         b = testdb.query(Project).get(1)

@@ -418,9 +418,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
         item_id = self.plaid_accts['checking']['item_id']
-        button = selenium.find_element(By.CSS_SELECTOR, 
-            f'a[onclick="plaidRefresh(\'{item_id}\')"]'
-        )
+        button = selenium.find_element(By.CSS_SELECTOR,
+                                       f'a[onclick="plaidRefresh(\'{item_id}\')"]'
+                                       )
         button.click()
         # wait for page reload, indicated by staleness of element
         WebDriverWait(selenium, 20).until(
@@ -485,9 +485,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
         self.get(selenium, base_url + '/plaid-update')
         self.wait_for_load_complete(selenium)
         self.wait_for_jquery_done(selenium)
-        button = selenium.find_element(By.CSS_SELECTOR, 
-            f'a[onclick="plaidUpdate(\'{item_id}\')"]'
-        )
+        button = selenium.find_element(By.CSS_SELECTOR,
+                                       f'a[onclick="plaidUpdate(\'{item_id}\')"]'
+                                       )
         button.click()
         self.wait_for_jquery_done(selenium)
         WebDriverWait(selenium, 30).until(

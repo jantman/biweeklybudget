@@ -177,9 +177,9 @@ class TestOFXDefault(AcceptanceHelper):
             ['BankOne (1)', 'BankOne.1.3'],
             ['BankOne (1)', 'BankOne.1.4']
         ]
-        page2_link = selenium.find_element(By.XPATH, 
-            '//li[@class="paginate_button "]/a[text()="2"]'
-        )
+        page2_link = selenium.find_element(By.XPATH,
+                                           '//li[@class="paginate_button "]/a[text()="2"]'
+                                           )
         page2_link.click()
         table = self.retry_stale(lambda: selenium.find_element(By.ID, 'table-ofx-txn'))
         texts = self.retry_stale(self.tbody2textlist, table)
@@ -319,8 +319,8 @@ class TestOFXTransModal(AcceptanceHelper):
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
-        assert selenium.find_element(By.ID, 
-            'modalSaveButton').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'modalSaveButton').is_displayed() is False
 
 
 @pytest.mark.acceptance
@@ -362,8 +362,8 @@ class TestOFXTransURL(AcceptanceHelper):
         ]
         assert elems[0][1].get_attribute(
             'innerHTML') == '<a href="/accounts/3">CreditOne (3)</a>'
-        assert selenium.find_element(By.ID, 
-            'modalSaveButton').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'modalSaveButton').is_displayed() is False
 
 
 @pytest.mark.acceptance
@@ -383,8 +383,8 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element(By.XPATH, 
-            '//a[@href="javascript:txnReconcileModal(1)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'

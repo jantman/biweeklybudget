@@ -75,9 +75,9 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
         assert ul.tag_name == 'ul'
 
     def test_nav_links(self, selenium):
-        nav = selenium.find_element(By.XPATH, 
-            "//div[contains(@class, 'sidebar-nav')]/ul"
-        )
+        nav = selenium.find_element(By.XPATH,
+                                    "//div[contains(@class, 'sidebar-nav')]/ul"
+                                    )
         navlinks = []
         for li in nav.find_elements(By.XPATH, "//li/a"):
             if li.text.strip() == '':
@@ -117,9 +117,9 @@ class TestBaseTemplateNotifications(AcceptanceHelper):
         assert div.get_attribute('class') == 'row'
 
     def test_stale_accounts(self, selenium):
-        div = selenium.find_elements(By.XPATH, 
-            "//div[@id='notifications-row']/div/div"
-        )[0]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[0]
         assert div.text == '2 Accounts with stale data. View Accounts.'
         a = div.find_element(By.TAG_NAME, 'a')
         assert self.relurl(a.get_attribute('href')) == '/accounts'
@@ -253,9 +253,9 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements(By.XPATH, 
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
                            'total of $132,617.50 ($132,939.07 standing ' \
@@ -338,9 +338,9 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
     def test_2_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements(By.XPATH, 
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($12,889.24) is less than all allocated funds ' \
                            'total of $44,778.28 ($11,099.85 standing ' \
@@ -392,9 +392,9 @@ class TestUnderBalanceNotification(AcceptanceHelper):
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url)
-        div = selenium.find_elements(By.XPATH, 
-            "//div[@id='notifications-row']/div/div"
-        )[1]
+        div = selenium.find_elements(By.XPATH,
+                                     "//div[@id='notifications-row']/div/div"
+                                     )[1]
         assert div.text == 'Combined balance of all budget-funding accounts ' \
                            '($428,990.47) is more than all allocated funds ' \
                            'total of $10,444.95 ($10,766.52 standing ' \

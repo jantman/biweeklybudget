@@ -1,7 +1,7 @@
 """base
 
 Revision ID: 7477ff15e8c4
-Revises: 
+Revises:
 Create Date: 2017-04-19 22:19:34.382425
 
 """

@@ -946,8 +946,8 @@ class TestTransactionEditModal(ReconcileHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '1'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '1'
         amt = body.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
         amt.send_keys('-123.45')
@@ -1037,8 +1037,8 @@ class TestDragLimitations(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-2-OFX3')
-        tgt = selenium.find_element(By.ID, 
-            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
@@ -1079,8 +1079,8 @@ class TestDragLimitations(ReconcileHelper):
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-2-OFXT6')
         src2 = selenium.find_element(By.ID, 'ofx-2-OFXT7')
-        tgt = selenium.find_element(By.ID, 
-            'trans-5').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-5').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
@@ -1135,8 +1135,8 @@ class TestDragLimitations(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
-        tgt = selenium.find_element(By.ID, 
-            'trans-4').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-4').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
         trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
@@ -1159,8 +1159,8 @@ class TestDragLimitations(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
-        tgt = selenium.find_element(By.ID, 
-            'trans-1').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-1').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
         trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
@@ -1183,8 +1183,8 @@ class TestDragLimitations(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-1-OFXT4')
-        tgt = selenium.find_element(By.ID, 
-            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # get the innerHTML of both columns
         trans_div = selenium.find_element(By.ID, 'trans-panel').get_attribute(
             'innerHTML')
@@ -1207,8 +1207,8 @@ class TestDragLimitations(ReconcileHelper):
         self.baseurl = base_url
         self.get(selenium, base_url + '/reconcile')
         src = selenium.find_element(By.ID, 'ofx-2-OFX3')
-        tgt = selenium.find_element(By.ID, 
-            'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
+        tgt = selenium.find_element(By.ID,
+                                    'trans-3').find_element(By.CLASS_NAME, 'reconcile-drop-target')
         # drag and drop
         chain = ActionChains(selenium)
         chain.drag_and_drop(src, tgt).perform()
@@ -1257,8 +1257,8 @@ class TestDragLimitations(ReconcileHelper):
             'OFX3',
             'ofx3-trans2-st1'
         )
-        assert tgt.find_element(By.CLASS_NAME, 
-            'reconcile-drop-target').get_attribute('innerHTML') == ''
+        assert tgt.find_element(By.CLASS_NAME,
+                                'reconcile-drop-target').get_attribute('innerHTML') == ''
         assert self.get_reconciled(selenium) == {}
         expected = txn_div(
             3,
@@ -1295,9 +1295,9 @@ class TestDragAndDropReconcile(ReconcileHelper):
         chain = ActionChains(selenium)
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-2-OFX3'),
-            selenium.find_element(By.ID, 
-                'trans-3'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-3'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         """
         IMPORTANT - 2022-10-22
@@ -1340,27 +1340,27 @@ class TestDragAndDropReconcile(ReconcileHelper):
         # END DEBUG
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-1-OFX1'),
-            selenium.find_element(By.ID, 
-                'trans-1'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-1'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-1-OFX2'),
-            selenium.find_element(By.ID, 
-                'trans-2'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-2'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-2-OFXT6'),
-            selenium.find_element(By.ID, 
-                'trans-5'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-5'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-2-OFXT7'),
-            selenium.find_element(By.ID, 
-                'trans-6'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-6'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -1448,9 +1448,9 @@ class TestUIReconcileMulti(ReconcileHelper):
         chain = ActionChains(selenium)
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-2-OFX3'),
-            selenium.find_element(By.ID, 
-                'trans-3'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-3'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -1469,15 +1469,15 @@ class TestUIReconcileMulti(ReconcileHelper):
         chain = ActionChains(selenium)
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-1-OFX1'),
-            selenium.find_element(By.ID, 
-                'trans-1'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-1'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-1-OFX2'),
-            selenium.find_element(By.ID, 
-                'trans-2'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-2'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -1767,13 +1767,13 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Transaction for OFX (2, OFX2)'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == date(
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == date(
             2017, 4, 11).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '-251.23'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'ofx2-trans1'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '-251.23'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'ofx2-trans1'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -1958,10 +1958,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX31")'
-        assert body.find_element(By.ID, 
-            'trans_frm_acct_id').get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_fitid').get_attribute('value') == 'OFX31'
+        assert body.find_element(By.ID,
+                                 'trans_frm_acct_id').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'trans_frm_fitid').get_attribute('value') == 'OFX31'
         notes = selenium.find_element(By.ID, 'trans_frm_note')
         assert notes.get_attribute(
             'value') == ''
@@ -2076,10 +2076,10 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Ignore OFXTransaction (2, "OFX30")'
-        assert body.find_element(By.ID, 
-            'trans_frm_acct_id').get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_fitid').get_attribute('value') == 'OFX30'
+        assert body.find_element(By.ID,
+                                 'trans_frm_acct_id').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'trans_frm_fitid').get_attribute('value') == 'OFX30'
         notes = selenium.find_element(By.ID, 'trans_frm_note')
         assert notes.get_attribute(
             'value') == ''
@@ -2310,9 +2310,9 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         chain = ActionChains(selenium)
         chain.drag_and_drop(
             selenium.find_element(By.ID, 'ofx-2-OFX3'),
-            selenium.find_element(By.ID, 
-                'trans-3'
-            ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
+            selenium.find_element(By.ID,
+                                  'trans-3'
+                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
         ).perform()
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
@@ -2414,8 +2414,8 @@ class TestTransReconcileNoOfx(ReconcileHelper):
         )
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Reconcile Transaction 3 Without OFX'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '3'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '3'
         note = body.find_element(By.ID, 'trans_frm_note')
         note.clear()
         note.send_keys('My Trans Note')

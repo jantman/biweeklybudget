@@ -86,9 +86,9 @@ class TestIndexAccounts(AcceptanceHelper):
         self.get(selenium, base_url)
 
     def test_bank_table(self, selenium):
-        table = selenium.find_element(By.XPATH, 
-            "//div[@id='panel-bank-accounts']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-bank-accounts']//table"
+                                      )
         assert self.thead2list(table) == [
             'Account', 'Balance', 'Unreconciled', 'Difference'
         ]
@@ -107,9 +107,9 @@ class TestIndexAccounts(AcceptanceHelper):
         ]
 
     def test_bank_stale_span(self, selenium):
-        tbody = selenium.find_element(By.XPATH, 
-            "//div[@id='panel-bank-accounts']//table/tbody"
-        )
+        tbody = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-bank-accounts']//table/tbody"
+                                      )
         rows = tbody.find_elements(By.TAG_NAME, 'tr')
         bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[1]
         bal_span = bankTwoStale_bal_td.find_elements(By.TAG_NAME, 'span')[1]
@@ -117,9 +117,9 @@ class TestIndexAccounts(AcceptanceHelper):
         assert bal_span.get_attribute('class') == 'data_age text-danger'
 
     def test_credit_table(self, selenium):
-        table = selenium.find_element(By.XPATH, 
-            "//div[@id='panel-credit-cards']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-credit-cards']//table"
+                                      )
         assert self.thead2list(table) == [
             'Account', 'Balance', 'Available', 'Avail - Unrec'
         ]
@@ -138,9 +138,9 @@ class TestIndexAccounts(AcceptanceHelper):
         ]
 
     def test_investment_table(self, selenium):
-        table = selenium.find_element(By.XPATH, 
-            "//div[@id='panel-investment']//table"
-        )
+        table = selenium.find_element(By.XPATH,
+                                      "//div[@id='panel-investment']//table"
+                                      )
         assert self.thead2list(table) == ['Account', 'Value']
         assert self.tbody2textlist(table) == [
             ['InvestmentOne', '$10,362.91 (13 days ago)']
@@ -490,8 +490,8 @@ class TestAccountTransfer(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Account Transfer'
-        assert body.find_element(By.ID, 
-            'acct_txfr_frm_date').get_attribute('value') == dtnow(
+        assert body.find_element(By.ID,
+                                 'acct_txfr_frm_date').get_attribute('value') == dtnow(
             ).strftime('%Y-%m-%d')
         amt = body.find_element(By.ID, 'acct_txfr_frm_amount')
         amt.clear()

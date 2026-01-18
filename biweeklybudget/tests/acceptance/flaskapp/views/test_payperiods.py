@@ -146,9 +146,9 @@ class TestFindPayPeriod(AcceptanceHelper):
         )
         send_tsmillis = timegm(send_dt.timetuple()) * 1000
         print("send_tsmillis: %s" % send_tsmillis)
-        date_td = selenium.find_element(By.XPATH, 
-            '//td[@data-date="%s"]' % send_tsmillis
-        )
+        date_td = selenium.find_element(By.XPATH,
+                                        '//td[@data-date="%s"]' % send_tsmillis
+                                        )
         date_td.click()
         self.wait_for_load_complete(selenium)
         assert selenium.current_url == \
@@ -163,14 +163,14 @@ class TestFindPayPeriod(AcceptanceHelper):
         print("send_date: %s" % send_date)
         send_pp = BiweeklyPayPeriod.period_for_date(send_date, None)
         print("send_pp.start_date: %s" % send_pp.start_date)
-        daysdiv = selenium.find_element(By.XPATH, 
-            '//div[@id="cal2"]//div[@class="datepicker-days"]'
-        )
+        daysdiv = selenium.find_element(By.XPATH,
+                                        '//div[@id="cal2"]//div[@class="datepicker-days"]'
+                                        )
         tbl = daysdiv.find_elements(By.TAG_NAME, 'table')[0]
         thead = tbl.find_elements(By.TAG_NAME, 'thead')[0]
         # month
-        assert thead.find_elements(By.TAG_NAME, 
-            'tr')[1].find_elements(By.TAG_NAME, 'th')[1].text == \
+        assert thead.find_elements(By.TAG_NAME,
+                                   'tr')[1].find_elements(By.TAG_NAME, 'th')[1].text == \
             dtnow().strftime('%B %Y')
         tbody = tbl.find_elements(By.TAG_NAME, 'tbody')[0]
         assets_dir = os.path.abspath(os.path.join(
@@ -930,8 +930,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$421.10'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$355.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,923.66'
@@ -1119,15 +1119,15 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '6'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '6'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
             pp.start_date + timedelta(days=6)).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '111.13'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'T1foo'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '111.13'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'T1foo'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -1155,8 +1155,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['7', 'Income (i)']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'notesT1'
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_notes').get_attribute('value') == 'notesT1'
 
     def test_09_transaction_modal_edit(self, base_url, selenium, testdb):
         self.get(
@@ -1168,8 +1168,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '6'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '6'
         desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('edited')
         # submit the form
@@ -1224,31 +1224,31 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_element(By.XPATH, 
-            '//a[text()="ST7 per_period (7)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[text()="ST7 per_period (7)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 7'
-        assert body.find_element(By.ID, 
-            'sched_frm_id').get_attribute('value') == '7'
-        assert body.find_element(By.ID, 
-            'sched_frm_description').get_attribute('value') == 'ST7 per_period'
-        assert body.find_element(By.ID, 
-            'sched_frm_type_monthly').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_date').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_per_period').is_selected()
-        assert body.find_element(By.ID, 
-            'sched_frm_num_per_period').get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'sched_frm_amount').get_attribute('value') == '11.11'
+        assert body.find_element(By.ID,
+                                 'sched_frm_id').get_attribute('value') == '7'
+        assert body.find_element(By.ID,
+                                 'sched_frm_description').get_attribute('value') == 'ST7 per_period'
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_date').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_per_period').is_selected()
+        assert body.find_element(By.ID,
+                                 'sched_frm_num_per_period').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'sched_frm_amount').get_attribute('value') == '11.11'
         acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         budget_sel = Select(body.find_element(By.ID, 'sched_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert selenium.find_element(By.ID, 
-            'sched_frm_active').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'sched_frm_active').is_selected()
 
     def test_13_sched_trans_modal_edit(self, base_url, selenium):
         self.get(
@@ -1256,8 +1256,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_element(By.XPATH, 
-            '//a[text()="ST7 per_period (7)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[text()="ST7 per_period (7)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         desc = body.find_element(By.ID, 'sched_frm_description')
@@ -1383,8 +1383,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$521.10'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$455.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,823.66'
@@ -1512,14 +1512,14 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_element(By.XPATH, 
-            '//a[text()="issue152regression3 (10)"]'
-        )
+        link = selenium.find_element(By.XPATH,
+                                     '//a[text()="issue152regression3 (10)"]'
+                                     )
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 10'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '10'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '10'
         desc = body.find_element(By.ID, 'trans_frm_description')
         desc.send_keys('-edited')
         # submit the form
@@ -1560,8 +1560,8 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$721.10'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$655.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,623.66'
@@ -1746,29 +1746,29 @@ class TestMakeTransModal(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_elements(By.XPATH, 
-            '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
-            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
+        link = selenium.find_elements(By.XPATH,
+                                      '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
+                                      '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Scheduled Transaction 7 to Transaction'
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_id').get_attribute('value') == '7'
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_pp_date').get_attribute(
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_id').get_attribute('value') == '7'
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_pp_date').get_attribute(
             'value') == pp.start_date.strftime('%Y-%m-%d')
         # if a num_per_period scheduled transaction, default to today
         # this default is populated by JS, which will use localtime
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_date').get_attribute(
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_date').get_attribute(
             'value') == dtnow().strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_amount').get_attribute('value') == '11.11'
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_description').get_attribute(
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_amount').get_attribute('value') == '11.11'
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_description').get_attribute(
             'value') == 'ST7 per_period'
-        assert body.find_element(By.ID, 
-            'schedtotrans_frm_notes').get_attribute(
+        assert body.find_element(By.ID,
+                                 'schedtotrans_frm_notes').get_attribute(
             'value') == ''
 
     def test_05_modal_schedtrans_to_trans(self, base_url, selenium, testdb):
@@ -1778,9 +1778,9 @@ class TestMakeTransModal(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_elements(By.XPATH, 
-            '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
-            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
+        link = selenium.find_elements(By.XPATH,
+                                      '//a[@href="javascript:schedToTransModal(7, \'%s\');"]'
+                                      '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         body.find_element(By.ID, 'schedtotrans_frm_date').clear()
@@ -1858,9 +1858,9 @@ class TestMakeTransModal(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        link = selenium.find_elements(By.XPATH, 
-            '//a[@href="javascript:schedToTransModal(6, \'%s\');"]'
-            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
+        link = selenium.find_elements(By.XPATH,
+                                      '//a[@href="javascript:schedToTransModal(6, \'%s\');"]'
+                                      '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         # verify sales_tax field is populated with ST6's value
@@ -2016,8 +2016,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$411.10'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$345.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,933.66'
@@ -2202,8 +2202,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element(By.ID, 
-            'budg_txfr_frm_date').get_attribute('value') == \
+        assert body.find_element(By.ID,
+                                 'budg_txfr_frm_date').get_attribute('value') == \
             dtnow().date().strftime('%Y-%m-%d')
         amt = body.find_element(By.ID, 'budg_txfr_frm_amount')
         amt.clear()
@@ -2316,8 +2316,8 @@ class TestBudgetTransfer(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$534.55'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$468.80'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,810.21'
@@ -2516,8 +2516,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element(By.ID, 
-            'budg_txfr_frm_date').get_attribute('value') == \
+        assert body.find_element(By.ID,
+                                 'budg_txfr_frm_date').get_attribute('value') == \
             dtnow().date().strftime('%Y-%m-%d')
 
     def test_18_budget_transfer_modal_date_prev_period(
@@ -2532,8 +2532,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element(By.ID, 
-            'budg_txfr_frm_date').get_attribute('value') == '2017-06-23'
+        assert body.find_element(By.ID,
+                                 'budg_txfr_frm_date').get_attribute('value') == '2017-06-23'
 
     def test_19_budget_transfer_modal_date_next_period(
         self, base_url, selenium
@@ -2547,8 +2547,8 @@ class TestBudgetTransfer(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Budget Transfer'
-        assert body.find_element(By.ID, 
-            'budg_txfr_frm_date').get_attribute('value') == '2017-08-18'
+        assert body.find_element(By.ID,
+                                 'budg_txfr_frm_date').get_attribute('value') == '2017-08-18'
 
 
 @pytest.mark.acceptance
@@ -2660,8 +2660,8 @@ class TestSkipScheduled(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$411.10'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$345.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,933.66'
@@ -2843,15 +2843,15 @@ class TestSkipScheduled(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
-        link = selenium.find_elements(By.XPATH, 
-            '//a[@href="javascript:skipSchedTransModal(8, \'%s\');"]'
-            '' % pp.start_date.strftime('%Y-%m-%d'))[0]
+        link = selenium.find_elements(By.XPATH,
+                                      '//a[@href="javascript:skipSchedTransModal(8, \'%s\');"]'
+                                      '' % pp.start_date.strftime('%Y-%m-%d'))[0]
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Skip Scheduled Transaction 8 in period %s' \
             % pp.start_date.strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'skipschedtrans_frm_pp_date').get_attribute('value') == \
+        assert body.find_element(By.ID,
+                                 'skipschedtrans_frm_pp_date').get_attribute('value') == \
             pp.start_date.strftime('%Y-%m-%d')
         desc = selenium.find_element(By.ID, 'skipschedtrans_frm_description')
         assert desc.get_attribute('value') == 'ST8 day_of_month'
@@ -2932,8 +2932,8 @@ class TestSkipScheduled(AcceptanceHelper):
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        assert selenium.find_element(By.ID, 
-            'amt-income').text == '$2,345.67'
+        assert selenium.find_element(By.ID,
+                                     'amt-income').text == '$2,345.67'
         assert selenium.find_element(By.ID, 'amt-allocated').text == '$388.88'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$345.35'
         assert selenium.find_element(By.ID, 'amt-remaining').text == '$1,955.88'

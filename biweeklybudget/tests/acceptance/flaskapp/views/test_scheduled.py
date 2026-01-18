@@ -270,20 +270,20 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 3'
-        assert body.find_element(By.ID, 
-            'sched_frm_id').get_attribute('value') == '3'
-        assert body.find_element(By.ID, 
-            'sched_frm_description').get_attribute('value') == 'ST3'
-        assert body.find_element(By.ID, 
-            'sched_frm_type_monthly').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_date').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_per_period').is_selected()
-        assert body.find_element(By.ID, 
-            'sched_frm_num_per_period').get_attribute('value') == '1'
-        assert body.find_element(By.ID, 
-            'sched_frm_amount').get_attribute('value') == '-333.33'
+        assert body.find_element(By.ID,
+                                 'sched_frm_id').get_attribute('value') == '3'
+        assert body.find_element(By.ID,
+                                 'sched_frm_description').get_attribute('value') == 'ST3'
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_date').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_per_period').is_selected()
+        assert body.find_element(By.ID,
+                                 'sched_frm_num_per_period').get_attribute('value') == '1'
+        assert body.find_element(By.ID,
+                                 'sched_frm_amount').get_attribute('value') == '-333.33'
         acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -339,20 +339,20 @@ class TestSchedTransMonthlyURL(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 2'
-        assert body.find_element(By.ID, 
-            'sched_frm_id').get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'sched_frm_description').get_attribute('value') == 'ST2'
-        assert body.find_element(By.ID, 
-            'sched_frm_type_monthly').is_selected()
-        assert body.find_element(By.ID, 
-            'sched_frm_type_date').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_per_period').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_day_of_month').get_attribute('value') == '4'
-        assert body.find_element(By.ID, 
-            'sched_frm_amount').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'sched_frm_id').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'sched_frm_description').get_attribute('value') == 'ST2'
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_monthly').is_selected()
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_date').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_per_period').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_day_of_month').get_attribute('value') == '4'
+        assert body.find_element(By.ID,
+                                 'sched_frm_amount').get_attribute('value') == '222.22'
         acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         budget_sel = Select(body.find_element(By.ID, 'sched_frm_budget'))
@@ -386,27 +386,27 @@ class TestSchedTransModal(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Scheduled Transaction 4'
-        assert body.find_element(By.ID, 
-            'sched_frm_id').get_attribute('value') == '4'
-        assert body.find_element(By.ID, 
-            'sched_frm_description').get_attribute('value') == 'ST4'
-        assert body.find_element(By.ID, 
-            'sched_frm_type_monthly').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_type_date').is_selected()
-        assert body.find_element(By.ID, 
-            'sched_frm_type_per_period').is_selected() is False
-        assert body.find_element(By.ID, 
-            'sched_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'sched_frm_id').get_attribute('value') == '4'
+        assert body.find_element(By.ID,
+                                 'sched_frm_description').get_attribute('value') == 'ST4'
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_monthly').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_date').is_selected()
+        assert body.find_element(By.ID,
+                                 'sched_frm_type_per_period').is_selected() is False
+        assert body.find_element(By.ID,
+                                 'sched_frm_date').get_attribute('value') == (
             dtnow() + timedelta(days=5)).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'sched_frm_amount').get_attribute('value') == '444.44'
+        assert body.find_element(By.ID,
+                                 'sched_frm_amount').get_attribute('value') == '444.44'
         acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         budget_sel = Select(body.find_element(By.ID, 'sched_frm_budget'))
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert selenium.find_element(By.ID, 
-            'sched_frm_active').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'sched_frm_active').is_selected() is False
 
     def test_02_edit_date_inactive_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
@@ -481,9 +481,9 @@ class TestSchedTransModal(AcceptanceHelper):
         dnow = dtnow()
         expected_date = date(year=dnow.year, month=dnow.month, day=15)
         date_input.click()
-        date_number = body.find_element(By.XPATH, 
-            '//td[@class="day" and text()="15"]'
-        )
+        date_number = body.find_element(By.XPATH,
+                                        '//td[@class="day" and text()="15"]'
+                                        )
         date_number.click()
         # END date chooser popup
         assert date_input.get_attribute(

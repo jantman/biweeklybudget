@@ -330,17 +330,17 @@ class TestTransModalByURL(AcceptanceHelper):
         modal, title, body = self.get_modal_parts(selenium)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '3'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
             dtnow() - timedelta(days=2)).date().strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '222.22'
-        assert body.find_element(By.ID, 
-            'trans_frm_sales_tax').get_attribute('value') == '12.34'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'T3'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'trans_frm_sales_tax').get_attribute('value') == '12.34'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'T3'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -368,8 +368,8 @@ class TestTransModalByURL(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'notesT3'
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_notes').get_attribute('value') == 'notesT3'
 
 
 @pytest.mark.acceptance
@@ -402,17 +402,17 @@ class TestTransModal(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == dtnow().date(
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == dtnow().date(
         ).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '-333.33'
-        assert body.find_element(By.ID, 
-            'trans_frm_sales_tax').get_attribute('value') == '0'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'T2'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '-333.33'
+        assert body.find_element(By.ID,
+                                 'trans_frm_sales_tax').get_attribute('value') == '0'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'T2'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -440,8 +440,8 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'notesT2'
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_notes').get_attribute('value') == 'notesT2'
 
     def test_02_simple_modal_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
@@ -450,8 +450,8 @@ class TestTransModal(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 2'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '2'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '2'
         d = body.find_element(By.ID, 'trans_frm_date')
         d.clear()
         d.send_keys(
@@ -528,15 +528,15 @@ class TestTransModal(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '1'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '1'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
             dtnow() + timedelta(days=4)).date().strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '111.13'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'T1foo'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '111.13'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'T1foo'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -564,8 +564,8 @@ class TestTransModal(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'notesT1'
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_notes').get_attribute('value') == 'notesT1'
 
     def test_12_cant_edit_reconciled_modal_edit(self, base_url, selenium):
         self.baseurl = base_url
@@ -574,8 +574,8 @@ class TestTransModal(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 1'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '1'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '1'
         # submit the form
         selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -601,9 +601,9 @@ class TestTransModal(AcceptanceHelper):
         dnow = dtnow()
         expected_date = date(year=dnow.year, month=dnow.month, day=15)
         date_input.click()
-        date_number = body.find_element(By.XPATH, 
-            '//td[@class="day" and text()="15"]'
-        )
+        date_number = body.find_element(By.XPATH,
+                                        '//td[@class="day" and text()="15"]'
+                                        )
         date_number.click()
         assert date_input.get_attribute(
             'value') == expected_date.strftime('%Y-%m-%d')
@@ -748,8 +748,8 @@ class TestTransModal(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '6'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '6'
         amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '345.67'
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
@@ -872,15 +872,15 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 5'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '5'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '5'
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         # there should be three split budget input groups
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
@@ -900,8 +900,8 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['3', 'Periodic3 Inactive']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '3'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_0').get_attribute('value') == '120.11'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_0').get_attribute('value') == '120.11'
         # BUDGET 1
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
@@ -916,8 +916,8 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_1').get_attribute('value') == '102.11'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_1').get_attribute('value') == '102.11'
         # BUDGET 2
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_2'))
         opts = []
@@ -932,8 +932,8 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_2').get_attribute('value') == '100.1'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_2').get_attribute('value') == '100.1'
 
     def test_03_modal_populate_nonsplit_active(self, base_url, selenium):
         self.baseurl = base_url
@@ -942,15 +942,15 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 6'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '6'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '6'
         # NOT Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
         amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '322.32'
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
@@ -974,15 +974,15 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 7'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '7'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '7'
         # NOT Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
         amt = body.find_element(By.ID, 'trans_frm_amount')
         assert amt.get_attribute('value') == '322.32'
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
@@ -1018,8 +1018,8 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_1_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element(By.XPATH, 
-            '//a[@href="javascript:txnReconcileModal(1)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
@@ -1094,8 +1094,8 @@ class TestTransReconciledModal(AcceptanceHelper):
     def test_3_split_trans_modal(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
-        link = selenium.find_element(By.XPATH, 
-            '//a[@href="javascript:txnReconcileModal(1)"]')
+        link = selenium.find_element(By.XPATH,
+                                     '//a[@href="javascript:txnReconcileModal(1)"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Transaction Reconcile 1'
@@ -1398,8 +1398,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         except TimeoutException:
             pass
         assert driver.find_element(By.ID, 'budget-split-feedback').text == msg
-        assert driver.find_element(By.ID, 
-            'modalSaveButton').is_enabled() is False
+        assert driver.find_element(By.ID,
+                                   'modalSaveButton').is_enabled() is False
 
     def assert_budget_split_does_not_have_error(self, driver):
         # get validate count
@@ -1428,21 +1428,21 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         amt.clear()
         amt.send_keys('200.22')
         # assert budget split items are hidden and checkbox is unchecked
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed()
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
         # check the budget split checkbox
         selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         # there should be two split budget input groups
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
@@ -1521,12 +1521,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         # uncheck the Budget Split checkbox
         selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are hidden and checkbox is unchecked
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed()
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
 
     def test_30_verify_db_before(self, testdb):
         t = testdb.query(Transaction).get(4)
@@ -1554,16 +1554,16 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 4'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '4'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '4'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
                 dtnow() - timedelta(days=35)
             ).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '322.32'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'T4split'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '322.32'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'T4split'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -1579,12 +1579,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '3'
         # Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
@@ -1602,8 +1602,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
         # BUDGET 1
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
@@ -1618,10 +1618,10 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_1').get_attribute('value') == '100.1'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'notesT4split'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_1').get_attribute('value') == '100.1'
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_notes').get_attribute('value') == 'notesT4split'
 
     def test_32_new_split_trans(self, base_url, selenium, testdb):
         self.baseurl = base_url
@@ -1645,12 +1645,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         # check the budget split checkbox
         selenium.find_element(By.ID, 'trans_frm_is_split').click()
         # assert budget split items are shown and checkbox is checked
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         # there should be two split budget input groups
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
@@ -1664,8 +1664,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         Select(
             body.find_element(By.ID, 'trans_frm_budget_1')).select_by_value('2')
         # the next value should be populated automatically
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_1').get_attribute('value') == '275.00'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_1').get_attribute('value') == '275.00'
         tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
         tmp.clear()
         tmp.send_keys('200')
@@ -1680,8 +1680,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
         # the amount should be populated automatically
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_2').get_attribute('value') == '75.00'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_2').get_attribute('value') == '75.00'
         # fill in the third row
         Select(
             body.find_element(By.ID, 'trans_frm_budget_2')).select_by_value('4')
@@ -1730,15 +1730,15 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 5'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '5'
-        assert body.find_element(By.ID, 
-            'trans_frm_date'
-        ).get_attribute('value') == dtnow().strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '375'
-        assert body.find_element(By.ID, 
-            'trans_frm_description').get_attribute('value') == 'NewTrans5'
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '5'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date'
+                                 ).get_attribute('value') == dtnow().strftime('%Y-%m-%d')
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '375'
+        assert body.find_element(By.ID,
+                                 'trans_frm_description').get_attribute('value') == 'NewTrans5'
         acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
         opts = []
         for o in acct_sel.options:
@@ -1754,12 +1754,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
         # Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 3
@@ -1777,8 +1777,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '2'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_0').get_attribute('value') == '200'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_0').get_attribute('value') == '200'
         # BUDGET 1
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_1'))
         opts = []
@@ -1793,8 +1793,8 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '1'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_1').get_attribute('value') == '100'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_1').get_attribute('value') == '100'
         # BUDGET 2
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget_2'))
         opts = []
@@ -1809,13 +1809,13 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['5', 'Standing2']
         ]
         assert budget_sel.first_selected_option.get_attribute('value') == '4'
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_2').get_attribute('value') == '75'
-        assert selenium.find_element(By.ID, 
-            'trans_frm_notes').get_attribute('value') == 'NewSplitTransNotes'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_2').get_attribute('value') == '75'
+        elem = selenium.find_element(By.ID, 'trans_frm_notes')
+        assert elem.get_attribute('value') == 'NewSplitTransNotes'
         # Ok, now edit it...
-        Select(body.find_element(By.ID, 
-            'trans_frm_budget_1')).select_by_value('None')
+        Select(body.find_element(By.ID,
+                                 'trans_frm_budget_1')).select_by_value('None')
         body.find_element(By.ID, 'trans_frm_budget_amount_1').clear()
         budget_amt = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         budget_amt.clear()
@@ -1878,32 +1878,32 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '3'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
                 dtnow() - timedelta(days=2)
             ).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '222.22'
         # NOT Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
         # Ok, click to split it...
         self.try_click(
             selenium, selenium.find_element(By.ID, 'trans_frm_is_split')
         )
         # Should be split now...
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected()
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
@@ -1912,18 +1912,18 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             body.find_element(By.ID, 'trans_frm_budget_0')
         ).first_selected_option.get_attribute('value') == '2'
         # Verify that amount has been set
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_0').get_attribute('value') == '222.22'
         # Set the amount
         budget_amt = body.find_element(By.ID, 'trans_frm_budget_amount_0')
         budget_amt.clear()
         budget_amt.send_keys('100.02')
         # select the second budget
-        Select(body.find_element(By.ID, 
-            'trans_frm_budget_1')).select_by_value('4')
+        Select(body.find_element(By.ID,
+                                 'trans_frm_budget_1')).select_by_value('4')
         # Verify that second amount is set
-        assert body.find_element(By.ID, 
-            'trans_frm_budget_amount_1').get_attribute('value') == '122.20'
+        assert body.find_element(By.ID,
+                                 'trans_frm_budget_amount_1').get_attribute('value') == '122.20'
         self.assert_budget_split_does_not_have_error(selenium)
         # submit the form
         selenium.find_element(By.ID, 'modalSaveButton').click()
@@ -1981,21 +1981,21 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Transaction 3'
-        assert body.find_element(By.ID, 
-            'trans_frm_id').get_attribute('value') == '3'
-        assert body.find_element(By.ID, 
-            'trans_frm_date').get_attribute('value') == (
+        assert body.find_element(By.ID,
+                                 'trans_frm_id').get_attribute('value') == '3'
+        assert body.find_element(By.ID,
+                                 'trans_frm_date').get_attribute('value') == (
                        dtnow() - timedelta(days=2)
                ).strftime('%Y-%m-%d')
-        assert body.find_element(By.ID, 
-            'trans_frm_amount').get_attribute('value') == '222.22'
+        assert body.find_element(By.ID,
+                                 'trans_frm_amount').get_attribute('value') == '222.22'
         # Should be split...
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected()
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected()
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed()
         assert len(
             selenium.find_elements(By.CLASS_NAME, 'budget_split_row')
         ) == 2
@@ -2004,12 +2004,12 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             selenium, selenium.find_element(By.ID, 'trans_frm_is_split')
         )
         # NOT Split Budget
-        assert selenium.find_element(By.ID, 
-            'trans_frm_is_split').is_selected() is False
-        assert selenium.find_element(By.ID, 
-            'trans_frm_budget_group').is_displayed() is True
-        assert selenium.find_element(By.ID, 
-            'trans_frm_split_budget_container').is_displayed() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_is_split').is_selected() is False
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_budget_group').is_displayed() is True
+        assert selenium.find_element(By.ID,
+                                     'trans_frm_split_budget_container').is_displayed() is False
         # Ok, now edit it...
         budget_sel = Select(body.find_element(By.ID, 'trans_frm_budget'))
         budget_sel.select_by_value('2')

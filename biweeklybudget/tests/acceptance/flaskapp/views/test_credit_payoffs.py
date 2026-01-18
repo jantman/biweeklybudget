@@ -65,36 +65,36 @@ def get_payoff_forms(selenium):
             _id = int(m.group(1))
 
             vals[_id] = {
-                'enabled': selenium.find_element(By.ID, 
-                    'payoff_%s_frm_%s_enable' % (f_type, _id)
-                ).is_selected(),
-                'date': selenium.find_element(By.ID, 
-                    'payoff_%s_frm_%s_date' % (f_type, _id)
-                ).get_attribute('value'),
-                'amount': selenium.find_element(By.ID, 
-                    'payoff_%s_frm_%s_amt' % (f_type, _id)
-                ).get_attribute('value')
+                'enabled': selenium.find_element(By.ID,
+                                                 'payoff_%s_frm_%s_enable' % (f_type, _id)
+                                                 ).is_selected(),
+                'date': selenium.find_element(By.ID,
+                                              'payoff_%s_frm_%s_date' % (f_type, _id)
+                                              ).get_attribute('value'),
+                'amount': selenium.find_element(By.ID,
+                                                'payoff_%s_frm_%s_amt' % (f_type, _id)
+                                                ).get_attribute('value')
             }
         res[f_type] = vals
     return res
 
 
 def set_payoff_form(selenium, f_type, idx, enabled, date_s, amt):
-    is_enabled = selenium.find_element(By.ID, 
-        'payoff_%s_frm_%s_enable' % (f_type, idx)).is_selected()
+    is_enabled = selenium.find_element(By.ID,
+                                       'payoff_%s_frm_%s_enable' % (f_type, idx)).is_selected()
     if is_enabled != enabled:
-        selenium.find_element(By.ID, 
-            'payoff_%s_frm_%s_enable' % (f_type, idx)).click()
-        assert selenium.find_element(By.ID, 
-            'payoff_%s_frm_%s_enable' % (f_type, idx)).is_selected() == enabled
-    selenium.find_element(By.ID, 
-        'payoff_%s_frm_%s_date' % (f_type, idx)).clear()
-    selenium.find_element(By.ID, 
-        'payoff_%s_frm_%s_date' % (f_type, idx)).send_keys(date_s)
-    selenium.find_element(By.ID, 
-        'payoff_%s_frm_%s_amt' % (f_type, idx)).clear()
-    selenium.find_element(By.ID, 
-        'payoff_%s_frm_%s_amt' % (f_type, idx)).send_keys(amt)
+        selenium.find_element(By.ID,
+                              'payoff_%s_frm_%s_enable' % (f_type, idx)).click()
+        elem_id = 'payoff_%s_frm_%s_enable' % (f_type, idx)
+        assert selenium.find_element(By.ID, elem_id).is_selected() == enabled
+    selenium.find_element(By.ID,
+                          'payoff_%s_frm_%s_date' % (f_type, idx)).clear()
+    selenium.find_element(By.ID,
+                          'payoff_%s_frm_%s_date' % (f_type, idx)).send_keys(date_s)
+    selenium.find_element(By.ID,
+                          'payoff_%s_frm_%s_amt' % (f_type, idx)).clear()
+    selenium.find_element(By.ID,
+                          'payoff_%s_frm_%s_amt' % (f_type, idx)).send_keys(amt)
 
 
 @pytest.mark.acceptance
@@ -143,20 +143,20 @@ class TestCreditPayoffsNoInterest(AcceptanceHelper):
     def test_06_add_interest(self, selenium, base_url):
         self.baseurl = base_url
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        link = selenium.find_element(By.XPATH, 
-            '//a[text()="manually input the interest charge from your '
-            'last statement"]'
-        )
+        link = selenium.find_element(By.XPATH,
+                                     '//a[text()="manually input the interest charge from your '
+                                     'last statement"]'
+                                     )
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Add Manual Interest Charge for Account 4'
         frm_id = selenium.find_element(By.ID, 'payoff_acct_frm_id')
-        frm_filename = selenium.find_element(By.ID, 
-            'payoff_acct_frm_statement_filename'
-        )
-        frm_int_amt = selenium.find_element(By.ID, 
-            'payoff_acct_frm_interest_amt'
-        )
+        frm_filename = selenium.find_element(By.ID,
+                                             'payoff_acct_frm_statement_filename'
+                                             )
+        frm_int_amt = selenium.find_element(By.ID,
+                                            'payoff_acct_frm_interest_amt'
+                                            )
         assert frm_id.get_attribute('value') == '4'
         fname = Select(frm_filename)
         # find the options
@@ -235,8 +235,8 @@ class TestNoSettings(AcceptanceHelper):
 
     def test_01_no_config(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        assert selenium.find_element(By.ID, 
-            'payoff_frm_min_pymt').get_attribute('value') == '144.98'
+        assert selenium.find_element(By.ID,
+                                     'payoff_frm_min_pymt').get_attribute('value') == '144.98'
         form_ids = [
             s.get_attribute('id')
             for s in selenium.find_elements(By.TAG_NAME, 'form')
@@ -281,9 +281,9 @@ class TestNoSettings(AcceptanceHelper):
 
     def test_02_highest_interest_payment(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        table = selenium.find_element(By.ID, 
-            'table_HighestInterestRateFirstMethod'
-        )
+        table = selenium.find_element(By.ID,
+                                      'table_HighestInterestRateFirstMethod'
+                                      )
         texts = self.tbody2textlist(table)
         assert texts == [
             [
@@ -315,9 +315,9 @@ class TestNoSettings(AcceptanceHelper):
 
     def test_04_lowest_interest_payment(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        table = selenium.find_element(By.ID, 
-            'table_LowestInterestRateFirstMethod'
-        )
+        table = selenium.find_element(By.ID,
+                                      'table_LowestInterestRateFirstMethod'
+                                      )
         texts = self.tbody2textlist(table)
         assert texts == [
             [
@@ -403,16 +403,16 @@ class TestSettings(AcceptanceHelper):
 
     def test_02_input_and_save(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        assert 'disabled' in selenium.find_element(By.ID, 
-            'btn_recalc_payoffs').get_attribute('class')
+        assert 'disabled' in selenium.find_element(By.ID,
+                                                   'btn_recalc_payoffs').get_attribute('class')
         set_payoff_form(selenium, 'increase', 1, True, '2017-05-14', '160.23')
-        assert 'disabled' not in selenium.find_element(By.ID, 
-            'btn_recalc_payoffs').get_attribute('class')
+        assert 'disabled' not in selenium.find_element(By.ID,
+                                                       'btn_recalc_payoffs').get_attribute('class')
         selenium.find_element(By.LINK_TEXT, '(add another increase)').click()
         set_payoff_form(selenium, 'increase', 2, False, '2017-06-27', '-56.78')
         set_payoff_form(selenium, 'onetime', 1, False, '2017-07-21', '98.76')
-        selenium.find_element(By.LINK_TEXT, 
-            '(add another one-time additional payment)').click()
+        selenium.find_element(By.LINK_TEXT,
+                              '(add another one-time additional payment)').click()
         set_payoff_form(selenium, 'onetime', 2, True, '2017-07-04', '54.32')
         selenium.find_element(By.ID, 'btn_recalc_payoffs').click()
         assert len(selenium.find_elements(By.CLASS_NAME, 'formfeedback')) == 0
@@ -505,9 +505,9 @@ class TestSettings(AcceptanceHelper):
 
     def test_06_highest_interest_payment(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        table = selenium.find_element(By.ID, 
-            'table_HighestInterestRateFirstMethod'
-        )
+        table = selenium.find_element(By.ID,
+                                      'table_HighestInterestRateFirstMethod'
+                                      )
         texts = self.tbody2textlist(table)
         assert texts == [
             [
@@ -539,9 +539,9 @@ class TestSettings(AcceptanceHelper):
 
     def test_08_lowest_interest_payment(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/credit-payoff')
-        table = selenium.find_element(By.ID, 
-            'table_LowestInterestRateFirstMethod'
-        )
+        table = selenium.find_element(By.ID,
+                                      'table_LowestInterestRateFirstMethod'
+                                      )
         texts = self.tbody2textlist(table)
         assert texts == [
             [
