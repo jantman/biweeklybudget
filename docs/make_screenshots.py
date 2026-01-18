@@ -96,7 +96,7 @@ from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 
 engine = create_engine(
-    connstr, convert_unicode=True, echo=False,
+    connstr, echo=False,
     connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
     pool_size=10, pool_timeout=120
 )

@@ -49,6 +49,9 @@ try:
 except (ImportError, KeyError):
     pass
 
+from collections import namedtuple
+
+import datatables
 from flask import Flask
 
 from biweeklybudget.db import init_db, cleanup_db
@@ -99,9 +102,6 @@ if app.debug:
 # Monkey-patch datatables package for SQLAlchemy 2.0 compatibility
 # The package uses query.join('relationship_name') which no longer works in
 # SQLAlchemy 2.0 - it must pass the actual relationship attribute instead
-import datatables
-from collections import namedtuple
-
 _original_datatable_init = datatables.DataTable.__init__
 
 
