@@ -542,11 +542,20 @@ class TestModals(AcceptanceHelper):
         selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that datatable was updated
-        table = selenium.find_element(By.ID, 'table-fuel-log')
-        odo_reads = [y[2] for y in self.tbody2textlist(table)]
-        assert odo_reads == [
+        # Wait for DataTable to fully render (may take time in Docker due to
+        # network latency between test and container)
+        expected_odo = [
             '1,011', '1,012', '1,013', '1,001', '1,002', '1,003', '1,123'
         ]
+        for _ in range(10):  # Retry up to 10 times
+            table = selenium.find_element(By.ID, 'table-fuel-log')
+            odo_reads = [y[2] for y in self.tbody2textlist(table)]
+            # Check if all cells are populated (no empty strings)
+            if '' not in odo_reads and odo_reads == expected_odo:
+                break
+            from time import sleep
+            sleep(0.5)
+        assert odo_reads == expected_odo
         notif = selenium.find_element(By.ID, 'last_mpg_notice')
         assert notif.get_attribute('innerHTML') == 'Last fill MPG: 16.349'
 
@@ -643,13 +652,22 @@ class TestModals(AcceptanceHelper):
         selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
         # test that datatable was updated
-        table = selenium.find_element(By.ID, 'table-fuel-log')
-        odo_reads = [y[2] for y in self.tbody2textlist(table)]
-        assert odo_reads == [
+        # Wait for DataTable to fully render (may take time in Docker due to
+        # network latency between test and container)
+        expected_odo = [
             '1,011', '1,012', '1,013',
             '1,001', '1,002', '1,003',
             '1,256', '1,123'
         ]
+        for _ in range(10):  # Retry up to 10 times
+            table = selenium.find_element(By.ID, 'table-fuel-log')
+            odo_reads = [y[2] for y in self.tbody2textlist(table)]
+            # Check if all cells are populated (no empty strings)
+            if '' not in odo_reads and odo_reads == expected_odo:
+                break
+            from time import sleep
+            sleep(0.5)
+        assert odo_reads == expected_odo
 
     def test_15_fuel_verify_db(self, testdb):
         ids = [

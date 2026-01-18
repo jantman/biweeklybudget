@@ -112,7 +112,7 @@ RUN set -ex \
         musl-dev \
         openssl-dev \
     && /app/bin/pip install {install} \
-    && /app/bin/pip install gunicorn==19.7.1 \
+    && /app/bin/pip install gunicorn==22.0.0 \
     && apk del .build-deps \
     && rm -Rf /root/.cache{versionfix}
 
@@ -266,7 +266,12 @@ class DockerImageBuilder(object):
                 'environment': {
                     'DB_CONNSTRING': 'mysql+pymysql://'
                         'root:root@mysql:3306/'
-                        'budgetfoo?charset=utf8mb4'
+                        'budgetfoo?charset=utf8mb4',
+                    # Use test settings module and frozen timestamp for
+                    # acceptance tests to match expected time-based assertions
+                    'SETTINGS_MODULE':
+                        'biweeklybudget.tests.fixtures.test_settings',
+                    'BIWEEKLYBUDGET_TEST_TIMESTAMP': '1501223084'
                 },
                 'links': {dbname: 'mysql'},
                 'ports': {
@@ -448,7 +453,18 @@ class DockerImageBuilder(object):
         """
         container.reload()
         cnet = container.attrs['NetworkSettings']
-        c_ip = cnet['IPAddress']
+        # Docker API changed - IPAddress may be directly in NetworkSettings
+        # (older versions) or inside Networks -> network_name (newer versions)
+        c_ip = cnet.get('IPAddress')
+        if not c_ip and 'Networks' in cnet:
+            # Get IP from the first available network (usually 'bridge')
+            for network_name, network_data in cnet['Networks'].items():
+                c_ip = network_data.get('IPAddress')
+                if c_ip:
+                    logger.debug(
+                        'Container IP %s from network %s', c_ip, network_name
+                    )
+                    break
         logger.debug('Container IP: %s / NetworkSettings: %s', c_ip, cnet)
         return c_ip
 
@@ -521,10 +537,10 @@ class DockerImageBuilder(object):
         cont = self._docker.containers.run(img, **kwargs)
         logger.debug('MySQL container running; name=%s id=%s',
                      cont.name, cont.id)
-        logger.info('Waiting 30s for MySQL container to stabilize...')
-        time.sleep(30)
+        logger.info('Waiting 60s for MySQL container to stabilize...')
+        time.sleep(60)
         count = 0
-        while count < 10:
+        while count < 20:
             count += 1
             logger.info('Creating database...')
             cmd = ('/usr/bin/mysql -uroot -proot -h 127.0.0.1 '

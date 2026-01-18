@@ -293,6 +293,8 @@ class TestTransactionsDefault(AcceptanceHelper):
         )
         search.send_keys('foo')
         self.wait_for_jquery_done(selenium)
+        # Wait for DataTables search to filter results (has debounce delay)
+        self.wait_for_datatable_rows(selenium, 'table-transactions', 1)
         table = self.retry_stale(
             lambda: selenium.find_element(By.ID, 'table-transactions')
         )

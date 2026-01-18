@@ -253,6 +253,44 @@ class AcceptanceHelper(object):
                 (sleep_sec * tries)
             )
 
+    def wait_for_datatable_rows(
+        self, driver, table_id, expected_count, sleep_sec=0.5, tries=10
+    ):
+        """
+        Wait until the DataTable with given ID has the expected number of rows.
+        This is useful for waiting for DataTables search/filter to complete.
+
+        :param driver: Selenium driver instance
+        :type driver: selenium.webdriver.remote.webdriver.WebDriver
+        :param table_id: The ID of the table element
+        :type table_id: str
+        :param expected_count: The expected number of rows
+        :type expected_count: int
+        :param sleep_sec: how long to sleep between tries
+        :type sleep_sec: float
+        :param tries: how many times to try
+        :type tries: int
+        """
+        for count in range(tries):
+            try:
+                table = driver.find_element(By.ID, table_id)
+                rows = table.find_element(
+                    By.TAG_NAME, 'tbody'
+                ).find_elements(By.TAG_NAME, 'tr')
+                if len(rows) == expected_count:
+                    logger.debug(
+                        'DataTable %s has %d rows after %d tries',
+                        table_id, expected_count, count + 1
+                    )
+                    return
+            except StaleElementReferenceException:
+                pass
+            sleep(sleep_sec)
+        raise RuntimeError(
+            f'DataTable {table_id} did not reach {expected_count} rows after '
+            f'{tries} tries ({sleep_sec * tries} seconds)'
+        )
+
     def wait_for_load_complete(self, driver, sleep_sec=0.2, tries=20):
         """
         Wait until ``document.readyState == "complete"``. Tries ``tries`` times

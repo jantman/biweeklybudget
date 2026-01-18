@@ -62,7 +62,7 @@ class TestInterestHelper(AcceptanceHelper):
             fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
             trans_type='debit',
             date_posted=stmt.as_of,
-            amount=Decimal('46.9061'),
+            amount=Decimal('-46.9061'),
             name='Interest Charged - MANUALLY ENTERED',
             is_interest_charge=True
         )
@@ -175,7 +175,7 @@ class TestInterestHelper(AcceptanceHelper):
                 'description': 'Lowest to Highest Balance (a.k.a. '
                                'Snowball Method)',
                 'doc': 'Pay statements off from lowest to highest balance, '
-                       'a.k.a. the "snowball"\n    method.',
+                       'a.k.a. the "snowball"\nmethod.',
                 'results': {
                     3: {
                         'payoff_months': 21,

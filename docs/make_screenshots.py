@@ -632,7 +632,7 @@ class Screenshotter(object):
             fitid='%s-MANUAL-CCPAYOFF' % dtnow().strftime('%Y%m%d%H%M%S'),
             trans_type='debit',
             date_posted=stmt.as_of,
-            amount=Decimal('46.9061'),
+            amount=Decimal('-46.9061'),
             name='Interest Charged - MANUALLY ENTERED',
             is_interest_charge=True
         )

@@ -53,6 +53,15 @@ pytest biweeklybudget/tests/unit/test_file.py::TestClass::test_method
 pytest --cov=biweeklybudget --cov-report=html
 ```
 
+**Important:** When running tests, always redirect output to a scratchpad file instead of piping to `tail`/`head`/`grep`. This allows full examination of test output as needed:
+```bash
+# Good - redirect to scratchpad file
+tox -e acceptance -- -k "TestName" 2>&1 > /path/to/scratchpad/test-output.txt
+
+# Bad - loses full output
+tox -e acceptance -- -k "TestName" 2>&1 | tail -50
+```
+
 ### Database Setup
 
 #### Quick Setup (Production/Local Development)

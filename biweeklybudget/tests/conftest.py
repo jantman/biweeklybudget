@@ -283,8 +283,15 @@ def testflask():
     """
     This is a version of pytest-flask's live_server fixture, modified for
     session use.
+
+    When BIWEEKLYBUDGET_TEST_BASE_URL is set (e.g., for Docker tests),
+    we don't start a live server - tests run against the external URL instead.
     """
-    if 'BIWEEKLYBUDGET_TEST_BASE_URL' not in os.environ:
+    if 'BIWEEKLYBUDGET_TEST_BASE_URL' in os.environ:
+        # When running against an external URL (e.g., Docker container),
+        # we don't need to start a local server
+        yield None
+    else:
         # Bind to an open port
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('', 0))

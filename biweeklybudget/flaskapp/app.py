@@ -96,6 +96,60 @@ if app.debug:
     app.jinja_env.auto_reload = True
 
 
+# Monkey-patch datatables package for SQLAlchemy 2.0 compatibility
+# The package uses query.join('relationship_name') which no longer works in
+# SQLAlchemy 2.0 - it must pass the actual relationship attribute instead
+import datatables
+from collections import namedtuple
+
+_original_datatable_init = datatables.DataTable.__init__
+
+
+def _patched_datatable_init(self, params, model, query, columns):
+    self.params = params
+    self.model = model
+    self.query = query
+    self.data = {}
+    self.columns = []
+    self.columns_dict = {}
+    self.search_func = lambda qs, s: qs
+
+    DataColumn = namedtuple("DataColumn", ("name", "model_name", "filter"))
+
+    for col in columns:
+        name, model_name, filter_func = None, None, None
+
+        if isinstance(col, datatables.DataColumn):
+            self.columns.append(col)
+            continue
+        elif isinstance(col, tuple):
+            if len(col) == 3:
+                name, model_name, filter_func = col
+            elif len(col) == 2:
+                if callable(col[1]):
+                    name, filter_func = col
+                    model_name = name
+                else:
+                    name, model_name = col
+            else:
+                raise ValueError("Columns must be a tuple of 2 to 3 elements")
+        else:
+            name, model_name = col, col
+
+        d = DataColumn(name=name, model_name=model_name, filter=filter_func)
+        self.columns.append(d)
+        self.columns_dict[d.name] = d
+
+    # SQLAlchemy 2.0 fix: use getattr to get the actual relationship attribute
+    # instead of passing a string to query.join()
+    for column in (col for col in self.columns if "." in col.model_name):
+        relationship_name = column.model_name.split(".")[0]
+        self.query = self.query.join(getattr(self.model, relationship_name))
+
+
+datatables.DataTable.__init__ = _patched_datatable_init
+
+
 from biweeklybudget.flaskapp.views import *  # noqa
 from biweeklybudget.flaskapp.filters import *  # noqa
 from biweeklybudget.flaskapp.jinja_tests import *  # noqa
