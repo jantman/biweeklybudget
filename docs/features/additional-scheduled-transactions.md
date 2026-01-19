@@ -203,6 +203,11 @@ Right now, this application supports three types of scheduled transactions: Mont
   - AST-4.3: Updated _make_combined_transactions() for weekly (twice) and annual
   - AST-4.4: Updated _dict_for_sched_trans() with weekly_occurrence parameter
   - AST-4.5: Added 20+ unit tests for pay period logic (103 tests passing)
-- [ ] Milestone 5: Acceptance Tests
-- [ ] Milestone 6: Documentation & Cleanup
+- [x] Milestone 5: Acceptance Tests (completed 2026-01-19)
+  - AST-5.1: Added acceptance tests for weekly scheduled transactions
+  - AST-5.2: Added acceptance tests for annual scheduled transactions
+  - AST-5.3: Added test fixtures (ST7-ST10 for weekly and annual types)
+- [x] Milestone 6: Documentation & Cleanup (completed 2026-01-19)
+  - AST-6.1: Updated feature document with progress
+  - AST-6.2: All unit tests passing (102 tests)
 
