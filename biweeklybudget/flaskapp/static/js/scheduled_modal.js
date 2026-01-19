@@ -44,7 +44,7 @@ function schedModalDivHandleType() {
     $('#sched_frm_num_per_period_group').hide();
     $('#sched_frm_date_group').hide();
     $('#sched_frm_day_of_week_group').hide();
-    $('#sched_frm_annual_group').hide();
+    $('#sched_frm_annual_month_group').hide();
     $('#sched_frm_annual_day_group').hide();
 
     // Show the appropriate field based on selected type
@@ -55,7 +55,7 @@ function schedModalDivHandleType() {
     } else if($('#sched_frm_type_weekly').is(':checked')) {
         $('#sched_frm_day_of_week_group').show();
     } else if($('#sched_frm_type_annual').is(':checked')) {
-        $('#sched_frm_annual_group').show();
+        $('#sched_frm_annual_month_group').show();
         $('#sched_frm_annual_day_group').show();
     } else {
         // date
@@ -137,7 +137,7 @@ function schedModalDivForm() {
             },
             null,
             true,
-            { groupHtml: 'id="sched_frm_annual_group" style="display: none;"' }
+            { groupHtml: 'id="sched_frm_annual_month_group" style="display: none;"' }
         )
         .addText(
             'sched_frm_annual_day',
