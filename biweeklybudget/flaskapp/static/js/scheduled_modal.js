@@ -113,8 +113,8 @@ function schedModalDivForm() {
                 'Saturday': '5',
                 'Sunday': '6'
             },
-            null,
-            true,
+            '0',
+            false,
             { groupHtml: 'id="sched_frm_day_of_week_group" style="display: none;"' }
         )
         .addLabelToValueSelect(
@@ -135,8 +135,8 @@ function schedModalDivForm() {
                 'November': '11',
                 'December': '12'
             },
-            null,
-            true,
+            '1',
+            false,
             { groupHtml: 'id="sched_frm_annual_month_group" style="display: none;"' }
         )
         .addText(
