@@ -1,6 +1,17 @@
 Changelog
 =========
 
+1.5.0 (2026-01-19)
+------------------
+
+* `PR #309 <https://github.com/jantman/biweeklybudget/pull/309>`_ - **Add weekly and annual scheduled transaction types**
+
+  * **Weekly (Day of Week)**: Transactions that recur every week on a specified day (e.g., every Monday). Weekly transactions appear twice per pay period since each weekday occurs exactly twice in a 14-day biweekly period.
+  * **Annual**: Transactions that recur on a specific month and day each year (e.g., April 15th). For February 29th, the transaction is skipped in non-leap years.
+  * Database migration adds ``day_of_week``, ``annual_month``, ``annual_day`` columns to ``scheduled_transactions`` table
+  * Updated frontend modal with day-of-week dropdown and month/day inputs for new transaction types
+  * Added type filter options for weekly and annual transactions
+
 1.4.0 (2026-01-18)
 ------------------
 
