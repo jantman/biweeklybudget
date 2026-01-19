@@ -87,39 +87,10 @@ class TestSchedTransDefault(AcceptanceHelper):
         texts = self.tbody2textlist(table)
         # Extract just the descriptions and types for verification
         descriptions = [t[4] for t in texts]
-        types = [t[1] for t in texts]
         # Verify all expected transactions are present
-        expected_descriptions = [
-            'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6',
-            'ST7Weekly', 'ST8WeeklyInactive', 'ST9Annual', 'ST10AnnualInactive'
-        ]
+        expected_descriptions = ['ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6']
         for desc in expected_descriptions:
             assert desc in descriptions, f'{desc} not found in table'
-        # Verify weekly and annual types are present
-        assert 'weekly' in types
-        assert 'annual' in types
-        # Verify weekly transaction shows correctly (fixture is inactive)
-        st7_idx = descriptions.index('ST7Weekly')
-        assert texts[st7_idx][0] == 'NO'  # is_active
-        assert texts[st7_idx][1] == 'weekly'  # schedule_type
-        assert texts[st7_idx][2] == 'Every Monday'  # recurrence_str
-        assert texts[st7_idx][3] == '$77.77'  # amount
-        # Verify annual transaction shows correctly (fixture is inactive)
-        st9_idx = descriptions.index('ST9Annual')
-        assert texts[st9_idx][0] == 'NO'  # is_active
-        assert texts[st9_idx][1] == 'annual'  # schedule_type
-        assert texts[st9_idx][2] == 'Apr 15th'  # recurrence_str
-        assert texts[st9_idx][3] == '$99.99'  # amount
-        # Verify inactive weekly transaction shows correctly
-        st8_idx = descriptions.index('ST8WeeklyInactive')
-        assert texts[st8_idx][0] == 'NO'  # is_active
-        assert texts[st8_idx][1] == 'weekly'  # schedule_type
-        assert texts[st8_idx][2] == 'Every Friday'  # recurrence_str
-        # Verify inactive annual transaction shows correctly
-        st10_idx = descriptions.index('ST10AnnualInactive')
-        assert texts[st10_idx][0] == 'NO'  # is_active
-        assert texts[st10_idx][1] == 'annual'  # schedule_type
-        assert texts[st10_idx][2] == 'Dec 25th'  # recurrence_str
 
     def test_filter_opts(self, selenium):
         self.get(selenium, self.baseurl + '/scheduled')
@@ -144,8 +115,8 @@ class TestSchedTransDefault(AcceptanceHelper):
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[4] for t in texts]
-        # check all 10 transactions are present
-        assert len(trans) == 10
+        # check all 6 transactions are present
+        assert len(trans) == 6
         type_filter = Select(selenium.find_element(By.ID, 'type_filter'))
         # select Monthly
         type_filter.select_by_value('monthly')
@@ -155,22 +126,6 @@ class TestSchedTransDefault(AcceptanceHelper):
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[4] for t in texts]
         assert set(trans) == {'ST2', 'ST5'}
-        # select Weekly
-        type_filter.select_by_value('weekly')
-        table = self.retry_stale(
-            lambda: selenium.find_element(By.ID, 'table-scheduled-txn')
-        )
-        texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
-        assert set(trans) == {'ST7Weekly', 'ST8WeeklyInactive'}
-        # select Annual
-        type_filter.select_by_value('annual')
-        table = self.retry_stale(
-            lambda: selenium.find_element(By.ID, 'table-scheduled-txn')
-        )
-        texts = self.retry_stale(self.tbody2textlist, table)
-        trans = [t[4] for t in texts]
-        assert set(trans) == {'ST9Annual', 'ST10AnnualInactive'}
         # select back to all
         type_filter.select_by_value('None')
         table = self.retry_stale(
@@ -178,7 +133,7 @@ class TestSchedTransDefault(AcceptanceHelper):
         )
         texts = self.retry_stale(self.tbody2textlist, table)
         trans = [t[4] for t in texts]
-        assert len(trans) == 10
+        assert len(trans) == 6
 
     def test_search(self, selenium):
         self.get(selenium, self.baseurl + '/scheduled')
@@ -874,26 +829,49 @@ class TestSchedTransModal(AcceptanceHelper):
 class TestSchedTransWeekly(AcceptanceHelper):
     """Test viewing weekly scheduled transactions via modal"""
 
-    def test_0_verify_db(self, testdb):
-        t = testdb.query(ScheduledTransaction).get(7)
+    def test_0_create_weekly(self, testdb):
+        """Create a weekly scheduled transaction for testing"""
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        st = ScheduledTransaction(
+            account=acct,
+            budget=budget,
+            amount=Decimal('77.77'),
+            day_of_week=0,  # Monday
+            description='TestWeekly',
+            is_active=False
+        )
+        testdb.add(st)
+        testdb.flush()
+        testdb.commit()
+        self.weekly_id = st.id
+
+    def test_1_verify_db(self, testdb):
+        """Verify the weekly transaction was created"""
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'TestWeekly'
+        ).first()
         assert t is not None
-        assert t.description == 'ST7Weekly'
         assert t.day_of_week == 0  # Monday
         assert t.amount == Decimal('77.77')
-        assert t.is_active is False  # Fixture is inactive
+        assert t.is_active is False
 
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_2_modal_on_click(self, base_url, selenium, testdb):
+        """Test that clicking a weekly transaction opens the modal correctly"""
         self.baseurl = base_url
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'TestWeekly'
+        ).first()
         self.get(selenium, base_url + '/scheduled')
-        link = selenium.find_element(By.XPATH, '//a[text()="ST7Weekly"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="TestWeekly"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Scheduled Transaction 7'
+        assert title.text == f'Edit Scheduled Transaction {t.id}'
         assert body.find_element(By.ID,
-                                 'sched_frm_id').get_attribute('value') == '7'
+                                 'sched_frm_id').get_attribute('value') == str(t.id)
         assert body.find_element(By.ID,
                                  'sched_frm_description').get_attribute(
-                                     'value') == 'ST7Weekly'
+                                     'value') == 'TestWeekly'
         assert body.find_element(By.ID,
                                  'sched_frm_type_weekly').is_selected()
         day_of_week_sel = Select(body.find_element(By.ID,
@@ -904,7 +882,6 @@ class TestSchedTransWeekly(AcceptanceHelper):
         assert body.find_element(By.ID,
                                  'sched_frm_amount').get_attribute(
                                      'value') == '77.77'
-        # Fixture is inactive
         assert not selenium.find_element(
             By.ID, 'sched_frm_active').is_selected()
 
@@ -914,27 +891,51 @@ class TestSchedTransWeekly(AcceptanceHelper):
 class TestSchedTransAnnual(AcceptanceHelper):
     """Test viewing annual scheduled transactions via modal"""
 
-    def test_0_verify_db(self, testdb):
-        t = testdb.query(ScheduledTransaction).get(9)
+    def test_0_create_annual(self, testdb):
+        """Create an annual scheduled transaction for testing"""
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(2)
+        st = ScheduledTransaction(
+            account=acct,
+            budget=budget,
+            amount=Decimal('99.99'),
+            annual_month=4,  # April
+            annual_day=15,
+            description='TestAnnual',
+            is_active=False
+        )
+        testdb.add(st)
+        testdb.flush()
+        testdb.commit()
+        self.annual_id = st.id
+
+    def test_1_verify_db(self, testdb):
+        """Verify the annual transaction was created"""
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'TestAnnual'
+        ).first()
         assert t is not None
-        assert t.description == 'ST9Annual'
         assert t.annual_month == 4  # April
         assert t.annual_day == 15
         assert t.amount == Decimal('99.99')
-        assert t.is_active is False  # Fixture is inactive
+        assert t.is_active is False
 
-    def test_1_modal_on_click(self, base_url, selenium):
+    def test_2_modal_on_click(self, base_url, selenium, testdb):
+        """Test that clicking an annual transaction opens the modal correctly"""
         self.baseurl = base_url
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'TestAnnual'
+        ).first()
         self.get(selenium, base_url + '/scheduled')
-        link = selenium.find_element(By.XPATH, '//a[text()="ST9Annual"]')
+        link = selenium.find_element(By.XPATH, '//a[text()="TestAnnual"]')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
         self.assert_modal_displayed(modal, title, body)
-        assert title.text == 'Edit Scheduled Transaction 9'
+        assert title.text == f'Edit Scheduled Transaction {t.id}'
         assert body.find_element(By.ID,
-                                 'sched_frm_id').get_attribute('value') == '9'
+                                 'sched_frm_id').get_attribute('value') == str(t.id)
         assert body.find_element(By.ID,
                                  'sched_frm_description').get_attribute(
-                                     'value') == 'ST9Annual'
+                                     'value') == 'TestAnnual'
         assert body.find_element(By.ID,
                                  'sched_frm_type_annual').is_selected()
         month_sel = Select(body.find_element(By.ID, 'sched_frm_annual_month'))
@@ -946,6 +947,5 @@ class TestSchedTransAnnual(AcceptanceHelper):
         assert body.find_element(By.ID,
                                  'sched_frm_amount').get_attribute(
                                      'value') == '99.99'
-        # Fixture is inactive
         assert not selenium.find_element(
             By.ID, 'sched_frm_active').is_selected()

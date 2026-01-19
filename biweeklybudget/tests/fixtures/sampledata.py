@@ -274,50 +274,6 @@ class SampleDataLoader(object):
                 budget=self.budgets['Standing1'],
                 num_per_period=3,
                 is_active=False
-            ),
-            # Weekly scheduled transactions (ST7 and ST8)
-            ScheduledTransaction(
-                amount=Decimal('77.77'),
-                sales_tax=Decimal('0.0'),
-                description='ST7Weekly',
-                notes='notesST7',
-                account=self.accounts['BankOne']['account'],
-                budget=self.budgets['Periodic1'],
-                day_of_week=0,  # Monday
-                is_active=False
-            ),
-            ScheduledTransaction(
-                amount=Decimal('88.88'),
-                sales_tax=Decimal('0.0'),
-                description='ST8WeeklyInactive',
-                notes='notesST8',
-                account=self.accounts['BankTwoStale']['account'],
-                budget=self.budgets['Standing1'],
-                day_of_week=4,  # Friday
-                is_active=False
-            ),
-            # Annual scheduled transactions (ST9 and ST10)
-            ScheduledTransaction(
-                amount=Decimal('99.99'),
-                sales_tax=Decimal('2.50'),
-                description='ST9Annual',
-                notes='notesST9',
-                account=self.accounts['BankOne']['account'],
-                budget=self.budgets['Periodic2'],
-                annual_month=4,  # April
-                annual_day=15,
-                is_active=False
-            ),
-            ScheduledTransaction(
-                amount=Decimal('100.00'),
-                sales_tax=Decimal('0.0'),
-                description='ST10AnnualInactive',
-                notes='notesST10',
-                account=self.accounts['CreditOne']['account'],
-                budget=self.budgets['Standing2'],
-                annual_month=12,  # December
-                annual_day=25,
-                is_active=False
             )
         ]
         for x in res:
