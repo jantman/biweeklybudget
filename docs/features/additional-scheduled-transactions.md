@@ -190,9 +190,19 @@ Right now, this application supports three types of scheduled transactions: Mont
   - AST-1.2: Updated ScheduledTransaction model with new fields and properties
   - AST-1.3: Added 44 unit tests for model changes
   - AST-1.4: All unit tests passing (91 tests)
-- [ ] Milestone 2: Backend View Changes
-- [ ] Milestone 3: Frontend Changes
-- [ ] Milestone 4: Pay Period Logic
+- [x] Milestone 2: Backend View Changes (completed 2026-01-19)
+  - AST-2.1: Updated SchedTransFormHandler.submit() for weekly and annual
+  - AST-2.2: OneScheduledAjax already includes new fields via as_dict
+  - AST-2.3: Updated scheduled.js type filter dropdown
+- [x] Milestone 3: Frontend Changes (completed 2026-01-19)
+  - AST-3.1: Updated scheduled_modal.js with weekly/annual radio buttons and inputs
+  - AST-3.2: Type filter already updated in Milestone 2
+- [x] Milestone 4: Pay Period Logic (completed 2026-01-19)
+  - AST-4.1: Added _scheduled_transactions_weekly() and _scheduled_transactions_annual()
+  - AST-4.2: Updated _data property with st_weekly and st_annual
+  - AST-4.3: Updated _make_combined_transactions() for weekly (twice) and annual
+  - AST-4.4: Updated _dict_for_sched_trans() with weekly_occurrence parameter
+  - AST-4.5: Added 20+ unit tests for pay period logic (103 tests passing)
 - [ ] Milestone 5: Acceptance Tests
 - [ ] Milestone 6: Documentation & Cleanup
 
