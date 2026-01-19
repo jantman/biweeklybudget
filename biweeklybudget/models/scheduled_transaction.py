@@ -46,6 +46,14 @@ from biweeklybudget.models.base import Base, ModelAsDict
 from biweeklybudget.utils import date_suffix
 from sqlalchemy.ext.hybrid import hybrid_property
 
+#: Weekday names indexed by day_of_week value (0=Monday, 6=Sunday)
+WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                 'Friday', 'Saturday', 'Sunday']
+
+#: Month abbreviations indexed by month number (1-12, index 0 unused)
+MONTH_ABBREVS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 
 class ScheduledTransaction(Base, ModelAsDict):
 
@@ -100,6 +108,16 @@ class ScheduledTransaction(Base, ModelAsDict):
     #: Denotes a scheduled transaction that happens N times per pay period
     num_per_period = Column(SmallInteger)
 
+    #: Denotes a scheduled transaction that happens every week on a given day
+    #: (0=Monday, 6=Sunday)
+    day_of_week = Column(SmallInteger)
+
+    #: Month for annual scheduled transaction (1-12)
+    annual_month = Column(SmallInteger)
+
+    #: Day for annual scheduled transaction (1-31)
+    annual_day = Column(SmallInteger)
+
     def __repr__(self):
         return "<ScheduledTransaction(id=%d)>" % (
             self.id
@@ -107,21 +125,50 @@ class ScheduledTransaction(Base, ModelAsDict):
 
     @validates('day_of_month')
     def validate_day_of_month(self, _, value):
+        if value is None:
+            return value
         assert value > 0
         assert value <= 28
         return value
 
     @validates('num_per_period')
     def validate_num_per_period(self, _, value):
+        if value is None:
+            return value
         assert value > 0
+        return value
+
+    @validates('day_of_week')
+    def validate_day_of_week(self, _, value):
+        if value is None:
+            return value
+        assert value >= 0
+        assert value <= 6
+        return value
+
+    @validates('annual_month')
+    def validate_annual_month(self, _, value):
+        if value is None:
+            return value
+        assert value >= 1
+        assert value <= 12
+        return value
+
+    @validates('annual_day')
+    def validate_annual_day(self, _, value):
+        if value is None:
+            return value
+        assert value >= 1
+        assert value <= 31
         return value
 
     @hybrid_property
     def recurrence_str(self):
         """
         Return a string describing the recurrence interval. This is a string
-        of the format ``YYYY-mm-dd``, ``N per period`` or ``N(st|nd|rd|th)``
-        where ``N`` is an integer.
+        of the format ``YYYY-mm-dd``, ``N per period``, ``N(st|nd|rd|th)``,
+        ``Every {Weekday}``, or ``{Mon} {Day}{suffix}`` where ``N`` is an
+        integer.
 
         :return: string describing recurrence interval
         :rtype: str
@@ -135,6 +182,14 @@ class ScheduledTransaction(Base, ModelAsDict):
             )
         if self.schedule_type == 'per period':
             return '%d per period' % self.num_per_period
+        if self.schedule_type == 'weekly':
+            return 'Every %s' % WEEKDAY_NAMES[self.day_of_week]
+        if self.schedule_type == 'annual':
+            return '%s %d%s' % (
+                MONTH_ABBREVS[self.annual_month],
+                self.annual_day,
+                date_suffix(self.annual_day)
+            )
         return None
 
     @recurrence_str.expression
@@ -153,6 +208,29 @@ class ScheduledTransaction(Base, ModelAsDict):
                 cls.num_per_period.isnot(None),
                 func.concat(cls.num_per_period, ' per period')
             ),
+            (
+                cls.day_of_week.isnot(None),
+                func.concat(
+                    'Every ',
+                    func.elt(
+                        cls.day_of_week + 1,
+                        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                        'Friday', 'Saturday', 'Sunday'
+                    )
+                )
+            ),
+            (
+                cls.annual_month.isnot(None),
+                func.concat(
+                    func.elt(
+                        cls.annual_month,
+                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                    ),
+                    ' ',
+                    cls.annual_day
+                )
+            ),
             else_=''
         )
 
@@ -160,8 +238,9 @@ class ScheduledTransaction(Base, ModelAsDict):
     def schedule_type(self):
         """
         Return a string describing the type of schedule; one of ``date`` (a
-        specific Date), ``per period`` (a number per pay period)`` or
-        ``monthly`` (a given day of the month).
+        specific Date), ``per period`` (a number per pay period), ``monthly``
+        (a given day of the month), ``weekly`` (a given day of the week), or
+        ``annual`` (a given month and day each year).
 
         :return: string describing type of schedule
         :rtype: str
@@ -172,6 +251,10 @@ class ScheduledTransaction(Base, ModelAsDict):
             return 'monthly'
         if self.num_per_period is not None:
             return 'per period'
+        if self.day_of_week is not None:
+            return 'weekly'
+        if self.annual_month is not None:
+            return 'annual'
         return None
 
     @schedule_type.expression
@@ -180,5 +263,7 @@ class ScheduledTransaction(Base, ModelAsDict):
             (cls.date.isnot(None), 'date'),
             (cls.day_of_month.isnot(None), 'monthly'),
             (cls.num_per_period.isnot(None), 'per period'),
+            (cls.day_of_week.isnot(None), 'weekly'),
+            (cls.annual_month.isnot(None), 'annual'),
             else_=''
         )

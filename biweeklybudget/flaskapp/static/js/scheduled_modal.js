@@ -39,17 +39,26 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
  * Handle change of the "Type" radio buttons on the modal
  */
 function schedModalDivHandleType() {
+    // Hide all type-specific fields first
+    $('#sched_frm_day_of_month_group').hide();
+    $('#sched_frm_num_per_period_group').hide();
+    $('#sched_frm_date_group').hide();
+    $('#sched_frm_day_of_week_group').hide();
+    $('#sched_frm_annual_month_group').hide();
+    $('#sched_frm_annual_day_group').hide();
+
+    // Show the appropriate field based on selected type
     if($('#sched_frm_type_monthly').is(':checked')) {
         $('#sched_frm_day_of_month_group').show();
-        $('#sched_frm_num_per_period_group').hide();
-        $('#sched_frm_date_group').hide();
     } else if($('#sched_frm_type_per_period').is(':checked')) {
-        $('#sched_frm_day_of_month_group').hide();
         $('#sched_frm_num_per_period_group').show();
-        $('#sched_frm_date_group').hide();
+    } else if($('#sched_frm_type_weekly').is(':checked')) {
+        $('#sched_frm_day_of_week_group').show();
+    } else if($('#sched_frm_type_annual').is(':checked')) {
+        $('#sched_frm_annual_month_group').show();
+        $('#sched_frm_annual_day_group').show();
     } else {
-        $('#sched_frm_day_of_month_group').hide();
-        $('#sched_frm_num_per_period_group').hide();
+        // date
         $('#sched_frm_date_group').show();
     }
 }
@@ -68,6 +77,8 @@ function schedModalDivForm() {
                 { id: 'sched_frm_type_monthly', value: 'monthly', label: 'Monthly', checked: true, inputHtml: 'onchange="schedModalDivHandleType()"' },
                 { id: 'sched_frm_type_per_period', value: 'per_period', label: 'Per Period', inputHtml: 'onchange="schedModalDivHandleType()"' },
                 { id: 'sched_frm_type_date', value: 'date', label: 'Date', inputHtml: 'onchange="schedModalDivHandleType()"' },
+                { id: 'sched_frm_type_weekly', value: 'weekly', label: 'Weekly', inputHtml: 'onchange="schedModalDivHandleType()"' },
+                { id: 'sched_frm_type_annual', value: 'annual', label: 'Annual', inputHtml: 'onchange="schedModalDivHandleType()"' },
             ]
         )
         .addText(
@@ -89,6 +100,54 @@ function schedModalDivForm() {
             }
         )
         .addDatePicker('sched_frm_date', 'date', 'Specific Date', { groupHtml: ' style="display: none;"' })
+        .addLabelToValueSelect(
+            'sched_frm_day_of_week',
+            'day_of_week',
+            'Day of Week',
+            {
+                'Monday': '0',
+                'Tuesday': '1',
+                'Wednesday': '2',
+                'Thursday': '3',
+                'Friday': '4',
+                'Saturday': '5',
+                'Sunday': '6'
+            },
+            '0',
+            false,
+            { groupHtml: 'id="sched_frm_day_of_week_group" style="display: none;"' }
+        )
+        .addLabelToValueSelect(
+            'sched_frm_annual_month',
+            'annual_month',
+            'Month',
+            {
+                'January': '1',
+                'February': '2',
+                'March': '3',
+                'April': '4',
+                'May': '5',
+                'June': '6',
+                'July': '7',
+                'August': '8',
+                'September': '9',
+                'October': '10',
+                'November': '11',
+                'December': '12'
+            },
+            '1',
+            false,
+            { groupHtml: 'id="sched_frm_annual_month_group" style="display: none;"' }
+        )
+        .addText(
+            'sched_frm_annual_day',
+            'annual_day',
+            'Day',
+            {
+                groupHtml: 'id="sched_frm_annual_day_group" style="display: none;"',
+                inputHtml: 'size="4" maxlength="2"'
+            }
+        )
         .addCurrency('sched_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
         .addCurrency('sched_frm_sales_tax', 'sales_tax', 'Sales Tax', { helpBlock: 'Sales tax for this transaction (default 0.0).' })
         .addLabelToValueSelect('sched_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
@@ -105,22 +164,29 @@ function schedModalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Scheduled Transaction ' + msg['id']);
     $('#sched_frm_id').val(msg['id']);
     $('#sched_frm_description').val(msg['description']);
+    // Clear all type radio buttons first
+    $('#sched_frm_type_monthly').prop('checked', false);
+    $('#sched_frm_type_per_period').prop('checked', false);
+    $('#sched_frm_type_date').prop('checked', false);
+    $('#sched_frm_type_weekly').prop('checked', false);
+    $('#sched_frm_type_annual').prop('checked', false);
+    // Set the appropriate type and fill in the value
     if(msg['date'] != null) {
-        $('#sched_frm_type_monthly').prop('checked', false);
-        $('#sched_frm_type_per_period').prop('checked', false);
         $('#sched_frm_type_date').prop('checked', true);
         $('#sched_frm_date').val(msg['date']['str']);
     } else if(msg['day_of_month'] != null) {
-        $('#sched_frm_type_per_period').prop('checked', false);
-        $('#sched_frm_type_date').prop('checked', false);
         $('#sched_frm_type_monthly').prop('checked', true);
         $('#sched_frm_day_of_month').val(msg['day_of_month']);
-    } else {
-        // num_per_period
-        $('#sched_frm_type_monthly').prop('checked', false);
-        $('#sched_frm_type_date').prop('checked', false);
+    } else if(msg['num_per_period'] != null) {
         $('#sched_frm_type_per_period').prop('checked', true);
         $('#sched_frm_num_per_period').val(msg['num_per_period']);
+    } else if(msg['day_of_week'] != null) {
+        $('#sched_frm_type_weekly').prop('checked', true);
+        $('#sched_frm_day_of_week option[value=' + msg['day_of_week'] + ']').prop('selected', 'selected');
+    } else if(msg['annual_month'] != null) {
+        $('#sched_frm_type_annual').prop('checked', true);
+        $('#sched_frm_annual_month option[value=' + msg['annual_month'] + ']').prop('selected', 'selected');
+        $('#sched_frm_annual_day').val(msg['annual_day']);
     }
     schedModalDivHandleType();
     $('#sched_frm_amount').val(msg['amount']);

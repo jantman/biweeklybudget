@@ -98,7 +98,7 @@ $(document).ready(function() {
     $('#table-scheduled-txn_length').parent().addClass('col-sm-4');
     $('#table-scheduled-txn_filter').parent().removeClass('col-sm-6');
     $('#table-scheduled-txn_filter').parent().addClass('col-sm-4');
-    var acctsel = '<div class="col-sm-4"><div id="table-scheduled-txn_acct_filter" class="dataTables_length"><label>Type: <select name="type_filter" id="type_filter" class="form-control input-sm" aria-controls="table-scheduled-txn"><option value="None" selected="selected"></option><option value="date">Date</option><option value="monthly">Monthly</option><option value="per period">Per Period</option>';
+    var acctsel = '<div class="col-sm-4"><div id="table-scheduled-txn_acct_filter" class="dataTables_length"><label>Type: <select name="type_filter" id="type_filter" class="form-control input-sm" aria-controls="table-scheduled-txn"><option value="None" selected="selected"></option><option value="date">Date</option><option value="monthly">Monthly</option><option value="per period">Per Period</option><option value="weekly">Weekly</option><option value="annual">Annual</option>';
     acctsel += '</select></label></div></div>';
     $(acctsel).insertAfter($('#table-scheduled-txn_length').parent());
     $('#type_filter').on('change', function() {
