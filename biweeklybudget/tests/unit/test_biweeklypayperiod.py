@@ -396,6 +396,9 @@ class TestData(object):
         mock_std = Mock()
         mock_stpp = Mock()
         mock_stm = Mock()
+        mock_stw = Mock()
+        mock_sta = Mock()
+        mock_sta_filtered = Mock()
         mock_mct = Mock()
         mock_mbs = Mock()
         mock_mos = Mock()
@@ -406,6 +409,9 @@ class TestData(object):
             _scheduled_transactions_date=DEFAULT,
             _scheduled_transactions_per_period=DEFAULT,
             _scheduled_transactions_monthly=DEFAULT,
+            _scheduled_transactions_weekly=DEFAULT,
+            _scheduled_transactions_annual=DEFAULT,
+            _filter_annual_for_period=DEFAULT,
             _make_combined_transactions=DEFAULT,
             _make_budget_sums=DEFAULT,
             _make_overall_sums=DEFAULT
@@ -417,6 +423,11 @@ class TestData(object):
                   ''].return_value.all.return_value = mock_stpp
             mocks['_scheduled_transactions_monthly'
                   ''].return_value.all.return_value = mock_stm
+            mocks['_scheduled_transactions_weekly'
+                  ''].return_value.all.return_value = mock_stw
+            mocks['_scheduled_transactions_annual'
+                  ''].return_value.all.return_value = mock_sta
+            mocks['_filter_annual_for_period'].return_value = mock_sta_filtered
             mocks['_make_combined_transactions'].return_value = mock_mct
             mocks['_make_budget_sums'].return_value = mock_mbs
             mocks['_make_overall_sums'].return_value = mock_mos
@@ -426,6 +437,8 @@ class TestData(object):
             'st_date': mock_std,
             'st_per_period': mock_stpp,
             'st_monthly': mock_stm,
+            'st_weekly': mock_stw,
+            'st_annual': mock_sta_filtered,
             'all_trans_list': mock_mct,
             'budget_sums': mock_mbs,
             'overall_sums': mock_mos
@@ -441,6 +454,15 @@ class TestData(object):
         ]
         assert mocks['_scheduled_transactions_monthly'].mock_calls == [
             call(self.cls), call().all()
+        ]
+        assert mocks['_scheduled_transactions_weekly'].mock_calls == [
+            call(self.cls), call().all()
+        ]
+        assert mocks['_scheduled_transactions_annual'].mock_calls == [
+            call(self.cls), call().all()
+        ]
+        assert mocks['_filter_annual_for_period'].mock_calls == [
+            call(self.cls, mock_sta)
         ]
         assert mocks['_make_combined_transactions'].mock_calls == [
             call(self.cls)
@@ -530,7 +552,9 @@ class TestMakeCombinedTransactions(object):
             'st_per_period': [
                 mock_per_periodA,
                 mock_per_periodB
-            ]
+            ],
+            'st_weekly': [],
+            'st_annual': []
         }
         with patch('%s._trans_dict' % pb, autospec=True) as mock_t_dict:
             mock_t_dict.side_effect = se_trans_dict
@@ -1018,7 +1042,7 @@ class TestTransDict(object):
                 res = self.cls._trans_dict(m)
         assert res == m_dst_res
         assert m_dt.mock_calls == []
-        assert m_dst.mock_calls == [call(self.cls, m)]
+        assert m_dst.mock_calls == [call(self.cls, m, weekly_occurrence=0)]
 
 
 class TestDictForTrans(object):
@@ -1350,3 +1374,242 @@ class TestDictForSchedTrans(object):
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
         }
+
+    def test_weekly(self):
+        type(self.m_st).schedule_type = 'weekly'
+        type(self.m_st).day_of_week = 0  # Monday
+        # Pay period 2017-03-07 to 2017-03-20
+        # Mondays: 2017-03-13, 2017-03-20
+        assert self.cls._dict_for_sched_trans(self.m_st, weekly_occurrence=0) == {
+            'type': 'ScheduledTransaction',
+            'id': 123,
+            'date': date(year=2017, month=3, day=13),
+            'sched_type': 'weekly',
+            'sched_trans_id': None,
+            'description': 'desc',
+            'amount': Decimal('123.45'),
+            'budgeted_amount': None,
+            'account_id': 2,
+            'account_name': 'foo',
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
+        }
+
+    def test_weekly_second_occurrence(self):
+        type(self.m_st).schedule_type = 'weekly'
+        type(self.m_st).day_of_week = 0  # Monday
+        # Pay period 2017-03-07 to 2017-03-20
+        # Mondays: 2017-03-13, 2017-03-20
+        assert self.cls._dict_for_sched_trans(self.m_st, weekly_occurrence=1) == {
+            'type': 'ScheduledTransaction',
+            'id': 123,
+            'date': date(year=2017, month=3, day=20),
+            'sched_type': 'weekly',
+            'sched_trans_id': None,
+            'description': 'desc',
+            'amount': Decimal('123.45'),
+            'budgeted_amount': None,
+            'account_id': 2,
+            'account_name': 'foo',
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
+        }
+
+    def test_annual(self):
+        type(self.m_st).schedule_type = 'annual'
+        type(self.m_st).annual_month = 3
+        type(self.m_st).annual_day = 15
+        # Pay period 2017-03-07 to 2017-03-20
+        assert self.cls._dict_for_sched_trans(self.m_st) == {
+            'type': 'ScheduledTransaction',
+            'id': 123,
+            'date': date(year=2017, month=3, day=15),
+            'sched_type': 'annual',
+            'sched_trans_id': None,
+            'description': 'desc',
+            'amount': Decimal('123.45'),
+            'budgeted_amount': None,
+            'account_id': 2,
+            'account_name': 'foo',
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
+        }
+
+    def test_annual_not_in_period(self):
+        type(self.m_st).schedule_type = 'annual'
+        type(self.m_st).annual_month = 4
+        type(self.m_st).annual_day = 15
+        # Pay period 2017-03-07 to 2017-03-20, April 15 is not in period
+        assert self.cls._dict_for_sched_trans(self.m_st) == {
+            'type': 'ScheduledTransaction',
+            'id': 123,
+            'date': None,
+            'sched_type': 'annual',
+            'sched_trans_id': None,
+            'description': 'desc',
+            'amount': Decimal('123.45'),
+            'budgeted_amount': None,
+            'account_id': 2,
+            'account_name': 'foo',
+            'reconcile_id': None,
+            'budgets': {
+                3: {'name': 'bar', 'amount': Decimal('123.45')}
+            }
+        }
+
+
+class TestSTWeekly(object):
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+
+    def test_scheduled_transactions_weekly(self):
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        res = cls._scheduled_transactions_weekly()
+        qfr = self.mock_sess.query.return_value.filter.return_value
+        assert res == qfr.order_by.return_value
+        assert len(self.mock_sess.mock_calls) == 3
+        assert self.mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
+        kall = self.mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = [
+            ScheduledTransaction.schedule_type.__eq__('weekly'),
+            ScheduledTransaction.is_active.__eq__(True)
+        ]
+        for idx, exp in enumerate(expected):
+            assert str(kall[1][idx]) == str(exp)
+        kall = self.mock_sess.mock_calls[2]
+        assert kall[0] == 'query().filter().order_by'
+        assert str(kall[1][0]) == str(asc(ScheduledTransaction.day_of_week))
+        assert str(kall[1][1]) == str(asc(ScheduledTransaction.amount))
+
+
+class TestSTAnnual(object):
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+
+    def test_scheduled_transactions_annual(self):
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        res = cls._scheduled_transactions_annual()
+        assert res == self.mock_sess.query.return_value.filter.return_value
+        assert len(self.mock_sess.mock_calls) == 2
+        assert self.mock_sess.mock_calls[0] == call.query(ScheduledTransaction)
+        kall = self.mock_sess.mock_calls[1]
+        assert kall[0] == 'query().filter'
+        expected = [
+            ScheduledTransaction.schedule_type.__eq__('annual'),
+            ScheduledTransaction.is_active.__eq__(True)
+        ]
+        for idx, exp in enumerate(expected):
+            assert str(kall[1][idx]) == str(exp)
+
+
+class TestFilterAnnualForPeriod(object):
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+
+    def test_annual_in_period(self):
+        # Pay period 2017-03-17 to 2017-03-30
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=3,
+                       annual_day=20)
+        result = cls._filter_annual_for_period([m_trans])
+        assert result == [m_trans]
+
+    def test_annual_not_in_period(self):
+        # Pay period 2017-03-17 to 2017-03-30
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=4,
+                       annual_day=15)
+        result = cls._filter_annual_for_period([m_trans])
+        assert result == []
+
+    def test_annual_at_period_start(self):
+        # Pay period 2017-03-17 to 2017-03-30
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=3,
+                       annual_day=17)
+        result = cls._filter_annual_for_period([m_trans])
+        assert result == [m_trans]
+
+    def test_annual_at_period_end(self):
+        # Pay period 2017-03-17 to 2017-03-30
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=3,
+                       annual_day=30)
+        result = cls._filter_annual_for_period([m_trans])
+        assert result == [m_trans]
+
+    def test_annual_multiple_transactions(self):
+        # Pay period 2017-03-17 to 2017-03-30
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        m_trans1 = Mock(spec_set=ScheduledTransaction, annual_month=3,
+                        annual_day=20)
+        m_trans2 = Mock(spec_set=ScheduledTransaction, annual_month=4,
+                        annual_day=15)  # Not in period
+        m_trans3 = Mock(spec_set=ScheduledTransaction, annual_month=3,
+                        annual_day=25)
+        result = cls._filter_annual_for_period([m_trans1, m_trans2, m_trans3])
+        assert result == [m_trans1, m_trans3]
+
+    def test_feb_29_in_leap_year(self):
+        # Pay period in a leap year that includes Feb 29
+        # 2020-02-21 to 2020-03-05
+        cls = BiweeklyPayPeriod(date(2020, 2, 21), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=2,
+                       annual_day=29)
+        result = cls._filter_annual_for_period([m_trans])
+        assert result == [m_trans]
+
+    def test_feb_29_in_non_leap_year(self):
+        # Pay period in a non-leap year that would include Feb 29
+        # 2017-02-17 to 2017-03-02
+        cls = BiweeklyPayPeriod(date(2017, 2, 17), self.mock_sess)
+        m_trans = Mock(spec_set=ScheduledTransaction, annual_month=2,
+                       annual_day=29)
+        result = cls._filter_annual_for_period([m_trans])
+        # Should be empty because Feb 29 doesn't exist in 2017
+        assert result == []
+
+
+class TestDatesForWeekdayInPeriod(object):
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+
+    def test_monday(self):
+        # Pay period 2017-03-17 (Friday) to 2017-03-30 (Thursday)
+        # Mondays: 2017-03-20, 2017-03-27
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        result = cls._dates_for_weekday_in_period(0)  # Monday
+        assert result == [date(2017, 3, 20), date(2017, 3, 27)]
+
+    def test_friday(self):
+        # Pay period 2017-03-17 (Friday) to 2017-03-30 (Thursday)
+        # Fridays: 2017-03-17, 2017-03-24
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        result = cls._dates_for_weekday_in_period(4)  # Friday
+        assert result == [date(2017, 3, 17), date(2017, 3, 24)]
+
+    def test_sunday(self):
+        # Pay period 2017-03-17 (Friday) to 2017-03-30 (Thursday)
+        # Sundays: 2017-03-19, 2017-03-26
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        result = cls._dates_for_weekday_in_period(6)  # Sunday
+        assert result == [date(2017, 3, 19), date(2017, 3, 26)]
+
+    def test_always_two_occurrences(self):
+        # Every weekday should have exactly 2 occurrences in a 14-day period
+        cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+        for day_of_week in range(7):
+            result = cls._dates_for_weekday_in_period(day_of_week)
+            assert len(result) == 2, \
+                f"Expected 2 occurrences for weekday {day_of_week}"

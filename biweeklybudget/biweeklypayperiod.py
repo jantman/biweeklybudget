@@ -287,6 +287,95 @@ class BiweeklyPayPeriod(object):
             )
         )
 
+    def _scheduled_transactions_weekly(self):
+        """
+        Return a Query for all :py:class:`~.ScheduledTransaction` defined by
+        day of week (schedule_type == "weekly"). Weekly transactions always
+        occur in every pay period since each weekday appears exactly twice
+        in a 14-day biweekly period.
+
+        :return: Query matching all active weekly ScheduledTransactions.
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return self._db.query(ScheduledTransaction).filter(
+            ScheduledTransaction.schedule_type.__eq__('weekly'),
+            ScheduledTransaction.is_active.__eq__(True)
+        ).order_by(
+            asc(ScheduledTransaction.day_of_week),
+            asc(ScheduledTransaction.amount)
+        )
+
+    def _scheduled_transactions_annual(self):
+        """
+        Return a Query for all :py:class:`~.ScheduledTransaction` defined by
+        annual month and day (schedule_type == "annual") that fall within
+        this pay period.
+
+        :return: Query matching all active annual ScheduledTransactions for
+          this pay period.
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        # We need to find annual transactions where the month/day falls in
+        # [start_date, end_date]. This is complex because we're comparing
+        # month+day without year.
+        # We'll fetch all annual transactions and filter in Python.
+        return self._db.query(ScheduledTransaction).filter(
+            ScheduledTransaction.schedule_type.__eq__('annual'),
+            ScheduledTransaction.is_active.__eq__(True)
+        )
+
+    def _filter_annual_for_period(self, annual_transactions):
+        """
+        Filter annual transactions to only those that fall within this pay
+        period. This handles the complexity of month/day comparison across
+        year boundaries.
+
+        :param annual_transactions: list of annual ScheduledTransactions
+        :return: list of annual ScheduledTransactions in this pay period
+        :rtype: list
+        """
+        result = []
+        for t in annual_transactions:
+            try:
+                # Try to construct the date for this year
+                annual_date = date(
+                    year=self.start_date.year,
+                    month=t.annual_month,
+                    day=t.annual_day
+                )
+            except ValueError:
+                # Invalid date (e.g., Feb 29 in non-leap year)
+                # Try next year in case period spans year boundary
+                try:
+                    annual_date = date(
+                        year=self.start_date.year + 1,
+                        month=t.annual_month,
+                        day=t.annual_day
+                    )
+                except ValueError:
+                    # Still invalid, skip this transaction
+                    continue
+
+            # Check if this date falls in our pay period
+            if self.start_date <= annual_date <= self.end_date:
+                result.append(t)
+                continue
+
+            # If the pay period spans a year boundary, check the next year too
+            if self.end_date.year > self.start_date.year:
+                try:
+                    annual_date_next = date(
+                        year=self.end_date.year,
+                        month=t.annual_month,
+                        day=t.annual_day
+                    )
+                    if self.start_date <= annual_date_next <= self.end_date:
+                        result.append(t)
+                except ValueError:
+                    # Invalid date, skip
+                    pass
+        return result
+
     @property
     def transactions_list(self):
         """
@@ -329,7 +418,11 @@ class BiweeklyPayPeriod(object):
             'transactions': self._transactions().all(),
             'st_date': self._scheduled_transactions_date().all(),
             'st_per_period': self._scheduled_transactions_per_period().all(),
-            'st_monthly': self._scheduled_transactions_monthly().all()
+            'st_monthly': self._scheduled_transactions_monthly().all(),
+            'st_weekly': self._scheduled_transactions_weekly().all(),
+            'st_annual': self._filter_annual_for_period(
+                self._scheduled_transactions_annual().all()
+            )
         }
         self._data_cache['all_trans_list'] = self._make_combined_transactions()
         self._data_cache['budget_sums'] = self._make_budget_sums()
@@ -364,10 +457,19 @@ class BiweeklyPayPeriod(object):
         for t in self._data_cache['st_monthly']:
             if t.id not in st_ids:
                 unordered.append(self._trans_dict(t))
+        for t in self._data_cache['st_annual']:
+            if t.id not in st_ids:
+                unordered.append(self._trans_dict(t))
         ordered = []
         for t in self._data_cache['st_per_period']:
             d = self._trans_dict(t)
             for _ in range(0, (t.num_per_period - st_ids[t.id])):
+                ordered.append(d)
+        # Weekly transactions appear twice per pay period (14 days = 2 weeks)
+        for t in self._data_cache['st_weekly']:
+            remaining = 2 - st_ids[t.id]
+            for occ_idx in range(remaining):
+                d = self._trans_dict(t, weekly_occurrence=occ_idx)
                 ordered.append(d)
         for t in sorted(unordered, key=lambda k: k['date']):
             ordered.append(t)
@@ -556,7 +658,7 @@ class BiweeklyPayPeriod(object):
             res['remaining'] = res['income'] - budgets_total
         return res
 
-    def _trans_dict(self, t):
+    def _trans_dict(self, t, weekly_occurrence=0):
         """
         Given a Transaction or ScheduledTransaction, return a dict of a
         common format describing the object.
@@ -568,7 +670,7 @@ class BiweeklyPayPeriod(object):
         * ``date`` (**date**) the date of the transaction, or None for
           per-period ScheduledTransactions
         * ``sched_type`` (**str**) for ScheduledTransactions, the schedule
-          type ("monthly", "date", or "per period")
+          type ("monthly", "date", "per period", "weekly", or "annual")
         * ``sched_trans_id`` (**int**) for Transactions, the
           ScheduledTransaction ``id`` that it was created from, or None.
         * ``description`` (**str**) the transaction description
@@ -590,12 +692,15 @@ class BiweeklyPayPeriod(object):
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
+        :param weekly_occurrence: For weekly transactions, which occurrence
+          (0 or 1) within the pay period this dict is for.
+        :type weekly_occurrence: int
         :return: dict describing ``t``
         :rtype: dict
         """
         if isinstance(t, Transaction):
             return self._dict_for_trans(t)
-        return self._dict_for_sched_trans(t)
+        return self._dict_for_sched_trans(t, weekly_occurrence=weekly_occurrence)
 
     def _dict_for_trans(self, t):
         """
@@ -665,7 +770,7 @@ class BiweeklyPayPeriod(object):
             res['planned_budget_name'] = t.planned_budget.name
         return res
 
-    def _dict_for_sched_trans(self, t):
+    def _dict_for_sched_trans(self, t, weekly_occurrence=0):
         """
         Return a dict describing the ScheduledTransaction t. Called from
         :py:meth:`~._trans_dict`.
@@ -677,7 +782,7 @@ class BiweeklyPayPeriod(object):
         * ``date`` (**date**) the date of the transaction, or None for
           per-period ScheduledTransactions
         * ``sched_type`` (**str**) for ScheduledTransactions, the schedule
-          type ("monthly", "date", or "per period")
+          type ("monthly", "date", "per period", "weekly", or "annual")
         * ``sched_trans_id`` **None**
         * ``description`` (**str**) the transaction description
         * ``amount`` (**Decimal.decimal**) the transaction amount
@@ -693,6 +798,9 @@ class BiweeklyPayPeriod(object):
 
         :param t: ScheduledTransaction to describe
         :type t: ScheduledTransaction
+        :param weekly_occurrence: For weekly transactions, which occurrence
+          (0 or 1) within the pay period this dict is for.
+        :type weekly_occurrence: int
         :return: common-format dict describing ``t``
         :rtype: dict
         """
@@ -718,6 +826,43 @@ class BiweeklyPayPeriod(object):
             res['date'] = t.date
             return res
         if t.schedule_type == 'per period':
+            res['date'] = None
+            return res
+        if t.schedule_type == 'weekly':
+            # Find the dates in this pay period that fall on the specified
+            # weekday. There are exactly 2 occurrences in a 14-day period.
+            dates_for_weekday = self._dates_for_weekday_in_period(t.day_of_week)
+            if weekly_occurrence < len(dates_for_weekday):
+                res['date'] = dates_for_weekday[weekly_occurrence]
+            else:
+                res['date'] = None
+            return res
+        if t.schedule_type == 'annual':
+            # Calculate the annual date for this period
+            try:
+                annual_date = date(
+                    year=self.start_date.year,
+                    month=t.annual_month,
+                    day=t.annual_day
+                )
+                if self.start_date <= annual_date <= self.end_date:
+                    res['date'] = annual_date
+                    return res
+            except ValueError:
+                pass
+            # Try next year if period spans year boundary
+            if self.end_date.year > self.start_date.year:
+                try:
+                    annual_date = date(
+                        year=self.end_date.year,
+                        month=t.annual_month,
+                        day=t.annual_day
+                    )
+                    if self.start_date <= annual_date <= self.end_date:
+                        res['date'] = annual_date
+                        return res
+                except ValueError:
+                    pass
             res['date'] = None
             return res
         # else it's a monthly transaction, and we need to figure out the date
@@ -747,3 +892,21 @@ class BiweeklyPayPeriod(object):
             day=t.day_of_month
         ) + relativedelta.relativedelta(months=1)
         return res
+
+    def _dates_for_weekday_in_period(self, day_of_week):
+        """
+        Return a list of dates in this pay period that fall on the specified
+        weekday.
+
+        :param day_of_week: The day of week (0=Monday, 6=Sunday)
+        :type day_of_week: int
+        :return: List of dates (exactly 2 for a 14-day biweekly period)
+        :rtype: list of date
+        """
+        result = []
+        current = self.start_date
+        while current <= self.end_date:
+            if current.weekday() == day_of_week:
+                result.append(current)
+            current += timedelta(days=1)
+        return result
