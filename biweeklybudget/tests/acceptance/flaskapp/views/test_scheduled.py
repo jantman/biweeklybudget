@@ -799,7 +799,9 @@ class TestSchedTransModal(AcceptanceHelper):
         # dismiss the modal
         selenium.find_element(By.ID, 'modalCloseButton').click()
         self.wait_for_jquery_done(selenium)
-        # test that the new transaction appears in the table
+        # reload the page to ensure table refresh and test that the new
+        # transaction appears in the table
+        self.get(selenium, base_url + '/scheduled')
         table = selenium.find_element(By.ID, 'table-scheduled-txn')
         texts = [y[4] for y in self.tbody2textlist(table)]
         assert 'NewAnnualTest' in texts
