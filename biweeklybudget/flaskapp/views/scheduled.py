@@ -262,10 +262,22 @@ class SchedTransFormHandler(FormHandlerView):
             trans = ScheduledTransaction()
             action = 'creating new ScheduledTransaction'
         trans.description = data['description'].strip()
+        # Clear all schedule type fields first, then set the appropriate one
+        trans.date = None
+        trans.day_of_month = None
+        trans.num_per_period = None
+        trans.day_of_week = None
+        trans.annual_month = None
+        trans.annual_day = None
         if data['type'] == 'monthly':
             trans.day_of_month = int(data['day_of_month'])
         elif data['type'] == 'per_period':
             trans.num_per_period = int(data['num_per_period'])
+        elif data['type'] == 'weekly':
+            trans.day_of_week = int(data['day_of_week'])
+        elif data['type'] == 'annual':
+            trans.annual_month = int(data['annual_month'])
+            trans.annual_day = int(data['annual_day'])
         else:
             # date
             trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
