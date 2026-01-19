@@ -125,29 +125,39 @@ class ScheduledTransaction(Base, ModelAsDict):
 
     @validates('day_of_month')
     def validate_day_of_month(self, _, value):
+        if value is None:
+            return value
         assert value > 0
         assert value <= 28
         return value
 
     @validates('num_per_period')
     def validate_num_per_period(self, _, value):
+        if value is None:
+            return value
         assert value > 0
         return value
 
     @validates('day_of_week')
     def validate_day_of_week(self, _, value):
+        if value is None:
+            return value
         assert value >= 0
         assert value <= 6
         return value
 
     @validates('annual_month')
     def validate_annual_month(self, _, value):
+        if value is None:
+            return value
         assert value >= 1
         assert value <= 12
         return value
 
     @validates('annual_day')
     def validate_annual_day(self, _, value):
+        if value is None:
+            return value
         assert value >= 1
         assert value <= 31
         return value
