@@ -283,7 +283,8 @@ class SampleDataLoader(object):
                 notes='notesST7',
                 account=self.accounts['BankOne']['account'],
                 budget=self.budgets['Periodic1'],
-                day_of_week=0  # Monday
+                day_of_week=0,  # Monday
+                is_active=False
             ),
             ScheduledTransaction(
                 amount=Decimal('88.88'),
@@ -304,7 +305,8 @@ class SampleDataLoader(object):
                 account=self.accounts['BankOne']['account'],
                 budget=self.budgets['Periodic2'],
                 annual_month=4,  # April
-                annual_day=15
+                annual_day=15,
+                is_active=False
             ),
             ScheduledTransaction(
                 amount=Decimal('100.00'),

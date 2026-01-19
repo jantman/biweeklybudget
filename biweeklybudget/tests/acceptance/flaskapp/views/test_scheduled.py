@@ -98,15 +98,15 @@ class TestSchedTransDefault(AcceptanceHelper):
         # Verify weekly and annual types are present
         assert 'weekly' in types
         assert 'annual' in types
-        # Verify active weekly transaction shows correctly
+        # Verify weekly transaction shows correctly (fixture is inactive)
         st7_idx = descriptions.index('ST7Weekly')
-        assert texts[st7_idx][0] == 'yes'  # is_active
+        assert texts[st7_idx][0] == 'NO'  # is_active
         assert texts[st7_idx][1] == 'weekly'  # schedule_type
         assert texts[st7_idx][2] == 'Every Monday'  # recurrence_str
         assert texts[st7_idx][3] == '$77.77'  # amount
-        # Verify active annual transaction shows correctly
+        # Verify annual transaction shows correctly (fixture is inactive)
         st9_idx = descriptions.index('ST9Annual')
-        assert texts[st9_idx][0] == 'yes'  # is_active
+        assert texts[st9_idx][0] == 'NO'  # is_active
         assert texts[st9_idx][1] == 'annual'  # schedule_type
         assert texts[st9_idx][2] == 'Apr 15th'  # recurrence_str
         assert texts[st9_idx][3] == '$99.99'  # amount
@@ -880,7 +880,7 @@ class TestSchedTransWeekly(AcceptanceHelper):
         assert t.description == 'ST7Weekly'
         assert t.day_of_week == 0  # Monday
         assert t.amount == Decimal('77.77')
-        assert t.is_active is True
+        assert t.is_active is False  # Fixture is inactive
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
@@ -904,7 +904,9 @@ class TestSchedTransWeekly(AcceptanceHelper):
         assert body.find_element(By.ID,
                                  'sched_frm_amount').get_attribute(
                                      'value') == '77.77'
-        assert selenium.find_element(By.ID, 'sched_frm_active').is_selected()
+        # Fixture is inactive
+        assert not selenium.find_element(
+            By.ID, 'sched_frm_active').is_selected()
 
 
 @pytest.mark.acceptance
@@ -919,7 +921,7 @@ class TestSchedTransAnnual(AcceptanceHelper):
         assert t.annual_month == 4  # April
         assert t.annual_day == 15
         assert t.amount == Decimal('99.99')
-        assert t.is_active is True
+        assert t.is_active is False  # Fixture is inactive
 
     def test_1_modal_on_click(self, base_url, selenium):
         self.baseurl = base_url
@@ -944,4 +946,6 @@ class TestSchedTransAnnual(AcceptanceHelper):
         assert body.find_element(By.ID,
                                  'sched_frm_amount').get_attribute(
                                      'value') == '99.99'
-        assert selenium.find_element(By.ID, 'sched_frm_active').is_selected()
+        # Fixture is inactive
+        assert not selenium.find_element(
+            By.ID, 'sched_frm_active').is_selected()
