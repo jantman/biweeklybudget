@@ -185,7 +185,11 @@ Right now, this application supports three types of scheduled transactions: Mont
 
 ## Progress
 
-- [ ] Milestone 1: Database & Model Changes
+- [x] Milestone 1: Database & Model Changes (completed 2026-01-19)
+  - AST-1.1: Created Alembic migration `bbb39e1d7c5d`
+  - AST-1.2: Updated ScheduledTransaction model with new fields and properties
+  - AST-1.3: Added 44 unit tests for model changes
+  - AST-1.4: All unit tests passing (91 tests)
 - [ ] Milestone 2: Backend View Changes
 - [ ] Milestone 3: Frontend Changes
 - [ ] Milestone 4: Pay Period Logic
