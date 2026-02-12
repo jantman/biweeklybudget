@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.5.1 (2026-02-11)
+------------------
+
+* Add HTTP API documentation page (``docs/source/http_api.rst``) documenting all Flask endpoints useful for external scripts and tools, including complete request/response data shapes and curl examples.
+
 1.5.0 (2026-01-19)
 ------------------
 

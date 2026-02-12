@@ -39,10 +39,10 @@ Create a single new RST file (`docs/source/http_api.rst`) documenting all script
 - [x] Documented: utility (pay_period_for)
 - [x] Updated feature doc with progress
 
-### Milestone 2: Final review, tests, and feature completion
-- [ ] Run `tox -e docs` to verify build
-- [ ] Run full test suites
-- [ ] Move feature doc to `complete/`
-- [ ] Bump version to 1.5.1
-- [ ] Add CHANGES.rst entry
-- [ ] Push and open PR
+### Milestone 2: Complete - Final review, tests, and feature completion
+- [x] Run `tox -e docs` to verify build
+- [x] Run full test suites
+- [x] Move feature doc to `complete/`
+- [x] Bump version to 1.5.1
+- [x] Add CHANGES.rst entry
+- [x] Push and open PR
