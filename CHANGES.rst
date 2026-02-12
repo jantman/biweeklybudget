@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.5.1 (2026-02-11)
+------------------
+
+* Add HTTP API documentation page (``docs/source/http_api.rst``) documenting all Flask endpoints useful for external scripts and tools, including complete request/response data shapes and curl examples.
+* Replace deprecated ``pkg_resources`` with ``importlib.resources`` in ``biweeklybudget/db.py`` for compatibility with setuptools >= 82.0 on Python 3.14.
+
 1.5.0 (2026-01-19)
 ------------------
 
