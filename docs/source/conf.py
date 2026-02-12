@@ -322,6 +322,7 @@ linkcheck_ignore = [
     r'https?://nvd\.nist\.gov/.*',  # NIST NVD blocks automated requests
     r'https?://.*\.flaticon\.com/.*',  # Flaticon blocks automated requests
     r'https?://www\.gnu\.org/.*',  # Sometimes unreachable
+    r'https?://developer\.hashicorp\.com/.*',  # Rate-limits automated requests
 ]
 
 nitpick_ignore = [
