@@ -42,7 +42,7 @@ import logging
 import os
 from copy import deepcopy
 import warnings
-import pkg_resources
+from importlib.resources import files
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -140,9 +140,8 @@ def init_db():
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
-    alembic_ini = pkg_resources.resource_filename(
-        pkg_resources.Requirement.parse('biweeklybudget'),
-        'biweeklybudget/alembic/alembic.ini'
+    alembic_ini = str(
+        files('biweeklybudget').joinpath('alembic', 'alembic.ini')
     )
     topdir = os.path.abspath(
         os.path.join(os.path.dirname(alembic_ini), '..', '..')
