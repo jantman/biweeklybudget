@@ -19,6 +19,10 @@ Request Format
 
 Most write endpoints accept either JSON or form-encoded POST data. When sending JSON, set the ``Content-Type: application/json`` header. The examples in this document use JSON.
 
+.. note::
+
+   JSON is **strongly recommended** over form-encoded data. Some endpoints (e.g. ``/forms/transaction``) require nested objects (like the ``budgets`` field) that cannot be represented in form-encoded format. Form-encoded data will flatten these to strings, causing server errors.
+
 .. _http_api.common_patterns.response_format:
 
 FormHandlerView Response Format
@@ -78,16 +82,20 @@ Create a new :py:class:`~.Transaction` or update an existing one. Handled by :py
 - ``amount`` *(decimal, required)* - Transaction amount. Cannot be zero.
 - ``account`` *(integer, required)* - :py:class:`~.Account` ID.
 - ``date`` *(string, required)* - Date in ``YYYY-MM-DD`` format.
-- ``notes`` *(string, optional)* - Free-text notes.
+- ``notes`` *(string, required)* - Free-text notes. Use an empty string if not needed. Although semantically optional, this field **must be present** in the request or the server will return a 500 error.
 - ``sales_tax`` *(decimal, optional)* - Sales tax amount. Defaults to ``0``.
 - ``budgets`` *(object, required)* - A mapping of :py:class:`~.Budget` ID (as string key) to the decimal amount allocated to that budget. At least one budget is required, and the sum of all budget amounts must equal the transaction ``amount``. New transactions cannot use inactive budgets.
+
+  .. note::
+
+     This field must be a JSON object (``{"2": "52.34"}``), not a JSON-encoded string. This means you **must** use ``Content-Type: application/json`` for this endpoint; form-encoded POST data cannot represent nested objects.
 
 **Example Request:**
 
 .. code-block:: bash
 
     $ curl -X POST -H 'Content-Type: application/json' \
-        -d '{"description": "Grocery Store", "amount": "52.34", "account": "1", "date": "2017-07-15", "budgets": {"2": "52.34"}}' \
+        -d '{"description": "Grocery Store", "amount": "52.34", "account": "1", "date": "2017-07-15", "notes": "", "budgets": {"2": "52.34"}}' \
         http://127.0.0.1:8080/forms/transaction
 
 **Success Response:**
