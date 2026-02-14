@@ -198,3 +198,7 @@ Projects in biweeklybudget track costs via BoMItems (Bill of Materials), but the
 - Task 1.5: Updated ProjectsFormHandler with `standing_budget_id` handling in `add`, new `edit` action
 - Task 1.6: Updated ProjectsView to query and pass active standing budgets to template
 - Task 1.7: Unit tests pass (488/488, 2 expected collection errors for MySQL-dependent tests)
+
+### Milestone 2: Frontend Changes - COMPLETE
+- Task 2.1: Updated projects.html with Standing Budget column, dropdown in add form, modal include, JS variable
+- Task 2.2: Updated projects.js with standing_budget_name column, edit modal (projectModal), form handling
