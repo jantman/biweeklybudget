@@ -79,7 +79,7 @@ class SampleDataLoader(object):
         self.plaid_accounts = self._plaid_accounts()
         self.db.flush()
         self.db.commit()
-        self._projects()
+        self.projects = self._projects()
         self.accounts = {
             'BankOne': self._bank_one(),
             'BankTwoStale': self._bank_two_stale(),
@@ -90,11 +90,8 @@ class SampleDataLoader(object):
         }
         self.budgets = self._budgets()
         # Link P1 to Standing1 budget
-        p1 = self.db.query(Project).filter(
-            Project.name.__eq__('P1')
-        ).one()
-        p1.standing_budget = self.budgets['Standing1']
-        self.db.add(p1)
+        self.projects['P1'].standing_budget = self.budgets['Standing1']
+        self.db.add(self.projects['P1'])
         self.scheduled_transactions = self._scheduled_transactions()
         self.transactions = self._transactions()
         self.db.add(TxnReconcile(
@@ -902,3 +899,4 @@ class SampleDataLoader(object):
             url='http://item3.p3.com',
             is_active=False
         ))
+        return {'P1': p1, 'P2': p2, 'P3Inactive': p3}

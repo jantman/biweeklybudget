@@ -89,12 +89,12 @@ function deactivateProject(proj_id) {
  */
 function projectModalDivForm() {
     return new FormBuilder('projectForm')
-        .addHidden('proj_frm_id', 'id', '')
-        .addHidden('proj_frm_action', 'action', 'edit')
-        .addText('proj_frm_name', 'name', 'Name')
-        .addText('proj_frm_notes', 'notes', 'Notes')
-        .addLabelToValueSelect('proj_frm_standing_budget_id', 'standing_budget_id', 'Standing Budget', standing_budget_names_to_id, undefined, true)
-        .addCheckbox('proj_frm_active', 'is_active', 'Active?', true)
+        .addHidden('proj_edit_frm_id', 'id', '')
+        .addHidden('proj_edit_frm_action', 'action', 'edit')
+        .addText('proj_edit_frm_name', 'name', 'Name')
+        .addText('proj_edit_frm_notes', 'notes', 'Notes')
+        .addLabelToValueSelect('proj_edit_frm_standing_budget_id', 'standing_budget_id', 'Standing Budget', standing_budget_names_to_id, undefined, true)
+        .addCheckbox('proj_edit_frm_active', 'is_active', 'Active?', true)
         .render();
 }
 
@@ -103,18 +103,18 @@ function projectModalDivForm() {
  */
 function projectModalDivFillAndShow(msg) {
     $('#modalLabel').text('Edit Project ' + msg['id']);
-    $('#proj_frm_id').val(msg['id']);
-    $('#proj_frm_name').val(msg['name']);
-    $('#proj_frm_notes').val(msg['notes']);
+    $('#proj_edit_frm_id').val(msg['id']);
+    $('#proj_edit_frm_name').val(msg['name']);
+    $('#proj_edit_frm_notes').val(msg['notes']);
     if(msg['standing_budget_id'] !== null) {
-        $('#proj_frm_standing_budget_id').val(msg['standing_budget_id']);
+        $('#proj_edit_frm_standing_budget_id').val(msg['standing_budget_id']);
     } else {
-        $('#proj_frm_standing_budget_id').val('None');
+        $('#proj_edit_frm_standing_budget_id').val('None');
     }
     if(msg['is_active'] === true) {
-        $('#proj_frm_active').prop('checked', true);
+        $('#proj_edit_frm_active').prop('checked', true);
     } else {
-        $('#proj_frm_active').prop('checked', false);
+        $('#proj_edit_frm_active').prop('checked', false);
     }
     $("#modalDiv").modal('show');
 }
@@ -172,12 +172,14 @@ $(document).ready(function() {
                 }
             },
             {
-                data: "standing_budget_name",
+                data: null,
                 "render": function(data, type, row) {
-                    if(type !== "display" && type !== "filter") { return data; }
-                    if(data === null) { return ''; }
-                    return data;
-                }
+                    if(type !== "display" && type !== "filter") { return ''; }
+                    var budgetName = row.DT_RowData.standing_budget_name;
+                    if(budgetName === null || budgetName === undefined) { return ''; }
+                    return budgetName;
+                },
+                "orderable": false
             },
             {
                 data: "is_active",

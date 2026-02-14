@@ -372,10 +372,11 @@ class TestProjectsView(AcceptanceHelper):
         modal, title, body = self.try_click_and_get_modal(selenium, editlink)
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Project 1'
-        assert body.find_element(By.ID, 'proj_frm_id').get_attribute('value') == '1'
-        assert body.find_element(By.ID, 'proj_frm_name').get_attribute('value') == 'P1'
-        assert body.find_element(By.ID, 'proj_frm_notes').get_attribute('value') == 'ProjectOne'
-        standing1 = Select(body.find_element(By.ID, 'proj_frm_standing_budget_id'))
+        assert body.find_element(By.ID, 'proj_edit_frm_id').get_attribute('value') == '1'
+        assert body.find_element(By.ID, 'proj_edit_frm_name').get_attribute('value') == 'P1'
+        notes = body.find_element(By.ID, 'proj_edit_frm_notes')
+        assert notes.get_attribute('value') == 'ProjectOne'
+        standing1 = Select(body.find_element(By.ID, 'proj_edit_frm_standing_budget_id'))
         assert standing1.first_selected_option.text == 'Standing1'
 
     def test_12_edit_modal_change_budget(self, base_url, selenium):
@@ -387,7 +388,7 @@ class TestProjectsView(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Project 1'
         # Change standing budget from Standing1 to Standing2
-        budget_sel = Select(body.find_element(By.ID, 'proj_frm_standing_budget_id'))
+        budget_sel = Select(body.find_element(By.ID, 'proj_edit_frm_standing_budget_id'))
         budget_sel.select_by_visible_text('Standing2')
         selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
@@ -418,7 +419,7 @@ class TestProjectsView(AcceptanceHelper):
         self.assert_modal_displayed(modal, title, body)
         assert title.text == 'Edit Project 1'
         # Remove standing budget (set to None)
-        budget_sel = Select(body.find_element(By.ID, 'proj_frm_standing_budget_id'))
+        budget_sel = Select(body.find_element(By.ID, 'proj_edit_frm_standing_budget_id'))
         budget_sel.select_by_value('None')
         selenium.find_element(By.ID, 'modalSaveButton').click()
         self.wait_for_jquery_done(selenium)
