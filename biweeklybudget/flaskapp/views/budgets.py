@@ -40,6 +40,7 @@ from flask.views import MethodView
 from flask import render_template, jsonify
 from datetime import datetime
 from decimal import Decimal
+from sqlalchemy import func
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
@@ -50,6 +51,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.utils import do_budget_transfer
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.utils import dtnow
 
 logger = logging.getLogger(__name__)
@@ -77,13 +79,29 @@ class BudgetsView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
+        allocated_rows = db_session.query(
+            Project.standing_budget_id,
+            func.sum(BoMItem.quantity * BoMItem.unit_cost)
+        ).join(
+            BoMItem, BoMItem.project_id == Project.id
+        ).filter(
+            Project.is_active.__eq__(True),
+            Project.standing_budget_id.isnot(None),
+            BoMItem.is_active.__eq__(True)
+        ).group_by(
+            Project.standing_budget_id
+        ).all()
+        allocated_by_budget = {
+            row[0]: row[1] for row in allocated_rows
+        }
         return render_template(
             'budgets.html',
             standing=standing,
             periodic=periodic,
             accts=accts,
             budgets=budgets,
-            active_budgets=active_budgets
+            active_budgets=active_budgets,
+            allocated_by_budget=allocated_by_budget
         )
 
 
@@ -110,6 +128,21 @@ class OneBudgetView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
+        allocated_rows = db_session.query(
+            Project.standing_budget_id,
+            func.sum(BoMItem.quantity * BoMItem.unit_cost)
+        ).join(
+            BoMItem, BoMItem.project_id == Project.id
+        ).filter(
+            Project.is_active.__eq__(True),
+            Project.standing_budget_id.isnot(None),
+            BoMItem.is_active.__eq__(True)
+        ).group_by(
+            Project.standing_budget_id
+        ).all()
+        allocated_by_budget = {
+            row[0]: row[1] for row in allocated_rows
+        }
         return render_template(
             'budgets.html',
             standing=standing,
@@ -117,7 +150,8 @@ class OneBudgetView(MethodView):
             budget_id=budget_id,
             accts=accts,
             budgets=budgets,
-            active_budgets=active_budgets
+            active_budgets=active_budgets,
+            allocated_by_budget=allocated_by_budget
         )
 
 

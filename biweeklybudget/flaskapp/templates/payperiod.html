@@ -149,13 +149,17 @@
                                         <tr>
                                             <th>Budget</th>
                                             <th>Balance</th>
+                                            <th>Allocated</th>
+                                            <th>Unallocated</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for k in standing.keys()|sort %}
                                         <tr>
                                             <td><a href="/budgets/{{ k }}">{{ budgets[k] }}</a></td>
-                                            <td>{{ standing[k]|reddollars|safe }}</td>
+                                            <td>{{ standing[k]['balance']|reddollars|safe }}</td>
+                                            <td>{{ standing[k]['allocated']|dollars }}</td>
+                                            <td>{{ standing[k]['unallocated']|reddollars|safe }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>

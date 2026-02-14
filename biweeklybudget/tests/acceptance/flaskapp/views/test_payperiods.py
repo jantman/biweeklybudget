@@ -989,10 +989,14 @@ class TestCurrentPayPeriod(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,617.56'
+                '$1,617.56',
+                '$77.77',
+                '$1,539.79'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29',
+                '$0.00',
                 '$9,482.29'
             ]
         ]
@@ -2075,10 +2079,14 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,617.56'
+                '$1,617.56',
+                '$77.77',
+                '$1,539.79'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29',
+                '$0.00',
                 '$9,482.29'
             ]
         ]
@@ -2375,10 +2383,14 @@ class TestBudgetTransfer(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,617.56'
+                '$1,617.56',
+                '$77.77',
+                '$1,539.79'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
+                '$9,605.74',
+                '$0.00',
                 '$9,605.74'
             ]
         ]
@@ -2719,10 +2731,14 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,617.56'
+                '$1,617.56',
+                '$77.77',
+                '$1,539.79'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29',
+                '$0.00',
                 '$9,482.29'
             ]
         ]
@@ -2991,10 +3007,14 @@ class TestSkipScheduled(AcceptanceHelper):
         assert htmls == [
             [
                 '<a href="/budgets/4">Standing1</a>',
-                '$1,617.56'
+                '$1,617.56',
+                '$77.77',
+                '$1,539.79'
             ],
             [
                 '<a href="/budgets/5">Standing2</a>',
+                '$9,482.29',
+                '$0.00',
                 '$9,482.29'
             ]
         ]

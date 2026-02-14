@@ -91,6 +91,8 @@
                                             <th>Active?</th>
                                             <th>Budget</th>
                                             <th>Current Balance</th>
+                                            <th>Allocated</th>
+                                            <th>Unallocated</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -101,7 +103,9 @@
                                             <td>
                                                 <span>{{ b.current_balance|dollars }}</span>
                                             </td>
-                                        </td>
+                                            <td>{{ allocated_by_budget.get(b.id, 0)|dollars }}</td>
+                                            <td>{{ (b.current_balance - allocated_by_budget.get(b.id, 0))|reddollars|safe }}</td>
+                                        </tr>
                                     {% endfor %}
                                     </tbody>
                                 </table>

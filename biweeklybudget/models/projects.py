@@ -66,6 +66,15 @@ class Project(Base, ModelAsDict):
     #: whether active or historical
     is_active = Column(Boolean, default=True)
 
+    #: Optional FK to a standing budget (is_periodic=False) that funds this
+    #: project
+    standing_budget_id = Column(
+        Integer, ForeignKey('budgets.id'), nullable=True
+    )
+
+    #: Relationship to the :py:class:`~.Budget` funding this project
+    standing_budget = relationship('Budget', uselist=False)
+
     def __repr__(self):
         return "<Project(id=%s, name=%s)>" % (
             self.id, self.name

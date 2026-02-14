@@ -84,9 +84,9 @@ class TestBudgets(AcceptanceHelper):
             ['NO', 'Periodic3 Inactive (3)', '$10.23']
         ]
         assert stexts == [
-            ['yes', 'Standing1 (4)', '$1,284.23'],
-            ['yes', 'Standing2 (5)', '$9,482.29'],
-            ['NO', 'Standing3 Inactive (6)', '-$92.29']
+            ['yes', 'Standing1 (4)', '$1,284.23', '$77.77', '$1,206.46'],
+            ['yes', 'Standing2 (5)', '$9,482.29', '$0.00', '$9,482.29'],
+            ['NO', 'Standing3 Inactive (6)', '-$92.29', '$0.00', '-$92.29']
         ]
         pelems = self.tbody2elemlist(ptable)
         selems = self.tbody2elemlist(stable)
@@ -597,7 +597,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
-        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29']
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29', '$0.00', '$9,482.29']
         ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
@@ -678,7 +678,7 @@ class TestBudgetTransfer(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
-        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,605.74']
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,605.74', '$0.00', '$9,605.74']
         ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
@@ -740,7 +740,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
-        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29']
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,482.29', '$0.00', '$9,482.29']
         ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']
@@ -827,7 +827,7 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         # test that updated budget was removed from the page
         stable = selenium.find_element(By.ID, 'table-standing-budgets')
         stexts = self.tbody2textlist(stable)
-        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,358.84']
+        assert stexts[1] == ['yes', 'Standing2 (5)', '$9,358.84', '$0.00', '$9,358.84']
         ptable = selenium.find_element(By.ID, 'table-periodic-budgets')
         ptexts = self.tbody2textlist(ptable)
         assert ptexts[2] == ['yes', 'Periodic2 (2)', '$234.00']

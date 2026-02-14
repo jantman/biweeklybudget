@@ -35,5 +35,41 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-VERSION = '1.6.0'
-PROJECT_URL = 'https://github.com/jantman/biweeklybudget'
+import pytest
+import logging
+from sqlalchemy import text
+
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.mark.migrations
+class TestAddStandingBudgetIdToProjects(MigrationTest):
+    """
+    Test for revision a1b2c3d4e5f6
+    """
+
+    migration_rev = 'a1b2c3d4e5f6'
+
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
+
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM projects WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert 'standing_budget_id' not in columns
+
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM projects WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert 'standing_budget_id' in columns

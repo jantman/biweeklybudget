@@ -44,6 +44,7 @@ var mytable;
 function handleProjectAdded() {
     $('#proj_frm_name').val("");
     $('#proj_frm_notes').val("");
+    $('#proj_frm_standing_budget_id').val("None");
     mytable.api().ajax.reload();
 }
 
@@ -83,6 +84,62 @@ function deactivateProject(proj_id) {
     });
 }
 
+/**
+ * Generate the HTML for the project edit modal form.
+ */
+function projectModalDivForm() {
+    return new FormBuilder('projectForm')
+        .addHidden('proj_edit_frm_id', 'id', '')
+        .addHidden('proj_edit_frm_action', 'action', 'edit')
+        .addText('proj_edit_frm_name', 'name', 'Name')
+        .addText('proj_edit_frm_notes', 'notes', 'Notes')
+        .addLabelToValueSelect('proj_edit_frm_standing_budget_id', 'standing_budget_id', 'Standing Budget', standing_budget_names_to_id, undefined, true)
+        .addCheckbox('proj_edit_frm_active', 'is_active', 'Active?', true)
+        .render();
+}
+
+/**
+ * Ajax callback to fill in the modal with data on a Project.
+ */
+function projectModalDivFillAndShow(msg) {
+    $('#modalLabel').text('Edit Project ' + msg['id']);
+    $('#proj_edit_frm_id').val(msg['id']);
+    $('#proj_edit_frm_name').val(msg['name']);
+    $('#proj_edit_frm_notes').val(msg['notes']);
+    if(msg['standing_budget_id'] !== null) {
+        $('#proj_edit_frm_standing_budget_id').val(msg['standing_budget_id']);
+    } else {
+        $('#proj_edit_frm_standing_budget_id').val('None');
+    }
+    if(msg['is_active'] === true) {
+        $('#proj_edit_frm_active').prop('checked', true);
+    } else {
+        $('#proj_edit_frm_active').prop('checked', false);
+    }
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Show the Project edit modal popup, populated with information for one
+ * Project. This function calls projectModalDivForm to generate the form HTML,
+ * projectModalDivFillAndShow to populate the form for editing, and handleForm
+ * to handle the Submit action.
+ *
+ * @param {number} id - the ID of the Project to show a modal for.
+ */
+function projectModal(id) {
+    $('#modalBody').empty();
+    $('#modalBody').append(projectModalDivForm());
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        handleForm('modalBody', 'projectForm', '/forms/projects', function() {
+            mytable.api().ajax.reload();
+        });
+    }).show();
+    var url = "/ajax/projects/" + id;
+    $.ajax(url).done(projectModalDivFillAndShow);
+}
+
 $(document).ready(function() {
     mytable = $('#table-projects').dataTable({
         processing: true,
@@ -93,7 +150,8 @@ $(document).ready(function() {
                 data: "name",
                 "render": function(data, type, row) {
                     return type === "display" || type === "filter" ?
-                        '<a href="/projects/' + row.DT_RowData.id + '">' + data + '</a>' :
+                        '<a href="/projects/' + row.DT_RowData.id + '">' + data + '</a>' +
+                        ' <a href="#" onclick="projectModal(' + row.DT_RowData.id + ')">(edit)</a>' :
                         data;
                 }
             },
@@ -114,6 +172,16 @@ $(document).ready(function() {
                 }
             },
             {
+                data: null,
+                "render": function(data, type, row) {
+                    if(type !== "display" && type !== "filter") { return ''; }
+                    var budgetName = row.DT_RowData.standing_budget_name;
+                    if(budgetName === null || budgetName === undefined) { return ''; }
+                    return budgetName;
+                },
+                "orderable": false
+            },
+            {
                 data: "is_active",
                 "render": function(data, type, row) {
                     if(type !== "display" && type !== "filter") { return data; }
@@ -126,8 +194,13 @@ $(document).ready(function() {
             },
             { data: "notes" }
         ],
-        order: [[3, "desc"], [ 0, "asc"]],
-        bInfo: true
+        order: [[4, "desc"], [ 0, "asc"]],
+        bInfo: true,
+        createdRow: function(row, data, dataIndex) {
+            if(data.is_active === false) {
+                $(row).addClass('inactive');
+            }
+        }
     });
 
     $('#formSaveButton').click(function() {
