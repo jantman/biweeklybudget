@@ -49,6 +49,7 @@
                                 <th>Project</th>
                                 <th>Total Cost</th>
                                 <th>Remaining Cost</th>
+                                <th>Standing Budget</th>
                                 <th>Active?</th>
                                 <th>Notes</th>
                             </tr>
@@ -58,6 +59,7 @@
                                 <th>Project</th>
                                 <th>Total Cost</th>
                                 <th>Remaining Cost</th>
+                                <th>Standing Budget</th>
                                 <th>Active?</th>
                                 <th>Notes</th>
                             </tr>
@@ -71,6 +73,13 @@
                                     <input class="form-control" id="proj_frm_name" name="name" type="text" size="20" style="display: inline-block; width: auto;">
                                     <label for="proj_frm_notes">Notes</label>
                                     <input class="form-control" id="proj_frm_notes" name="notes" type="text" size="40" style="display: inline-block; width: auto;">
+                                    <label for="proj_frm_standing_budget_id">Standing Budget</label>
+                                    <select class="form-control" id="proj_frm_standing_budget_id" name="standing_budget_id" style="display: inline-block; width: auto;">
+                                        <option value="None"></option>
+                                        {% for name in standing_budgets.keys()|sort %}
+                                        <option value="{{ standing_budgets[name] }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
                                     <button type="button" class="btn btn-primary" id="formSaveButton">Add Project</button>
                                 </form>
                             </div>
@@ -82,12 +91,20 @@
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+{% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
     <!-- DataTables JavaScript -->
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables/js/jquery.dataTables.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
     <script src="/static/startbootstrap-sb-admin-2/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
+<script>
+var standing_budget_names_to_id = {};
+{% for name in standing_budgets.keys()|sort %}
+standing_budget_names_to_id["{{ name }}"] = {{ standing_budgets[name] }};
+{% endfor %}
+</script>
 
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/formBuilder.js"></script>
