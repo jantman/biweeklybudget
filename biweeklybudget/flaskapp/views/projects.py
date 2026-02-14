@@ -66,10 +66,17 @@ class ProjectsView(MethodView):
         ).all():
             total_active += p.total_cost
             remain_active += p.remaining_cost
+        standing_budgets = {}
+        for b in db_session.query(Budget).filter(
+            Budget.is_periodic.__eq__(False),
+            Budget.is_active.__eq__(True)
+        ).order_by(Budget.name).all():
+            standing_budgets[b.name] = b.id
         return render_template(
             'projects.html',
             total_active=total_active,
-            remain_active=remain_active
+            remain_active=remain_active,
+            standing_budgets=standing_budgets
         )
 
 
