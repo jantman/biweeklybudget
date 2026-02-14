@@ -184,6 +184,18 @@ class ProjectsFormHandler(FormHandlerView):
             if len(q) > 0:
                 errors['name'].append('Name must be unique')
                 have_errors = True
+        elif action == 'edit':
+            if 'id' not in data:
+                raise RuntimeError('id must be specified to edit')
+            p = db_session.query(Project).get(int(data['id']))
+            if p is None:
+                raise RuntimeError('Invalid Project id: %s' % data['id'])
+            if data.get('name', '').strip() == '':
+                errors['name'].append('Name cannot be empty')
+                have_errors = True
+            if len(data.get('name', '').strip()) > 40:
+                errors['name'].append('Name must be <= 40 characters in length')
+                have_errors = True
         elif action in ['activate', 'deactivate']:
             if 'id' not in data:
                 raise RuntimeError('id must be specified to (de)activate')
@@ -211,6 +223,18 @@ class ProjectsFormHandler(FormHandlerView):
             proj = Project()
             proj.name = data['name'].strip()
             proj.notes = data['notes'].strip()
+            proj.standing_budget_id = self._parse_standing_budget_id(
+                data.get('standing_budget_id', None)
+            )
+        elif action == 'edit':
+            proj = db_session.query(Project).get(int(data['id']))
+            proj.name = data['name'].strip()
+            proj.notes = data.get('notes', '').strip()
+            proj.standing_budget_id = self._parse_standing_budget_id(
+                data.get('standing_budget_id', None)
+            )
+            proj.is_active = data.get('is_active', True)
+            logger.info('Edit %s', proj)
         elif action == 'activate':
             proj = db_session.query(Project).get(int(data['id']))
             logger.info('Activate %s', proj)
@@ -225,7 +249,21 @@ class ProjectsFormHandler(FormHandlerView):
         db_session.commit()
         if action == 'add':
             logger.info('Created Project %s', proj)
-        return 'Successfully saved Project %d in database.' % proj.id
+        return {
+            'success_message': 'Successfully saved Project %d in '
+                               'database.' % proj.id,
+            'success': True,
+            'id': proj.id
+        }
+
+    def _parse_standing_budget_id(self, value):
+        """
+        Parse standing_budget_id from form data. Returns None for empty/None
+        values, or the integer ID.
+        """
+        if value is None or str(value).strip() in ('', 'None'):
+            return None
+        return int(value)
 
 
 class BoMItemView(MethodView):
