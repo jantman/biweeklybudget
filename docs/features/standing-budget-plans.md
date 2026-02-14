@@ -190,4 +190,11 @@ Projects in biweeklybudget track costs via BoMItems (Bill of Materials), but the
 
 ## Progress
 
-*Not yet started.*
+### Milestone 1: Database Schema and Backend Model - COMPLETE
+- Task 1.1: Added `standing_budget_id` FK column and `standing_budget` relationship to Project model
+- Task 1.2: Created Alembic migration `a1b2c3d4e5f6`
+- Task 1.3: Updated ProjectsAjax with outerjoin and `standing_budget_name` in DataTable response
+- Task 1.4: Updated ProjectAjax to include `standing_budget_name` in single-project JSON
+- Task 1.5: Updated ProjectsFormHandler with `standing_budget_id` handling in `add`, new `edit` action
+- Task 1.6: Updated ProjectsView to query and pass active standing budgets to template
+- Task 1.7: Unit tests pass (488/488, 2 expected collection errors for MySQL-dependent tests)
