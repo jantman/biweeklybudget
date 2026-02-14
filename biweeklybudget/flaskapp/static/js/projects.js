@@ -195,7 +195,12 @@ $(document).ready(function() {
             { data: "notes" }
         ],
         order: [[4, "desc"], [ 0, "asc"]],
-        bInfo: true
+        bInfo: true,
+        createdRow: function(row, data, dataIndex) {
+            if(data.is_active === false) {
+                $(row).addClass('inactive');
+            }
+        }
     });
 
     $('#formSaveButton').click(function() {

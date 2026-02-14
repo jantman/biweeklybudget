@@ -41,6 +41,7 @@ from decimal import Decimal
 
 from flask.views import MethodView
 from flask import render_template, request, redirect
+from sqlalchemy import func
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.utils import dtnow
@@ -50,6 +51,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
+from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
@@ -126,13 +128,36 @@ class PayPeriodView(MethodView):
             budgets[b.id] = k
             if b.is_active:
                 active_budgets[b.id] = k
-        standing = {
-            b.id: b.current_balance
-            for b in db_session.query(Budget).filter(
-                Budget.is_periodic.__eq__(False),
-                Budget.is_active.__eq__(True)
-            ).all()
+        standing_budgets = db_session.query(Budget).filter(
+            Budget.is_periodic.__eq__(False),
+            Budget.is_active.__eq__(True)
+        ).all()
+        # Query allocated amounts: sum of remaining_cost for active BoM items
+        # in active projects linked to each standing budget
+        allocated_rows = db_session.query(
+            Project.standing_budget_id,
+            func.sum(BoMItem.quantity * BoMItem.unit_cost)
+        ).join(
+            BoMItem, BoMItem.project_id == Project.id
+        ).filter(
+            Project.is_active.__eq__(True),
+            Project.standing_budget_id.isnot(None),
+            BoMItem.is_active.__eq__(True)
+        ).group_by(
+            Project.standing_budget_id
+        ).all()
+        allocated_by_budget = {
+            row[0]: row[1] for row in allocated_rows
         }
+        standing = {}
+        for b in standing_budgets:
+            alloc = allocated_by_budget.get(b.id, Decimal('0'))
+            standing[b.id] = {
+                'balance': b.current_balance,
+                'allocated': alloc,
+                'unallocated': b.current_balance - alloc
+            }
+
         periodic = {
             b.id: b.current_balance
             for b in db_session.query(Budget).filter(
