@@ -89,6 +89,12 @@ class SampleDataLoader(object):
             'DisabledBank': self._disabled_bank()
         }
         self.budgets = self._budgets()
+        # Link P1 to Standing1 budget
+        p1 = self.db.query(Project).filter(
+            Project.name.__eq__('P1')
+        ).one()
+        p1.standing_budget = self.budgets['Standing1']
+        self.db.add(p1)
         self.scheduled_transactions = self._scheduled_transactions()
         self.transactions = self._transactions()
         self.db.add(TxnReconcile(
