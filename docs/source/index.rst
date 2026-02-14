@@ -11,6 +11,7 @@ Contents
 
    Screenshots <screenshots>
    Getting Started <getting_started>
+   Core Concepts <concepts>
    Application Usage <app_usage>
    Flask App <flask_app>
    HTTP API <http_api>
