@@ -337,6 +337,9 @@ class ProjectAjax(MethodView):
         d = proj.as_dict
         d['total_cost'] = proj.total_cost
         d['remaining_cost'] = proj.remaining_cost
+        d['standing_budget_name'] = (
+            proj.standing_budget.name if proj.standing_budget else None
+        )
         return jsonify(d)
 
 
