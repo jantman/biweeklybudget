@@ -45,6 +45,7 @@ from decimal import Decimal
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.db import db_session
 from biweeklybudget.models.projects import Project, BoMItem
+from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 
@@ -130,7 +131,7 @@ class ProjectsAjax(SearchableAjaxView):
         table = DataTable(
             args,
             Project,
-            db_session.query(Project),
+            db_session.query(Project).outerjoin(Project.standing_budget),
             [
                 'name',
                 'total_cost',
@@ -140,7 +141,10 @@ class ProjectsAjax(SearchableAjaxView):
             ]
         )
         table.add_data(
-            id=lambda o: o.id
+            id=lambda o: o.id,
+            standing_budget_name=lambda o: (
+                o.standing_budget.name if o.standing_budget else None
+            )
         )
         if args['search[value]'] != '':
             table.searchable(lambda qs, s: self._filterhack(qs, s, args_dict))
