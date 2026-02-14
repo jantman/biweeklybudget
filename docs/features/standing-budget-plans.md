@@ -202,3 +202,7 @@ Projects in biweeklybudget track costs via BoMItems (Bill of Materials), but the
 ### Milestone 2: Frontend Changes - COMPLETE
 - Task 2.1: Updated projects.html with Standing Budget column, dropdown in add form, modal include, JS variable
 - Task 2.2: Updated projects.js with standing_budget_name column, edit modal (projectModal), form handling
+
+### Milestone 3: Test Data and Migration Tests - COMPLETE
+- Task 3.1: Updated sampledata.py to link P1 to Standing1 budget
+- Task 3.2: Created migration test test_migration_a1b2c3d4e5f6.py
