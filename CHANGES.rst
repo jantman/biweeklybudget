@@ -1,6 +1,17 @@
 Changelog
 =========
 
+1.6.0 (2026-02-14)
+------------------
+
+* **Standing Budget Plans** - Add optional one-to-one relationship from Project to Standing Budget, allowing users to associate a project with the standing budget used to fund it.
+
+  * Add ``standing_budget_id`` nullable foreign key on ``projects`` table pointing to ``budgets``
+  * Add standing budget dropdown to the project inline add form on ``/projects``
+  * Add project edit modal for editing name, notes, standing budget, and active status
+  * Display linked standing budget name in the projects DataTable
+  * Database migration ``a1b2c3d4e5f6`` adds ``standing_budget_id`` column and foreign key constraint
+
 1.5.1 (2026-02-11)
 ------------------
 

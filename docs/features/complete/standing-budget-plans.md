@@ -206,3 +206,16 @@ Projects in biweeklybudget track costs via BoMItems (Bill of Materials), but the
 ### Milestone 3: Test Data and Migration Tests - COMPLETE
 - Task 3.1: Updated sampledata.py to link P1 to Standing1 budget
 - Task 3.2: Created migration test test_migration_a1b2c3d4e5f6.py
+
+### Milestone 4: Acceptance Tests - COMPLETE
+- Task 4.1-4.3: Updated and expanded acceptance tests for standing budget feature
+  - Updated test_00_verify_db, test_01_table, test_02_search with standing budget column
+  - Added test_03_add_with_standing_budget and test_05_add_without_standing_budget
+  - Added tests 11-16 for project edit modal (populate, change budget, remove budget, verify)
+
+### Milestone 5: Final Testing and Documentation - COMPLETE
+- Task 5.1: All test suites pass
+  - Unit tests (py314): 511 passed
+  - Migration tests: 6 passed (including schema comparison)
+  - Acceptance tests: 513 passed
+  - Fixed migration down_revision, FK naming convention, DT_RowData access, duplicate form IDs
