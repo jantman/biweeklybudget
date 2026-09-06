@@ -42,6 +42,8 @@ import pytest
 import time
 import re
 
+from sqlalchemy import text
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -91,7 +93,7 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             'DELETE FROM budget_transactions;',
             'DELETE FROM transactions;',
         ]:
-            testdb.execute(stmt)
+            testdb.execute(text(stmt))
         testdb.flush()
         testdb.commit()
         self.plaid_accts = {}

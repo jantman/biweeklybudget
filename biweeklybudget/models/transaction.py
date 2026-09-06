@@ -171,7 +171,7 @@ class Transaction(Base, ModelAsDict):
 
     @actual_amount.expression
     def actual_amount(cls):
-        # see: http://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html
+        # see: https://docs.sqlalchemy.org/en/latest/orm/extensions/hybrid.html
         # #correlated-subquery-relationship-hybrid
         return select(
             func.sum(BudgetTransaction.amount)

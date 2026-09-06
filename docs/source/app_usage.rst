@@ -14,7 +14,7 @@ Currency Formatting and Localization
 biweeklybudget supports configurable currency symbols and display/formatting,
 controlled by the :py:attr:`~biweeklybudget.settings.LOCALE_NAME` and
 :py:attr:`~biweeklybudget.settings.CURRENCY_CODE` settings. The former must
-specify a `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ language tag
+specify a `RFC 5646 / BCP 47 <https://www.rfc-editor.org/info/bcp47>`_ language tag
 with a region identifier (i.e. "en_US", "en_GB", "de_DE", etc.). If it is not
 set in the settings module or via a ``LOCALE_NAME`` environment variable, it
 will be looked up from the ``LC_ALL``, ``LC_MONETARY``, or ``LANG`` environment

@@ -88,7 +88,7 @@ database often.
 Testing
 -------
 
-Testing is done via `pytest <https://docs.pytest.org/en/latest/>`_, driven by `tox <https://tox.readthedocs.io/>`_.
+Testing is done via `pytest <https://docs.pytest.org/en/latest/>`_, driven by `tox <https://tox.wiki/en/latest/>`_.
 
 * testing is as simple as:
 
@@ -118,7 +118,7 @@ There's a pytest marker for integration tests, effectively defined as anything t
 Acceptance Tests
 ++++++++++++++++
 
-There are acceptance tests, which use a real MySQL DB (see the connection string in ``tox.ini`` and ``conftest.py``) and a real Flask HTTP server, and selenium. Run them via the ``acceptance`` tox environment. Note that they're currently configured to use Headless Chrome; running them locally will require a modern Chrome version that supports the ``--headless`` flag (Chrome 59+) and a matching version of `chromedriver <https://sites.google.com/a/chromium.org/chromedriver/>`_.
+There are acceptance tests, which use a real MySQL DB (see the connection string in ``tox.ini`` and ``conftest.py``) and a real Flask HTTP server, and selenium. Run them via the ``acceptance`` tox environment. Note that they're currently configured to use Headless Chrome; running them locally will require a modern Chrome version that supports the ``--headless`` flag (Chrome 59+) and a matching version of `chromedriver <https://developer.chrome.com/docs/chromedriver/>`_.
 
 The acceptance tests connect to a local MySQL database using a connection string specified by the ``DB_CONNSTRING`` environment variable, or defaulting to a DB name and user/password that can be seen in ``conftest.py``. Once connected, the tests will drop all tables in the test DB, re-create all models/tables, and then load sample data. After the DB is initialized, tests will run the local Flask app on a random port, and run Selenium backed by headless Chrome.
 
@@ -158,7 +158,7 @@ This tox environment is configured via environment variables. Please note that i
 Alembic DB Migrations
 ---------------------
 
-This project uses `Alembic <http://alembic.zzzcomputing.com/en/latest/index.html>`_
+This project uses `Alembic <https://alembic.sqlalchemy.org/en/latest/index.html>`_
 for DB migrations.
 
 .. important::
@@ -245,12 +245,17 @@ Use the ``docker`` tox environment. See the docstring at the top of
 Frontend / UI
 -------------
 
-The UI is based on `BlackrockDigital's startbootstrap-sb-admin-2 <https://github.com/BlackrockDigital/startbootstrap-sb-admin-2>`_,
+The UI is based on `StartBootstrap's startbootstrap-sb-admin-2 <https://github.com/StartBootstrap/startbootstrap-sb-admin-2>`_,
 currently as of the 3.3.7-1 GitHub release. It is currently not modified at all, but should it need to be rebuilt,
 this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
 Sphinx also generates documentation for the custom javascript files. This must be done manually
 on a machine with `jsdoc <https://jsdoc.app/>`_ installed, via: ``tox -e jsdoc``.
+
+``jsdoc`` 4.x is required; jsdoc 3.x (still packaged by some distributions) crashes
+on Node.js 22 and newer, and ``tox -e jsdoc`` then fails with ``jsdoc found no JS
+files``. CI pins the version installed; to match it locally, install jsdoc with
+``npm install -g jsdoc@4.0.4``.
 
 .. _development.vendored_requirements:
 

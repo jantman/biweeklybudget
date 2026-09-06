@@ -83,7 +83,7 @@ _STRING_VARS = [
     'PLAID_USER_ID',
 ]
 
-#: A `RFC 5646 / BCP 47 <https://tools.ietf.org/html/bcp47>`_ Language Tag
+#: A `RFC 5646 / BCP 47 <https://www.rfc-editor.org/info/bcp47>`_ Language Tag
 #: with a Region suffix to use for number (currency) formatting, i.e. "en_US",
 #: "en_GB", "de_DE", etc. If this is not specified (None), it will be looked up
 #: from environment variables in the following order: LC_ALL, LC_MONETARY, LANG.
@@ -275,7 +275,7 @@ try:
 except UnknownLocaleError:
     raise SystemExit(
         'ERROR: LOCALE_NAME setting of "%s" is not a valid BCP 47 Language Tag.'
-        ' See <https://tools.ietf.org/html/bcp47> for more information.' %
+        ' See <https://www.rfc-editor.org/info/bcp47> for more information.' %
         LOCALE_NAME
     )
 

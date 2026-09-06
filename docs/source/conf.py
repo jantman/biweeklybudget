@@ -90,7 +90,7 @@ release = version
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -133,11 +133,9 @@ todo_include_todos = True
 # -- Options for HTML output ----------------------------------------------
 
 if is_rtd:
-    import sphinx_rtd_theme
+    # sphinx_rtd_theme >= 1.0 registers itself as a Sphinx extension and
+    # supplies its own theme path; setting html_theme_path here is deprecated.
     html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [
-        sphinx_rtd_theme.get_html_theme_path(),
-    ]
     html_static_path = ['_static']
     htmlhelp_basename = 'budgetdoc'
 
@@ -298,9 +296,9 @@ texinfo_documents = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'sqlalchemy': (
-        'http://docs.sqlalchemy.org/en/13/', None
+        'https://docs.sqlalchemy.org/en/20/', None
     ),
-    'selenium': ('http://selenium-python.readthedocs.io/', None)
+    'selenium': ('https://selenium-python.readthedocs.io/', None)
 }
 
 autoclass_content = 'class'
@@ -323,7 +321,13 @@ linkcheck_ignore = [
     r'https?://.*\.flaticon\.com/.*',  # Flaticon blocks automated requests
     r'https?://www\.gnu\.org/.*',  # Sometimes unreachable
     r'https?://developer\.hashicorp\.com/.*',  # Rate-limits automated requests
+    r'https?://(www\.)?stackoverflow\.com/.*',  # Blocks automated requests (403)
 ]
+
+# Some sites are slow and/or intermittently unreachable from CI; retry rather
+# than failing the whole docs build on a transient network error.
+linkcheck_timeout = 20
+linkcheck_retries = 3
 
 nitpick_ignore = [
     ('py:class', 'flask.views.MethodView'),
