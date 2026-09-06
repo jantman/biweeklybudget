@@ -233,11 +233,18 @@ class Transaction(Base, ModelAsDict):
         impact, while a no-budget-impact flag the user set themselves survives
         that change.
 
+        The relationship is checked as well as the foreign key so that a
+        Transaction constructed as ``Transaction(credit_payment_acct=acct)``
+        answers correctly before it has been flushed, when the foreign key is
+        still None. The foreign key is checked first, so the relationship is
+        only consulted when it is the only thing set.
+
         :return: whether this Transaction is excluded from budget arithmetic
         :rtype: bool
         """
         return bool(self.no_budget_impact) or (
-            self.credit_payment_acct_id is not None
+            self.credit_payment_acct_id is not None or
+            self.credit_payment_acct is not None
         )
 
     @is_excluded_from_budget.expression

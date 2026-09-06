@@ -40,7 +40,6 @@ from decimal import Decimal
 
 from biweeklybudget import settings
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
-from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import dtnow, fmt_currency
 
@@ -269,16 +268,3 @@ class CreditPaymentAttribution(object):
             'pays_itself': self.pays_itself,
             'warnings': self.warnings
         }
-
-
-def is_credit_account(acct):
-    """
-    Return whether ``acct`` is an Account that may be paid, i.e. a credit
-    account.
-
-    :param acct: the account to check, or None
-    :type acct: biweeklybudget.models.account.Account
-    :return: whether this is a credit account
-    :rtype: bool
-    """
-    return isinstance(acct, Account) and acct.acct_type == AcctType.Credit

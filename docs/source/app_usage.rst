@@ -94,3 +94,96 @@ the following caveats (which I'd be happy to fix if anyone needs it):
   (inclusive), the application will not function. If anyone needs support for
   larger numbers (or, at the rate I'm going, I'm still working and paying into
   my pension in about 300 years), the change shouldn't be terribly difficult.
+
+.. _app_usage.credit_card_payments:
+
+Credit Card Payments
+--------------------
+
+When you pay a credit card, record the payment as an ordinary transaction on
+the bank account the money left, and set **Credit Card Payment For** on the
+Add/Edit Transaction form to the card being paid. That is the whole workflow.
+Do not create an offsetting entry of any kind.
+
+.. _app_usage.credit_card_payments.why:
+
+Why a payment has no budget impact
+++++++++++++++++++++++++++++++++++
+
+Every transaction is counted against the income available in the pay period it
+falls in. That is right for money spent from a bank account, but a credit card
+purchase and the cash payment that settles it are two separate transactions, so
+counting both charges the same money against your income twice.
+
+Marking a transaction as a payment toward a credit account excludes it from
+every budget and every pay period total. Each charge is already budgeted on its
+own charge date, in its own pay period; the payment is a movement of cash
+between two accounts the application already tracks.
+
+This holds however the dates fall:
+
+* **Paid in the same pay period as the charge.** A $100 charge is counted once,
+  in that period. The $100 payment adds nothing.
+* **Paid after the period closed**, which is the normal case. Charges made in
+  period N are counted in period N. The payment lands in period N+1 and adds
+  nothing there, so N+1 is charged only its own purchases.
+
+There is deliberately no netting of a card's charges against payments toward
+it. Netting is correct only when a card is paid inside the same period its
+charges were made; across periods it charges a period the payment amount rather
+than that period's own purchases, which recreates the double-count one period
+later.
+
+.. _app_usage.credit_card_payments.validation:
+
+What the payment panel tells you
+++++++++++++++++++++++++++++++++
+
+Once a card is selected, the form shows how the amount you have entered maps
+onto the charges recorded for that card: how much settles charges from pay
+periods that have already closed, broken down by period from oldest to newest,
+and how much applies to the currently-open period.
+
+If the amount is larger than every unpaid charge recorded for that card, you
+are warned, and told by how much. That reliably means charges are missing from
+your records or were recorded against the wrong account — for example, charges
+made near the end of a period that have not posted yet, or a payment covering
+several periods at once after a missed cycle.
+
+The warning is advisory. You can always save the transaction: you know things
+the application does not, including charges it has not downloaded yet.
+
+Unpaid charges are counted from
+:py:attr:`~biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE`, which defaults to
+:py:attr:`~biweeklybudget.settings.RECONCILE_BEGIN_DATE`. Payments recorded
+before this feature existed carry no card designation, so they are not
+subtracted from a card's charge total; without a lower bound, a card's apparent
+unpaid charges would drift upward without limit and the warning would stop
+meaning anything. Move the date forward once historical payments have been
+designated or written off.
+
+.. _app_usage.no_budget_impact:
+
+Transactions With No Budget Impact
+----------------------------------
+
+Some transactions need to exist so they can be reconciled against a real
+downloaded bank or card transaction, but do not represent spending or income
+against any budget. Check **No Budget Impact?** on the Add/Edit Transaction
+form for these. Typical cases are statement credits, cash-back redemptions
+applied as a statement credit, and manual adjustments made to bring a recorded
+balance into line with the real one.
+
+Such a transaction still belongs to an account, still needs a budget and an
+amount like any other, still appears in the transaction list, and is still
+available to reconcile. What changes is that it contributes nothing to any
+budget's spent, allocated or remaining amounts, nothing to any pay period's
+totals, and nothing to the account's unreconciled sum. It is marked as
+*(no budget impact)* wherever transactions are listed, so it is clear why the
+listed amounts do not add up to the totals above them.
+
+Credit card payments get this behaviour automatically from the **Credit Card
+Payment For** field and do not need the checkbox as well. The two fields are
+independent: clearing the card designation from a transaction restores its
+ordinary budget impact, unless you had also checked **No Budget Impact?**
+yourself, in which case that choice stands.

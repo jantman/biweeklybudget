@@ -42,6 +42,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import null
 
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
@@ -275,6 +276,17 @@ class TestTransactionIsExcludedFromBudget(object):
         t.no_budget_impact = True
         t.credit_payment_acct_id = 3
         t.credit_payment_acct_id = None
+        assert t.is_excluded_from_budget is True
+
+    def test_unflushed_relationship_is_excluded(self):
+        """A Transaction constructed with the relationship rather than the
+        foreign key must answer correctly before it is flushed, when the
+        foreign key is still None."""
+        t = Transaction()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = None
+        t.credit_payment_acct = Account(name='CreditOne')
+        assert t.credit_payment_acct_id is None
         assert t.is_excluded_from_budget is True
 
     def test_expression_form(self):

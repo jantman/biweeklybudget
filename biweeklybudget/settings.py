@@ -161,7 +161,8 @@ RECONCILE_BEGIN_DATE = None
 #: stop meaning anything. Move this date forward once historical payments have
 #: been designated or written off.
 #:
-#: If not set, this defaults to :py:attr:`~.RECONCILE_BEGIN_DATE`. This must be
+#: If not set, this defaults to
+#: :py:attr:`biweeklybudget.settings.RECONCILE_BEGIN_DATE`. This must be
 #: specified in Y-m-d format (i.e. parsable by
 #: :py:meth:`datetime.datetime.strptime` with ``%Y-%m-%d`` format).
 CREDIT_PAYMENT_BEGIN_DATE = None

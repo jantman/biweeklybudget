@@ -102,10 +102,6 @@ class OneTransactionView(MethodView):
         ``transactions.html`` template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
-        # Only credit accounts may be paid; restricting the list here is what
-        # makes the "Credit Card Payment For" select correct by construction.
-        # TransactionFormHandler.validate() enforces the same rule, because the
-        # form endpoint is reachable without the select.
         credit_accts = {
             a.name: a.id
             for a in Account.active_credit_accounts(db_session).all()

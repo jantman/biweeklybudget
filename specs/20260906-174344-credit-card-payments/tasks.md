@@ -58,7 +58,7 @@ silently emit an empty migration (CLAUDE.md, research.md D-11).
 
 - [X] M1.12 **Gate**: run `tox -e py314` and `tox -e migrations` to completion, plus the pycodestyle/pyflakes run. Redirect output to a scratchpad file rather than piping to `tail`. A timed-out suite has not passed — raise both the pytest timeout and the invoking timeout and re-run. *(Constitution II, III)*
 
-- [ ] M1.13 Commit as `Credit Card Payments - M1.x`, covering M1.2 through M1.11.
+- [X] M1.13 Commit as `Credit Card Payments - M1.x`, covering M1.2 through M1.11.
 
 **Checkpoint**: schema and model are in place; nothing reads the new fields yet, and every existing total is unchanged (SC-006).
 
@@ -91,7 +91,7 @@ Story 1 end to end at the data layer, and makes User Story 2's arithmetic correc
 
 - [X] M2.10 **Gate**: run `tox -e py314` to completion plus lint, output to a scratchpad file. *(Constitution II)*
 
-- [ ] M2.11 Commit as `Credit Card Payments - M2.x`.
+- [X] M2.11 Commit as `Credit Card Payments - M2.x`.
 
 **Checkpoint**: SC-001 and SC-002 hold at the data layer. User Story 1 is testable end to end via the model; nothing is exposed in the UI yet.
 
@@ -177,19 +177,19 @@ representable.
 
 **Depends on**: M4 complete.
 
-- [ ] M5.1 [P] Document the credit card payment workflow in `docs/source/app_usage.rst`: designate the payment toward the card, enter nothing else, zero budget impact in every pay period, and what the attribution panel and the over-payment warning mean. Document the general no-budget-impact designation and when to use it — statement credits, cash-back redemptions applied as a statement credit, manual balance-reconcile adjustments. A search of `docs/` and `README.rst` found no existing description of the pseudo-transaction workaround, so FR-025's "replace" reduces to writing the new workflow; state that finding in the commit message rather than leaving it implicit. *(FR-025)*
+- [X] M5.1 [P] Document the credit card payment workflow in `docs/source/app_usage.rst`: designate the payment toward the card, enter nothing else, zero budget impact in every pay period, and what the attribution panel and the over-payment warning mean. Document the general no-budget-impact designation and when to use it — statement credits, cash-back redemptions applied as a statement credit, manual balance-reconcile adjustments. A search of `docs/` and `README.rst` found no existing description of the pseudo-transaction workaround, so FR-025's "replace" reduces to writing the new workflow; state that finding in the commit message rather than leaving it implicit. *(FR-025)*
 
-- [ ] M5.2 [P] Document `CREDIT_PAYMENT_BEGIN_DATE` where the other settings are documented, covering what the window is for and why moving it forward is the operator's lever once historical payments have been designated. *(FR-023, FR-025)*
+- [X] M5.2 [P] Document `CREDIT_PAYMENT_BEGIN_DATE` where the other settings are documented, covering what the window is for and why moving it forward is the operator's lever once historical payments have been designated. *(FR-023, FR-025)*
 
-- [ ] M5.3 [P] Add `docs/source/biweeklybudget.credit_payment.rst` following the existing per-module autodoc pages, and add it to the toctree in `docs/source/biweeklybudget.rst`. *(Constitution IV)*
+- [X] M5.3 [P] Add `docs/source/biweeklybudget.credit_payment.rst` following the existing per-module autodoc pages, and add it to the toctree in `docs/source/biweeklybudget.rst`. *(Constitution IV)*
 
-- [ ] M5.4 [P] Add the `CHANGES.rst` entry for 1.8.0 in the existing format, referencing issues #210 and #319, and stating plainly that the netting approach in #210's original proposal was rejected and why. *(Constitution VI)*
+- [X] M5.4 [P] Add the `CHANGES.rst` entry for 1.8.0 in the existing format, referencing issues #210 and #319, and stating plainly that the netting approach in #210's original proposal was rejected and why. *(Constitution VI)*
 
-- [ ] M5.5 [P] Bump `VERSION` in `biweeklybudget/version.py` from `1.7.0` to `1.8.0` — backwards-compatible new functionality. *(Constitution VI)*
+- [X] M5.5 [P] Bump `VERSION` in `biweeklybudget/version.py` from `1.7.0` to `1.8.0` — backwards-compatible new functionality. *(Constitution VI)*
 
-- [ ] M5.6 **Full gate**: run `tox -e py314`, `tox -e acceptance`, `tox -e migrations`, and `tox -e docs` to completion, plus lint. Redirect each to its own scratchpad file. All four must pass. A suite that times out has not passed: raise the pytest timeout and the invoking timeout and run it again. Narrowing to a passing subset, marking failures expected, or reporting a timed-out run as green all violate Principle II. *(Constitution II, III, IV; SC-008)*
+- [X] M5.6 **Full gate**: run `tox -e py314`, `tox -e acceptance`, `tox -e migrations`, and `tox -e docs` to completion, plus lint. Redirect each to its own scratchpad file. All four must pass. A suite that times out has not passed: raise the pytest timeout and the invoking timeout and run it again. Narrowing to a passing subset, marking failures expected, or reporting a timed-out run as green all violate Principle II. *(Constitution II, III, IV; SC-008)*
 
-- [ ] M5.7 Walk the [quickstart.md](./quickstart.md) scenarios against a running application to confirm the delivered behaviour matches the spec's acceptance scenarios, not just the tests. *(SC-001 through SC-005)*
+- [X] M5.7 Walk the [quickstart.md](./quickstart.md) scenarios against a running application to confirm the delivered behaviour matches the spec's acceptance scenarios, not just the tests. *(SC-001 through SC-005)*
 
 - [ ] M5.8 Commit as `Credit Card Payments - M5.x`, push the branch to `origin`, and open a pull request describing the change, the rejected netting approach, the Constitution Check result, and the `Account.unreconciled_sum` trade-off recorded in research.md D-5 so it is visible to review.
 
