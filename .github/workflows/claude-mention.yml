@@ -1,0 +1,124 @@
+name: Claude (@mention)
+
+# Reactive: does nothing until someone writes @claude. Pairs with claude-pr-review.yml,
+# which is the proactive half — see the README in this directory for why both exist before
+# deleting either as a "duplicate".
+#
+# NOTE: issue_comment workflows always run from the default branch, so edits to this file
+# do nothing until they are on master.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # Two conditions, both required, and they must be checked per-event.
+    #
+    # 1. author_association of the person who actually triggered it — this repo is public,
+    #    so without it any passer-by who types @claude gets a contents:write agent run on
+    #    the maintainer's account. Note the pairing matters: on `issue_comment`,
+    #    github.event.issue.author_association is the issue's *opener*, not the commenter,
+    #    so checking that field here would let a stranger trigger a run merely by commenting
+    #    on one of jantman's own issues. OWNER covers jantman; COLLABORATOR/MEMBER cover
+    #    anyone later given push access.
+    # 2. the @claude mention itself.
+    if: |
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' &&
+       contains(github.event.review.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)) ||
+      (github.event_name == 'issues' &&
+       (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Optional setting that lets Claude read CI results — i.e. read the
+          # run-tox-suite.yml run for the commit it was asked about, rather than guessing
+          # why it went red.
+          additional_permissions: |
+            actions: read
+
+          # Without these the log shows only "init" and "result" — no way to see what Claude
+          # actually did or which tool calls were refused.
+          display_report: true
+          show_full_output: true
+
+          # --allowedTools ADDS to the action's base tools (file ops, comment management,
+          # read-only git); it does not replace them. So this list is only what the base
+          # set lacks.
+          #
+          # Enumerating commands starves the agent: it reaches for sed/awk/jq/diff constantly
+          # and every unlisted one is a silent denial. The author_association guard above
+          # means only people who already have push access can trigger this, so allow Bash
+          # outright rather than chase the list.
+          #
+          # `Skill` is required in THIS repo specifically. The 15 committed skills under
+          # .claude/skills/ (speckit-*) are the documented feature workflow here, and they
+          # are in the CI checkout. Without `Skill`, "@claude run /speckit-tasks" is a
+          # silent denial and the run improvises the steps by hand instead.
+          #
+          # mcp__github_ci__* is why `additional_permissions: actions: read` is set above.
+          # The docs say the permission makes them available; listing them removes the
+          # ambiguity between "mounted" and "allowed". They are what lets Claude read an
+          # actual run-tox-suite.yml failure instead of guessing at a red X — which matters
+          # more here than most repos, since that suite is long and DB-backed.
+          #
+          # No `prompt:` here, deliberately. Supplying one switches the action into agent
+          # mode, which is the wrong mode for a mention: no PR context, no tracking comment,
+          # nothing posted back. That is the whole reason this is a separate file.
+          claude_args: |
+            --allowedTools "Bash,Read,Glob,Grep,Edit,Write,Task,Skill,TodoWrite,WebSearch,WebFetch,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log"
+
+      # The action writes its transcript under the runner temp dir and throws it away with
+      # the runner. Without this there is no way to find out why a run did nothing visible.
+      - name: Collect Claude logs
+        if: always()
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/claude-logs"
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            cp "$EXECUTION_FILE" "$RUNNER_TEMP/claude-logs/execution-output.json"
+          fi
+          if [ -d "$HOME/.claude/projects" ]; then
+            cp -r "$HOME/.claude/projects" "$RUNNER_TEMP/claude-logs/sessions"
+          fi
+          find "$RUNNER_TEMP/claude-logs" -type f -printf '%s\t%p\n' | sort -rn
+
+      - name: Upload Claude logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-mention-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/claude-logs/
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,125 @@
+name: Claude PR Review
+
+# Proactive: reviews every PR without being asked. Pairs with claude-mention.yml, which is
+# the reactive half — see the README in this directory for why both exist before deleting
+# either as a "duplicate".
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+# A new push supersedes the review it interrupted. Reviewing a commit that has already been
+# replaced burns a full agent run to comment on code that no longer exists.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    # This repo is public and has forks. A `pull_request` run from a fork gets no secrets,
+    # so CLAUDE_CODE_OAUTH_TOKEN would be empty and the action would fail on every such PR.
+    # It would also hand `Bash` to an agent working on a stranger's checked-out code. Skip
+    # fork PRs entirely; review them by hand or by commenting @claude from a branch.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read # lets Claude read run-tox-suite.yml results for the reviewed commit
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Lets the reviewer see whether run-tox-suite.yml passed on the commit it is
+          # reviewing, instead of reviewing in the dark. Read-only, and this job is
+          # contents:read with fork PRs excluded.
+          additional_permissions: |
+            actions: read
+
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          # Step 1 of the plugin's command stops silently if Claude has already commented on
+          # the PR, which would make every `synchronize` run a no-op after the first review.
+          # The trailing paragraphs override that; they reach the model as command arguments.
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment
+
+            Override to step 1: do NOT stop because Claude has already commented on
+            this pull request. Earlier Claude reviews are expected here and are not a
+            reason to skip. The other step 1 stop conditions (closed, draft, trivial)
+            still apply.
+
+            If Claude has commented before, scope this review to the commits pushed
+            since Claude's most recent review comment rather than the whole PR diff,
+            and do not re-raise an issue that a previous comment already covers.
+
+            You can read this PR's CI results. If run-tox-suite.yml is failing on the
+            head commit, read the failure and let it inform the review — a test this
+            diff broke is a review finding. Do not turn the review into CI triage:
+            infrastructure flakes, DB service startup and pre-existing failures
+            unrelated to the diff are not this review's business, and a red suite is
+            never a reason to skip reviewing the code.
+
+            This is a non-interactive CI run. Nothing will resume the session once
+            you produce a final message, so do not launch background or async agents
+            and do not schedule a wakeup — run subagents synchronously and wait for
+            each result. The review must be posted before you finish the turn.
+          # Without these the log shows only "init" and "result" — 2+ minutes of invisible
+          # work and a bare permission_denials_count when it goes wrong.
+          display_report: true
+          show_full_output: true
+          # `Skill` is load-bearing: /code-review:code-review IS a skill, so leaving it off
+          # denies the review itself and the run silently improvises the plugin's steps by
+          # hand. That fallback backgrounds an agent and ends the turn, which is how a run
+          # goes green having posted nothing.
+          #
+          # An enumerated command allowlist starves the review: the plugin fans out ~10
+          # subagents that inherit it, and each reaches for sed/awk/jq/diff, none of which
+          # were listed. The job is contents:read and the `if:` above keeps fork code out,
+          # so allow Bash outright rather than chase the list.
+          #
+          # --allowedTools ADDS to the action's base tools (file ops, comment management,
+          # read-only git) rather than replacing them, so this is only the delta. No
+          # Edit/Write: a review reads and comments, it does not change the tree.
+          #
+          # Note the review agent cannot run this project's tests — tox/pytest here need a
+          # MariaDB service container this job does not have. CLAUDE.md tells it so; it
+          # reviews by reading, and run-tox-suite.yml is what actually runs the suite.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log,Read,Glob,Grep,Task,Skill,TodoWrite,Bash"
+
+      # The action writes its transcript under the runner temp dir and throws it away with
+      # the runner. Without this there is no way to find out why a run posted nothing.
+      - name: Collect Claude logs
+        if: always()
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/claude-logs"
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            cp "$EXECUTION_FILE" "$RUNNER_TEMP/claude-logs/execution-output.json"
+          fi
+          if [ -d "$HOME/.claude/projects" ]; then
+            cp -r "$HOME/.claude/projects" "$RUNNER_TEMP/claude-logs/sessions"
+          fi
+          find "$RUNNER_TEMP/claude-logs" -type f -printf '%s\t%p\n' | sort -rn
+
+      - name: Upload Claude logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: claude-pr-review-logs-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/claude-logs/
+          if-no-files-found: warn
+          retention-days: 14
