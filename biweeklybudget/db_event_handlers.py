@@ -45,10 +45,41 @@ from sqlalchemy import event, inspect
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.budget_transaction import BudgetTransaction
+from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import fmt_currency
 
 logger = logging.getLogger(__name__)
+
+
+def _budget_trans_is_excluded(btrans, session=None):
+    """
+    Return whether the :py:class:`~.Transaction` that ``btrans`` belongs to is
+    excluded from budget arithmetic, i.e. it is marked
+    :py:attr:`~.Transaction.no_budget_impact` or is a payment toward a credit
+    account. See GitHub issues #210 and #319.
+
+    Standing budget balances are persisted state, adjusted by the handlers in
+    this module rather than computed on read as periodic budget totals are. So
+    the exclusion has to be applied here too, or a credit card payment recorded
+    against a standing budget would debit that budget's balance -- the very
+    double-count the exclusion exists to remove -- and the wrong balance would
+    stay wrong.
+
+    :param btrans: the BudgetTransaction to check
+    :type btrans: biweeklybudget.models.budget_transaction.BudgetTransaction
+    :param session: session to look the Transaction up in, if it is not already
+      loaded on ``btrans``
+    :type session: sqlalchemy.orm.session.Session
+    :return: whether the parent Transaction is excluded from budget arithmetic
+    :rtype: bool
+    """
+    trans = btrans.transaction
+    if trans is None and btrans.trans_id is not None and session is not None:
+        trans = session.query(Transaction).get(btrans.trans_id)
+    if trans is None:
+        return False
+    return trans.is_excluded_from_budget
 
 
 def handle_budget_trans_amount_change(**kwargs):
@@ -74,6 +105,12 @@ def handle_budget_trans_amount_change(**kwargs):
         return
     if tgt.budget.is_periodic:
         logger.debug('got BudgetTransaction with periodic budget; skipping')
+        return
+    if _budget_trans_is_excluded(tgt, inspect(tgt).session):
+        logger.debug(
+            'got BudgetTransaction whose Transaction is excluded from budget '
+            'arithmetic; skipping'
+        )
         return
     value = kwargs['value']
     oldvalue = kwargs['oldvalue']
@@ -118,6 +155,13 @@ def handle_new_or_deleted_budget_transaction(session):
             budg = session.query(Budget).get(obj.budget_id)
         if budg.is_periodic:
             continue
+        if _budget_trans_is_excluded(obj, session):
+            logger.debug(
+                'New BudgetTransaction %s belongs to a Transaction excluded '
+                'from budget arithmetic; not adjusting standing budget id=%s',
+                obj, budg.id
+            )
+            continue
         logger.debug(
             'Session has new BudgetTransaction referencing standing '
             'budget id=%s', budg.id
@@ -146,6 +190,13 @@ def handle_new_or_deleted_budget_transaction(session):
         else:
             budg = session.query(Budget).get(obj.budget_id)
         if budg.is_periodic:
+            continue
+        if _budget_trans_is_excluded(obj, session):
+            logger.debug(
+                'Deleted BudgetTransaction %s belongs to a Transaction '
+                'excluded from budget arithmetic; not adjusting standing '
+                'budget id=%s', obj, budg.id
+            )
             continue
         logger.debug(
             'Session has deleted BudgetTransaction referencing standing '
@@ -244,6 +295,75 @@ def handle_account_re_change(session):
         logger.debug('Done with update_is_fields() for %s', obj)
 
 
+def handle_transaction_budget_exclusion_change(session):
+    """
+    ``before_flush`` handler for a :py:class:`~.Transaction` whose
+    :py:attr:`~.Transaction.no_budget_impact` or
+    :py:attr:`~.Transaction.credit_payment_acct_id` has been changed on an
+    existing row, correcting the balance of any standing
+    :py:class:`~.Budget` the Transaction is allocated to.
+
+    Periodic budget totals are computed on read, so toggling either field
+    corrects them on the next page load with nothing to do here. Standing
+    budget balances are persisted, so they have to be corrected in place:
+    a Transaction that becomes excluded must have its debit refunded, and one
+    that stops being excluded must be debited again. Without this, clearing a
+    credit card payment designation -- which the Add/Edit Transaction form
+    supports -- would leave a standing budget permanently over-credited.
+
+    See GitHub issues #210 and #319.
+
+    :param session: current database session
+    :type session: sqlalchemy.orm.session.Session
+    """
+    for obj in session.dirty:
+        if not isinstance(obj, Transaction):
+            continue
+        state = inspect(obj)
+        was_excluded = None
+        for attrname in ['no_budget_impact', 'credit_payment_acct_id']:
+            hist = state.attrs[attrname].history
+            if not hist.has_changes():
+                continue
+            # Reconstruct what is_excluded_from_budget was before this change,
+            # from the old value of whichever field changed plus the current
+            # value of the other.
+            old = hist.deleted[0] if hist.deleted else None
+            if attrname == 'no_budget_impact':
+                was_excluded = bool(old) or (
+                    obj.credit_payment_acct_id is not None
+                )
+            else:
+                was_excluded = bool(obj.no_budget_impact) or (
+                    old is not None
+                )
+        if was_excluded is None:
+            continue
+        is_excluded = obj.is_excluded_from_budget
+        if was_excluded == is_excluded:
+            continue
+        for btrans in obj.budget_transactions:
+            budg = btrans.budget
+            if budg is None:
+                budg = session.query(Budget).get(btrans.budget_id)
+            if budg is None or budg.is_periodic:
+                continue
+            old_amt = budg.current_balance
+            if is_excluded:
+                # Now excluded; refund the debit it made.
+                budg.current_balance = old_amt + btrans.amount
+            else:
+                # No longer excluded; debit it as an ordinary transaction.
+                budg.current_balance = old_amt - btrans.amount
+            logger.info(
+                'Transaction %s budget exclusion changed to %s; update '
+                'standing budget id=%s current_balance from %s to %s',
+                obj.id, is_excluded, budg.id, fmt_currency(old_amt),
+                fmt_currency(budg.current_balance)
+            )
+            session.add(budg)
+
+
 def handle_before_flush(session, flush_context, instances):
     """
     Hook into ``before_flush``
@@ -253,6 +373,7 @@ def handle_before_flush(session, flush_context, instances):
     specific cases:
 
     * :py:func:`~.handle_new_or_deleted_budget_transaction`
+    * :py:func:`~.handle_transaction_budget_exclusion_change`
 
     :param session: current database session
     :type session: sqlalchemy.orm.session.Session
@@ -261,6 +382,7 @@ def handle_before_flush(session, flush_context, instances):
     :param instances: deprecated
     """
     logger.debug('handle_before_flush handler')
+    handle_transaction_budget_exclusion_change(session)
     handle_new_or_deleted_budget_transaction(session)
     handle_ofx_transaction_new_or_change(session)
     handle_account_re_change(session)

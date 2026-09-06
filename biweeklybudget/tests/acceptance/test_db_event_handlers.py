@@ -353,3 +353,142 @@ class TestIsFieldsSet(AcceptanceHelper):
         assert txn3.is_interest_charge is False
         assert txn3.is_other_fee is False
         assert txn3.is_interest_payment is False
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestStandingBudgetExcludedTransactions(AcceptanceHelper):
+    """
+    Standing budget balances and transactions excluded from budget arithmetic;
+    GitHub issues #210 and #319.
+
+    Standing budget balances are persisted state maintained by the handlers in
+    ``db_event_handlers``, not computed on read like periodic budget totals.
+    So an excluded transaction has to be skipped here as well, or a credit card
+    payment recorded against a standing budget would debit that budget --
+    exactly the double-count the feature removes -- and stay wrong.
+
+    Sample data: Budget 5 is "Standing2", a standing budget starting at
+    9482.29. Account 3 is CreditOne, a credit account.
+    """
+
+    def test_0_verify_db(self, testdb):
+        standing = testdb.query(Budget).get(5)
+        assert standing.is_periodic is False
+        assert standing.current_balance == Decimal('9482.29')
+
+    def test_1_credit_payment_does_not_debit_standing_budget(self, testdb):
+        testdb.add(Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('500.00')},
+            description='CardPaymentStanding',
+            account=testdb.query(Account).get(1),
+            credit_payment_acct=testdb.query(Account).get(3)
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_verify_balance_unchanged(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_3_no_budget_impact_does_not_debit_standing_budget(self, testdb):
+        testdb.add(Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('40.00')},
+            description='NoImpactStanding',
+            account=testdb.query(Account).get(1),
+            no_budget_impact=True
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_4_verify_balance_still_unchanged(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_5_ordinary_transaction_still_debits(self, testdb):
+        """The guard must not break the ordinary case."""
+        testdb.add(Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('100.00')},
+            description='OrdinaryStanding',
+            account=testdb.query(Account).get(1)
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_6_verify_ordinary_debited(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9382.29')
+
+    def test_7_clearing_designation_debits_standing_budget(self, testdb):
+        """Spec FR-014, for a standing budget: a transaction that stops being
+        a credit card payment must debit the budget it is allocated to."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CardPaymentStanding')
+        ).one()
+        t.credit_payment_acct_id = None
+        testdb.flush()
+        testdb.commit()
+
+    def test_8_verify_debited_on_clear(self, testdb):
+        # 9382.29 - 500.00
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('8882.29')
+
+    def test_9_resetting_designation_refunds(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CardPaymentStanding')
+        ).one()
+        t.credit_payment_acct_id = 3
+        testdb.flush()
+        testdb.commit()
+
+    def test_10_verify_refunded(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9382.29')
+
+    def test_11_toggling_no_budget_impact_flag(self, testdb):
+        """The same correction applies to the general flag."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('OrdinaryStanding')
+        ).one()
+        t.no_budget_impact = True
+        testdb.flush()
+        testdb.commit()
+
+    def test_12_verify_refunded_on_flag(self, testdb):
+        # the 100.00 debit from test_5 is refunded
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_13_deleting_excluded_transaction_does_not_credit(self, testdb):
+        """Deleting an excluded transaction must not credit the standing
+        budget, because it never debited it."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('NoImpactStanding')
+        ).one()
+        for bt in list(t.budget_transactions):
+            testdb.delete(bt)
+        testdb.delete(t)
+        testdb.flush()
+        testdb.commit()
+
+    def test_14_verify_balance_after_delete(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_15_changing_amount_of_excluded_transaction(self, testdb):
+        """Changing the amount of an excluded transaction must not move the
+        standing budget balance either."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CardPaymentStanding')
+        ).one()
+        t.set_budget_amounts({
+            testdb.query(Budget).get(5): Decimal('750.00')
+        })
+        testdb.flush()
+        testdb.commit()
+
+    def test_16_verify_balance_after_amount_change(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
