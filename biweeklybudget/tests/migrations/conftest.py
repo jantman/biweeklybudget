@@ -35,5 +35,26 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-VERSION = '1.6.2'
-PROJECT_URL = 'https://github.com/jantman/biweeklybudget'
+import pytest
+
+from alembicverify.util import make_alembic_config
+
+
+@pytest.fixture
+def alembic_config_left(uri_left, alembic_root):
+    """Alembic config pointed at the "left" (migrations) test database.
+
+    This replaces the deprecated fixture of the same name shipped by
+    alembic-verify, which resolves the script location from ``alembic.ini``
+    as a path relative to the current working directory.
+    """
+    return make_alembic_config(uri_left, alembic_root)
+
+
+@pytest.fixture
+def alembic_config_right(uri_right, alembic_root):
+    """Alembic config pointed at the "right" (models) test database.
+
+    See :py:func:`~.alembic_config_left`.
+    """
+    return make_alembic_config(uri_right, alembic_root)

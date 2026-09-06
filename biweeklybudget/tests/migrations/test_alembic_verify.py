@@ -40,8 +40,8 @@ import logging
 import json
 
 from alembic import command
-from sqlalchemydiff import compare
-from sqlalchemydiff.util import prepare_schema_from_models
+from sqlalchemy import create_engine
+from sqlalchemydiff.comparer import Comparer
 
 from alembicverify.util import (
     get_current_revision,
@@ -53,6 +53,19 @@ from biweeklybudget.models.base import Base
 import biweeklybudget.tests.migrations.alembic_helpers as ah
 
 logger = logging.getLogger(__name__)
+
+
+def prepare_schema_from_models(uri, sqlalchemy_base):
+    """Create all tables of ``sqlalchemy_base`` in the database at ``uri``.
+
+    sqlalchemy-diff removed its ``util.prepare_schema_from_models`` helper in
+    1.0.0; this is a local equivalent.
+    """
+    engine = create_engine(uri)
+    try:
+        sqlalchemy_base.metadata.create_all(engine)
+    finally:
+        engine.dispose()
 
 
 @pytest.mark.migrations
@@ -91,27 +104,26 @@ def test_model_and_migration_schemas_are_the_same(
     prepare_schema_from_migrations(uri_left, alembic_config_left)
     prepare_schema_from_models(uri_right, Base)
 
-    result = compare(
-        uri_left, uri_right,
+    result = Comparer.from_params(uri_left, uri_right).compare(
         ignores=[
             'alembic_version',
             # for some reason, these constraints don't diff correctly,
             # likely due to creation order
-            'accounts.cons.CONSTRAINT_1',
-            'accounts.cons.CONSTRAINT_2',
-            'accounts.cons.CONSTRAINT_3',
-            'accounts.cons.CONSTRAINT_4',
-            'budgets.cons.CONSTRAINT_1',
-            'budgets.cons.CONSTRAINT_2',
-            'budgets.cons.CONSTRAINT_3',
-            'budgets.cons.CONSTRAINT_4',
-            'ofx_trans.cons.CONSTRAINT_1',
-            'ofx_trans.cons.CONSTRAINT_2',
-            'ofx_trans.cons.CONSTRAINT_3',
-            'ofx_trans.cons.CONSTRAINT_4',
-            'ofx_trans.cons.CONSTRAINT_5',
-            'reconcile_rules.cons.CONSTRAINT_1',
-            'scheduled_transactions.cons.CONSTRAINT_1',
+            'accounts.check_constraints.CONSTRAINT_1',
+            'accounts.check_constraints.CONSTRAINT_2',
+            'accounts.check_constraints.CONSTRAINT_3',
+            'accounts.check_constraints.CONSTRAINT_4',
+            'budgets.check_constraints.CONSTRAINT_1',
+            'budgets.check_constraints.CONSTRAINT_2',
+            'budgets.check_constraints.CONSTRAINT_3',
+            'budgets.check_constraints.CONSTRAINT_4',
+            'ofx_trans.check_constraints.CONSTRAINT_1',
+            'ofx_trans.check_constraints.CONSTRAINT_2',
+            'ofx_trans.check_constraints.CONSTRAINT_3',
+            'ofx_trans.check_constraints.CONSTRAINT_4',
+            'ofx_trans.check_constraints.CONSTRAINT_5',
+            'reconcile_rules.check_constraints.CONSTRAINT_1',
+            'scheduled_transactions.check_constraints.CONSTRAINT_1',
         ]
     )
 

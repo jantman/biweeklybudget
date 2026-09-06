@@ -3,8 +3,8 @@ biweeklybudget package
 
 .. automodule:: biweeklybudget
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Subpackages
 -----------
