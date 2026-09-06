@@ -201,6 +201,10 @@ class PayPeriodView(MethodView):
             periodic=periodic,
             transactions=pp.transactions_list,
             accts=accts,
+            credit_accts={
+                a.name: a.id
+                for a in Account.active_credit_accounts(db_session).all()
+            },
             txfr_date_str=txfr_date_str,
             active_budgets=active_budgets
         )

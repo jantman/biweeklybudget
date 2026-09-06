@@ -47,11 +47,14 @@ from biweeklybudget.db import db_session
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.account import Account
+from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
-from biweeklybudget.utils import parse_currency, CurrencyParseError
+from biweeklybudget.utils import (
+    parse_currency, CurrencyParseError, dtnow
+)
+from biweeklybudget.credit_payment import CreditPaymentAttribution
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,14 @@ class TransactionsView(MethodView):
         template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        # Only credit accounts may be paid; restricting the list here is what
+        # makes the "Credit Card Payment For" select correct by construction.
+        # TransactionFormHandler.validate() enforces the same rule, because the
+        # form endpoint is reachable without the select.
+        credit_accts = {
+            a.name: a.id
+            for a in Account.active_credit_accounts(db_session).all()
+        }
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -77,6 +88,7 @@ class TransactionsView(MethodView):
         return render_template(
             'transactions.html',
             accts=accts,
+            credit_accts=credit_accts,
             budgets=budgets,
             active_budgets=active_budgets
         )
@@ -90,6 +102,14 @@ class OneTransactionView(MethodView):
         ``transactions.html`` template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        # Only credit accounts may be paid; restricting the list here is what
+        # makes the "Credit Card Payment For" select correct by construction.
+        # TransactionFormHandler.validate() enforces the same rule, because the
+        # form endpoint is reachable without the select.
+        credit_accts = {
+            a.name: a.id
+            for a in Account.active_credit_accounts(db_session).all()
+        }
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -103,6 +123,7 @@ class OneTransactionView(MethodView):
         return render_template(
             'transactions.html',
             accts=accts,
+            credit_accts=credit_accts,
             budgets=budgets,
             trans_id=trans_id,
             active_budgets=active_budgets
@@ -211,6 +232,12 @@ class TransactionsAjax(SearchableAjaxView):
         )
         table.add_data(
             acct_id=lambda o: o.account_id,
+            no_budget_impact=lambda o: o.is_excluded_from_budget,
+            credit_payment_acct_id=lambda o: o.credit_payment_acct_id,
+            credit_payment_acct_name=lambda o: (
+                None if o.credit_payment_acct is None
+                else o.credit_payment_acct.name
+            ),
             budgets=lambda o: [
                 {
                     'name': bt.budget.name,
@@ -239,6 +266,13 @@ class OneTransactionAjax(MethodView):
         t = db_session.query(Transaction).get(trans_id)
         d = copy(t.as_dict)
         d['account_name'] = t.account.name
+        # no_budget_impact comes through as_dict as the raw stored column, so
+        # the modal's checkbox reflects the user's own choice rather than the
+        # derived value; is_excluded_from_budget carries the derived answer.
+        d['credit_payment_acct_name'] = (
+            None if t.credit_payment_acct is None
+            else t.credit_payment_acct.name
+        )
         d['budgets'] = [
             {
                 'name': bt.budget.name,
@@ -353,6 +387,25 @@ class TransactionFormHandler(FormHandlerView):
                     'amount (%s).' % (budgets_total, Decimal(data['amount']))
                 )
                 have_errors = True
+        cp_acct = data.get('credit_payment_acct', 'None')
+        if cp_acct is not None and str(cp_acct).strip() not in ['', 'None']:
+            errors.setdefault('credit_payment_acct', [])
+            try:
+                cp_id = int(cp_acct)
+            except (TypeError, ValueError):
+                cp_id = None
+            cp = None if cp_id is None else db_session.query(Account).get(cp_id)
+            if cp is None:
+                errors['credit_payment_acct'].append(
+                    'Account ID %s is invalid.' % cp_acct
+                )
+                have_errors = True
+            elif cp.acct_type != AcctType.Credit:
+                errors['credit_payment_acct'].append(
+                    '%s is not a credit account; only credit accounts can be '
+                    'paid.' % cp.name
+                )
+                have_errors = True
         if data['date'].strip() == '':
             errors['date'].append('Transactions must have a date')
             have_errors = True
@@ -400,6 +453,17 @@ class TransactionFormHandler(FormHandlerView):
             trans.sales_tax = Decimal(data['sales_tax'])
         else:
             trans.sales_tax = Decimal('0.0')
+        trans.no_budget_impact = data.get('no_budget_impact', False) in [
+            True, 'true', 'True', 'on', '1'
+        ]
+        cp_acct = data.get('credit_payment_acct', 'None')
+        if cp_acct is None or str(cp_acct).strip() in ['', 'None']:
+            # Clearing the select must write NULL, not leave the previous
+            # value: that is what lets a transaction resume counting against
+            # its budget when it is no longer a credit card payment.
+            trans.credit_payment_acct_id = None
+        else:
+            trans.credit_payment_acct_id = int(cp_acct)
         budg_amts = {}
         for bid, budg_amt in data['budgets'].items():
             budg = db_session.query(Budget).get(int(bid))
@@ -414,6 +478,64 @@ class TransactionFormHandler(FormHandlerView):
             'success': True,
             'trans_id': trans.id
         }
+
+
+class CreditPaymentInfoAjax(MethodView):
+    """
+    Handle GET /ajax/credit-payment-info endpoint.
+
+    Given a credit account and a candidate payment amount, return a breakdown
+    of which pay periods' charges that amount settles, plus any advisory
+    warnings. Read-only, no side effects, safe to call on every keystroke.
+    See GitHub issue #210 and :py:class:`~.CreditPaymentAttribution`.
+    """
+
+    def get(self):
+        acct_id = request.args.get('account_id', None)
+        try:
+            acct = db_session.query(Account).get(int(acct_id))
+        except (TypeError, ValueError):
+            acct = None
+        if acct is None:
+            return jsonify({
+                'error': 'Invalid or missing account_id: %s' % acct_id
+            }), 400
+        if acct.acct_type != AcctType.Credit:
+            return jsonify({
+                'error': '%s is not a credit account.' % acct.name
+            }), 400
+        try:
+            amount = parse_currency(request.args.get('amount', ''))
+        except CurrencyParseError:
+            return jsonify({
+                'error': 'Invalid or missing amount: %s' % request.args.get(
+                    'amount', ''
+                )
+            }), 400
+        date_s = request.args.get('date', None)
+        if date_s is None or date_s.strip() == '':
+            pmt_date = dtnow().date()
+        else:
+            try:
+                pmt_date = datetime.strptime(date_s, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({
+                    'error': 'Date "%s" is not valid (YYYY-MM-DD)' % date_s
+                }), 400
+        txn_id = request.args.get('txn_id', None)
+        try:
+            txn_id = int(txn_id)
+        except (TypeError, ValueError):
+            txn_id = None
+        payer_id = request.args.get('payer_account_id', None)
+        try:
+            payer_id = int(payer_id)
+        except (TypeError, ValueError):
+            payer_id = None
+        return jsonify(CreditPaymentAttribution(
+            db_session, acct, amount, pmt_date,
+            exclude_txn_id=txn_id, payer_account_id=payer_id
+        ).as_dict)
 
 
 app.add_url_rule(
@@ -431,6 +553,10 @@ app.add_url_rule(
 app.add_url_rule(
     '/ajax/transactions/<int:trans_id>',
     view_func=OneTransactionAjax.as_view('one_transaction_ajax')
+)
+app.add_url_rule(
+    '/ajax/credit-payment-info',
+    view_func=CreditPaymentInfoAjax.as_view('credit_payment_info_ajax')
 )
 app.add_url_rule(
     '/forms/transaction',

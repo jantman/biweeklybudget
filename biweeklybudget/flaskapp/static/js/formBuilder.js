@@ -158,18 +158,21 @@ FormBuilder.prototype.addTextArea = function(id, name, label, options) {
  * @param {String} options.helpBlock - Content for block of help text after input; defaults to null.
  * @param {String} options.groupHtml - Additional HTML to add to the outermost
  *  form-group div. This is where we'd usually add a default style/display. Defaults to null.
+ * @param {String} options.inputHtml - extra HTML string to include in the
+ *  actual ``input`` element *(optional; defaults to null)*
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addCurrency = function(id, name, label, options) {
     if(options === undefined) { options = {}; }
-    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, options);
+    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null, inputHtml: null }, options);
     this.html += '<div class="form-group" id="' + id + '_group"';
     if (options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
         '<div class="input-group">' +
         '<span class="input-group-addon">' + CURRENCY_SYMBOL + '</span>' +
-        '<input class="' + options.htmlClass + '" id="' + id + '" name="' + name + '" type="text">' +
-        '</div>';
+        '<input class="' + options.htmlClass + '" id="' + id + '" name="' + name + '" type="text"';
+    if (options.inputHtml !== null) { this.html += ' ' + options.inputHtml; }
+    this.html += '></div>';
     if (options.helpBlock !== null) {
         this.html += '<p class="help-block">' + options.helpBlock + "</p>";
     }
@@ -217,15 +220,19 @@ FormBuilder.prototype.addDatePicker = function(id, name, label, options) {
  * @param {String} options.helpBlock - Content for block of help text after input; defaults to null.
  * @param {String} options.groupHtml - Additional HTML to add to the outermost
  *  form-group div. This is where we'd usually add a default style/display. Defaults to null.
+ * @param {String} options.inputHtml - extra HTML string to include in the
+ *  actual ``select`` element *(optional; defaults to null)*
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addSelect = function(id, name, label, selectOptions, options) {
     if(options === undefined) { options = {}; }
-    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null }, options);
+    options = $.extend({ htmlClass: 'form-control', helpBlock: null, groupHtml: null, inputHtml: null }, options);
     this.html += '<div class="form-group" id="' + id + '_group"';
     if (options.groupHtml !== null) { this.html += ' ' + options.groupHtml; }
     this.html += '><label for="' + id + '" class="control-label">' + label + '</label>' +
-        '<select id="' + id + '" name="' + name + '" class="' + options.htmlClass + '">';
+        '<select id="' + id + '" name="' + name + '" class="' + options.htmlClass + '"';
+    if (options.inputHtml !== null) { this.html += ' ' + options.inputHtml; }
+    this.html += '>';
     for (var idx in selectOptions) {
         this.html += '<option value="' + selectOptions[idx].value + '"';
         if ('selected' in selectOptions[idx] && selectOptions[idx].selected === true) { this.html += ' selected="selected"'; }
@@ -313,6 +320,8 @@ FormBuilder.prototype.addRadioInline = function(name, label, options) {
  * @param {Object} options
  * @param {String} options.inputHtml - extra HTML string to include in the
  *  actual ``input`` element *(optional; defaults to null)*
+ * @param {String} options.helpBlock - Content for block of help text after the
+ *  checkbox; defaults to null.
  * @return {FormBuilder} this
  */
 FormBuilder.prototype.addCheckbox = function(id, name, label, checked, options) {
@@ -322,6 +331,10 @@ FormBuilder.prototype.addCheckbox = function(id, name, label, checked, options) 
         '<input type="checkbox" id="' + id + '" name="' + name + '"';
     if (checked === true) { this.html += ' checked'; }
     if ('inputHtml' in options) { this.html += ' ' + options.inputHtml; }
-    this.html += '> ' + label + '</label></div>\n';
+    this.html += '> ' + label + '</label>';
+    if ('helpBlock' in options && options.helpBlock !== null) {
+        this.html += '<p class="help-block">' + options.helpBlock + '</p>';
+    }
+    this.html += '</div>\n';
     return this;
 };

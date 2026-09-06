@@ -304,6 +304,23 @@ class Account(Base, ModelAsDict):
             AccountBalance.id.desc()).limit(1).first()
         return res
 
+    @staticmethod
+    def active_credit_accounts(db):
+        """
+        Return a query matching all active credit Accounts, i.e. the accounts
+        that a :py:class:`~.Transaction` may be a payment toward. See GitHub
+        issue #210.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query matching all active credit Accounts
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return db.query(Account).filter(
+            Account.acct_type.__eq__(AcctType.Credit),
+            Account.is_active.__eq__(True)
+        )
+
     @property
     def unreconciled(self):
         """

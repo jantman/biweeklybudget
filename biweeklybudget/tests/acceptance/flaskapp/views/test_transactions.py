@@ -2332,3 +2332,461 @@ class TestTransModalSplitCurrencyNormalization(AcceptanceHelper):
         assert body.find_element(
             By.ID, 'trans_frm_budget_amount_0'
         ).get_attribute('value') == '1234.56'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestTransModalNoBudgetImpactAndCreditPayment(AcceptanceHelper):
+    """
+    The "No Budget Impact?" checkbox and the "Credit Card Payment For" select
+    on the Add/Edit Transaction modal. GitHub issues #210 and #319.
+
+    Sample data accounts: 1 BankOne (Bank), 2 BankTwoStale (Bank),
+    3 CreditOne (Credit), 4 CreditTwo (Credit), 5 InvestmentOne (Investment),
+    6 DisabledBank (Bank, inactive).
+    """
+
+    def test_00_add_transactions(self, testdb):
+        # Transaction 5 - an ordinary transaction, neither field set
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={testdb.query(Budget).get(1): Decimal('11.11')},
+            date=dtnow().date(),
+            description='NBIOrdinary'
+        ))
+        # Transaction 6 - explicitly no budget impact
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={testdb.query(Budget).get(1): Decimal('22.22')},
+            date=dtnow().date(),
+            description='NBIStatementCredit',
+            no_budget_impact=True
+        ))
+        # Transaction 7 - a payment toward CreditOne
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={testdb.query(Budget).get(1): Decimal('33.33')},
+            date=dtnow().date(),
+            description='NBICardPayment',
+            credit_payment_acct_id=3
+        ))
+        testdb.commit()
+
+    def test_01_verify_db(self, testdb):
+        t = testdb.query(Transaction).get(5)
+        assert t.no_budget_impact is False
+        assert t.credit_payment_acct_id is None
+        assert t.is_excluded_from_budget is False
+        t = testdb.query(Transaction).get(6)
+        assert t.no_budget_impact is True
+        assert t.credit_payment_acct_id is None
+        assert t.is_excluded_from_budget is True
+        t = testdb.query(Transaction).get(7)
+        # Setting the credit account alone excludes the transaction, without
+        # no_budget_impact being set separately (spec FR-011).
+        assert t.no_budget_impact is False
+        assert t.credit_payment_acct_id == 3
+        assert t.is_excluded_from_budget is True
+        assert t.credit_payment_acct.name == 'CreditOne'
+
+    def test_02_credit_select_offers_credit_accounts_only(
+        self, base_url, selenium
+    ):
+        """Spec FR-010: the select offers credit accounts and no others, plus
+        an explicit empty default."""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.XPATH, '//a[text()="NBIOrdinary"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        sel = Select(
+            body.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        )
+        opts = [
+            [o.get_attribute('value'), o.text] for o in sel.options
+        ]
+        assert opts == [
+            ['None', ''],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo']
+        ]
+        assert sel.first_selected_option.get_attribute('value') == 'None'
+        assert body.find_element(
+            By.ID, 'trans_frm_no_budget_impact'
+        ).is_selected() is False
+
+    def test_03_modal_populates_no_budget_impact(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(
+            By.XPATH, '//a[text()="NBIStatementCredit"]'
+        )
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 6'
+        assert body.find_element(
+            By.ID, 'trans_frm_no_budget_impact'
+        ).is_selected() is True
+        sel = Select(
+            body.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        )
+        assert sel.first_selected_option.get_attribute('value') == 'None'
+
+    def test_04_modal_populates_credit_payment(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.XPATH, '//a[text()="NBICardPayment"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 7'
+        sel = Select(
+            body.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        )
+        assert sel.first_selected_option.get_attribute('value') == '3'
+        # The checkbox shows the user's own choice, which was never made; the
+        # exclusion comes from the credit account designation.
+        assert body.find_element(
+            By.ID, 'trans_frm_no_budget_impact'
+        ).is_selected() is False
+
+    def test_05_transactions_table_marks_excluded(self, base_url, selenium):
+        """Spec FR-007: excluded transactions are visually distinguished."""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        # 4 transactions from the sample data plus the 3 added by test_00
+        self.wait_for_datatable_rows(selenium, 'table-transactions', 7)
+        table = selenium.find_element(By.ID, 'table-transactions')
+        # description is the third column; the marker renders inline after it
+        descriptions = [row[2] for row in self.tbody2textlist(table)]
+
+        def cell_for(desc):
+            matches = [d for d in descriptions if d.startswith(desc)]
+            assert len(matches) == 1, \
+                'expected exactly one row for %s, got %s' % (desc, matches)
+            return matches[0]
+
+        assert cell_for('NBICardPayment') == \
+            'NBICardPayment (payment for CreditOne; no budget impact)'
+        assert cell_for('NBIStatementCredit') == \
+            'NBIStatementCredit (no budget impact)'
+        assert cell_for('NBIOrdinary') == 'NBIOrdinary'
+
+    def test_06_backend_persists_both_fields(self, base_url, testdb):
+        """Spec SC-003: recording a payment takes one entry, with no
+        offsetting transaction."""
+        before = testdb.query(Transaction).count()
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '123.45',
+                'description': 'NewCardPayment',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '123.45'},
+                'sales_tax': '0.0',
+                'no_budget_impact': False,
+                'credit_payment_acct': '4'
+            }
+        )
+        assert res.status_code == 200
+        assert res.json()['success'] is True
+        # This session began its read transaction before the POST, so under
+        # REPEATABLE READ it cannot see the app's committed write until the
+        # transaction ends and a new snapshot is taken.
+        testdb.rollback()
+        testdb.expire_all()
+        assert testdb.query(Transaction).count() == before + 1
+        t = testdb.query(Transaction).get(res.json()['trans_id'])
+        assert t.description == 'NewCardPayment'
+        assert t.credit_payment_acct_id == 4
+        assert t.no_budget_impact is False
+        assert t.is_excluded_from_budget is True
+
+    def test_07_backend_persists_no_budget_impact(self, base_url, testdb):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '55.55',
+                'description': 'NewStatementCredit',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '55.55'},
+                'sales_tax': '0.0',
+                'no_budget_impact': True,
+                'credit_payment_acct': 'None'
+            }
+        )
+        assert res.status_code == 200
+        assert res.json()['success'] is True
+        testdb.expire_all()
+        t = testdb.query(Transaction).get(res.json()['trans_id'])
+        assert t.no_budget_impact is True
+        assert t.credit_payment_acct_id is None
+        assert t.is_excluded_from_budget is True
+
+    def test_08_backend_clearing_credit_acct_restores_impact(
+        self, base_url, testdb
+    ):
+        """Spec FR-014."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('NewCardPayment')
+        ).one()
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'id': str(t.id),
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '123.45',
+                'description': 'NewCardPayment',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '123.45'},
+                'sales_tax': '0.0',
+                'no_budget_impact': False,
+                'credit_payment_acct': 'None'
+            }
+        )
+        assert res.status_code == 200
+        assert res.json()['success'] is True
+        testdb.rollback()
+        testdb.expire_all()
+        t = testdb.query(Transaction).get(t.id)
+        assert t.credit_payment_acct_id is None
+        assert t.no_budget_impact is False
+        assert t.is_excluded_from_budget is False
+
+    def test_09_backend_rejects_non_credit_account(self, base_url):
+        """Spec FR-015: the form endpoint is reachable without the restricted
+        select, so it must enforce the account type itself. Account 1 is a
+        Bank account."""
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '10.00',
+                'description': 'BadCreditAcct',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '10.00'},
+                'sales_tax': '0.0',
+                'no_budget_impact': False,
+                'credit_payment_acct': '1'
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['credit_payment_acct'] == [
+            'BankOne is not a credit account; only credit accounts can be '
+            'paid.'
+        ]
+
+    def test_10_backend_rejects_unknown_account(self, base_url):
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '10.00',
+                'description': 'BadCreditAcct2',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '10.00'},
+                'sales_tax': '0.0',
+                'no_budget_impact': False,
+                'credit_payment_acct': '98765'
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['credit_payment_acct'] == [
+            'Account ID 98765 is invalid.'
+        ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestCreditPaymentInfoAjax(AcceptanceHelper):
+    """
+    The GET /ajax/credit-payment-info endpoint that drives the modal's payment
+    information panel. GitHub issue #210, User Story 3.
+
+    Sample data has CreditOne as account 3, with transactions T3 ($222.22,
+    dtnow - 2 days) and T4split ($322.32, dtnow - 35 days) against it.
+    """
+
+    def test_00_charges_are_reported(self, base_url):
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={
+                'account_id': '3',
+                'amount': '100.00',
+                'date': dtnow().strftime('%Y-%m-%d')
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['account_id'] == 3
+        assert j['account_name'] == 'CreditOne'
+        assert j['amount'] == 100.0
+        # 222.22 + 322.32
+        assert j['total_unpaid'] == 544.54
+        assert j['total_attributed'] == 100.0
+        assert j['excess'] == 0.0
+        assert j['pays_itself'] is False
+        assert j['warnings'] == []
+        assert len(j['periods']) > 0
+
+    def test_01_overpayment_warns(self, base_url):
+        """Spec SC-004: the warning states the size of the excess."""
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={
+                'account_id': '3',
+                'amount': '600.00',
+                'date': dtnow().strftime('%Y-%m-%d')
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['total_unpaid'] == 544.54
+        assert j['total_attributed'] == 544.54
+        assert j['excess'] == 55.46
+        assert j['warnings'] == [
+            'This payment exceeds the $544.54 of unpaid charges recorded for '
+            'CreditOne by $55.46. This usually means charges are missing from '
+            'your records, or were recorded against the wrong account.'
+        ]
+
+    def test_02_pays_itself_warns(self, base_url):
+        """Spec FR-022."""
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={
+                'account_id': '3',
+                'amount': '100.00',
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'payer_account_id': '3'
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['pays_itself'] is True
+        assert j['warnings'] == [
+            'This transaction is recorded against CreditOne and is also '
+            'marked as a payment toward CreditOne. A payment should be '
+            'recorded against the account the money came from.'
+        ]
+
+    def test_03_non_credit_account_rejected(self, base_url):
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={'account_id': '1', 'amount': '100.00'}
+        )
+        assert res.status_code == 400
+        assert res.json() == {'error': 'BankOne is not a credit account.'}
+
+    def test_04_unknown_account_rejected(self, base_url):
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={'account_id': '98765', 'amount': '100.00'}
+        )
+        assert res.status_code == 400
+        assert res.json() == {
+            'error': 'Invalid or missing account_id: 98765'
+        }
+
+    def test_05_missing_amount_rejected(self, base_url):
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={'account_id': '3'}
+        )
+        assert res.status_code == 400
+        assert 'Invalid or missing amount' in res.json()['error']
+
+    def test_06_bad_date_rejected(self, base_url):
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={'account_id': '3', 'amount': '1.00', 'date': 'notadate'}
+        )
+        assert res.status_code == 400
+        assert res.json() == {
+            'error': 'Date "notadate" is not valid (YYYY-MM-DD)'
+        }
+
+    def test_07_currency_formatted_amount_accepted(self, base_url):
+        """The modal sends whatever the user typed; the endpoint normalizes it
+        the same way the form does. See GitHub issue #323."""
+        res = requests.get(
+            base_url + '/ajax/credit-payment-info',
+            params={
+                'account_id': '3',
+                'amount': '1,234.56',
+                'date': dtnow().strftime('%Y-%m-%d')
+            }
+        )
+        assert res.status_code == 200
+        assert res.json()['amount'] == 1234.56
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestTransModalCreditPaymentPanel(AcceptanceHelper):
+    """
+    The payment information panel inside the Add/Edit Transaction modal.
+    GitHub issue #210, User Story 3.
+    """
+
+    def test_00_panel_hidden_until_card_selected(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        selenium.find_element(By.ID, 'btn_add_trans').click()
+        self.wait_for_modal_shown(selenium)
+        assert selenium.find_element(
+            By.ID, 'trans_frm_credit_payment_info'
+        ).is_displayed() is False
+
+    def test_01_panel_shows_breakdown(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        selenium.find_element(By.ID, 'btn_add_trans').click()
+        self.wait_for_modal_shown(selenium)
+        amt = selenium.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys('100.00')
+        Select(
+            selenium.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        ).select_by_value('3')
+        self.wait_for_id(selenium, 'credit_payment_periods')
+        panel = selenium.find_element(By.ID, 'trans_frm_credit_payment_info')
+        assert panel.is_displayed() is True
+        assert '$100.00 of $100.00 settles recorded charges' in panel.text
+        assert '$544.54 of unpaid charges' in panel.text
+        # No warning at this amount
+        assert len(
+            panel.find_elements(By.ID, 'credit_payment_warning_0')
+        ) == 0
+
+    def test_02_panel_warns_and_save_stays_enabled(self, base_url, selenium):
+        """Spec US3 scenario 5 / FR-021: the warning is advisory. The Save
+        button must stay enabled so a payment the person knows to be correct
+        can still be recorded."""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        selenium.find_element(By.ID, 'btn_add_trans').click()
+        self.wait_for_modal_shown(selenium)
+        amt = selenium.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys('600.00')
+        Select(
+            selenium.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        ).select_by_value('3')
+        self.wait_for_id(selenium, 'credit_payment_warning_0')
+        warning = selenium.find_element(By.ID, 'credit_payment_warning_0')
+        assert 'exceeds the $544.54 of unpaid charges' in warning.text
+        assert 'by $55.46' in warning.text
+        assert selenium.find_element(
+            By.ID, 'modalSaveButton'
+        ).is_enabled() is True
