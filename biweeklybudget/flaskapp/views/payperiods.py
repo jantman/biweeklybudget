@@ -233,6 +233,8 @@ class SchedToTransFormHandler(FormHandlerView):
     Handle POST /forms/sched_to_trans
     """
 
+    currency_fields = ['amount', 'sales_tax']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of
@@ -303,6 +305,8 @@ class SkipSchedTransFormHandler(FormHandlerView):
     """
     Handle POST /forms/skip_sched_trans
     """
+
+    currency_fields = ['amount']
 
     def validate(self, data):
         """

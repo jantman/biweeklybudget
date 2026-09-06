@@ -402,6 +402,8 @@ class BoMItemFormHandler(FormHandlerView):
     Handle POST /forms/bom_item
     """
 
+    currency_fields = ['unit_cost']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of

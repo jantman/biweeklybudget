@@ -261,11 +261,19 @@ function validateTransModalSplits() {
             }
             budget_ids.push(bid);
         }
-        if($('#trans_frm_budget_amount_' + rownum).val() != '') {
-            total = total + parseFloat($('#trans_frm_budget_amount_' + rownum).val());
+        var raw = $('#trans_frm_budget_amount_' + rownum).val();
+        if(raw != '') {
+            var split_amt = parse_currency(raw);
+            if(split_amt === null) {
+                return 'Error: Invalid amount: "' + raw + '".';
+            }
+            total = total + split_amt;
         }
     }
-    var amt = parseFloat($('#trans_frm_amount').val());
+    var amt = parse_currency($('#trans_frm_amount').val());
+    // The server reports the real field error for an uninterpretable amount;
+    // don't block the submission with a NaN comparison here.
+    if(amt === null) { return null; }
     // Note: workaround for JS floating point math issues...
     if(amt.toFixed(4) != total.toFixed(4)) {
         return 'Error: Sum of budget allocations (' + total.toFixed(4) + ') must equal transaction amount (' + amt.toFixed(4) + ').';
@@ -336,11 +344,15 @@ function transModalBudgetSplitRowHtml(row_num) {
  */
 function transModalSplitBudgetChanged(row_num) {
     if($('#trans_frm_budget_amount_' + row_num).val() != '') { return null; }
-    var amt = parseFloat($('#trans_frm_amount').val());
+    var amt = parse_currency($('#trans_frm_amount').val());
+    if(amt === null) { return null; }
     var total = 0.0;
     for (var rownum = 0; rownum < $('.budget_split_row').length; rownum++) {
-        if($('#trans_frm_budget_amount_' + rownum).val() != '') {
-            total = total + parseFloat($('#trans_frm_budget_amount_' + rownum).val());
+        var raw = $('#trans_frm_budget_amount_' + rownum).val();
+        if(raw != '') {
+            var split_amt = parse_currency(raw);
+            if(split_amt === null) { return null; }
+            total = total + split_amt;
         }
     }
     var remainder = amt - total;

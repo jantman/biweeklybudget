@@ -24,6 +24,42 @@ specify currency formatting. The latter, ``CURRENCY_CODE``, must be a valid
 "USD", "EUR", etc.) and can also be set via a ``CURRENCY_CODE`` environment
 variable.
 
+.. _app_usage.currency_input:
+
+Entering Currency Amounts
++++++++++++++++++++++++++
+
+Every currency input in the web UI accepts common formatting; you do not need to
+type a bare, unformatted number. Amounts are interpreted using the same
+``LOCALE_NAME`` and ``CURRENCY_CODE`` settings used to *display* them, by
+:py:func:`biweeklybudget.utils.parse_currency` on the server and its
+counterpart ``parse_currency()`` in ``static/js/custom.js`` in the browser.
+
+For a ``en_US`` / ``USD`` configuration, all of the following are accepted and
+mean the same thing:
+
+.. code-block:: none
+
+    1234.56    1,234.56    1 234.56    $1,234.56    $ 1,234.56    1,234.56 $
+
+Bare integers are accepted; ``123`` does not have to be written as ``123.0``.
+A negative amount may be written with a leading minus sign or wrapped in
+parentheses, so ``-1,234.56``, ``-$1,234.56`` and ``(1,234.56)`` are equivalent.
+Leading and trailing whitespace is ignored.
+
+Input that cannot be interpreted *unambiguously* is rejected with a
+field-level validation error rather than being guessed at. In particular,
+values whose digit grouping is not valid for the locale - such as ``10,00``,
+``1,23,4.56``, ``1,234,`` or ``,123`` - are errors, **not** silently read as
+``1000``, ``1234.56``, ``1234`` and ``123``. This is deliberate: for an
+application that tracks real money, quietly turning a typo into a plausible
+number is worse than refusing it. Likewise ``1.2.3``, ``1 2 3``, ``1e5`` and
+non-numeric text are rejected.
+
+Configuring a different ``LOCALE_NAME`` changes what is accepted as well as
+what is displayed. With ``de_DE``, ``1.234,56`` is 1234.56 and ``1,234.56`` is
+an error.
+
 In addition, the Fuel Log functionality supports customization of the volume,
 distance and fuel economy units via a set of settings (which can also be set
 via environment variables):

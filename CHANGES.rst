@@ -1,6 +1,25 @@
 Changelog
 =========
 
+1.7.0 (2026-09-06)
+------------------
+
+* `Issue #323 <https://github.com/jantman/biweeklybudget/issues/323>`_ - Normalize currency values entered in the UI, so that all currency inputs accept common formatting.
+
+  * Entering a currency value containing thousands separators, such as ``1,234.56``, previously produced a 500 Internal Server Error. ``FormHandlerView.post()`` wrapped ``submit()`` in a ``try``/``except`` but called ``validate()`` unguarded, and ``TransactionFormHandler.validate()`` calls ``Decimal(data['amount'])`` directly, so ``decimal.InvalidOperation`` propagated out to Flask. Six other validators had the same shape with unguarded ``float()``.
+  * Bare integers were rejected by several inputs; ``123`` had to be entered as ``123.0``. ``FormHandlerView._validate_float()`` asserted ``data[key].startswith('%s' % float(data[key]))``, and ``'123'.startswith('123.0')`` is ``False``.
+  * Add :py:func:`biweeklybudget.utils.parse_currency` and ``CurrencyParseError``, the single server-side authority for interpreting a user-entered amount, alongside the existing ``fmt_currency()``. It wraps ``babel.numbers.parse_decimal(..., strict=True)`` and returns an exact ``Decimal``. Babel was already a dependency; nothing new is added.
+  * Add a matching ``parse_currency()`` to ``biweeklybudget/flaskapp/static/js/custom.js``, alongside its ``fmt_currency()`` counterpart, and use it in place of ``parseFloat()`` in ``transactions_modal.js``. ``parseFloat('1,234.56')`` is ``1``, so budget split validation previously disabled the Save button for any separator-formatted amount, making the fix unreachable in that flow.
+  * Normalize in one place on the server: ``FormHandlerView`` gains ``currency_fields`` and ``decimal_fields`` class attributes and a ``normalize_currency()`` hook that runs before ``validate()``. Every form handler declares its own fields, so all existing ``Decimal()``/``float()`` conversions in ``validate()`` and ``submit()`` are left untouched, and the complete set of currency fields can be found by grepping for those attributes.
+  * Also wrap the ``validate()`` call in ``FormHandlerView.post()`` in a ``try``/``except``, so that no conversion anywhere can produce a 500 again.
+  * All of the following are now accepted (for a ``en_US``/``USD`` configuration): bare integers, comma or space thousands separators (including Unicode spaces), a leading or trailing currency symbol or ISO code, a leading ``+`` or ``-``, parentheses denoting a negative, and surrounding whitespace.
+  * Ambiguously grouped values such as ``10,00``, ``1,23,4.56``, ``1,234,`` and ``,123`` are rejected with a field-level validation error rather than being silently read as ``1000``, ``1234.56``, ``1234`` and ``123``. For an application that tracks real money, guessing at a typo is worse than refusing it.
+  * Locale conventions are read from ``LOCALE_NAME`` and ``CURRENCY_CODE`` on both the server and the client, so adding another locale is a configuration change; this is covered by tests against ``de_DE``.
+  * Reword the validation messages ``Invalid float value: "..."`` and ``Invalid Decimal value: "..."``, which leaked Python type names, to ``Invalid number: "..."`` and ``Invalid amount: "..."``.
+  * Fuel Log ``gallons`` and ``reported_mpg`` are not currency, but shared the validation helper responsible for the bare-integer defect; they are fixed too.
+  * Add unit tests covering the accept/reject matrix and the normalization hook, and Selenium browser tests covering the Transaction modal (including budget splits) plus every other currency input in the application.
+  * Document the accepted input formats in ``docs/source/app_usage.rst``.
+
 1.6.2 (2026-09-06)
 ------------------
 

@@ -172,6 +172,10 @@ docs updated.
 - **M5 — Completion.** Docs, regenerated jsdoc, version bump, `CHANGES.rst`, full
   `py314` + `acceptance` + `docs` + `jsdoc` + `migrations` suites green, PR opened.
 
+**Status: all five milestones complete.** See the Completion Status section of
+[tasks.md](./tasks.md) for suite results and for the three parser defects and one
+test-isolation bug found during implementation.
+
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |

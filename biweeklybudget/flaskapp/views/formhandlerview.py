@@ -39,12 +39,25 @@ import logging
 from flask.views import MethodView
 from flask import jsonify, request
 from datetime import datetime
-from decimal import Decimal
+
+from biweeklybudget.utils import parse_currency, CurrencyParseError
 
 logger = logging.getLogger(__name__)
 
 
 class FormHandlerView(MethodView):
+
+    #: List of names of form fields that hold currency amounts. Values of these
+    #: fields are normalized to a canonical numeric string by
+    #: :py:meth:`~.normalize_currency` before :py:meth:`~.validate` is called,
+    #: so that user-entered formatting such as ``$1,234.56`` or a bare ``123``
+    #: is accepted everywhere. See GitHub issue #323.
+    currency_fields = []
+
+    #: List of names of form fields that hold non-currency decimal numbers.
+    #: Normalized identically to :py:attr:`~.currency_fields`, but reported
+    #: with "number" rather than "amount" wording when invalid.
+    decimal_fields = []
 
     def post(self):
         """
@@ -61,7 +74,23 @@ class FormHandlerView(MethodView):
         if data is None:
             # not JSON, must be form encoded
             data = request.form.to_dict()
-        res = self.validate(data)
+        errors = self.normalize_currency(data)
+        if errors:
+            logger.info('Currency normalization failed. data=%s errors=%s',
+                        data, errors)
+            return jsonify({
+                'success': False,
+                'errors': errors
+            })
+        try:
+            res = self.validate(data)
+        except Exception as ex:
+            logger.warning('Form validation raised an exception. data=%s',
+                           data, exc_info=True)
+            return jsonify({
+                'success': False,
+                'error_message': str(ex)
+            })
         if res is not None:
             logger.info('Form validation failed. data=%s errors=%s',
                         data, res)
@@ -84,6 +113,45 @@ class FormHandlerView(MethodView):
             'success': True,
             'success_message': res
         })
+
+    def normalize_currency(self, data):
+        """
+        Normalize every field named in :py:attr:`~.currency_fields` and
+        :py:attr:`~.decimal_fields` to a canonical numeric string, in place.
+
+        This is the single place where user-entered currency formatting is
+        interpreted on the server; doing it here, before
+        :py:meth:`~.validate` runs, means every downstream
+        ``Decimal(data[key])`` and ``float(data[key])`` in ``validate()`` and
+        ``submit()`` receives a value it can parse. See GitHub issue #323.
+
+        Fields that are absent from ``data``, that are empty or whitespace
+        only, or that are not strings, are left untouched - each field's
+        existing "blank means zero" or "blank is an error" behavior is
+        unchanged by normalization.
+
+        :param data: submitted form data; modified in place
+        :type data: dict
+        :return: hash of field name to list of error strings for that field;
+          empty if every field was valid
+        :rtype: dict
+        """
+        errors = {}
+        fields = [(k, 'amount') for k in self.currency_fields]
+        fields += [(k, 'number') for k in self.decimal_fields]
+        for key, noun in fields:
+            if key not in data:
+                continue
+            value = data[key]
+            if not isinstance(value, str) or value.strip() == '':
+                continue
+            try:
+                data[key] = str(parse_currency(value))
+            except CurrencyParseError:
+                errors.setdefault(key, []).append(
+                    'Invalid %s: "%s"' % (noun, value)
+                )
+        return errors
 
     def validate(self, data):
         """
@@ -119,7 +187,12 @@ class FormHandlerView(MethodView):
 
     def _validate_float(self, key, data, errors):
         """
-        Validate a float field.
+        Validate a numeric (non-currency) field.
+
+        Accepts anything :py:func:`~biweeklybudget.utils.parse_currency`
+        accepts, which includes bare integers; the previous implementation
+        required a decimal point, rejecting ``123`` while accepting ``123.0``
+        (GitHub issue #323).
 
         :param key: the key in data to look at
         :type key: str
@@ -131,15 +204,18 @@ class FormHandlerView(MethodView):
         :rtype: dict
         """
         try:
-            x = float(data[key])
-            assert data[key].startswith('%s' % x)
+            parse_currency(data[key])
         except Exception:
-            errors[key].append('Invalid float value: "%s"' % data[key])
+            errors[key].append('Invalid number: "%s"' % data[key])
         return errors
 
     def _validate_decimal(self, key, data, errors):
         """
-        Validate a Decimal field.
+        Validate a currency amount field.
+
+        Accepts anything :py:func:`~biweeklybudget.utils.parse_currency`
+        accepts, i.e. bare integers, thousands separators and a currency
+        symbol (GitHub issue #323).
 
         :param key: the key in data to look at
         :type key: str
@@ -151,9 +227,9 @@ class FormHandlerView(MethodView):
         :rtype: dict
         """
         try:
-            Decimal(data[key])
+            parse_currency(data[key])
         except Exception:
-            errors[key].append('Invalid Decimal value: "%s"' % data[key])
+            errors[key].append('Invalid amount: "%s"' % data[key])
         return errors
 
     def _validate_date_ymd(self, key, data, errors):
