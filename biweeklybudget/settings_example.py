@@ -75,6 +75,13 @@ PAY_PERIOD_START_DATE = date(2017, 3, 17)
 #: :py:class:`~.OFXTransaction` before this date will be ignored.
 RECONCILE_BEGIN_DATE = date(2017, 1, 1)
 
+#: *(optional)* The date from which credit account charges, and payments toward
+#: credit accounts, are counted when validating the amount of a credit card
+#: payment. Anything before this date is ignored when working out how much of a
+#: card's recorded charges are still unpaid. If not set, defaults to
+#: :py:attr:`~.RECONCILE_BEGIN_DATE`.
+CREDIT_PAYMENT_BEGIN_DATE = date(2017, 1, 1)
+
 #: Account ID to show first in dropdown lists
 DEFAULT_ACCOUNT_ID = 1
 
