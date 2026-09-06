@@ -3,8 +3,8 @@ biweeklybudget.flaskapp.views package
 
 .. automodule:: biweeklybudget.flaskapp.views
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Submodules
 ----------

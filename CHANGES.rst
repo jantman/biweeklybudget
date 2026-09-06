@@ -1,6 +1,21 @@
 Changelog
 =========
 
+1.6.2 (2026-09-06)
+------------------
+
+* `Issue #324 <https://github.com/jantman/biweeklybudget/issues/324>`_ - Update all dependencies to their latest versions, including all packages with open GitHub Dependabot security alerts.
+
+  * ``requirements.txt``: Flask 3.1.2 to 3.1.3, Mako 1.3.10 to 1.4.1, PyMySQL 1.1.2 to 1.2.0, SQLAlchemy 2.0.45 to 2.0.52, alembic 1.18.1 to 1.19.2, babel 2.17.0 to 2.18.0, beautifulsoup4 4.14.3 to 4.15.0, cffi 2.0.0 to 2.1.1, click 8.3.1 to 8.5.0, httplib2 0.31.1 to 0.32.0, humanize 4.15.0 to 4.16.0, idna 3.11 to 3.19, lxml 6.0.2 to 6.1.3, newrelic 11.2.0 to 13.5.0, plaid-python 38.0.0 to 44.0.0, pycparser 2.23 to 3.0, pyparsing 3.3.1 to 3.3.2, selenium 4.39.0 to 4.48.0, and Werkzeug 3.1.5 to 3.1.8.
+  * This resolves the Dependabot alerts for Flask, Werkzeug, httplib2, idna, Mako (two alerts), and lxml, superseding Dependabot PRs `#316 <https://github.com/jantman/biweeklybudget/pull/316>`_, `#317 <https://github.com/jantman/biweeklybudget/pull/317>`_, and `#318 <https://github.com/jantman/biweeklybudget/pull/318>`_.
+  * Remove ``biweeklybudget/flaskapp/static/jquery-ui-1.12.1.custom/package.json``. Only ``jquery-ui.min.js`` from that custom jQuery UI download is used; the manifest declared jQuery UI's own build-time ``devDependencies`` (including a vulnerable ``grunt``), which this project never installs, and was the source of three Dependabot npm alerts.
+  * ``tox.ini``: alembic-verify 0.1.4 to 1.0.2, sqlalchemy-diff 0.1.5 to 1.1.1, selenium 4.39.0 to 4.48.0, Pillow 12.1.0 to 12.3.0, sphinx 8.1.3 to 9.1.0, docutils 0.21.2 to 0.22.4 (0.23 is incompatible with Sphinx 9), pygments 2.19.2 to 2.21.0, and sphinx-js 5.0.2 to 5.0.3.
+  * Update the migration tests for the sqlalchemy-diff 1.0 API: ``sqlalchemydiff.compare()`` is replaced by ``sqlalchemydiff.comparer.Comparer``, the removed ``sqlalchemydiff.util.prepare_schema_from_models()`` helper is reimplemented locally in ``test_alembic_verify.py``, and the constraint ignore clauses use the new ``check_constraints`` inspector key instead of ``cons``.
+  * Add ``biweeklybudget/tests/migrations/conftest.py`` defining ``alembic_config_left`` and ``alembic_config_right``. alembic-verify 1.0 deprecated its own fixtures of those names and resolves the Alembic script location relative to the current working directory; ours use the absolute path from the ``alembic_root`` fixture.
+  * Docker image: base image ``python:3.14-alpine3.23`` to ``python:3.14-alpine3.24``, and gunicorn 22.0.0 to 26.2.0.
+  * GitHub Actions: ``actions/checkout`` to v7, ``actions/setup-python`` to v7, ``actions/upload-artifact`` to v7, ``actions/download-artifact`` to v8, ``actions/github-script`` to v9, ``docker/login-action`` to v4, and ``pypa/gh-action-pypi-publish`` to v1.14.2.
+  * Regenerate the ``sphinx-apidoc``-generated ``docs/source/*.rst`` files with Sphinx 9.
+
 1.6.1 (2026-09-06)
 ------------------
 

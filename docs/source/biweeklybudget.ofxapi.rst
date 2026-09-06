@@ -3,8 +3,8 @@ biweeklybudget.ofxapi package
 
 .. automodule:: biweeklybudget.ofxapi
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 Submodules
 ----------

@@ -28,9 +28,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -42,7 +42,7 @@ jobs:
       - name: Run tests
         run: tox -e ${{ github.job }}
       - name: Archive test results and artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -56,9 +56,9 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -70,9 +70,9 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -101,9 +101,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -134,9 +134,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -148,7 +148,7 @@ jobs:
       - name: Run tests
         run: tox -e ${{ github.job }}
       - name: Archive test results and artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -186,9 +186,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -200,7 +200,7 @@ jobs:
       - name: Run tests
         run: tox -e ${{ github.job }}
       - name: Archive test results and artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -230,9 +230,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -243,7 +243,7 @@ jobs:
         run: mkdir -p results
       - name: Login to Docker Hub if master branch
         if: github.ref_type == 'branch' && github.ref_name == 'master'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -251,7 +251,7 @@ jobs:
         id: run-tests
         run: tox -e ${{ github.job }}
       - name: Archive test results and artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -286,9 +286,9 @@ jobs:
           MYSQL_ROOT_PASSWORD: dbroot
           MYSQL_ROOT_HOST: '%'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -300,7 +300,7 @@ jobs:
       - name: Run tests
         run: tox -e ${{ github.job }}
       - name: Archive test results and artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: test-results-and-coverage-${{ github.job }}
@@ -317,9 +317,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Download coverage artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: test-results-and-coverage-py314
       - name: Extract coverage percentage
@@ -355,7 +355,7 @@ jobs:
           echo "" >> coverage_comment.md
           echo "🔍 **Generated by**: Unit tests (\`tox -e py314\`)" >> coverage_comment.md
       - name: Comment PR with coverage
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
