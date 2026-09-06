@@ -53,6 +53,7 @@ from biweeklybudget.models.account import NoInterestChargedError, Account
 from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.utils import parse_currency, CurrencyParseError
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,21 @@ class PayoffSettingsFormHandler(MethodView):
             for d in sorted(data[key], key=lambda k: k['date']):
                 if d['date'] == '' or d['amount'] == '':
                     continue
+                # Normalize on the way in, so the stored JSON is always
+                # canonical. _payment_settings_dict() re-parses these amounts
+                # while *rendering* the credit payoff page, so a bad value
+                # stored here would break the whole page. GitHub issue #323.
+                try:
+                    d['amount'] = str(parse_currency(d['amount']))
+                except CurrencyParseError:
+                    logger.error(
+                        'Invalid %s amount in payoff settings: %s',
+                        key, d['amount']
+                    )
+                    return jsonify({
+                        'success': False,
+                        'error_message': 'Invalid amount: "%s"' % d['amount']
+                    })
                 fixeddata[key].append(d)
         val = json.dumps(fixeddata, sort_keys=True, cls=MagicJSONEncoder)
         logger.info('Changing setting value to: %s', val)
@@ -244,6 +260,8 @@ class AccountOfxFormHandler(FormHandlerView):
     """
     Handle POST /forms/credit-payoff-account-ofx
     """
+
+    currency_fields = ['interest_amt']
 
     def validate(self, data):
         pass

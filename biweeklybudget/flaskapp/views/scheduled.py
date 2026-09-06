@@ -213,6 +213,8 @@ class SchedTransFormHandler(FormHandlerView):
     Handle POST /forms/scheduled
     """
 
+    currency_fields = ['amount', 'sales_tax']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of

@@ -170,6 +170,8 @@ class BudgetFormHandler(FormHandlerView):
     Handle POST /forms/budget
     """
 
+    currency_fields = ['starting_balance', 'current_balance']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of
@@ -244,6 +246,8 @@ class BudgetTxfrFormHandler(FormHandlerView):
     """
     Handle POST /forms/budget_transfer
     """
+
+    currency_fields = ['amount']
 
     def validate(self, data):
         """

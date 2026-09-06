@@ -2043,3 +2043,292 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
         assert max([
             tx.id for tx in testdb.query(Transaction).all()
         ]) == 5
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestTransModalCurrencyNormalization(AcceptanceHelper):
+    """
+    Browser tests for currency input normalization; GitHub issue #323.
+
+    Entering ``1,234.56`` used to produce a 500 Internal Server Error, and a
+    bare ``123`` used to be rejected as an invalid value.
+    """
+
+    def _add_transaction(self, base_url, selenium, amount, description,
+                         sales_tax=None):
+        """
+        Fill and submit the Add Transaction modal with the given amount, and
+        return the text of the first div in the modal body afterwards.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Transaction'
+        amt = body.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys(amount)
+        desc = body.find_element(By.ID, 'trans_frm_description')
+        desc.send_keys(description)
+        Select(
+            body.find_element(By.ID, 'trans_frm_account')
+        ).select_by_value('1')
+        Select(
+            body.find_element(By.ID, 'trans_frm_budget')
+        ).select_by_value('1')
+        if sales_tax is not None:
+            tax = body.find_element(By.ID, 'trans_frm_sales_tax')
+            tax.clear()
+            tax.send_keys(sales_tax)
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        return body
+
+    def test_01_comma_separated_amount(self, base_url, selenium):
+        """Entering "1,234.56" must save, not raise a 500."""
+        body = self._add_transaction(
+            base_url, selenium, '1,234.56', 'CommaAmount'
+        )
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_02_verify_comma_separated_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CommaAmount')
+        ).one()
+        assert t.actual_amount == Decimal('1234.56')
+        assert t.budget_transactions[0].amount == Decimal('1234.56')
+
+    def test_03_bare_integer_amount(self, base_url, selenium):
+        """Entering "123" must save; it used to require "123.0"."""
+        body = self._add_transaction(
+            base_url, selenium, '123', 'BareInteger', sales_tax='7'
+        )
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_04_verify_bare_integer_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('BareInteger')
+        ).one()
+        assert t.actual_amount == Decimal('123')
+        assert t.sales_tax == Decimal('7')
+
+    def test_05_currency_symbol_amount(self, base_url, selenium):
+        body = self._add_transaction(
+            base_url, selenium, '$1,234.56', 'SymbolAmount'
+        )
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_06_verify_currency_symbol_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('SymbolAmount')
+        ).one()
+        assert t.actual_amount == Decimal('1234.56')
+
+    def test_07_space_separated_amount(self, base_url, selenium):
+        body = self._add_transaction(
+            base_url, selenium, ' 1 234.56 ', 'SpaceAmount'
+        )
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_08_verify_space_separated_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('SpaceAmount')
+        ).one()
+        assert t.actual_amount == Decimal('1234.56')
+
+    def test_09_parenthesized_negative_amount(self, base_url, selenium):
+        body = self._add_transaction(
+            base_url, selenium, '(1,234.56)', 'ParenAmount'
+        )
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_10_verify_parenthesized_negative_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('ParenAmount')
+        ).one()
+        assert t.actual_amount == Decimal('-1234.56')
+
+    def test_20_invalid_amount_shows_field_error(self, base_url, selenium):
+        """Malformed input must produce a field error, never a 500."""
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        amt = body.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys('abc')
+        desc = body.find_element(By.ID, 'trans_frm_description')
+        desc.send_keys('ShouldNotBeSaved')
+        Select(
+            body.find_element(By.ID, 'trans_frm_account')
+        ).select_by_value('1')
+        Select(
+            body.find_element(By.ID, 'trans_frm_budget')
+        ).select_by_value('1')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        # the modal is still the form, not a success alert
+        assert 'Invalid amount: "abc"' in body.text
+        assert 'alert-success' not in body.get_attribute('innerHTML')
+
+    def test_21_verify_invalid_amount_not_saved(self, testdb):
+        assert testdb.query(Transaction).filter(
+            Transaction.description.__eq__('ShouldNotBeSaved')
+        ).all() == []
+
+    def test_30_post_comma_amount_is_not_a_server_error(self, base_url):
+        """
+        The reported bug, at the HTTP level: this used to be a 500.
+        """
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '1,234.56',
+                'description': 'PostedCommaAmount',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': '1,234.56'},
+                'sales_tax': ''
+            }
+        )
+        assert res.status_code == 200
+        assert res.json()['success'] is True
+
+    def test_31_verify_posted_comma_amount(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('PostedCommaAmount')
+        ).one()
+        assert t.actual_amount == Decimal('1234.56')
+        assert t.budget_transactions[0].amount == Decimal('1234.56')
+
+    @pytest.mark.parametrize(
+        'amount', ['abc', '1.2.3', '10,00', '1,23,4.56']
+    )
+    def test_32_post_invalid_amount_is_not_a_server_error(
+        self, base_url, amount
+    ):
+        """
+        Ambiguous grouping such as "10,00" must be rejected rather than
+        silently read as 1000.
+        """
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': amount,
+                'description': 'InvalidPost',
+                'notes': '',
+                'account': '1',
+                'budgets': {'1': amount},
+                'sales_tax': ''
+            }
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['amount'] == ['Invalid amount: "%s"' % amount]
+
+    def test_33_verify_invalid_posts_not_saved(self, testdb):
+        assert testdb.query(Transaction).filter(
+            Transaction.description.__eq__('InvalidPost')
+        ).all() == []
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestTransModalSplitCurrencyNormalization(AcceptanceHelper):
+    """
+    Browser tests for the client-side currency parser used by budget split
+    validation; GitHub issue #323. ``parseFloat('1,234.56')`` is ``1``, so
+    before this change the in-browser check disabled Save and the user could
+    never reach the server.
+    """
+
+    def test_01_split_validation_accepts_separators(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        amt = body.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys('1,234.56')
+        desc = body.find_element(By.ID, 'trans_frm_description')
+        desc.send_keys('SplitCommaAmount')
+        Select(
+            body.find_element(By.ID, 'trans_frm_account')
+        ).select_by_value('1')
+        selenium.find_element(By.ID, 'trans_frm_is_split').click()
+        Select(
+            body.find_element(By.ID, 'trans_frm_budget_0')
+        ).select_by_value('1')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_0')
+        tmp.clear()
+        tmp.send_keys('1,000.00')
+        Select(
+            body.find_element(By.ID, 'trans_frm_budget_1')
+        ).select_by_value('2')
+        tmp = body.find_element(By.ID, 'trans_frm_budget_amount_1')
+        tmp.clear()
+        tmp.send_keys('234.56')
+        # blur the last field so the split validation runs
+        body.find_element(By.ID, 'trans_frm_description').click()
+        self.wait_for_jquery_done(selenium)
+        assert selenium.find_element(
+            By.ID, 'budget-split-feedback'
+        ).text == ''
+        assert selenium.find_element(By.ID, 'modalSaveButton').is_enabled()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_02_verify_split_amounts(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('SplitCommaAmount')
+        ).one()
+        assert t.actual_amount == Decimal('1234.56')
+        assert {
+            bt.budget_id: bt.amount for bt in t.budget_transactions
+        } == {
+            1: Decimal('1000.00'),
+            2: Decimal('234.56')
+        }
+
+    def test_10_split_remainder_autofill_uses_normalized_amount(
+        self, base_url, selenium
+    ):
+        """
+        Selecting a budget auto-fills the remainder. With parseFloat, a
+        transaction amount of "1,234.56" made the remainder 1.00.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        amt = body.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys('1,234.56')
+        selenium.find_element(By.ID, 'trans_frm_is_split').click()
+        Select(
+            body.find_element(By.ID, 'trans_frm_budget_0')
+        ).select_by_value('1')
+        self.wait_for_jquery_done(selenium)
+        assert body.find_element(
+            By.ID, 'trans_frm_budget_amount_0'
+        ).get_attribute('value') == '1234.56'

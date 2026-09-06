@@ -265,6 +265,9 @@ class FuelLogFormHandler(FormHandlerView):
     Handle POST /forms/fuel
     """
 
+    currency_fields = ['cost_per_gallon', 'total_cost']
+    decimal_fields = ['gallons', 'reported_mpg']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of

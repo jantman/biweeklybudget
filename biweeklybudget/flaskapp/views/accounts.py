@@ -167,6 +167,8 @@ class AccountFormHandler(FormHandlerView):
     Handle POST /forms/account
     """
 
+    currency_fields = ['credit_limit', 'apr', 'prime_rate_margin']
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of
@@ -313,6 +315,8 @@ class AccountTxfrFormHandler(FormHandlerView):
     """
     Handle POST /forms/account_transfer
     """
+
+    currency_fields = ['amount']
 
     def validate(self, data):
         """

@@ -35,9 +35,14 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.utils import dtnow, plaid_client
+import pytest
+
+from biweeklybudget.utils import (
+    dtnow, plaid_client, parse_currency, CurrencyParseError
+)
 from pytz import utc
 from datetime import datetime
+from decimal import Decimal
 from freezegun import freeze_time
 
 from unittest.mock import patch, call, Mock, DEFAULT
@@ -99,3 +104,163 @@ class TestDtNow(object):
         assert dtnow() == datetime(
             2017, 7, 28, 6, 24, 44, tzinfo=utc
         )
+
+
+#: Values that :py:func:`~biweeklybudget.utils.parse_currency` must accept for
+#: the ``en_US``/``USD`` settings used by the test settings module, as
+#: (input, expected Decimal) pairs.
+CURRENCY_ACCEPT_CASES = [
+    # bare integers - github issue #323
+    ('123', Decimal('123')),
+    ('0', Decimal('0')),
+    ('1234', Decimal('1234')),
+    # plain decimals
+    ('123.45', Decimal('123.45')),
+    ('0.01', Decimal('0.01')),
+    # comma thousands separators - github issue #323
+    ('1,234.56', Decimal('1234.56')),
+    ('1,000', Decimal('1000')),
+    ('1,234,567.89', Decimal('1234567.89')),
+    # space thousands separators, including unicode spaces
+    ('1 234.56', Decimal('1234.56')),
+    ('1\u00a0234.56', Decimal('1234.56')),
+    ('1\u202f234.56', Decimal('1234.56')),
+    # currency symbol and ISO code
+    ('$1,234.56', Decimal('1234.56')),
+    ('$ 1,234.56', Decimal('1234.56')),
+    ('1,234.56 $', Decimal('1234.56')),
+    ('USD 1,234.56', Decimal('1234.56')),
+    # explicit signs
+    ('-1,234.56', Decimal('-1234.56')),
+    ('-$1,234.56', Decimal('-1234.56')),
+    ('+123', Decimal('123')),
+    ('-123', Decimal('-123')),
+    # parentheses as negative
+    ('(1,234.56)', Decimal('-1234.56')),
+    ('($1,234.56)', Decimal('-1234.56')),
+    # surrounding whitespace
+    ('  1234.56  ', Decimal('1234.56')),
+    ('\t1,234.56\u00a0', Decimal('1234.56')),
+    # more than 2 decimal places is preserved, not rounded
+    ('1.23456', Decimal('1.23456')),
+    # negative zero is zero, so "cannot be zero" checks still fire
+    ('-0.00', Decimal('0')),
+]
+
+#: Values that :py:func:`~biweeklybudget.utils.parse_currency` must reject.
+CURRENCY_REJECT_CASES = [
+    # not numbers at all
+    'abc',
+    'twelve',
+    '',
+    '   ',
+    '$',
+    '$ ',
+    # invalid grouping; a lenient parser reads these as 1000/1234/123/1234.56
+    # and silently corrupts the amount, which is the whole point of rejecting
+    '10,00',
+    '1,234,',
+    ',123',
+    '1,23,4.56',
+    '1,2345.67',
+    '12,34.5',
+    # space-separated digit runs that are not valid groups
+    '1 2 3',
+    # multiple decimal separators
+    '1.2.3',
+    '1..2',
+    # misplaced signs
+    '5-',
+    '-(5)',
+    '1-2',
+    # things Decimal() would otherwise happily accept
+    '1e5',
+    '1E5',
+    'nan',
+    'NaN',
+    'inf',
+    '-inf',
+    'Infinity',
+    # non-ascii digits
+    '\uff11\uff12\uff13',
+    # non-string input
+    None,
+    123,
+    12.3,
+    Decimal('1.23'),
+    ['1.23'],
+]
+
+
+class TestParseCurrency(object):
+    """
+    Tests for :py:func:`biweeklybudget.utils.parse_currency`; see GitHub issue
+    #323.
+    """
+
+    @pytest.mark.parametrize('value,expected', CURRENCY_ACCEPT_CASES)
+    def test_accepted(self, value, expected):
+        assert parse_currency(value) == expected
+
+    @pytest.mark.parametrize('value,expected', CURRENCY_ACCEPT_CASES)
+    def test_accepted_returns_decimal(self, value, expected):
+        # never a float; cents must survive exactly
+        assert isinstance(parse_currency(value), Decimal)
+
+    @pytest.mark.parametrize('value', CURRENCY_REJECT_CASES)
+    def test_rejected(self, value):
+        with pytest.raises(CurrencyParseError):
+            parse_currency(value)
+
+    def test_currency_parse_error_is_value_error(self):
+        # callers that already catch ValueError keep working
+        assert issubclass(CurrencyParseError, ValueError)
+
+    def test_bare_integer_stays_integral(self):
+        # github issue #323: "123" must not become "123.0"
+        assert str(parse_currency('123')) == '123'
+
+    def test_precision_is_preserved(self):
+        assert str(parse_currency('1.23456')) == '1.23456'
+        assert str(parse_currency('1.50')) == '1.50'
+
+    def test_canonical_form_round_trips(self):
+        for value, _ in CURRENCY_ACCEPT_CASES:
+            parsed = parse_currency(value)
+            assert parse_currency(str(parsed)) == parsed
+
+    def test_no_float_rounding(self):
+        # 0.1 + 0.2 == 0.30000000000000004 in binary floating point
+        assert parse_currency('0.1') + parse_currency('0.2') == Decimal('0.3')
+
+    def test_error_message_includes_value(self):
+        with pytest.raises(CurrencyParseError) as excinfo:
+            parse_currency('1,23,4.56')
+        assert '1,23,4.56' in str(excinfo.value)
+
+
+class TestParseCurrencyLocale(object):
+    """
+    Normalization must be driven by settings, not hard-coded, so that adding a
+    locale is a configuration change rather than a code change.
+    """
+
+    @patch('biweeklybudget.utils.settings.LOCALE_NAME', 'de_DE')
+    @patch('biweeklybudget.utils.settings.CURRENCY_CODE', 'EUR')
+    def test_de_de_accepts_german_formatting(self):
+        assert parse_currency('1.234,56') == Decimal('1234.56')
+        assert parse_currency('1 234,56') == Decimal('1234.56')
+        assert parse_currency('1234,56') == Decimal('1234.56')
+        assert parse_currency('1234') == Decimal('1234')
+
+    @patch('biweeklybudget.utils.settings.LOCALE_NAME', 'de_DE')
+    @patch('biweeklybudget.utils.settings.CURRENCY_CODE', 'EUR')
+    def test_de_de_rejects_us_formatting(self):
+        with pytest.raises(CurrencyParseError):
+            parse_currency('1,234.56')
+
+    @patch('biweeklybudget.utils.settings.LOCALE_NAME', 'de_DE')
+    @patch('biweeklybudget.utils.settings.CURRENCY_CODE', 'EUR')
+    def test_de_de_currency_symbol(self):
+        assert parse_currency('\u20ac1.234,56') == Decimal('1234.56')
+        assert parse_currency('1.234,56 \u20ac') == Decimal('1234.56')

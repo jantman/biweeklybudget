@@ -51,6 +51,7 @@ from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.utils import parse_currency, CurrencyParseError
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +258,38 @@ class TransactionFormHandler(FormHandlerView):
     """
     Handle POST /forms/transaction
     """
+
+    currency_fields = ['amount', 'sales_tax']
+
+    def normalize_currency(self, data):
+        """
+        Normalize the currency fields, plus the per-budget split amounts.
+
+        Budget split amounts arrive as a ``budgets`` hash of budget ID to
+        amount, which :py:attr:`~.FormHandlerView.currency_fields` cannot
+        address; they are normalized here so that :py:meth:`~.validate` can
+        sum them. See GitHub issue #323.
+
+        :param data: submitted form data; modified in place
+        :type data: dict
+        :return: hash of field name to list of error strings for that field;
+          empty if every field was valid
+        :rtype: dict
+        """
+        errors = super().normalize_currency(data)
+        budgets = data.get('budgets', None)
+        if not isinstance(budgets, dict):
+            return errors
+        for bid, amount in budgets.items():
+            if not isinstance(amount, str) or amount.strip() == '':
+                continue
+            try:
+                budgets[bid] = str(parse_currency(amount))
+            except CurrencyParseError:
+                errors.setdefault('budgets', []).append(
+                    'Invalid amount: "%s"' % amount
+                )
+        return errors
 
     def validate(self, data):
         """
