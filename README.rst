@@ -9,15 +9,15 @@ biweeklybudget
    :target: https://readthedocs.org/projects/biweeklybudget/?badge=latest
    :alt: sphinx documentation for latest release
 
-.. image:: http://www.repostatus.org/badges/latest/active.svg
+.. image:: https://www.repostatus.org/badges/latest/active.svg
    :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
-   :target: http://www.repostatus.org/#active
+   :target: https://www.repostatus.org/#active
 
 Responsive Flask/SQLAlchemy personal finance app, specifically for biweekly budgeting.
 
-**For full documentation**, see `http://biweeklybudget.readthedocs.io/en/latest/ <http://biweeklybudget.readthedocs.io/en/latest/>`_
+**For full documentation**, see `https://biweeklybudget.readthedocs.io/en/latest/ <https://biweeklybudget.readthedocs.io/en/latest/>`_
 
-**For screenshots**, see `<http://biweeklybudget.readthedocs.io/en/latest/screenshots.html>`_
+**For screenshots**, see `<https://biweeklybudget.readthedocs.io/en/latest/screenshots.html>`_
 
 Overview
 --------
@@ -44,7 +44,7 @@ application is **not** designed to be accessible in any way to anyone other than
 over the web, someone *will* get your account numbers, or worse).
 
 *Note:* Any potential users outside of the US should see the documentation section on
-`Currency Formatting and Localization <http://biweeklybudget.readthedocs.io/en/latest/app_usage.html#currency-formatting-and-localization>`_;
+`Currency Formatting and Localization <https://biweeklybudget.readthedocs.io/en/latest/app_usage.html#currency-formatting-and-localization>`_;
 the short version is that I've done my best to make this configurable, but as far as I know I'm the
 only person using this software. If anyone else wants to use it and it doesn't work for your currency
 or locale, let me know and I'll fix it.
@@ -69,13 +69,13 @@ Main Features
 Requirements
 ------------
 
-**Note:** Alternatively, biweeklybudget is also distributed as a `Docker container <http://biweeklybudget.readthedocs.io/en/latest/flask_app.html>`_.
+**Note:** Alternatively, biweeklybudget is also distributed as a `Docker container <https://biweeklybudget.readthedocs.io/en/latest/flask_app.html>`_.
 Using the dockerized version will eliminate all of these dependencies aside from MySQL (which you can run in another container) and
 Vault (if you choose to take advantage of the OFX downloading), which you can also run in another container.
 
 * Python 3.7+ (currently tested and developed with 3.14).
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
-* MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
+* MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_). biweeklybudget uses `SQLAlchemy <https://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the automated Plaid transaction downloading functionality, a valid `Plaid <https://plaid.com/>`__ account.
 * To use the automated OFX Direct Connect transaction downloading functionality:
 

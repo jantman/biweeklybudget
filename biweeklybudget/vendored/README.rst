@@ -7,7 +7,7 @@ aren't responding to pull requests, or packages that haven't uploaded a recent
 release to PyPI).
 
 For information on updating these packages, see the
-`Development - Vendored Requirements <http://biweeklybudget.readthedocs.io/en/latest/development.html#vendored-requirements>`_
+`Development - Vendored Requirements <https://biweeklybudget.readthedocs.io/en/latest/development.html#vendored-requirements>`_
 section of the documentation.
 
 For the licenses that each of these dependencies are distributed under, see

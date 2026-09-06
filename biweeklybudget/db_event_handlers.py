@@ -273,7 +273,7 @@ def query_profile_before(conn, cursor, statement, parameters, context, _):  # no
     Engine's ``before_cursor_execute`` event.
 
     For information, see:
-    http://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
+    https://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
     """
     conn.info.setdefault('query_start_time', []).append(time.time())
     logger.debug(
@@ -288,7 +288,7 @@ def query_profile_after(conn, cursor, statement, parameters, context, _):  # noq
     Engine's ``after_cursor_execute`` event.
 
     For information, see:
-    http://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
+    https://docs.sqlalchemy.org/en/latest/faq/performance.html#query-profiling
     """
     total = time.time() - conn.info['query_start_time'].pop(-1)
     logger.debug(
@@ -301,7 +301,7 @@ def init_event_listeners(db_session, engine):
     """
     Initialize/register all SQLAlchemy event listeners.
 
-    See http://docs.sqlalchemy.org/en/latest/orm/events.html
+    See https://docs.sqlalchemy.org/en/latest/orm/events.html
 
     :param db_session: the Database Session
     :type db_session: sqlalchemy.orm.scoping.scoped_session

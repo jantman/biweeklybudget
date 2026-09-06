@@ -14,7 +14,7 @@ Vault (the latter only if you choose to take advantage of the OFX downloading), 
 
 * Python 3.10+ (currently developed and tested with 3.14).
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
-* MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_ ). biweeklybudget uses `SQLAlchemy <http://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
+* MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_ ). biweeklybudget uses `SQLAlchemy <https://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
 * To use the new :ref:`Plaid <plaid>` automated transaction downloading functionality, a valid Plaid account.
 * To use the (old) automated OFX transaction downloading functionality:
 
@@ -144,7 +144,7 @@ The only dependencies for a Docker installation are:
 is backed up and will not be removed.
 
 The `image <https://hub.docker.com/r/jantman/biweeklybudget/>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
-wrapper and uses `gunicorn <http://gunicorn.org/>`_ under Python 3.14 to serve the web UI, exposed on port 80. Note that,
+wrapper and uses `gunicorn <https://gunicorn.org/>`_ under Python 3.14 to serve the web UI, exposed on port 80. Note that,
 while it runs with 4 worker threads, there is no HTTP proxy in front of Gunicorn and this image is intended for local network
 use by a single user/client. The image also automatically runs database migrations in a safe manner at start, before starting
 the Flask application.
@@ -202,7 +202,7 @@ you'll need to know the host system's IP address (as seen from the container). O
 using the default "bridge" Docker networking mode, this will coorespond to the container's
 gateway (the gateway of the Docker network that the container is in) and will usually be
 ``172.x.0.1``. Using the special ``host-gateway`` option available in the
-`docker run command --add-host option <https://docs.docker.com/engine/reference/commandline/run/#add-host>`_,
+`docker run command --add-host option <https://docs.docker.com/reference/cli/docker/container/run/#add-host>`_,
 we can add ``--add-host=host.docker.internal:host-gateway`` to our ``docker run`` command and
 then use that as the hostname in the DB connection string:
 
@@ -229,14 +229,14 @@ You may need to adjust those commands depending on your operating system, Docker
 MySQL Connection Errors
 +++++++++++++++++++++++
 
-On resource-constrained systems or with MySQL servers tuned for minimal resource utilization, you may see the Flask application returning HTTP 500 errors after periods of inactivity, with the Flask application log reporting something like "Lost connection to MySQL server during query" and MySQL reporting "Aborted connection" errors. This is due to connections in the SQLAlchemy connection pool timing out, but the application not being aware of that. If this happens, you can set the ``SQL_POOL_PRE_PING`` environment variable (to any value). This will enable SQLAlchemy's ``pool_pre_ping`` feature (see `Disconnect Handling - Pessimistic <http://docs.sqlalchemy.org/en/latest/core/pooling.html#pool-disconnects-pessimistic>`_) which tests that connections are still working before executing queries with them.
+On resource-constrained systems or with MySQL servers tuned for minimal resource utilization, you may see the Flask application returning HTTP 500 errors after periods of inactivity, with the Flask application log reporting something like "Lost connection to MySQL server during query" and MySQL reporting "Aborted connection" errors. This is due to connections in the SQLAlchemy connection pool timing out, but the application not being aware of that. If this happens, you can set the ``SQL_POOL_PRE_PING`` environment variable (to any value). This will enable SQLAlchemy's ``pool_pre_ping`` feature (see `Disconnect Handling - Pessimistic <https://docs.sqlalchemy.org/en/latest/core/pooling.html#pool-disconnects-pessimistic>`_) which tests that connections are still working before executing queries with them.
 
 Settings Module Example
 +++++++++++++++++++++++
 
 If you need to provide biweeklybudget with more complicated configuration, this is
 still possible via a Python settings module. The easiest way to inject one into the
-Docker image is to `mount <https://docs.docker.com/engine/reference/commandline/run/#read-only>`_
+Docker image is to `mount <https://docs.docker.com/reference/cli/docker/container/run/#read-only>`_
 a python module directly into the biweeklybudget package directory. Assuming you have
 a custom settings module on your local machine at ``/opt/biweeklybudget-settings.py``, you would
 run the container as shown below to mount the custom settings module into the container and use it.

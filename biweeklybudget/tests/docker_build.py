@@ -147,9 +147,11 @@ class DockerImageBuilder(object):
             'Initializing DockerImageBuilder; toxinidir=%s gitdir=%s',
             self._toxinidir, self._gitdir
         )
-        if not os.path.exists(self._gitdir) or not os.path.isdir(self._gitdir):
+        # Note: in a git worktree (or a submodule) ``.git`` is a file containing
+        # a pointer to the real git directory, rather than a directory itself.
+        if not os.path.exists(self._gitdir):
             raise RuntimeError(
-                'Error: %s does not exist or is not a directory' % self._gitdir
+                'Error: %s does not exist' % self._gitdir
             )
         logger.debug('Connecting to Docker')
         self._docker = docker.from_env()
@@ -164,7 +166,7 @@ class DockerImageBuilder(object):
         """
         res = {}
         logger.debug('Checking git status...')
-        repo = Repo(path=self._gitdir, search_parent_directories=False)
+        repo = Repo(path=self._toxinidir, search_parent_directories=False)
         res['sha'] = repo.head.commit.hexsha
         res['dirty'] = repo.is_dirty(untracked_files=True)
         if os.environ.get('GITHUB_ACTIONS') == 'true':

@@ -1,6 +1,20 @@
 Changelog
 =========
 
+1.6.1 (2026-09-06)
+------------------
+
+* `Issue #325 <https://github.com/jantman/biweeklybudget/issues/325>`_ - Fix the tox test suite so that all environments pass locally and in CI.
+
+  * ``docs`` environment: the ``linkcheck`` build was failing because Stack Overflow now returns HTTP 403 to automated requests; add ``stackoverflow.com`` to ``linkcheck_ignore`` in ``docs/source/conf.py``.
+  * Update all documentation links that had moved or now redirect: Docker ``docker run`` reference, Flask server docs, tox docs (``tox.wiki``), chromedriver docs, Alembic docs, the startbootstrap-sb-admin-2 repository, the BCP 47 spec (``rfc-editor.org``), and ``http://`` links to sites that now redirect to ``https://``.
+  * Add ``linkcheck_timeout`` and ``linkcheck_retries`` to ``docs/source/conf.py`` so that a transient network error no longer fails the whole docs build.
+  * Fix Sphinx deprecation warnings: set ``language = 'en'`` instead of ``None``, drop the deprecated ``sphinx_rtd_theme.get_html_theme_path()`` call, and point the intersphinx SQLAlchemy/selenium inventories at ``https://`` URLs.
+  * Pin the ``jsdoc`` version installed in CI to 4.0.4 and document that jsdoc 4.x is required (jsdoc 3.x crashes on Node.js 22+).
+  * Update the GitHub Actions used by the workflow off of the deprecated Node 20 runtime.
+  * ``plaid`` environment: wrap the raw SQL statements in ``test_plaidlink.py`` in ``sqlalchemy.text()``; SQLAlchemy 2.0 rejects bare textual SQL passed to ``Session.execute()``. This failure was masked in CI because the whole test class is marked ``xfail`` when ``CI=true``.
+  * ``docker`` environment: allow ``docker_build.py`` to run from a Git worktree, where ``.git`` is a file pointing at the real Git directory rather than a directory itself.
+
 1.6.0 (2026-02-14)
 ------------------
 

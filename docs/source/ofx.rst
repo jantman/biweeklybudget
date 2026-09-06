@@ -16,7 +16,7 @@ using HTTP only, via the `ofxclient <https://github.com/captin411/ofxclient>`_ p
 (note we vendor-in a fork with some bug fixes). For banks that do not support the
 OFX protocol and require you to use their website to download OFX format statements,
 biweeklybudget provides a base :py:class:`~biweeklybudget.screenscraper.ScreenScraper`
-class that can be used to develop a `selenium <http://selenium-python.readthedocs.io/>`_-based
+class that can be used to develop a `selenium <https://selenium-python.readthedocs.io/>`_-based
 tool to automate logging in to your bank's site and downloading the OFX file.
 
 In order to use either of these methods, you must have an instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_
@@ -36,7 +36,7 @@ implications of this program as well as Vault, and to understand the risks of st
 your banking credentials in this way.
 
 Also note that biweeklybudget includes a base class (:py:class:`~biweeklybudget.screenscraper.ScreenScraper`)
-intended to simplify developing `selenium <http://selenium-python.readthedocs.io/>`_-based
+intended to simplify developing `selenium <https://selenium-python.readthedocs.io/>`_-based
 browser automation to log in to financial institution websites and download your transactions.
 Many banks and other financial institutions have terms of service that
 *explicitly forbid automated or programmatic use of their websites*. As such, it is up to you
