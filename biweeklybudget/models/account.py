@@ -327,11 +327,22 @@ class Account(Base, ModelAsDict):
         """
         Return the sum of all unreconciled transaction amounts for this account.
 
+        Transactions excluded from budget arithmetic -- those marked
+        :py:attr:`~.Transaction.no_budget_impact`, and payments toward a credit
+        account -- are not counted. See GitHub issues #210 and #319.
+
+        Note that :py:attr:`~.unreconciled` itself is deliberately *not*
+        filtered: those transactions still need to be reconciled against the
+        real bank transaction, and :py:meth:`~.Transaction.unreconciled` is
+        what the reconcile view lists.
+
         :return: sum of amounts of all unreconciled transactions
         :rtype: float
         """
         total = Decimal('0.0')
         for t in self.unreconciled:
+            if t.is_excluded_from_budget:
+                continue
             total += t.actual_amount
         return total
 

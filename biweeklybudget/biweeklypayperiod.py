@@ -549,7 +549,21 @@ class BiweeklyPayPeriod(object):
                     res[budg_id]['allocated'] += budg_data['amount']
                     res[budg_id]['trans_total'] += budg_data['amount']
                 continue
-            # NOT a ScheduledTransaction; must be an actual Transaction
+            # NOT a ScheduledTransaction; must be an actual Transaction.
+            # Transactions marked as having no budget impact -- and payments
+            # toward a credit account, which imply that -- contribute nothing
+            # to any budget. A credit card charge is budgeted on its own charge
+            # date, in its own pay period; counting the payment that settles it
+            # would charge the same money to a budget twice. See GitHub issues
+            # #210 and #319.
+            #
+            # This is deliberately filtered here rather than in
+            # _transactions(): transactions_list also renders the pay period
+            # page, where an excluded transaction must still be shown -- and
+            # shown as excluded -- so a reader can see why the listed amounts
+            # do not sum to the totals above them.
+            if t['no_budget_impact']:
+                continue
             for budg_id, budg_data in t['budgets'].items():
                 if budg_id not in res:
                     # Issue #161 - inactive budget, but transaction for it
@@ -689,6 +703,9 @@ class BiweeklyPayPeriod(object):
           was planned against, if any. May be None.
         * ``planned_budget_name`` (**str**) the name of the Budget the
           transaction was planned against, if any. May be None.
+        * ``no_budget_impact`` (**bool**) whether this transaction is excluded
+          from this pay period's budget arithmetic. Always False for
+          ScheduledTransactions.
 
         :param t: the object to return a dict for
         :type t: :py:class:`~.Transaction` or :py:class:`~.ScheduledTransaction`
@@ -733,6 +750,9 @@ class BiweeklyPayPeriod(object):
         * ``budgets`` (**dict**) dict of information on the Budgets this
           Transaction is against. Keys are budget IDs (**int**), values are
           dicts with keys "amount" (**Decimal**) and "name" (**string**).
+        * ``no_budget_impact`` (**bool**) whether this Transaction is excluded
+          from this pay period's budget arithmetic, i.e.
+          :py:attr:`~.Transaction.is_excluded_from_budget`.
 
         :param t: transaction to describe
         :type t: Transaction
@@ -751,6 +771,7 @@ class BiweeklyPayPeriod(object):
             'account_name': t.account.name,
             'planned_budget_id': t.planned_budget_id,
             'planned_budget_name': None,
+            'no_budget_impact': t.is_excluded_from_budget,
             'budgets': {
                 bt.budget_id: {
                     'amount': bt.amount,
@@ -815,6 +836,7 @@ class BiweeklyPayPeriod(object):
             'account_id': t.account_id,
             'account_name': t.account.name,
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 t.budget_id: {
                     'name': t.budget.name,
