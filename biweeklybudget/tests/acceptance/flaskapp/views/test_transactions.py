@@ -49,6 +49,8 @@ from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.models.budget_model import Budget
+from biweeklybudget.models.account import Account, AcctType
+from biweeklybudget.settings import PAY_PERIOD_START_DATE
 
 
 @pytest.mark.acceptance
@@ -2335,7 +2337,7 @@ class TestTransModalSplitCurrencyNormalization(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('refreshdb', 'testflask')
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestTransModalNoBudgetImpactAndCreditPayment(AcceptanceHelper):
     """
     The "No Budget Impact?" checkbox and the "Credit Card Payment For" select
@@ -2607,80 +2609,151 @@ class TestTransModalNoBudgetImpactAndCreditPayment(AcceptanceHelper):
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('refreshdb', 'testflask')
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestCreditPaymentInfoAjax(AcceptanceHelper):
     """
     The GET /ajax/credit-payment-info endpoint that drives the modal's payment
     information panel. GitHub issue #210, User Story 3.
 
-    Sample data has CreditOne as account 3, with transactions T3 ($222.22,
-    dtnow - 2 days) and T4split ($322.32, dtnow - 35 days) against it.
+    This class builds its own credit account and charges rather than asserting
+    against the shared sample data, so the expected numbers are the ones the
+    spec states and cannot be shifted by whatever other test classes have done
+    to the sample data before this one runs.
+
+    With PAY_PERIOD_START_DATE as the start of the currently-open period, the
+    account gets $400.00 of charges in the preceding, closed period and $150.00
+    in the open one -- the scenario in User Story 3.
     """
 
-    def test_00_charges_are_reported(self, base_url):
-        res = requests.get(
-            base_url + '/ajax/credit-payment-info',
-            params={
-                'account_id': '3',
-                'amount': '100.00',
-                'date': dtnow().strftime('%Y-%m-%d')
-            }
+    @property
+    def closed_charge_date(self):
+        return PAY_PERIOD_START_DATE - timedelta(days=7)
+
+    @property
+    def open_charge_date(self):
+        return PAY_PERIOD_START_DATE + timedelta(days=1)
+
+    def test_00_add_card_and_charges(self, testdb):
+        card = Account(
+            description='Payment info test card',
+            name='InfoCard',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('2000.00')
         )
+        testdb.add(card)
+        testdb.flush()
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=self.closed_charge_date,
+            budget_amounts={budget: Decimal('400.00')},
+            description='InfoCard closed period charges',
+            account=card
+        ))
+        testdb.add(Transaction(
+            date=self.open_charge_date,
+            budget_amounts={budget: Decimal('150.00')},
+            description='InfoCard open period charges',
+            account=card
+        ))
+        testdb.flush()
+        testdb.commit()
+        self.__class__.card_id = card.id
+
+    def _get(self, base_url, amount, **extra):
+        params = {
+            'account_id': str(self.card_id),
+            'amount': amount,
+            'date': dtnow().strftime('%Y-%m-%d')
+        }
+        params.update(extra)
+        return requests.get(
+            base_url + '/ajax/credit-payment-info', params=params
+        )
+
+    def test_01_payment_of_400(self, base_url):
+        """Spec US3 scenario 1: the whole 400.00 settles closed-period charges
+        and nothing applies to the open period."""
+        res = self._get(base_url, '400.00')
         assert res.status_code == 200
         j = res.json()
-        assert j['account_id'] == 3
-        assert j['account_name'] == 'CreditOne'
-        assert j['amount'] == 100.0
-        # 222.22 + 322.32
-        assert j['total_unpaid'] == 544.54
-        assert j['total_attributed'] == 100.0
+        assert j['account_name'] == 'InfoCard'
+        assert j['amount'] == 400.0
+        assert j['total_unpaid'] == 550.0
+        assert j['total_attributed'] == 400.0
         assert j['excess'] == 0.0
         assert j['pays_itself'] is False
         assert j['warnings'] == []
-        assert len(j['periods']) > 0
+        assert [
+            [p['is_closed'], p['attributed']] for p in j['periods']
+        ] == [[True, 400.0], [False, 0.0]]
 
-    def test_01_overpayment_warns(self, base_url):
-        """Spec SC-004: the warning states the size of the excess."""
-        res = requests.get(
-            base_url + '/ajax/credit-payment-info',
-            params={
-                'account_id': '3',
-                'amount': '600.00',
-                'date': dtnow().strftime('%Y-%m-%d')
-            }
-        )
-        assert res.status_code == 200
-        j = res.json()
-        assert j['total_unpaid'] == 544.54
-        assert j['total_attributed'] == 544.54
-        assert j['excess'] == 55.46
+    def test_02_payment_of_500(self, base_url):
+        """Spec US3 scenario 2: 400.00 settles the closed period, 100.00
+        applies to the open one, and there is no warning."""
+        j = self._get(base_url, '500.00').json()
+        assert j['total_attributed'] == 500.0
+        assert j['excess'] == 0.0
+        assert j['warnings'] == []
+        assert [
+            [p['is_closed'], p['attributed']] for p in j['periods']
+        ] == [[True, 400.0], [False, 100.0]]
+
+    def test_03_payment_of_600_warns(self, base_url):
+        """Spec US3 scenario 3 / SC-004: the warning states the excess."""
+        j = self._get(base_url, '600.00').json()
+        assert j['total_unpaid'] == 550.0
+        assert j['total_attributed'] == 550.0
+        assert j['excess'] == 50.0
         assert j['warnings'] == [
-            'This payment exceeds the $544.54 of unpaid charges recorded for '
-            'CreditOne by $55.46. This usually means charges are missing from '
+            'This payment exceeds the $550.00 of unpaid charges recorded for '
+            'InfoCard by $50.00. This usually means charges are missing from '
             'your records, or were recorded against the wrong account.'
         ]
 
-    def test_02_pays_itself_warns(self, base_url):
+    def test_04_pays_itself_warns(self, base_url):
         """Spec FR-022."""
-        res = requests.get(
-            base_url + '/ajax/credit-payment-info',
-            params={
-                'account_id': '3',
-                'amount': '100.00',
-                'date': dtnow().strftime('%Y-%m-%d'),
-                'payer_account_id': '3'
-            }
-        )
-        assert res.status_code == 200
-        j = res.json()
+        j = self._get(
+            base_url, '100.00', payer_account_id=str(self.card_id)
+        ).json()
         assert j['pays_itself'] is True
         assert j['warnings'] == [
-            'This transaction is recorded against CreditOne and is also '
-            'marked as a payment toward CreditOne. A payment should be '
-            'recorded against the account the money came from.'
+            'This transaction is recorded against InfoCard and is also marked '
+            'as a payment toward InfoCard. A payment should be recorded '
+            'against the account the money came from.'
         ]
 
-    def test_03_non_credit_account_rejected(self, base_url):
+    def test_05_prior_payment_reduces_unpaid(self, base_url, testdb):
+        """A payment already recorded toward the card is subtracted, so the
+        next payment is measured against what is left."""
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=dtnow().date(),
+            budget_amounts={budget: Decimal('400.00')},
+            description='InfoCard earlier payment',
+            account_id=1,
+            credit_payment_acct_id=self.card_id
+        ))
+        testdb.flush()
+        testdb.commit()
+        j = self._get(base_url, '150.00').json()
+        assert j['total_unpaid'] == 150.0
+        assert j['total_attributed'] == 150.0
+        assert j['excess'] == 0.0
+        assert j['warnings'] == []
+
+    def test_06_editing_excludes_self(self, base_url, testdb):
+        """Spec US3 scenario 6 / FR-019: reopening a saved payment must not
+        count it against itself."""
+        txn = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('InfoCard earlier payment')
+        ).one()
+        j = self._get(base_url, '400.00', txn_id=str(txn.id)).json()
+        assert j['total_unpaid'] == 550.0
+        assert j['total_attributed'] == 400.0
+        assert j['excess'] == 0.0
+        assert j['warnings'] == []
+
+    def test_07_non_credit_account_rejected(self, base_url):
         res = requests.get(
             base_url + '/ajax/credit-payment-info',
             params={'account_id': '1', 'amount': '100.00'}
@@ -2688,7 +2761,7 @@ class TestCreditPaymentInfoAjax(AcceptanceHelper):
         assert res.status_code == 400
         assert res.json() == {'error': 'BankOne is not a credit account.'}
 
-    def test_04_unknown_account_rejected(self, base_url):
+    def test_08_unknown_account_rejected(self, base_url):
         res = requests.get(
             base_url + '/ajax/credit-payment-info',
             params={'account_id': '98765', 'amount': '100.00'}
@@ -2698,48 +2771,73 @@ class TestCreditPaymentInfoAjax(AcceptanceHelper):
             'error': 'Invalid or missing account_id: 98765'
         }
 
-    def test_05_missing_amount_rejected(self, base_url):
+    def test_09_missing_amount_rejected(self, base_url):
         res = requests.get(
             base_url + '/ajax/credit-payment-info',
-            params={'account_id': '3'}
+            params={'account_id': str(self.card_id)}
         )
         assert res.status_code == 400
         assert 'Invalid or missing amount' in res.json()['error']
 
-    def test_06_bad_date_rejected(self, base_url):
+    def test_10_bad_date_rejected(self, base_url):
         res = requests.get(
             base_url + '/ajax/credit-payment-info',
-            params={'account_id': '3', 'amount': '1.00', 'date': 'notadate'}
+            params={
+                'account_id': str(self.card_id),
+                'amount': '1.00',
+                'date': 'notadate'
+            }
         )
         assert res.status_code == 400
         assert res.json() == {
             'error': 'Date "notadate" is not valid (YYYY-MM-DD)'
         }
 
-    def test_07_currency_formatted_amount_accepted(self, base_url):
+    def test_11_currency_formatted_amount_accepted(self, base_url):
         """The modal sends whatever the user typed; the endpoint normalizes it
         the same way the form does. See GitHub issue #323."""
-        res = requests.get(
-            base_url + '/ajax/credit-payment-info',
-            params={
-                'account_id': '3',
-                'amount': '1,234.56',
-                'date': dtnow().strftime('%Y-%m-%d')
-            }
-        )
-        assert res.status_code == 200
-        assert res.json()['amount'] == 1234.56
+        j = self._get(base_url, '1,234.56').json()
+        assert j['amount'] == 1234.56
 
 
 @pytest.mark.acceptance
-@pytest.mark.usefixtures('refreshdb', 'testflask')
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
 class TestTransModalCreditPaymentPanel(AcceptanceHelper):
     """
     The payment information panel inside the Add/Edit Transaction modal.
     GitHub issue #210, User Story 3.
+
+    Builds its own card, as TestCreditPaymentInfoAjax does and for the same
+    reason: $400.00 of charges in the closed period and $150.00 in the open
+    one, so the panel's numbers are the spec's.
     """
 
-    def test_00_panel_hidden_until_card_selected(self, base_url, selenium):
+    def test_00_add_card_and_charges(self, testdb):
+        card = Account(
+            description='Panel test card',
+            name='PanelCard',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('2000.00')
+        )
+        testdb.add(card)
+        testdb.flush()
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=PAY_PERIOD_START_DATE - timedelta(days=7),
+            budget_amounts={budget: Decimal('400.00')},
+            description='PanelCard closed period charges',
+            account=card
+        ))
+        testdb.add(Transaction(
+            date=PAY_PERIOD_START_DATE + timedelta(days=1),
+            budget_amounts={budget: Decimal('150.00')},
+            description='PanelCard open period charges',
+            account=card
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_01_panel_hidden_until_card_selected(self, base_url, selenium):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         selenium.find_element(By.ID, 'btn_add_trans').click()
@@ -2748,45 +2846,40 @@ class TestTransModalCreditPaymentPanel(AcceptanceHelper):
             By.ID, 'trans_frm_credit_payment_info'
         ).is_displayed() is False
 
-    def test_01_panel_shows_breakdown(self, base_url, selenium):
+    def _open_modal_with(self, selenium, base_url, amount):
         self.baseurl = base_url
         self.get(selenium, base_url + '/transactions')
         selenium.find_element(By.ID, 'btn_add_trans').click()
         self.wait_for_modal_shown(selenium)
         amt = selenium.find_element(By.ID, 'trans_frm_amount')
         amt.clear()
-        amt.send_keys('100.00')
+        amt.send_keys(amount)
         Select(
             selenium.find_element(By.ID, 'trans_frm_credit_payment_acct')
-        ).select_by_value('3')
+        ).select_by_visible_text('PanelCard')
+
+    def test_02_panel_shows_breakdown(self, base_url, selenium):
+        self._open_modal_with(selenium, base_url, '400.00')
         self.wait_for_id(selenium, 'credit_payment_periods')
         panel = selenium.find_element(By.ID, 'trans_frm_credit_payment_info')
         assert panel.is_displayed() is True
-        assert '$100.00 of $100.00 settles recorded charges' in panel.text
-        assert '$544.54 of unpaid charges' in panel.text
-        # No warning at this amount
+        assert '$400.00 of $400.00 settles recorded charges' in panel.text
+        assert '$550.00 of unpaid charges' in panel.text
+        assert 'closed' in panel.text
+        assert 'open' in panel.text
         assert len(
             panel.find_elements(By.ID, 'credit_payment_warning_0')
         ) == 0
 
-    def test_02_panel_warns_and_save_stays_enabled(self, base_url, selenium):
-        """Spec US3 scenario 5 / FR-021: the warning is advisory. The Save
-        button must stay enabled so a payment the person knows to be correct
-        can still be recorded."""
-        self.baseurl = base_url
-        self.get(selenium, base_url + '/transactions')
-        selenium.find_element(By.ID, 'btn_add_trans').click()
-        self.wait_for_modal_shown(selenium)
-        amt = selenium.find_element(By.ID, 'trans_frm_amount')
-        amt.clear()
-        amt.send_keys('600.00')
-        Select(
-            selenium.find_element(By.ID, 'trans_frm_credit_payment_acct')
-        ).select_by_value('3')
+    def test_03_panel_warns_and_save_stays_enabled(self, base_url, selenium):
+        """Spec US3 scenario 5 / FR-021: the warning is advisory. Save must
+        stay enabled so a payment the person knows to be correct can still be
+        recorded."""
+        self._open_modal_with(selenium, base_url, '600.00')
         self.wait_for_id(selenium, 'credit_payment_warning_0')
         warning = selenium.find_element(By.ID, 'credit_payment_warning_0')
-        assert 'exceeds the $544.54 of unpaid charges' in warning.text
-        assert 'by $55.46' in warning.text
+        assert 'exceeds the $550.00 of unpaid charges' in warning.text
+        assert 'by $50.00' in warning.text
         assert selenium.find_element(
             By.ID, 'modalSaveButton'
         ).is_enabled() is True
