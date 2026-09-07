@@ -19,6 +19,7 @@ Changelog
   * ``transactions`` now holds two foreign keys to ``accounts.id``, so the existing ``Transaction.account`` relationship gained an explicit ``foreign_keys``; without it SQLAlchemy cannot infer the join condition for either relationship.
   * ``FormBuilder`` gained ``inputHtml`` on ``addSelect`` and ``addCurrency``, and ``helpBlock`` on ``addCheckbox``, following the convention ``addText`` already established.
   * Document the credit card payment workflow and the no-budget-impact flag in ``docs/source/app_usage.rst``.
+  * **Known limitation, documented rather than fixed:** the zero-budget-impact rule is exact for the purchases a payment settles; it does not account for interest or fees on a carried balance. ``OFXTransaction.unreconciled()`` has always excluded transactions flagged as interest charges, interest payments, late fees, other fees and payments, so an interest charge never reaches the Reconcile view and never becomes a budgeted ``Transaction``. Anyone carrying a balance therefore has the interest portion of a payment leave their bank account with no budget recording it. Previously card payments counted in full, which double-counted the purchases but incidentally captured the interest; that side effect goes away along with the double-count. ``docs/source/app_usage.rst`` gains a section telling balance-carriers to record the interest charge themselves as an ordinary transaction on the credit account, after which the rule holds again.
 
 1.7.0 (2026-09-06)
 ------------------

@@ -20,6 +20,10 @@ impact.** Each charge is already budgeted on its own charge date, in its own pay
 The payment that settles it is a movement of cash between two accounts the application
 already tracks, and must not be charged to any budget in any period.
 
+That rule is exact as long as everything the payment settles was recorded as a charge. It
+holds for purchases. It does not hold for interest and fees on a carried balance — see
+"Known limitation: interest and fees on a carried balance" below.
+
 Reaching that rule requires a general capability first — the ability to record a
 transaction that exists for reconciliation purposes but is excluded from all budget and
 pay-period arithmetic. That capability is issue #319, it is not present in the code today,
@@ -392,6 +396,39 @@ decision that can be revisited without reworking the rest of the feature.
   the person's data are left exactly as they are; they already net to zero and are correct.
   The feature changes how new payments are recorded, and existing unreconciled payments may
   be updated by hand if the person chooses.
+
+## Known limitation: interest and fees on a carried balance
+
+Raised by the repository owner during review of the implementation, and recorded here rather
+than fixed — their decision, taken as a documentation-only change.
+
+The rule rests on every amount a payment settles having been budgeted on its own charge date.
+Purchases satisfy that. Interest and fees do not:
+
+* `OFXTransaction.unreconciled()` excludes any downloaded transaction flagged
+  `is_interest_charge`, `is_interest_payment`, `is_late_fee`, `is_other_fee` or `is_payment`.
+  Those flags are set from the `re_*` regular expressions on `Account`.
+* So an interest charge never reaches the Reconcile view, never becomes a `Transaction`, and
+  is never counted against a budget. That behaviour predates this feature.
+
+The consequence is that for someone who carries a balance, the interest portion of a card
+payment leaves their bank account and no budget records it — their budget overstates
+available money by the interest and fees paid. Before this feature, card payments were
+counted against a budget in full, which double-counted the purchases (the defect this feature
+fixes) but did incidentally capture the interest; that side effect goes away with the
+double-count.
+
+**Decision**: documented, not fixed. `docs/source/app_usage.rst` gains a warning-boxed section
+telling anyone who carries a balance to record the interest charge themselves as an ordinary
+transaction on the credit account, dated when it was charged. Once recorded it is budgeted
+like any other charge on that card and the rule holds again. Behaviour and the over-payment
+warning text are unchanged.
+
+**Considered and not taken**: giving a payment budget impact equal to the excess over the
+card's recorded unpaid charges. That would make balance-carriers correct automatically, but it
+would make a pay period's total depend on what has been recorded so far — recording a
+forgotten charge late would retroactively change an already-closed period's total — which is
+the timing dependence FR-012 exists to rule out.
 
 ## Dependencies
 

@@ -120,6 +120,11 @@ every budget and every pay period total. Each charge is already budgeted on its
 own charge date, in its own pay period; the payment is a movement of cash
 between two accounts the application already tracks.
 
+This holds exactly as long as everything the payment settles was recorded as a
+charge. That is true of purchases. It is *not* automatically true of interest
+and fees — see :ref:`app_usage.credit_card_payments.balance` below if you carry
+a balance on any card.
+
 This holds however the dates fall:
 
 * **Paid in the same pay period as the charge.** A $100 charge is counted once,
@@ -134,6 +139,57 @@ charges were made; across periods it charges a period the payment amount rather
 than that period's own purchases, which recreates the double-count one period
 later.
 
+.. _app_usage.credit_card_payments.balance:
+
+If you carry a balance: interest and fees
++++++++++++++++++++++++++++++++++++++++++
+
+.. warning::
+
+   If you carry a balance on a credit card, read this. The zero-budget-impact
+   rule is exact for the *purchases* a payment settles, and this application
+   does not, on its own, account for the interest and fees you pay on top of
+   them.
+
+When a card is paid in full every month, everything a payment settles is a
+purchase, and every purchase was recorded and budgeted on its charge date. The
+payment really is nothing but a movement of cash, and excluding it from budget
+totals is exactly right.
+
+Carrying a balance breaks that premise. The card charges interest, and may
+charge late fees or other fees, and those are amounts you owe *on top of* your
+purchases. They are real money leaving your bank account — but this application
+does not record them as budgeted charges.
+
+That is deliberate and predates this feature.
+:py:meth:`OFXTransaction.unreconciled() <biweeklybudget.models.ofx_transaction.OFXTransaction.unreconciled>`
+excludes any downloaded transaction flagged as an interest charge, interest
+payment, late fee, other fee, or payment. Those flags are set automatically from
+the ``re_interest_charge``, ``re_interest_paid``, ``re_late_fee``,
+``re_other_fee`` and ``re_payment`` regular expressions on the
+:py:class:`~biweeklybudget.models.account.Account`. So an interest charge never
+appears in the Reconcile view, is never matched to a
+:py:class:`~biweeklybudget.models.transaction.Transaction`, and is never
+counted against a budget.
+
+**The consequence.** The interest portion of a card payment leaves your bank
+account, and no budget or pay period records it. Your budget will show more
+money available than you actually have, by the amount of interest and fees you
+paid. Before this feature existed, card payments were counted against a budget
+in full, which double-counted the purchases — the bug this feature fixes — but
+did incidentally capture the interest. That side effect is now gone along with
+the double-count.
+
+**What to do about it.** Record the interest charge yourself, as an ordinary
+transaction against the credit account, dated the day it was charged, against
+whatever budget you want to carry your interest cost. Once it is recorded, it is
+budgeted on its charge date like any other charge on that card, and the payment
+that settles it correctly has no further impact. Nothing else about the workflow
+changes.
+
+You will also see the over-payment warning described below until you do, because
+the payment genuinely does exceed the charges the application has on record.
+
 .. _app_usage.credit_card_payments.validation:
 
 What the payment panel tells you
@@ -145,10 +201,13 @@ periods that have already closed, broken down by period from oldest to newest,
 and how much applies to the currently-open period.
 
 If the amount is larger than every unpaid charge recorded for that card, you
-are warned, and told by how much. That reliably means charges are missing from
-your records or were recorded against the wrong account — for example, charges
-made near the end of a period that have not posted yet, or a payment covering
-several periods at once after a missed cycle.
+are warned, and told by how much. On a card you pay in full, that reliably means
+charges are missing from your records or were recorded against the wrong
+account — for example, charges made near the end of a period that have not
+posted yet, or a payment covering several periods at once after a missed cycle.
+On a card carrying a balance it will also include the interest and fees
+described above, which are not recorded as charges unless you record them
+yourself.
 
 The warning is advisory. You can always save the transaction: you know things
 the application does not, including charges it has not downloaded yet.
