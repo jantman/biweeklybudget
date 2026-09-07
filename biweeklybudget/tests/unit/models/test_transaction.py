@@ -37,10 +37,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 from decimal import Decimal
 from datetime import date
+from sqlalchemy import select
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import null
 
 from biweeklybudget.models.transaction import Transaction
+from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
@@ -209,3 +211,89 @@ class TestSetBudgetAmounts(object):
         delete_call = [c for c in mock_sess.mock_calls if c[0] == 'delete'][0]
         assert delete_call[1][0].budget == b2
         assert delete_call[1][0].amount == Decimal('90.00')
+
+
+class TestTransactionIsExcludedFromBudget(object):
+    """
+    Tests for :py:attr:`~.Transaction.is_excluded_from_budget`.
+
+    This is a derived property rather than a stored one. Keeping
+    ``no_budget_impact`` (the user's own choice) separate from
+    ``credit_payment_acct_id`` (which implies exclusion) is what makes it
+    possible to clear a credit payment designation and have the transaction
+    resume counting against its budget -- see ``test_clearing_credit_acct_restores_impact``,
+    which is spec FR-014 and the reason for the whole arrangement.
+    """
+
+    def test_neither_set_is_not_excluded(self):
+        t = Transaction()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = None
+        assert t.is_excluded_from_budget is False
+
+    def test_defaults_are_not_excluded(self):
+        """A transaction with neither field touched must behave as it does
+        today; this is what keeps the migration a no-op for existing rows."""
+        t = Transaction()
+        assert t.is_excluded_from_budget is False
+
+    def test_no_budget_impact_alone_is_excluded(self):
+        t = Transaction()
+        t.no_budget_impact = True
+        t.credit_payment_acct_id = None
+        assert t.is_excluded_from_budget is True
+
+    def test_credit_payment_acct_alone_is_excluded(self):
+        """Setting a credit payment account excludes the transaction without
+        the user separately setting no_budget_impact (spec FR-011)."""
+        t = Transaction()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = 3
+        assert t.is_excluded_from_budget is True
+
+    def test_both_set_is_excluded(self):
+        t = Transaction()
+        t.no_budget_impact = True
+        t.credit_payment_acct_id = 3
+        assert t.is_excluded_from_budget is True
+
+    def test_clearing_credit_acct_restores_impact(self):
+        """Spec FR-014: clearing the credit designation restores ordinary
+        budget impact, because the user never set no_budget_impact
+        themselves."""
+        t = Transaction()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = 3
+        assert t.is_excluded_from_budget is True
+        t.credit_payment_acct_id = None
+        assert t.is_excluded_from_budget is False
+
+    def test_clearing_credit_acct_keeps_explicit_flag(self):
+        """Spec FR-014: an explicitly-set no_budget_impact survives clearing
+        the credit designation. This is the case a single stored boolean
+        could not represent."""
+        t = Transaction()
+        t.no_budget_impact = True
+        t.credit_payment_acct_id = 3
+        t.credit_payment_acct_id = None
+        assert t.is_excluded_from_budget is True
+
+    def test_unflushed_relationship_is_excluded(self):
+        """A Transaction constructed with the relationship rather than the
+        foreign key must answer correctly before it is flushed, when the
+        foreign key is still None."""
+        t = Transaction()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = None
+        t.credit_payment_acct = Account(name='CreditOne')
+        assert t.credit_payment_acct_id is None
+        assert t.is_excluded_from_budget is True
+
+    def test_expression_form(self):
+        """The hybrid must also work as a SQL expression, so it can be used in
+        queries."""
+        sql = str(
+            select(Transaction.id).where(Transaction.is_excluded_from_budget)
+        ).replace('\n', ' ')
+        assert 'no_budget_impact IS true' in sql
+        assert 'credit_payment_acct_id IS NOT NULL' in sql

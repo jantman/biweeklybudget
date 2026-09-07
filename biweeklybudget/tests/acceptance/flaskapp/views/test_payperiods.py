@@ -3112,3 +3112,100 @@ class TestSkipScheduled(AcceptanceHelper):
                 '<a href="javascript:txnReconcileModal(2)">Yes (2)</a>'
             ]
         ])
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestPayPeriodNoBudgetImpact(AcceptanceHelper):
+    """
+    An excluded transaction is shown in the pay period's transaction table,
+    marked, and moves none of the period's totals. GitHub issues #210 and #319.
+    """
+
+    def test_0_clean_db(self, dump_file_path):
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
+
+    def test_1_add_data(self, testdb):
+        acct = Account(
+            description='Bank Account',
+            name='BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(acct)
+        card = Account(
+            description='Credit Card',
+            name='CreditOne',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('2000.00')
+        )
+        testdb.add(card)
+        budget = Budget(
+            name='1Periodic',
+            is_periodic=True,
+            description='1Periodic',
+            starting_balance=Decimal('500.00')
+        )
+        testdb.add(budget)
+        testdb.flush()
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('100.00')},
+            description='PPOrdinary',
+            account=acct
+        ))
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=2),
+            budget_amounts={budget: Decimal('40.00')},
+            description='PPStatementCredit',
+            account=acct,
+            no_budget_impact=True
+        ))
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=3),
+            budget_amounts={budget: Decimal('60.00')},
+            description='PPCardPayment',
+            account=acct,
+            credit_payment_acct=card
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_sums_ignore_excluded(self, testdb):
+        """Only the 100.00 ordinary transaction is counted; the 40.00 and
+        60.00 excluded ones are not."""
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('100.00')
+        assert pp.budget_sums[1]['remaining'] == Decimal('400.00')
+        assert pp.overall_sums['spent'] == Decimal('100.00')
+
+    def test_3_page_totals_ignore_excluded(self, base_url, selenium):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        assert selenium.find_element(By.ID, 'amt-spent').text == '$100.00'
+
+    def test_4_excluded_shown_and_marked(self, base_url, selenium):
+        """Spec FR-005 and FR-007: still listed, and marked, so a reader can
+        see why the listed amounts do not add up to the totals above them."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'trans-table')
+        htmls = [
+            row[2] for row in self.inner_htmls(self.tbody2elemlist(table))
+        ]
+        ordinary = [h for h in htmls if 'PPOrdinary' in h]
+        credit = [h for h in htmls if 'PPStatementCredit' in h]
+        payment = [h for h in htmls if 'PPCardPayment' in h]
+        assert len(ordinary) == 1
+        assert len(credit) == 1
+        assert len(payment) == 1
+        assert 'no budget impact' not in ordinary[0]
+        assert '<em class="text-muted">(no budget impact)</em>' in credit[0]
+        assert '<em class="text-muted">(no budget impact)</em>' in payment[0]

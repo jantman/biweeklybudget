@@ -56,7 +56,19 @@ $(document).ready(function() {
             {
                 data: "description",
                 "render": function(data, type, row) {
-                    return $("<div>").append($("<a/>").attr("href", "javascript:transModal(" + row.DT_RowData.id + ", mytable)").text(data)).html();
+                    var div = $("<div>").append($("<a/>").attr("href", "javascript:transModal(" + row.DT_RowData.id + ", mytable)").text(data));
+                    // Mark transactions that are excluded from budget and pay
+                    // period totals, so a reader can see why the listed
+                    // amounts do not sum to the reported totals. See GitHub
+                    // issues #210 and #319.
+                    if(row.DT_RowData.no_budget_impact === true) {
+                        var note = row.DT_RowData.credit_payment_acct_name === null ?
+                            "(no budget impact)" :
+                            "(payment for " + row.DT_RowData.credit_payment_acct_name + "; no budget impact)";
+                        div.append(document.createTextNode(" "));
+                        div.append($("<em/>").addClass("text-muted").text(note));
+                    }
+                    return div.html();
                 }
             },
             {

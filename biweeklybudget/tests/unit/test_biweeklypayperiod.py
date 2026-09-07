@@ -611,6 +611,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('22.22'),
                     'budgeted_amount': None,
                     'budgets': {
@@ -620,6 +621,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
                     'budgets': {
@@ -629,6 +631,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
                     'budgets': {
@@ -727,6 +730,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('22.22'),
                     'budgeted_amount': None,
                     'budgets': {
@@ -735,6 +739,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('22.22'),
                     'budgeted_amount': Decimal('20.20'),
                     'budgets': {
@@ -744,6 +749,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('33.33'),
                     'budgeted_amount': Decimal('33.33'),
                     'budgets': {
@@ -753,6 +759,7 @@ class TestMakeBudgetSums(object):
                 },
                 {
                     'type': 'Transaction',
+                    'no_budget_impact': False,
                     'amount': Decimal('-1234.56'),
                     'budgeted_amount': Decimal('-1234.56'),
                     'budgets': {
@@ -828,6 +835,148 @@ class TestMakeBudgetSums(object):
         for idx, exp in enumerate(expected):
             assert str(kall[1][idx]) == str(expected[idx])
         assert self.mock_sess.mock_calls[2] == call.query().filter().all()
+
+
+class TestMakeBudgetSumsNoBudgetImpact(object):
+    """
+    Transactions excluded from budget arithmetic contribute nothing to any
+    budget's spent, allocated, or trans_total amounts, and therefore nothing to
+    the overall sums, which are derived from these. See GitHub issues #210 and
+    #319.
+    """
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+        self.budgets = [
+            Mock(
+                spec_set=Budget, starting_balance=Decimal('500.00'), id=1,
+                is_income=False
+            )
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all\
+            .return_value = self.budgets
+
+    def _trans(self, amount, no_budget_impact=False, budgeted_amount=None,
+               planned_budget_id=None, budgets=None):
+        d = {
+            'type': 'Transaction',
+            'no_budget_impact': no_budget_impact,
+            'amount': amount,
+            'budgeted_amount': budgeted_amount,
+            'budgets': budgets or {
+                1: {'name': 'Groceries', 'amount': amount}
+            }
+        }
+        if planned_budget_id is not None:
+            d['planned_budget_id'] = planned_budget_id
+        return d
+
+    def test_excluded_transaction_does_not_move_any_sum(self):
+        """A budget showing 100.00 spent still shows 100.00 after a 40.00
+        excluded transaction against the same budget is added to the period."""
+        without = [self._trans(Decimal('100.00'))]
+        with_excluded = [
+            self._trans(Decimal('100.00')),
+            self._trans(Decimal('40.00'), no_budget_impact=True)
+        ]
+
+        self.cls._data_cache = {'all_trans_list': without}
+        baseline = self.cls._make_budget_sums()
+        assert baseline[1]['spent'] == Decimal('100.00')
+        assert baseline[1]['allocated'] == Decimal('100.00')
+        assert baseline[1]['trans_total'] == Decimal('100.00')
+        assert baseline[1]['remaining'] == Decimal('400.00')
+
+        self.cls._data_cache = {'all_trans_list': with_excluded}
+        after = self.cls._make_budget_sums()
+        assert after == baseline
+
+    def test_excluded_split_transaction_hits_no_budget(self):
+        """An excluded transaction split across budgets contributes to none of
+        them."""
+        budgets = [
+            Mock(
+                spec_set=Budget, starting_balance=Decimal('500.00'), id=1,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=Decimal('300.00'), id=2,
+                is_income=False
+            ),
+            Mock(
+                spec_set=Budget, starting_balance=Decimal('200.00'), id=3,
+                is_income=False
+            )
+        ]
+        self.mock_sess.query.return_value.filter.return_value.all\
+            .return_value = budgets
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(
+                Decimal('60.00'), no_budget_impact=True, budgets={
+                    1: {'name': 'a', 'amount': Decimal('10.00')},
+                    2: {'name': 'b', 'amount': Decimal('20.00')},
+                    3: {'name': 'c', 'amount': Decimal('30.00')}
+                }
+            )
+        ]}
+        res = self.cls._make_budget_sums()
+        for bid in [1, 2, 3]:
+            assert res[bid]['spent'] == Decimal('0.0')
+            assert res[bid]['allocated'] == Decimal('0.0')
+            assert res[bid]['trans_total'] == Decimal('0.0')
+
+    def test_excluded_transaction_with_budgeted_amount(self):
+        """An excluded transaction carrying a budgeted_amount and a
+        planned_budget_id contributes neither spent nor allocated."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(
+                Decimal('40.00'), no_budget_impact=True,
+                budgeted_amount=Decimal('40.00'), planned_budget_id=1
+            )
+        ]}
+        res = self.cls._make_budget_sums()
+        assert res[1]['spent'] == Decimal('0.0')
+        assert res[1]['allocated'] == Decimal('0.0')
+        assert res[1]['trans_total'] == Decimal('0.0')
+        assert res[1]['remaining'] == Decimal('500.00')
+
+    def test_credit_payment_is_not_netted_against_period_charges(self):
+        """
+        Regression guard for the approach issue #210 explicitly rejects.
+
+        Netting would subtract this period's charges on a card from payments
+        toward it, charging the period `C + (P - C)` = `P`. With C = 300.00 of
+        this period's own charges and a payment of P = 500.00, the period must
+        be charged 300.00 -- its own purchases -- and never 500.00.
+        """
+        self.cls._data_cache = {'all_trans_list': [
+            # This period's own charges on the card
+            self._trans(Decimal('300.00')),
+            # A payment settling an earlier period's charges
+            self._trans(Decimal('500.00'), no_budget_impact=True)
+        ]}
+        res = self.cls._make_budget_sums()
+        assert res[1]['spent'] == Decimal('300.00')
+        assert res[1]['spent'] != Decimal('500.00')
+        assert res[1]['trans_total'] == Decimal('300.00')
+
+    def test_overall_sums_follow_budget_sums(self):
+        """_make_overall_sums derives entirely from budget_sums, so excluding a
+        transaction from the budget sums excludes it from the overall sums.
+        Asserted rather than assumed."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('100.00'))
+        ]}
+        self.cls._data_cache['budget_sums'] = self.cls._make_budget_sums()
+        baseline = self.cls._make_overall_sums()
+
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('100.00')),
+            self._trans(Decimal('40.00'), no_budget_impact=True)
+        ]}
+        self.cls._data_cache['budget_sums'] = self.cls._make_budget_sums()
+        assert self.cls._make_overall_sums() == baseline
 
 
 class TestMakeOverallSums(object):
@@ -1058,6 +1207,7 @@ class TestDictForTrans(object):
         type(m_budget).name = 'bar'
         m = Mock(
             spec=Transaction,
+            is_excluded_from_budget=False,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -1090,6 +1240,7 @@ class TestDictForTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'planned_budget_id': 3,
             'planned_budget_name': 'bar',
             'budgets': {
@@ -1108,6 +1259,7 @@ class TestDictForTrans(object):
         type(m_budget3).name = 'baz'
         m = Mock(
             spec=Transaction,
+            is_excluded_from_budget=False,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -1152,6 +1304,7 @@ class TestDictForTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'planned_budget_id': 3,
             'planned_budget_name': 'bar',
             'budgets': {
@@ -1168,6 +1321,7 @@ class TestDictForTrans(object):
         type(m_budget).name = 'bar'
         m = Mock(
             spec=Transaction,
+            is_excluded_from_budget=False,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -1200,6 +1354,7 @@ class TestDictForTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': 2,
+            'no_budget_impact': False,
             'planned_budget_id': 3,
             'planned_budget_name': 'bar',
             'budgets': {
@@ -1214,6 +1369,7 @@ class TestDictForTrans(object):
         type(m_budget).name = 'bar'
         m = Mock(
             spec=Transaction,
+            is_excluded_from_budget=False,
             id=123,
             date=date(year=2017, month=7, day=15),
             scheduled_trans_id=567,
@@ -1248,6 +1404,7 @@ class TestDictForTrans(object):
             'planned_budget_id': None,
             'planned_budget_name': None,
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1289,6 +1446,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1308,6 +1466,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1328,6 +1487,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1349,6 +1509,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1370,6 +1531,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1392,6 +1554,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1414,6 +1577,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1436,6 +1600,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }
@@ -1458,6 +1623,7 @@ class TestDictForSchedTrans(object):
             'account_id': 2,
             'account_name': 'foo',
             'reconcile_id': None,
+            'no_budget_impact': False,
             'budgets': {
                 3: {'name': 'bar', 'amount': Decimal('123.45')}
             }

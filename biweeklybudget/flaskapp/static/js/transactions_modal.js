@@ -45,7 +45,7 @@ function transModalDivForm() {
     return new FormBuilder('transForm')
         .addHidden('trans_frm_id', 'id', '')
         .addDatePicker('trans_frm_date', 'date', 'Date')
-        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
+        .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).', inputHtml: 'onchange="transModalCreditPaymentChanged()" onkeyup="transModalCreditPaymentChanged()"' })
         .addCurrency('trans_frm_sales_tax', 'sales_tax', 'Sales Tax', { helpBlock: 'Sales tax paid on this transaction (default 0.0).' })
         .addText('trans_frm_description', 'description', 'Description')
         .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
@@ -67,6 +67,17 @@ function transModalDivForm() {
             '</div>'
         )
         .addText('trans_frm_notes', 'notes', 'Notes')
+        .addLabelToValueSelect(
+            'trans_frm_credit_payment_acct', 'credit_payment_acct',
+            'Credit Card Payment For', credit_acct_names_to_id, 'None', true,
+            { helpBlock: 'If this transaction is a payment toward a credit account, select that account. The payment will have no budget impact in any pay period; the charges it settles are already budgeted on their own dates.', inputHtml: 'onchange="transModalCreditPaymentChanged()"' }
+        )
+        .addCheckbox(
+            'trans_frm_no_budget_impact', 'no_budget_impact',
+            'No Budget Impact?', false,
+            { helpBlock: 'Exclude this transaction from all budget and pay period totals. Use for statement credits, cash-back redemptions and balance reconcile adjustments. Credit card payments are excluded automatically and do not need this.' }
+        )
+        .addHTML('<div id="trans_frm_credit_payment_info" style="display: none;"></div>')
         .addHTML('<p id="trans_frm_transfer_p" style="display: none;"></p>')
         .render();
 }
@@ -83,6 +94,19 @@ function transModalDivFillAndShow(msg) {
     $('#trans_frm_sales_tax').val(msg['sales_tax']);
     $('#trans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#trans_frm_notes').val(msg['notes']);
+    $('#trans_frm_no_budget_impact').prop('checked', msg['no_budget_impact'] === true);
+    if(msg['credit_payment_acct_id'] !== null && msg['credit_payment_acct_id'] !== undefined) {
+        // The account may since have been deactivated, in which case the
+        // select will not contain it; append it so an existing payment still
+        // shows the account it points at.
+        if($('#trans_frm_credit_payment_acct option[value=' + msg['credit_payment_acct_id'] + ']').length === 0) {
+            $('#trans_frm_credit_payment_acct').append(
+                '<option value="' + msg['credit_payment_acct_id'] + '">' + msg['credit_payment_acct_name'] + '</option>'
+            );
+        }
+        $('#trans_frm_credit_payment_acct option[value=' + msg['credit_payment_acct_id'] + ']').prop('selected', 'selected');
+    }
+    transModalCreditPaymentChanged();
     if(msg['transfer_id'] !== null) {
       $('#trans_frm_transfer_p').html(
         'This transaction is one half of a transfer, along with <a href="javascript:transModal(' +
@@ -226,6 +250,133 @@ function transModalFormSerialize(form_id) {
         delete data['amount_' + rownum];
     }
     return data;
+}
+
+/**
+ * Handler for change of the "Credit Card Payment For"
+ * (``#trans_frm_credit_payment_acct``) select, and of the amount and date
+ * inputs while a credit account is selected.
+ *
+ * Shows or hides the payment information panel. When a credit account is
+ * selected, the panel is populated from ``/ajax/credit-payment-info`` with a
+ * breakdown of which pay periods' charges the entered amount settles, plus any
+ * advisory warnings. See GitHub issue #210.
+ */
+function transModalCreditPaymentChanged() {
+    var acct_id = $('#trans_frm_credit_payment_acct').find(':selected').val();
+    if(acct_id === undefined || acct_id === 'None' || acct_id === '') {
+        $('#trans_frm_credit_payment_info').hide().html('');
+        return;
+    }
+    $('#trans_frm_credit_payment_info').show();
+    transModalUpdateCreditPaymentInfo();
+}
+
+/**
+ * Populate the credit payment information panel
+ * (``#trans_frm_credit_payment_info``) from ``/ajax/credit-payment-info``.
+ *
+ * Shows which pay periods' charges the entered amount settles, and any
+ * advisory warnings. Never disables the Save button: the person entering a
+ * payment knows things the application does not, including charges that have
+ * not been downloaded yet. See GitHub issue #210.
+ */
+function transModalUpdateCreditPaymentInfo() {
+    var acct_id = $('#trans_frm_credit_payment_acct').find(':selected').val();
+    if(acct_id === undefined || acct_id === 'None' || acct_id === '') { return; }
+    var amount = $('#trans_frm_amount').val();
+    if(amount === undefined || amount.trim() === '') {
+        $('#trans_frm_credit_payment_info').html('');
+        return;
+    }
+    var params = {
+        account_id: acct_id,
+        amount: amount,
+        date: $('#trans_frm_date').val(),
+        payer_account_id: $('#trans_frm_account').find(':selected').val()
+    };
+    var txn_id = $('#trans_frm_id').val();
+    if(txn_id !== undefined && txn_id !== '') { params['txn_id'] = txn_id; }
+    $.ajax({
+        url: '/ajax/credit-payment-info',
+        data: params,
+        success: function(data) {
+            $('#trans_frm_credit_payment_info').html(
+                transModalCreditPaymentInfoHtml(data)
+            );
+        },
+        error: function(xhr) {
+            var msg = 'Unable to check this payment against recorded charges.';
+            if(xhr.responseJSON && xhr.responseJSON.error) {
+                msg = xhr.responseJSON.error;
+            }
+            $('#trans_frm_credit_payment_info').html(
+                $('<div>').append(
+                    $('<p/>').addClass('text-muted').text(msg)
+                ).html()
+            );
+        }
+    });
+}
+
+/**
+ * Render the HTML for the credit payment information panel.
+ *
+ * @param {Object} data - the ``/ajax/credit-payment-info`` response
+ * @return {String} HTML for the panel
+ */
+function transModalCreditPaymentInfoHtml(data) {
+    var div = $('<div>');
+    var i;
+    for(i = 0; i < data['warnings'].length; i++) {
+        div.append(
+            $('<p/>').addClass('text-danger')
+                .attr('id', 'credit_payment_warning_' + i)
+                .text(data['warnings'][i])
+        );
+    }
+    if(data['periods'].length === 0) {
+        div.append(
+            $('<p/>').addClass('text-muted').text(
+                'No unpaid charges are recorded for ' + data['account_name'] +
+                '.'
+            )
+        );
+        return div.html();
+    }
+    div.append(
+        $('<p/>').css('margin-bottom', '5px').css('font-weight', '700')
+            .text('This payment covers:')
+    );
+    var tbl = $('<table/>').addClass('table table-condensed')
+        .attr('id', 'credit_payment_periods');
+    var thead = $('<tr/>');
+    thead.append($('<th/>').text('Pay Period'));
+    thead.append($('<th/>').text('Status'));
+    thead.append($('<th/>').text('Unpaid Charges'));
+    thead.append($('<th/>').text('Covered By This Payment'));
+    tbl.append($('<thead/>').append(thead));
+    var tbody = $('<tbody/>');
+    for(i = 0; i < data['periods'].length; i++) {
+        var p = data['periods'][i];
+        var row = $('<tr/>');
+        row.append($('<td/>').text(p['start_date']['str']));
+        row.append($('<td/>').text(p['is_closed'] ? 'closed' : 'open'));
+        row.append($('<td/>').text(fmt_currency(p['outstanding'])));
+        row.append($('<td/>').text(fmt_currency(p['attributed'])));
+        tbody.append(row);
+    }
+    tbl.append(tbody);
+    div.append(tbl);
+    div.append(
+        $('<p/>').attr('id', 'credit_payment_totals').text(
+            fmt_currency(data['total_attributed']) + ' of ' +
+            fmt_currency(data['amount']) + ' settles recorded charges; ' +
+            fmt_currency(data['total_unpaid']) + ' of unpaid charges are ' +
+            'recorded for ' + data['account_name'] + '.'
+        )
+    );
+    return div.html();
 }
 
 /**

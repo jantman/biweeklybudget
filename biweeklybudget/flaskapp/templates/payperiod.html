@@ -15,6 +15,10 @@
         {% for name in accts.keys()|sort %}
         acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
         {% endfor %}
+        var credit_acct_names_to_id = {};
+        {% for name in credit_accts.keys()|sort %}
+        credit_acct_names_to_id["{{ name }}"] = "{{ credit_accts[name] }}";
+        {% endfor %}
         var budget_names_to_id = {};
         {% for id in budgets.keys()|sort %}
         budget_names_to_id["{{ budgets[id] }}"] = "{{ id }}";
@@ -190,7 +194,7 @@
                                             <td>{{ t['date']|dateymd }}</td>
                                             <td>{{ t['amount']|dollars }}</td>
                                             {% if t['type'] == 'Transaction' %}
-                                            <td><a href="javascript:transModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a></td>
+                                            <td><a href="javascript:transModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a>{% if t['no_budget_impact'] %} <em class="text-muted">(no budget impact)</em>{% endif %}</td>
                                             {% else %}
                                             <td><em>(sched)</em> <a href="javascript:schedModal({{ t['id'] }}, null);">{{ t['description'] }} ({{ t['id'] }})</a></td>
                                             {% endif %}

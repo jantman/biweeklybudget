@@ -55,7 +55,8 @@ _REQUIRED_VARS = [
 
 _DATE_VARS = [
     'PAY_PERIOD_START_DATE',
-    'RECONCILE_BEGIN_DATE'
+    'RECONCILE_BEGIN_DATE',
+    'CREDIT_PAYMENT_BEGIN_DATE'
 ]
 _TIMEDELTA_VARS = [
     'STALE_DATA_TIMEDELTA'
@@ -147,6 +148,24 @@ PAY_PERIOD_START_DATE = None
 #: be specified in Y-m-d format (i.e. parsable by
 #: :py:meth:`datetime.datetime.strptime` with ``%Y-%m-%d`` format).
 RECONCILE_BEGIN_DATE = None
+
+#: :py:class:`datetime.date` - *(optional)* The date from which credit account
+#: charges and payments toward credit accounts are counted when validating the
+#: amount of a credit card payment. Charges and payments before this date are
+#: ignored when computing how much of a card's recorded charges are unpaid.
+#:
+#: Payments recorded before the credit card payment feature existed carry no
+#: :py:attr:`~.Transaction.credit_payment_acct_id`, so they are not subtracted
+#: from a card's charge total; without a lower bound, a card's apparent unpaid
+#: charges would drift upward without limit and the over-payment warning would
+#: stop meaning anything. Move this date forward once historical payments have
+#: been designated or written off.
+#:
+#: If not set, this defaults to
+#: :py:attr:`biweeklybudget.settings.RECONCILE_BEGIN_DATE`. This must be
+#: specified in Y-m-d format (i.e. parsable by
+#: :py:meth:`datetime.datetime.strptime` with ``%Y-%m-%d`` format).
+CREDIT_PAYMENT_BEGIN_DATE = None
 
 #: :py:class:`datetime.timedelta` - Time interval beyond which OFX data for
 #: accounts will be considered old/stale. This must be specified as a number
@@ -253,6 +272,14 @@ for varname in _REQUIRED_VARS:
         raise SystemExit(
             'ERROR: setting or environment variable "%s" must be set' % varname
         )
+
+# CREDIT_PAYMENT_BEGIN_DATE is optional; default it to RECONCILE_BEGIN_DATE.
+if CREDIT_PAYMENT_BEGIN_DATE is None:
+    logger.debug(
+        'CREDIT_PAYMENT_BEGIN_DATE not set; defaulting to '
+        'RECONCILE_BEGIN_DATE (%s)', RECONCILE_BEGIN_DATE
+    )
+    CREDIT_PAYMENT_BEGIN_DATE = RECONCILE_BEGIN_DATE
 
 # Handle the "LOCALE_NAME" variable special logic for default if not specified.
 if LOCALE_NAME is None or LOCALE_NAME == 'C' or LOCALE_NAME.startswith('C.'):

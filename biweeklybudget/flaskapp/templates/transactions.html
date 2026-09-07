@@ -15,6 +15,10 @@
         {% for name in accts.keys()|sort %}
         acct_names_to_id["{{ name }}"] = {{ accts[name] }};
         {% endfor %}
+        var credit_acct_names_to_id = {};
+        {% for name in credit_accts.keys()|sort %}
+        credit_acct_names_to_id["{{ name }}"] = {{ credit_accts[name] }};
+        {% endfor %}
         var budget_names_to_id = {};
         {% for name in budgets.keys()|sort %}
         budget_names_to_id["{{ name }}"] = {{ budgets[name] }};

@@ -355,6 +355,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'date': None,
                 'description': 'ST_pp_1',
                 'id': 8,
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
@@ -371,6 +372,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'date': None,
                 'description': 'ST_pp_3',
                 'id': 9,
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': 'per period',
@@ -389,6 +391,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 9,
                 'planned_budget_id': None,
                 'planned_budget_name': None,
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
@@ -407,6 +410,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 5,
                 'planned_budget_id': 1,
                 'planned_budget_name': 'Periodic1',
+                'no_budget_impact': False,
                 'reconcile_id': 2,
                 'sched_trans_id': 7,
                 'sched_type': None,
@@ -425,6 +429,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 8,
                 'planned_budget_id': 1,
                 'planned_budget_name': 'Periodic1',
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': 10,
                 'sched_type': None,
@@ -443,6 +448,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 6,
                 'planned_budget_id': 1,
                 'planned_budget_name': 'Periodic1',
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
@@ -461,6 +467,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 7,
                 'planned_budget_id': 1,
                 'planned_budget_name': 'Periodic1',
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': 9,
                 'sched_type': None,
@@ -480,6 +487,7 @@ class TestTransFromSchedTrans(AcceptanceHelper):
                 'id': 10,
                 'planned_budget_id': None,
                 'planned_budget_name': None,
+                'no_budget_impact': False,
                 'reconcile_id': None,
                 'sched_trans_id': None,
                 'sched_type': None,
@@ -937,3 +945,276 @@ class TestSums(AcceptanceHelper):
             'remaining': Decimal('-577.55'),
             'spent': Decimal('200.0')
         }
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestCreditCardPaymentSums(AcceptanceHelper):
+    """
+    Pay period arithmetic for credit card payments; GitHub issue #210.
+
+    A payment toward a credit account has zero budget impact. Every charge on
+    the card is already budgeted on its own charge date, in its own pay period,
+    so counting the payment that settles it would charge the same money against
+    available income twice.
+
+    Pay periods here start 2017-04-07 (patched below), so:
+
+      * period N   = 2017-04-07 .. 2017-04-20
+      * period N+1 = 2017-04-21 .. 2017-05-04
+    """
+
+    def test_10_clean_db(self, dump_file_path):
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
+
+    def test_11_add_accounts(self, testdb):
+        testdb.add(Account(
+            description='Bank Account',
+            name='BankOne',
+            acct_type=AcctType.Bank
+        ))
+        testdb.add(Account(
+            description='Credit Card',
+            name='CreditOne',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('2000.00')
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_12_add_budgets(self, testdb):
+        testdb.add(Budget(
+            name='1Periodic',
+            is_periodic=True,
+            description='1Periodic',
+            starting_balance=Decimal('2000.00')
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_13_add_charges_and_payment(self, testdb):
+        bank = testdb.query(Account).get(1)
+        card = testdb.query(Account).get(2)
+        budget = testdb.query(Budget).get(1)
+        # Period N: 500.00 of charges on the card
+        testdb.add(Transaction(
+            date=date(2017, 4, 10),
+            budget_amounts={budget: Decimal('500.00')},
+            description='N charges on card',
+            account=card
+        ))
+        # Period N+1: 300.00 of the card's own charges
+        testdb.add(Transaction(
+            date=date(2017, 4, 24),
+            budget_amounts={budget: Decimal('300.00')},
+            description='N+1 charges on card',
+            account=card
+        ))
+        # Period N+1: a 500.00 payment from the bank account, settling the
+        # charges made in period N.
+        testdb.add(Transaction(
+            date=date(2017, 4, 25),
+            budget_amounts={budget: Decimal('500.00')},
+            description='Payment toward CreditOne',
+            account=bank,
+            credit_payment_acct=card
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_14_payment_is_excluded(self, testdb):
+        payment = testdb.query(Transaction).get(3)
+        assert payment.credit_payment_acct_id == 2
+        assert payment.no_budget_impact is False
+        assert payment.is_excluded_from_budget is True
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_15_period_n_unchanged(self, testdb):
+        """Period N is charged its own 500.00 and nothing else."""
+        pp = BiweeklyPayPeriod(date(2017, 4, 7), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('500.00')
+        assert pp.overall_sums['spent'] == Decimal('500.00')
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_16_cross_period_payoff_counts_once(self, testdb):
+        """
+        Spec US2 scenario 1 / SC-001. Period N+1 must be charged only its own
+        300.00 of purchases. Before this feature it was charged 800.00 -- its
+        own charges plus the payment settling period N's charges -- which is
+        the double-count the whole feature exists to remove.
+        """
+        pp = BiweeklyPayPeriod(date(2017, 4, 21), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('300.00')
+        assert pp.budget_sums[1]['spent'] != Decimal('800.00')
+        assert pp.budget_sums[1]['trans_total'] == Decimal('300.00')
+        assert pp.budget_sums[1]['remaining'] == Decimal('1700.00')
+        assert pp.overall_sums['spent'] == Decimal('300.00')
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_17_payment_still_listed_in_period(self, testdb):
+        """The payment must remain visible in the pay period's transaction
+        list, marked as excluded, even though it moves no total."""
+        pp = BiweeklyPayPeriod(date(2017, 4, 21), testdb)
+        payments = [
+            t for t in pp.transactions_list
+            if t.get('description') == 'Payment toward CreditOne'
+        ]
+        assert len(payments) == 1
+        assert payments[0]['no_budget_impact'] is True
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_18_same_period_payoff_counts_once(self, testdb):
+        """
+        Spec US2 scenario 2 / SC-002. A 200.00 charge and a 200.00 payment in
+        the same pay period: the period is charged 200.00, not 400.00.
+        """
+        bank = testdb.query(Account).get(1)
+        card = testdb.query(Account).get(2)
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=date(2017, 5, 8),
+            budget_amounts={budget: Decimal('200.00')},
+            description='Same period charge',
+            account=card
+        ))
+        testdb.add(Transaction(
+            date=date(2017, 5, 10),
+            budget_amounts={budget: Decimal('200.00')},
+            description='Same period payment',
+            account=bank,
+            credit_payment_acct=card
+        ))
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 5, 5), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('200.00')
+        assert pp.budget_sums[1]['spent'] != Decimal('400.00')
+        assert pp.overall_sums['spent'] == Decimal('200.00')
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_19_clearing_designation_restores_impact(self, testdb):
+        """Spec FR-014: clearing the credit account designation makes the
+        payment count against its budget again."""
+        payment = testdb.query(Transaction).get(3)
+        payment.credit_payment_acct_id = None
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 4, 21), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('800.00')
+        # ... and setting it again removes the impact once more
+        payment = testdb.query(Transaction).get(3)
+        payment.credit_payment_acct_id = 2
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 4, 21), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('300.00')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestNoBudgetImpactSums(AcceptanceHelper):
+    """
+    Pay period arithmetic and unreconciled sums for the general
+    no-budget-impact designation; GitHub issue #319.
+    """
+
+    def test_10_clean_db(self, dump_file_path):
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
+
+    def test_11_add_account_and_budget(self, testdb):
+        a = Account(
+            description='Bank Account',
+            name='BankOne',
+            acct_type=AcctType.Bank,
+            reconcile_trans=True
+        )
+        testdb.add(a)
+        testdb.add(Budget(
+            name='Groceries',
+            is_periodic=True,
+            description='Groceries',
+            starting_balance=Decimal('500.00')
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_12_add_ordinary_transaction(self, testdb):
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=date(2017, 4, 10),
+            budget_amounts={budget: Decimal('100.00')},
+            description='Ordinary',
+            account=acct
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_13_baseline(self, testdb):
+        pp = BiweeklyPayPeriod(date(2017, 4, 7), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('100.00')
+        assert pp.budget_sums[1]['remaining'] == Decimal('400.00')
+        assert testdb.query(Account).get(1).unreconciled_sum == \
+            Decimal('100.00')
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_14_excluded_transaction_moves_nothing(self, testdb):
+        """Spec US1 scenarios 1 and 2: the period still shows 100.00 spent and
+        the account still shows 100.00 unreconciled."""
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        testdb.add(Transaction(
+            date=date(2017, 4, 12),
+            budget_amounts={budget: Decimal('40.00')},
+            description='Statement credit',
+            account=acct,
+            no_budget_impact=True
+        ))
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 4, 7), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('100.00')
+        assert pp.budget_sums[1]['allocated'] == Decimal('100.00')
+        assert pp.budget_sums[1]['trans_total'] == Decimal('100.00')
+        assert pp.budget_sums[1]['remaining'] == Decimal('400.00')
+        assert pp.overall_sums['spent'] == Decimal('100.00')
+        assert testdb.query(Account).get(1).unreconciled_sum == \
+            Decimal('100.00')
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_15_still_reconcilable(self, testdb):
+        """Spec US1 scenarios 3 and 5: an excluded transaction is still
+        offered for reconciliation. unreconciled_sum ignores it; the
+        unreconciled *query* does not."""
+        ids = [t.id for t in Transaction.unreconciled(testdb).all()]
+        assert 2 in ids
+        acct_ids = [t.id for t in testdb.query(Account).get(1).unreconciled]
+        assert 2 in acct_ids
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % pbm, date(2017, 4, 7))
+    def test_16_clearing_flag_restores_impact(self, testdb):
+        """Spec US1 scenario 4: clearing the flag makes the totals rise by the
+        transaction's amount; setting it again returns them."""
+        t = testdb.query(Transaction).get(2)
+        t.no_budget_impact = False
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 4, 7), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('140.00')
+        assert testdb.query(Account).get(1).unreconciled_sum == \
+            Decimal('140.00')
+
+        t = testdb.query(Transaction).get(2)
+        t.no_budget_impact = True
+        testdb.flush()
+        testdb.commit()
+        pp = BiweeklyPayPeriod(date(2017, 4, 7), testdb)
+        assert pp.budget_sums[1]['spent'] == Decimal('100.00')
+        assert testdb.query(Account).get(1).unreconciled_sum == \
+            Decimal('100.00')

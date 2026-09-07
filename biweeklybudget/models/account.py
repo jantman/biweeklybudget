@@ -304,6 +304,23 @@ class Account(Base, ModelAsDict):
             AccountBalance.id.desc()).limit(1).first()
         return res
 
+    @staticmethod
+    def active_credit_accounts(db):
+        """
+        Return a query matching all active credit Accounts, i.e. the accounts
+        that a :py:class:`~.Transaction` may be a payment toward. See GitHub
+        issue #210.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query matching all active credit Accounts
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return db.query(Account).filter(
+            Account.acct_type.__eq__(AcctType.Credit),
+            Account.is_active.__eq__(True)
+        )
+
     @property
     def unreconciled(self):
         """
@@ -327,11 +344,22 @@ class Account(Base, ModelAsDict):
         """
         Return the sum of all unreconciled transaction amounts for this account.
 
+        Transactions excluded from budget arithmetic -- those marked
+        :py:attr:`~.Transaction.no_budget_impact`, and payments toward a credit
+        account -- are not counted. See GitHub issues #210 and #319.
+
+        Note that :py:attr:`~.unreconciled` itself is deliberately *not*
+        filtered: those transactions still need to be reconciled against the
+        real bank transaction, and :py:meth:`~.Transaction.unreconciled` is
+        what the reconcile view lists.
+
         :return: sum of amounts of all unreconciled transactions
         :rtype: float
         """
         total = Decimal('0.0')
         for t in self.unreconciled:
+            if t.is_excluded_from_budget:
+                continue
             total += t.actual_amount
         return total
 

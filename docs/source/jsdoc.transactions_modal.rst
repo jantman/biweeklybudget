@@ -46,6 +46,23 @@ File: ``biweeklybudget/flaskapp/static/js/transactions_modal.js``
 
    :param row\_num: the budget split row number
    :type row\_num: **Integer**
+.. js:function:: .............................d()
+
+   Handler for change of the "Credit Card Payment For"
+   (``#trans_frm_credit_payment_acct``) select, and of the amount and date
+   inputs while a credit account is selected.
+
+   Shows or hides the payment information panel. When a credit account is
+   selected, the panel is populated from ``/ajax/credit-payment-info`` with a
+   breakdown of which pay periods' charges the entered amount settles, plus any
+   advisory warnings. See GitHub issue #210.
+.. js:function:: ..............................l(data)
+
+   Render the HTML for the credit payment information panel.
+
+   :param data: the ``/ajax/credit-payment-info`` response
+   :type data: **Object**
+   :returns: **String** -- HTML for the panel
 .. js:function:: .......................w(msg)
 
    Ajax callback to fill in the modalDiv with data on a Transaction.
@@ -73,6 +90,15 @@ File: ``biweeklybudget/flaskapp/static/js/transactions_modal.js``
 
    :param row\_num: the budget split row number
    :type row\_num: **Integer**
+.. js:function:: ................................o()
+
+   Populate the credit payment information panel
+   (``#trans_frm_credit_payment_info``) from ``/ajax/credit-payment-info``.
+
+   Shows which pay periods' charges the entered amount settles, and any
+   advisory warnings. Never disables the Save button: the person entering a
+   payment knows things the application does not, including charges that have
+   not been downloaded yet. See GitHub issue #210.
 .. js:function:: .......................s()
 
    Function to validate Transaction modal split budgets. Returns null if valid

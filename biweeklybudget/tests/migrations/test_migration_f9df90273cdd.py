@@ -35,5 +35,44 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-VERSION = '1.8.0'
-PROJECT_URL = 'https://github.com/jantman/biweeklybudget'
+import pytest
+import logging
+from sqlalchemy import text
+
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.mark.migrations
+class TestAddNoBudgetImpactAndCreditPaymentAcct(MigrationTest):
+    """
+    Test for revision f9df90273cdd - add Transaction.no_budget_impact and
+    Transaction.credit_payment_acct_id.
+    """
+
+    migration_rev = 'f9df90273cdd'
+
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
+
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM transactions WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert 'no_budget_impact' not in columns
+        assert 'credit_payment_acct_id' not in columns
+
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM transactions WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert 'no_budget_impact' in columns
+        assert 'credit_payment_acct_id' in columns

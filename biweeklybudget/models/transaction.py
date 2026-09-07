@@ -37,7 +37,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, Integer, Numeric, String, Date, ForeignKey, inspect, func, select
+    Column, Integer, Numeric, String, Date, Boolean, ForeignKey, inspect, func,
+    select, or_
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
@@ -67,7 +68,7 @@ class Transaction(Base, ModelAsDict):
     )
 
     #: Class properties to include in :py:attr:`~.ModelAsDict.as_dict` result.
-    _dict_properties = ['actual_amount']
+    _dict_properties = ['actual_amount', 'is_excluded_from_budget']
 
     #: Primary Key
     id = Column(Integer, primary_key=True)
@@ -92,8 +93,15 @@ class Transaction(Base, ModelAsDict):
     account_id = Column(Integer, ForeignKey('accounts.id'))
 
     #: Relationship - :py:class:`~.Account` this transaction is against
+    #:
+    #: Note: ``transactions`` has two foreign keys to ``accounts.id`` -- this
+    #: one and :py:attr:`~.credit_payment_acct_id` -- so ``foreign_keys`` must
+    #: be stated explicitly on both relationships. Without it, SQLAlchemy
+    #: cannot infer the join condition and raises ``AmbiguousForeignKeysError``
+    #: when the mappers are configured.
     account = relationship(
-        "Account", backref="transactions", uselist=False
+        "Account", backref="transactions", uselist=False,
+        foreign_keys=[account_id]
     )
 
     #: ID of the ScheduledTransaction this Transaction was created from;
@@ -134,6 +142,38 @@ class Transaction(Base, ModelAsDict):
     #: Amount of sales tax paid on this transaction.
     sales_tax = Column(
         Numeric(precision=10, scale=4), nullable=False, default=0.0
+    )
+
+    #: Whether this Transaction is excluded from all budget and pay period
+    #: arithmetic. Set for transactions that need to exist so they can be
+    #: reconciled against a real OFX/Plaid bank transaction, but that do not
+    #: represent spending or income against any budget -- statement credits,
+    #: cash-back redemptions applied as a statement credit, and manual balance
+    #: reconcile adjustments.
+    #:
+    #: This stores only the user's explicit choice. Setting
+    #: :py:attr:`~.credit_payment_acct_id` also excludes a Transaction from
+    #: budget arithmetic, independently of this flag; read
+    #: :py:attr:`~.is_excluded_from_budget` for the effective answer, never
+    #: this column on its own.
+    no_budget_impact = Column(Boolean, default=False, nullable=False)
+
+    #: ID of the credit :py:class:`~.Account` that this Transaction is a
+    #: payment toward, or None if it is not a credit card payment.
+    #:
+    #: A payment toward a credit account has zero budget impact: every charge
+    #: on the card is budgeted on its own charge date, in its own pay period,
+    #: and the payment is purely a movement of cash between two accounts this
+    #: application already tracks. Setting this makes the Transaction excluded
+    #: from budget arithmetic; see :py:attr:`~.is_excluded_from_budget`.
+    credit_payment_acct_id = Column(Integer, ForeignKey('accounts.id'))
+
+    #: Relationship - the credit :py:class:`~.Account` that this Transaction is
+    #: a payment toward, if any. See the note on :py:attr:`~.account` for why
+    #: ``foreign_keys`` is stated explicitly.
+    credit_payment_acct = relationship(
+        "Account", backref="credit_payments", uselist=False,
+        foreign_keys=[credit_payment_acct_id]
     )
 
     def __init__(self, **kwargs):
@@ -178,6 +218,41 @@ class Transaction(Base, ModelAsDict):
         ).where(
             BudgetTransaction.trans_id.__eq__(cls.id)
         ).label('actual_amount')
+
+    @hybrid_property
+    def is_excluded_from_budget(self):
+        """
+        Whether this Transaction is excluded from all budget and pay period
+        arithmetic, either because it was explicitly marked as having no budget
+        impact (:py:attr:`~.no_budget_impact`) or because it is a payment
+        toward a credit account (:py:attr:`~.credit_payment_acct_id`).
+
+        This is the value every consumer should read. The two underlying fields
+        are kept separate rather than collapsed into one so that clearing the
+        credit account designation restores a Transaction's ordinary budget
+        impact, while a no-budget-impact flag the user set themselves survives
+        that change.
+
+        The relationship is checked as well as the foreign key so that a
+        Transaction constructed as ``Transaction(credit_payment_acct=acct)``
+        answers correctly before it has been flushed, when the foreign key is
+        still None. The foreign key is checked first, so the relationship is
+        only consulted when it is the only thing set.
+
+        :return: whether this Transaction is excluded from budget arithmetic
+        :rtype: bool
+        """
+        return bool(self.no_budget_impact) or (
+            self.credit_payment_acct_id is not None or
+            self.credit_payment_acct is not None
+        )
+
+    @is_excluded_from_budget.expression
+    def is_excluded_from_budget(cls):
+        return or_(
+            cls.no_budget_impact.is_(True),
+            cls.credit_payment_acct_id.isnot(None)
+        )
 
     @staticmethod
     def unreconciled(db):

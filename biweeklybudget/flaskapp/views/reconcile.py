@@ -67,10 +67,15 @@ class ReconcileView(MethodView):
             if b.is_active:
                 active_budgets[b.id] = k
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        credit_accts = {
+            a.name: a.id
+            for a in Account.active_credit_accounts(db_session).all()
+        }
         return render_template(
             'reconcile.html',
             budgets=budgets,
             accts=accts,
+            credit_accts=credit_accts,
             active_budgets=active_budgets
         )
 
