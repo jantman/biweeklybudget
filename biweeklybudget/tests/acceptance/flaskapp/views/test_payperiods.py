@@ -3209,3 +3209,320 @@ class TestPayPeriodNoBudgetImpact(AcceptanceHelper):
         assert 'no budget impact' not in ordinary[0]
         assert '<em class="text-muted">(no budget impact)</em>' in credit[0]
         assert '<em class="text-muted">(no budget impact)</em>' in payment[0]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestPayPeriodAccountTotals(AcceptanceHelper):
+    """
+    The per-account transaction totals table on the single pay period view.
+    GitHub issue #213.
+    """
+
+    def test_0_clean_db(self, dump_file_path):
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
+
+    def test_1_add_data(self, testdb):
+        acct = Account(
+            description='Bank Account',
+            name='BankOne',
+            acct_type=AcctType.Bank
+        )
+        testdb.add(acct)
+        card = Account(
+            description='Credit Card',
+            name='CreditOne',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('2000.00')
+        )
+        testdb.add(card)
+        cash = Account(
+            description='Cash',
+            name='CashOne',
+            acct_type=AcctType.Cash
+        )
+        testdb.add(cash)
+        # An account with no transactions at all, in any displayed period. It
+        # must not appear in the table (FR-002).
+        testdb.add(Account(
+            description='Quiet Account',
+            name='QuietOne',
+            acct_type=AcctType.Bank
+        ))
+        budget = Budget(
+            name='1Periodic',
+            is_periodic=True,
+            description='1Periodic',
+            starting_balance=Decimal('500.00')
+        )
+        testdb.add(budget)
+        budget2 = Budget(
+            name='2Periodic',
+            is_periodic=True,
+            description='2Periodic',
+            starting_balance=Decimal('100.00')
+        )
+        testdb.add(budget2)
+        income = Budget(
+            name='3Income',
+            is_periodic=True,
+            description='3Income',
+            starting_balance=Decimal('0.00'),
+            is_income=True
+        )
+        testdb.add(income)
+        testdb.flush()
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        # --- current period ---
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('100.00')},
+            description='CurrOrdinary',
+            account=acct
+        ))
+        # split across two budgets; must count its own amount once (FR-004)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=2),
+            budget_amounts={
+                budget: Decimal('10.00'),
+                budget2: Decimal('20.00')
+            },
+            description='CurrSplit',
+            account=acct
+        ))
+        # income; negative, so the account's total goes negative (FR-007)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=3),
+            budget_amounts={income: Decimal('-2345.67')},
+            description='CurrIncome',
+            account=acct
+        ))
+        # no budget impact, and a card payment: both counted here, unlike in
+        # the budget sums (FR-004)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=4),
+            budget_amounts={budget: Decimal('40.00')},
+            description='CurrStatementCredit',
+            account=cash,
+            no_budget_impact=True
+        ))
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=5),
+            budget_amounts={budget: Decimal('60.00')},
+            description='CurrCardPayment',
+            account=cash,
+            credit_payment_acct=card
+        ))
+        # --- previous period ---
+        prev = pp.previous
+        testdb.add(Transaction(
+            date=prev.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('7.77')},
+            description='PrevOrdinary',
+            account=card
+        ))
+        # --- next period ---
+        nxt = pp.next
+        testdb.add(Transaction(
+            date=nxt.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('8.88')},
+            description='NextOrdinary',
+            account=acct
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_account_sums(self, testdb):
+        """The property the table is built from. BankOne nets
+        100.00 + 30.00 - 2345.67; CashOne's two transactions are excluded from
+        the budget sums but are counted here."""
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        assert pp.account_sums == {
+            1: {'name': 'BankOne', 'total': Decimal('-2215.67')},
+            3: {'name': 'CashOne', 'total': Decimal('100.00')}
+        }
+
+    def test_3_table_present_and_rows(self, base_url, selenium):
+        """FR-001, FR-002, FR-007, FR-010, FR-011, FR-012."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        htmls = self.inner_htmls(self.tbody2elemlist(table))
+        assert htmls == [
+            [
+                '<a href="/accounts/1">BankOne</a>',
+                '$0.00',
+                '<span class="text-danger">-$2,215.67</span>',
+                '$8.88',
+                '$0.00',
+                '$0.00'
+            ],
+            [
+                '<a href="/accounts/3">CashOne</a>',
+                '$0.00',
+                '$100.00',
+                '$0.00',
+                '$0.00',
+                '$0.00'
+            ],
+            [
+                '<a href="/accounts/2">CreditOne</a>',
+                '$7.77',
+                '$0.00',
+                '$0.00',
+                '$0.00',
+                '$0.00'
+            ],
+            [
+                '<strong>Total</strong>',
+                '$7.77',
+                '<span class="text-danger">-$2,115.67</span>',
+                '$8.88',
+                '$0.00',
+                '$0.00'
+            ]
+        ]
+
+    def test_4_quiet_account_absent(self, base_url, selenium):
+        """FR-002: an account with no transactions in any displayed period does
+        not get a row."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        assert 'QuietOne' not in table.get_attribute('innerHTML')
+
+    def test_5_totals_include_no_budget_impact(self, base_url, selenium):
+        """FR-004: CashOne's only two transactions are a statement credit and a
+        card payment, both excluded from budget arithmetic. Its total is their
+        full sum, and it deliberately disagrees with the period's spent total,
+        which counts neither."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        rows = self.inner_htmls(self.tbody2elemlist(table))
+        cash = [r for r in rows if 'CashOne' in r[0]][0]
+        assert cash[2] == '$100.00'
+        assert selenium.find_element(By.ID, 'amt-spent').text == '$130.00'
+
+    def test_6_totals_row_sums_current_column(self, base_url, selenium):
+        """FR-011 and SC-003: the totals row equals the sum of the column above
+        it, in every column."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        rows = self.tbody2textlist(table)
+        accounts = rows[:-1]
+        totals = rows[-1]
+        assert totals[0] == 'Total'
+        for col in range(1, 6):
+            expected = sum([
+                Decimal(r[col].replace('$', '').replace(',', ''))
+                for r in accounts
+            ])
+            assert Decimal(
+                totals[col].replace('$', '').replace(',', '')
+            ) == expected
+
+    def test_7_headers_match_remaining_balances(self, base_url, selenium):
+        """FR-003, FR-008, FR-009: the columns are the same five pay periods as
+        the Remaining Balances table, in the same order, with the same labels,
+        the same links and the same current-period emphasis."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        balances = selenium.find_element(By.ID, 'pay-period-table')
+        accts = selenium.find_element(By.ID, 'pp-acct-table')
+        bal_heads = self.thead2elemlist(balances)
+        acct_heads = self.thead2elemlist(accts)
+        # the account table has a leading "Account" column; the rest match
+        assert acct_heads[0].get_attribute('innerHTML') == 'Account'
+        assert len(acct_heads) == len(bal_heads) + 1
+        for idx, bal in enumerate(bal_heads):
+            acct = acct_heads[idx + 1]
+            assert acct.get_attribute(
+                'innerHTML'
+            ) == bal.get_attribute('innerHTML')
+            assert acct.get_attribute(
+                'class'
+            ) == bal.get_attribute('class')
+
+    def test_8_account_name_links(self, base_url, selenium):
+        """FR-010: clicking an account name opens that account."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        link = table.find_element(By.XPATH, './/a[text()="BankOne"]')
+        assert link.get_attribute('href') == base_url + '/accounts/1'
+        link.click()
+        self.wait_for_load_complete(selenium)
+        assert selenium.current_url == base_url + '/accounts/1'
+
+    def test_9_no_datatable_js(self, base_url, selenium):
+        """The table is plain server-rendered markup: no DataTables wrapper is
+        added around it."""
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        assert 'dataTable' not in (table.get_attribute('class') or '')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestPayPeriodAccountTotalsEmpty(AcceptanceHelper):
+    """
+    With no transactions at all, the per-account totals table still renders,
+    with its headers and a totals row of zeros, and no account rows.
+    GitHub issue #213, spec edge case 1.
+    """
+
+    def test_0_clean_db(self, dump_file_path):
+        restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
+
+    def test_1_add_accounts_only(self, testdb):
+        testdb.add(Account(
+            description='Bank Account',
+            name='BankOne',
+            acct_type=AcctType.Bank
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_2_table_renders_with_zero_totals(self, base_url, selenium):
+        self.get(
+            selenium,
+            base_url + '/payperiod/' +
+            PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
+        )
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        assert self.inner_htmls(self.tbody2elemlist(table)) == [
+            [
+                '<strong>Total</strong>',
+                '$0.00',
+                '$0.00',
+                '$0.00',
+                '$0.00',
+                '$0.00'
+            ]
+        ]

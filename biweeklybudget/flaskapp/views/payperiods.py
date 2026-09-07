@@ -58,6 +58,53 @@ from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 logger = logging.getLogger(__name__)
 
 
+def build_account_period_sums(periods):
+    """
+    Build the per-account transaction totals table model for a sequence of pay
+    periods, as rendered by the ``pp-acct-table`` table on ``payperiod.html``.
+
+    Returns a 2-tuple of ``(rows, column_totals)``:
+
+    - ``rows`` *(list)* - one dict per :py:class:`~.Account` having at least one
+      transaction in at least one of ``periods``, sorted ascending by account
+      name. Each dict has keys ``id`` *(int)*, ``name`` *(str)* and ``totals``
+      *(list of Decimal)*, the latter holding one total per element of
+      ``periods``, in the same order, and ``Decimal('0.0')`` for a period in
+      which the account has no transactions.
+    - ``column_totals`` *(list of Decimal)* - the sum of every account's total
+      for each period, in the same order as ``periods``.
+
+    The zeros are supplied here rather than by
+    :py:meth:`~.BiweeklyPayPeriod.account_sums`, which reports only the accounts
+    it actually observed: only the view knows which accounts are on screen and
+    therefore need a zero rather than an absence.
+
+    :param periods: the pay periods to build columns for, in column order
+    :type periods: list of :py:class:`~.BiweeklyPayPeriod`
+    :return: 2-tuple of (rows, column totals)
+    :rtype: tuple
+    """
+    per_period = [p.account_sums for p in periods]
+    names = {}
+    for sums in per_period:
+        for acct_id, data in sums.items():
+            names.setdefault(acct_id, data['name'])
+    rows = []
+    column_totals = [Decimal('0.0') for _ in periods]
+    for acct_id in sorted(names, key=lambda i: names[i]):
+        totals = []
+        for idx, sums in enumerate(per_period):
+            amt = sums.get(acct_id, {}).get('total', Decimal('0.0'))
+            totals.append(amt)
+            column_totals[idx] += amt
+        rows.append({
+            'id': acct_id,
+            'name': names[acct_id],
+            'totals': totals
+        })
+    return rows, column_totals
+
+
 class PayPeriodsView(MethodView):
     """
     Render the top-level GET /payperiods view using ``payperiods.html`` template
@@ -119,6 +166,16 @@ class PayPeriodView(MethodView):
         d = datetime.strptime(period_date, '%Y-%m-%d').date()
         pp = BiweeklyPayPeriod.period_for_date(d, db_session)
         curr_pp = BiweeklyPayPeriod.period_for_date(dtnow(), db_session)
+        # Bind the five periods this view displays once, rather than re-walking
+        # ``pp.next.next.next`` for each value needed from them: ``next`` and
+        # ``previous`` construct a new object every time they are read, and each
+        # object builds and caches its own data on first use. Binding them means
+        # reading both ``overall_sums`` and ``account_sums`` from a period
+        # computes that period's data once, not twice.
+        pp_prev = pp.previous
+        pp_next = pp.next
+        pp_following = pp_next.next
+        pp_last = pp_following.next
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -177,24 +234,29 @@ class PayPeriodView(MethodView):
             # If we're looking at a non-current pay period, default the
             # transfer modal date to the start of the period.
             txfr_date_str = pp.start_date.strftime('%Y-%m-%d')
+        acct_rows, acct_totals = build_account_period_sums(
+            [pp_prev, pp, pp_next, pp_following, pp_last]
+        )
         return render_template(
             'payperiod.html',
             pp=pp,
-            pp_prev_date=pp.previous.start_date,
-            pp_prev_sums=pp.previous.overall_sums,
-            pp_prev_suffix=self.suffix_for_period(curr_pp, pp.previous),
+            pp_prev_date=pp_prev.start_date,
+            pp_prev_sums=pp_prev.overall_sums,
+            pp_prev_suffix=self.suffix_for_period(curr_pp, pp_prev),
             pp_curr_date=pp.start_date,
             pp_curr_sums=pp.overall_sums,
             pp_curr_suffix=self.suffix_for_period(curr_pp, pp),
-            pp_next_date=pp.next.start_date,
-            pp_next_sums=pp.next.overall_sums,
-            pp_next_suffix=self.suffix_for_period(curr_pp, pp.next),
-            pp_following_date=pp.next.next.start_date,
-            pp_following_sums=pp.next.next.overall_sums,
-            pp_following_suffix=self.suffix_for_period(curr_pp, pp.next.next),
-            pp_last_date=pp.next.next.next.start_date,
-            pp_last_sums=pp.next.next.next.overall_sums,
-            pp_last_suffix=self.suffix_for_period(curr_pp, pp.next.next.next),
+            pp_next_date=pp_next.start_date,
+            pp_next_sums=pp_next.overall_sums,
+            pp_next_suffix=self.suffix_for_period(curr_pp, pp_next),
+            pp_following_date=pp_following.start_date,
+            pp_following_sums=pp_following.overall_sums,
+            pp_following_suffix=self.suffix_for_period(curr_pp, pp_following),
+            pp_last_date=pp_last.start_date,
+            pp_last_sums=pp_last.overall_sums,
+            pp_last_suffix=self.suffix_for_period(curr_pp, pp_last),
+            acct_period_sums=acct_rows,
+            acct_period_totals=acct_totals,
             budget_sums=pp.budget_sums,
             budgets=budgets,
             standing=standing,
