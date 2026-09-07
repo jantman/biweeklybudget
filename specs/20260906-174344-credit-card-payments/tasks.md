@@ -191,9 +191,20 @@ representable.
 
 - [X] M5.7 Walk the [quickstart.md](./quickstart.md) scenarios against a running application to confirm the delivered behaviour matches the spec's acceptance scenarios, not just the tests. *(SC-001 through SC-005)*
 
-- [ ] M5.8 Commit as `Credit Card Payments - M5.x`, push the branch to `origin`, and open a pull request describing the change, the rejected netting approach, the Constitution Check result, and the `Account.unreconciled_sum` trade-off recorded in research.md D-5 so it is visible to review.
+- [X] M5.8 Commit as `Credit Card Payments - M5.x`, push the branch to `origin`, and open a pull request describing the change, the rejected netting approach, the Constitution Check result, and the `Account.unreconciled_sum` trade-off recorded in research.md D-5 so it is visible to review.
 
-- [ ] M5.9 Tear down the test container: `docker stop budgettest && docker rm budgettest`.
+- [X] M5.10 Address PR review. `claude-review` on PR #329 found that the exclusion
+  reached only the budget totals computed on read, and not the *persisted*
+  `Budget.current_balance` maintained for standing budgets by
+  `db_event_handlers.py` -- so a credit card payment against a standing budget
+  still debited it, reproducing the double-count the feature removes and
+  leaving it permanently wrong. Reproduced, fixed in 57d9794 by guarding all
+  three handlers and adding `handle_transaction_budget_exclusion_change()` so
+  FR-014 holds for standing budgets, and covered by 16 regression tests in
+  `acceptance/test_db_event_handlers.py`. Thread replied to and resolved.
+  *(FR-002, FR-014)*
+
+- [X] M5.9 Tear down the test container: `docker stop budgettest && docker rm budgettest`.
 
 ---
 
