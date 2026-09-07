@@ -64,7 +64,9 @@ _TIMEDELTA_VARS = [
 _INT_VARS = [
     'DEFAULT_ACCOUNT_ID',
     'FUEL_BUDGET_ID',
-    'BIWEEKLYBUDGET_TEST_TIMESTAMP'
+    'BIWEEKLYBUDGET_TEST_TIMESTAMP',
+    'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS',
+    'ACCOUNT_BALANCE_CHART_MAX_POINTS'
 ]
 _STRING_VARS = [
     'DB_CONNSTRING',
@@ -135,6 +137,24 @@ DEFAULT_ACCOUNT_ID = 1
 #: int - Budget ID to select as default when inputting Fuel Log entries. This
 #: must be the database ID of a valid budget.
 FUEL_BUDGET_ID = 1
+
+#: int - How many days of history the "Account Balances" chart on the index page
+#: shows when the page is first loaded. A value of ``0`` means all recorded
+#: history. The chart's range selector can widen or narrow this at any time
+#: without changing this setting; this is only the starting view. Defaults to
+#: ``365`` (one year). See
+#: :ref:`Account Balances Chart <app_usage.account_balance_chart>`.
+ACCOUNT_BALANCE_CHART_DEFAULT_DAYS = 365
+
+#: int - The maximum number of dates the "Account Balances" chart on the index
+#: page will plot, for any selected range including "All". When the selected
+#: range holds more dates than this, they are sampled at a regular interval down
+#: to this many; the most recent date is always kept, so the right-hand edge of
+#: the chart always agrees with the account tables below it. This is what bounds
+#: the chart's load time and legibility no matter how many years of daily
+#: balances have accumulated. Defaults to ``300``. See
+#: :ref:`Account Balances Chart <app_usage.account_balance_chart>`.
+ACCOUNT_BALANCE_CHART_MAX_POINTS = 300
 
 #: :py:class:`datetime.date` - The starting date of one pay period (generally
 #: the first pay period represented in data in this app). The dates of all pay

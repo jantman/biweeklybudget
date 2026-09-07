@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+import requests
 from datetime import datetime, timedelta
 from pytz import UTC
 from decimal import Decimal
@@ -627,3 +628,340 @@ class TestAccountTransfer(AcceptanceHelper):
         acct2 = testdb.query(Account).get(2)
         assert acct2.balance.ledger == Decimal('100.23')
         assert acct2.unreconciled_sum == Decimal('-456.78')
+
+
+CHART_URL = '/ajax/chart-data/account-balances'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestAcctBalanceChartData(AcceptanceHelper):
+    """
+    Tests for the ``days`` parameter added to the account balances chart
+    endpoint for GitHub issue #279. These hit the endpoint directly; the chart
+    UI that consumes it is covered by TestAcctBalanceChartRanges below.
+
+    The acceptance test timestamp is 2017-07-28, and the sample data's balances
+    run from 2017-06-27 to 2017-07-27, so the shipped 365-day default window
+    covers all of it. That is deliberate: an installation with less history
+    than the default window must be entirely unaffected by this feature
+    (FR-013).
+    """
+
+    def test_response_shape_is_unchanged(self, base_url):
+        r = requests.get(base_url + CHART_URL)
+        assert r.status_code == 200
+        data = r.json()
+        # external scripts read this endpoint; the shape must not change
+        assert sorted(data.keys()) == ['data', 'keys']
+        assert data['keys'] == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
+            'DisabledBank', 'InvestmentOne'
+        ]
+        for row in data['data']:
+            assert 'date' in row
+            for k in data['keys']:
+                assert k in row
+
+    def test_dates_are_ascending_and_unique(self, base_url):
+        dates = [
+            x['date'] for x in requests.get(base_url + CHART_URL).json()['data']
+        ]
+        assert dates == sorted(dates)
+        assert len(set(dates)) == len(dates)
+
+    def test_default_window_covers_all_sample_data(self, base_url):
+        # sample data is well inside the 365 day default, so nothing is cut
+        dates = [
+            x['date'] for x in requests.get(base_url + CHART_URL).json()['data']
+        ]
+        assert dates == [
+            '2017-06-27', '2017-07-10', '2017-07-15', '2017-07-26',
+            '2017-07-27'
+        ]
+
+    def test_days_zero_returns_all_history(self, base_url):
+        default = requests.get(base_url + CHART_URL).json()
+        allhist = requests.get(base_url + CHART_URL + '?days=0').json()
+        assert allhist['data'] == default['data']
+
+    def test_shorter_window_returns_fewer_dates(self, base_url):
+        short = requests.get(base_url + CHART_URL + '?days=15').json()
+        long_ = requests.get(base_url + CHART_URL + '?days=365').json()
+        assert len(short['data']) < len(long_['data'])
+        assert [x['date'] for x in short['data']] == [
+            '2017-07-15', '2017-07-26', '2017-07-27'
+        ]
+
+    def test_window_always_ends_at_the_latest_balance(self, base_url):
+        for days in ['', '?days=0', '?days=15', '?days=30', '?days=365']:
+            data = requests.get(base_url + CHART_URL + days).json()['data']
+            assert data[-1]['date'] == '2017-07-27', days
+
+    @pytest.mark.parametrize('param', ['abc', '', '-1', '1.5', 'null'])
+    def test_bad_days_falls_back_to_default(self, base_url, param):
+        # FR-010: never a 4xx or a traceback where a chart should be
+        r = requests.get(base_url + CHART_URL + '?days=' + param)
+        assert r.status_code == 200
+        assert r.json() == requests.get(base_url + CHART_URL).json()
+
+    @pytest.mark.parametrize('param', ['999999', '99999999999', '36501'])
+    def test_absurd_days_returns_all_history_not_a_500(self, base_url, param):
+        """
+        Regression guard for the OverflowError found in review of PR #331.
+
+        A window start of ``now - timedelta(days=999999)`` falls below
+        ``datetime.MINYEAR``, so the subtraction raised OverflowError and the
+        endpoint answered a mistyped URL with an HTTP 500 rather than a chart.
+        Such a window reaches back before every recorded balance, so all
+        history is the honest answer as well as the safe one.
+        """
+        r = requests.get(base_url + CHART_URL + '?days=' + param)
+        assert r.status_code == 200
+        assert r.json() == requests.get(base_url + CHART_URL + '?days=0').json()
+
+    def test_dormant_account_keeps_its_line(self, base_url):
+        """
+        The correctness guarantee that windowing most easily breaks (FR-011).
+
+        BankTwoStale's only recorded balance is 2017-07-10, which is *before*
+        the start of a 15 day window. Without the pre-window seed query it
+        would have no value to carry forward and would be reported as null on
+        every row -- which, on a chart of account balances, reads as the
+        account having been emptied.
+        """
+        data = requests.get(base_url + CHART_URL + '?days=15').json()['data']
+        assert [x['date'] for x in data] == [
+            '2017-07-15', '2017-07-26', '2017-07-27'
+        ]
+        for row in data:
+            assert row['BankTwoStale'] == 100.23, row['date']
+
+    def test_account_with_no_prior_data_is_not_backfilled(self, base_url):
+        """
+        The inverse of the above: an account whose data begins part-way
+        through the window must start where its data starts, not be
+        back-filled onto dates when it had no recorded balance.
+        """
+        data = requests.get(base_url + CHART_URL + '?days=0').json()['data']
+        assert data[0]['date'] == '2017-06-27'
+        assert data[0]['BankOne'] is None
+        assert data[3]['date'] == '2017-07-26'
+        assert data[3]['BankOne'] == 12345.67
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestAcctBalanceChartLargeData(AcceptanceHelper):
+    """
+    The point cap is the whole reason this feature exists, and the sample data
+    is far too small to exercise it: five balance dates against a cap of 300.
+    These tests seed several years of synthetic daily balances so the bound is
+    actually tested rather than merely asserted about data that could never
+    reach it (SC-002, SC-003).
+
+    ``class_refresh_db`` restores the database afterwards, so the seeded rows
+    do not leak into any other test.
+    """
+
+    NUM_DAYS = 1100
+
+    @pytest.fixture(autouse=True)
+    def seed_balances(self, testdb):
+        end = dtnow()
+        for i in range(0, self.NUM_DAYS):
+            d = end - timedelta(days=i)
+            for acct_id in [1, 2, 3]:
+                testdb.add(AccountBalance(
+                    account_id=acct_id,
+                    ledger=Decimal('1000.00') + Decimal(i),
+                    ledger_date=d,
+                    avail=Decimal('1000.00') + Decimal(i),
+                    avail_date=d,
+                    overall_date=d
+                ))
+        testdb.commit()
+
+    def test_default_window_is_capped(self, base_url):
+        data = requests.get(base_url + CHART_URL).json()['data']
+        assert len(data) <= 300
+        # and it really did have more than 300 dates to choose from
+        assert len(data) > 100
+
+    def test_all_history_is_capped(self, base_url):
+        # days=0 is the one request whose date range is unbounded; the cap
+        # must still hold, or the "zoom out" affordance is a trap
+        data = requests.get(base_url + CHART_URL + '?days=0').json()['data']
+        assert len(data) <= 300
+
+    def test_capped_response_still_ends_at_the_present(self, base_url):
+        expected = dtnow().strftime('%Y-%m-%d')
+        for qs in ['', '?days=0', '?days=365']:
+            data = requests.get(base_url + CHART_URL + qs).json()['data']
+            assert data[-1]['date'] == expected, qs
+
+    def test_capped_dates_stay_ascending_and_unique(self, base_url):
+        dates = [
+            x['date']
+            for x in requests.get(base_url + CHART_URL + '?days=0').json()[
+                'data'
+            ]
+        ]
+        assert dates == sorted(dates)
+        assert len(set(dates)) == len(dates)
+
+    def test_point_count_does_not_grow_with_history(self, base_url, testdb):
+        """
+        SC-003: the volume of stored history must stop affecting how much the
+        index page transfers and draws for its default view.
+        """
+        before = len(requests.get(base_url + CHART_URL).json()['data'])
+        # add another two years of daily balances further into the past
+        end = dtnow() - timedelta(days=self.NUM_DAYS)
+        for i in range(0, 730):
+            d = end - timedelta(days=i)
+            testdb.add(AccountBalance(
+                account_id=1, ledger=Decimal('5.00'), ledger_date=d,
+                avail=Decimal('5.00'), avail_date=d, overall_date=d
+            ))
+        testdb.commit()
+        after = len(requests.get(base_url + CHART_URL).json()['data'])
+        assert after == before
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestAcctBalanceChartRanges(AcceptanceHelper):
+    """
+    Tests for the chart's date range selector, added for GitHub issue #279.
+    """
+
+    EXPECTED = [
+        ('1m', '30'), ('3m', '90'), ('6m', '180'), ('1y', '365'),
+        ('2y', '730'), ('5y', '1825'), ('All', '0')
+    ]
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+
+    def _buttons(self, selenium):
+        return selenium.find_elements(
+            By.CSS_SELECTOR, '#account-balance-chart-ranges button'
+        )
+
+    def test_range_buttons_present_in_order(self, selenium):
+        btns = self._buttons(selenium)
+        assert [
+            (b.text, b.get_attribute('data-days')) for b in btns
+        ] == self.EXPECTED
+
+    def test_configured_default_is_the_active_button(self, selenium):
+        # test_settings.py does not set ACCOUNT_BALANCE_CHART_DEFAULT_DAYS, so
+        # the shipped default of 365 applies -- which is itself the check that
+        # a settings module predating this feature keeps working untouched.
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == '1y'
+
+    def test_chart_renders_an_svg(self, selenium):
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+    def test_nodata_message_is_hidden_when_there_is_data(self, selenium):
+        nodata = selenium.find_element(
+            By.ID, 'account-balance-chart-nodata'
+        )
+        assert nodata.is_displayed() is False
+
+    def test_selecting_a_range_moves_active_and_redraws_in_place(
+        self, selenium, base_url
+    ):
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['All'].click()
+        self.wait_for_jquery_done(selenium)
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == 'All'
+        # no navigation: FR-008 requires an in-place redraw
+        assert selenium.current_url.rstrip('/') == base_url.rstrip('/')
+        # and the chart is still one chart, not a second drawn over the first
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+    def test_narrowing_the_range_again(self, selenium):
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['All'].click()
+        self.wait_for_jquery_done(selenium)
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['1m'].click()
+        self.wait_for_jquery_done(selenium)
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == '1m'
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb')
+class TestAcctBalanceChartSettings(AcceptanceHelper):
+    """
+    The two settings added for GitHub issue #279 must actually drive the
+    endpoint, not merely exist beside constants baked into the code.
+
+    These use the Flask test client rather than the live server, because the
+    live server runs in a separate process where monkeypatching the settings
+    module in this process would have no effect. The route, view and database
+    are the real ones either way.
+    """
+
+    def _get(self, qs=''):
+        from biweeklybudget.flaskapp.app import app
+        with app.test_client() as c:
+            return c.get(CHART_URL + qs).get_json()
+
+    def test_max_points_is_read_from_settings(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        assert len(self._get('?days=0')['data']) == 5
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_MAX_POINTS', 3
+        )
+        data = self._get('?days=0')['data']
+        assert len(data) == 3
+        # the cap must never cost us the most recent balance
+        assert data[-1]['date'] == '2017-07-27'
+
+    def test_default_days_is_read_from_settings(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 15
+        )
+        # no days parameter: the configured default must be what applies
+        assert [x['date'] for x in self._get()['data']] == [
+            '2017-07-15', '2017-07-26', '2017-07-27'
+        ]
+
+    def test_default_days_of_zero_means_all_history(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 0
+        )
+        assert len(self._get()['data']) == 5
+
+    def test_bad_days_falls_back_to_the_configured_default(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 15
+        )
+        assert self._get('?days=garbage') == self._get()

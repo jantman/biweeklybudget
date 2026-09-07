@@ -291,3 +291,64 @@ same page. They are that same list of transactions, grouped by account and
 added up — including the scheduled transactions the period projects, and
 including the rows marked *(no budget impact)*. If you want to check a cell,
 add up the visible rows for that account.
+
+.. _app_usage.account_balance_chart:
+
+Account Balances Chart
+----------------------
+
+The **Account Balances** chart on the index page plots one line per account,
+using the balances recorded each time account data is downloaded.
+
+By default it shows the last year of history, not everything ever recorded. The
+buttons in the panel heading — ``1m``, ``3m``, ``6m``, ``1y``, ``2y``, ``5y``
+and ``All`` — change the span, redrawing the chart in place without reloading
+the page. The button for the range currently displayed is highlighted. The
+selection is not remembered: every visit to the index page starts on the
+configured default again.
+
+Two settings control this, and both are ordinary integers that can also be set
+by environment variable:
+:py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`, the
+number of days shown on page load (``0`` for all history), and
+:py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_MAX_POINTS`, the
+largest number of dates the chart will ever plot.
+
+.. _app_usage.account_balance_chart.sampling:
+
+Why not every date is plotted
+`````````````````````````````
+
+When the selected range holds more dates than
+:py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_MAX_POINTS`, the chart
+samples them at a regular interval instead of drawing them all. Five years of
+daily balances is around 1,800 dates per account; drawn in full the chart is
+both slow to load and too dense to read, which is what
+`issue #279 <https://github.com/jantman/biweeklybudget/issues/279>`_ reported.
+
+Sampling, rather than averaging into weekly or monthly buckets, is deliberate.
+Every point on the chart is a balance that really was recorded on the date it
+sits above, so a hovered value is a fact rather than a summary statistic.
+
+**The most recent date is always plotted**, whatever the sampling interval works
+out to. The right-hand edge of the chart therefore always agrees with the
+account tables immediately below it on the same page.
+
+.. _app_usage.account_balance_chart.dormant:
+
+Accounts with no recent balances
+````````````````````````````````
+
+An account with no balance recorded inside the selected range still gets a line.
+It is drawn flat at that account's most recent known balance from before the
+range began, which is the same carry-forward the chart has always applied to
+dates where an account has no record of its own.
+
+This matters when narrowing the range: an account you stopped downloading a year
+ago holds a flat line at its last known value rather than disappearing or
+dropping to zero. A line at zero would say the account was emptied, which is a
+very different statement from "nothing new has been recorded".
+
+An account whose data begins part-way through the selected range is not treated
+this way — its line simply starts where its data starts, rather than being
+extended back over dates when the account had no recorded balance.
