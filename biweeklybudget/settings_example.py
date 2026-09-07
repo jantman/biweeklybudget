@@ -89,6 +89,18 @@ DEFAULT_ACCOUNT_ID = 1
 #: must be the database ID of a valid budget.
 FUEL_BUDGET_ID = 1
 
+#: int - How many days of history the "Account Balances" chart on the index page
+#: shows when the page is first loaded. A value of ``0`` means all recorded
+#: history. The chart's range selector can widen or narrow this at any time
+#: without changing this setting; this is only the starting view.
+ACCOUNT_BALANCE_CHART_DEFAULT_DAYS = 365
+
+#: int - The maximum number of dates the "Account Balances" chart on the index
+#: page will plot, for any selected range including "All". When the selected
+#: range holds more dates than this, they are sampled at a regular interval down
+#: to this many; the most recent date is always kept.
+ACCOUNT_BALANCE_CHART_MAX_POINTS = 300
+
 #: Plaid Client ID
 PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
 

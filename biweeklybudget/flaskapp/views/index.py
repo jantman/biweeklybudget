@@ -36,9 +36,13 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 from flask.views import MethodView
-from flask import render_template, jsonify
+from flask import render_template, jsonify, request
 from copy import copy
-from sqlalchemy import asc
+from datetime import timedelta
+from math import ceil
+from sqlalchemy import asc, func
+
+from biweeklybudget import settings
 
 from biweeklybudget.flaskapp.app import app
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
@@ -101,6 +105,91 @@ class IndexView(MethodView):
             budgets=budgets,
             active_budgets=active_budgets
         )
+
+
+def parse_chart_days(raw, default):
+    """
+    Parse the ``days`` query parameter for
+    :py:class:`~.AcctBalanaceChartView`, falling back to ``default`` for
+    anything that is not a non-negative integer.
+
+    A value of ``0`` means "all recorded history" and is returned as-is; any
+    other non-negative integer is a number of days to count back from now.
+
+    This never raises. The chart endpoint has no side effects, and for a
+    mistyped or stale URL, quietly showing the default view is a better outcome
+    than a traceback or a ``400`` where a chart should be (FR-010).
+
+    :param raw: the raw query parameter value, or None if it was not given
+    :type raw: str or None
+    :param default: the value to use when ``raw`` cannot be interpreted
+    :type default: int
+    :return: number of days of history to return; 0 means all history
+    :rtype: int
+    """
+    if raw is None:
+        return default
+    try:
+        days = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+    if days < 0:
+        return default
+    return days
+
+
+def sample_chart_rows(rows, max_points):
+    """
+    Reduce ``rows`` to at most ``max_points`` entries by taking every *n*-th
+    row, so that the "Account Balances" chart stays legible and quick to draw
+    however many years of daily balances have accumulated.
+
+    Guarantees, each of which is covered by a test in
+    :py:mod:`biweeklybudget.tests.unit.flaskapp.views.test_index`:
+
+    1. ``len(result) <= max_points`` for every input.
+    2. When ``len(rows) <= max_points``, ``rows`` is returned unchanged -- the
+       same objects, in the same order. An installation with a small amount of
+       history sees exactly what it saw before this sampling existed (FR-013).
+    3. When ``rows`` is non-empty, ``result[-1] is rows[-1]``.
+    4. Order is preserved.
+    5. An empty ``rows`` returns an empty list rather than raising.
+
+    Guarantee 3 is the one that is not merely cosmetic. The right-hand edge of
+    this chart is "what are my balances now", and it sits directly above the
+    account tables on the same page. A stride that happened to stop two days
+    short would make the chart silently disagree with those tables, so the last
+    row is always kept even when the stride skips it (FR-005).
+
+    Balances are slow-moving series rather than spiky signals, so a regularly
+    sampled subset represents them faithfully. Sampling rather than averaging is
+    deliberate: every plotted value is a balance that was actually recorded on
+    the date it is plotted against, which is what makes a hovered value
+    meaningful in a financial application.
+
+    :param rows: chart data rows, ordered ascending by date
+    :type rows: list
+    :param max_points: maximum number of rows to return; values below 1 are
+      treated as 1
+    :type max_points: int
+    :return: at most ``max_points`` of ``rows``, ending with ``rows[-1]``
+    :rtype: list
+    """
+    if not rows:
+        return rows
+    if max_points < 1:
+        max_points = 1
+    if len(rows) <= max_points:
+        return rows
+    if max_points == 1:
+        return [rows[-1]]
+    # Reserve the final slot for the last row and stride across the rest. The
+    # naive form -- stride over the whole list, then append the last row if the
+    # stride missed it -- can return max_points + 1 rows whenever len(rows) is
+    # an exact multiple of the stride (e.g. 6 rows into 3 points), because the
+    # stride fills the quota and the appended row overflows it.
+    stride = ceil((len(rows) - 1) / (max_points - 1))
+    return rows[:-1:stride] + [rows[-1]]
 
 
 class AcctBalanaceChartView(MethodView):
