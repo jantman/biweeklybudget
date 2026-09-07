@@ -156,9 +156,23 @@ The prefix for this feature is **`Transaction API - M{n}.{t}`**, mapped as:
 - [X] T039 Work through [quickstart.md](./quickstart.md) section 2 end to end against a running app, including the check that the web UI's own Add Transaction modal is unchanged
 - [X] T039a Run `tox -e migrations` as well. Not required by Constitution II, which scopes it to schema changes, but it is what actually *demonstrates* the claim that there is no schema change: it verifies the Alembic head still matches the models. 7 passed.
 - [X] T040 Update this `tasks.md` and, if anything was learned that contradicts them, `spec.md` and `plan.md`, to record the outcome; commit everything from M4 and M5 together as the milestone close
-- [ ] T041 Push `robot-army/issue-322-implement-the-transaction-http-api-and` to `origin` and open a pull request describing the change, the decisions from [research.md](./research.md), and the constitution compliance check from [plan.md](./plan.md)
-- [ ] T042 Monitor the PR's CI jobs to completion and fix any failure
-- [ ] T043 Run `/answer-reviews` to address review feedback, repeating until Claude's review reports "No issues found" and any Copilot review recommends approval
+- [X] T041 Push `robot-army/issue-322-implement-the-transaction-http-api-and` to `origin` and open a pull request describing the change, the decisions from [research.md](./research.md), and the constitution compliance check from [plan.md](./plan.md)
+- [X] T042 Monitor the PR's CI jobs to completion and fix any failure
+- [X] T043 Run `/answer-reviews` to address review feedback, repeating until Claude's review reports "No issues found" and any Copilot review recommends approval
+
+## Outcome
+
+PR [#332](https://github.com/jantman/biweeklybudget/pull/332). All eleven CI checks pass
+on the first run: `py314`, `acceptance`, `docker`, `docs`, `jsdoc`, `migrations`, `plaid`,
+`screenshots`, `coverage`, `claude-review`, and Snyk.
+
+Claude's automated review reported **"No issues found"** on the first pass, and no Copilot
+review was requested, so the stopping condition for T043 was already satisfied and there
+was no review feedback to answer.
+
+Unit-test coverage moved from 44% to 48.8%. The CI comment still flags it as under the
+80% threshold, which is a pre-existing project-wide state rather than anything this
+feature introduced; the `coverage` check itself passes.
 
 ---
 
