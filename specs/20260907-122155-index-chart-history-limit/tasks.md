@@ -177,7 +177,7 @@ not a pass.
 - [X] T041 Add the `1.10.0` entry to `CHANGES.rst` in the established per-issue format, citing `Issue #279`. It must state: that the dominant cost was an N+1 lazy load rather than the data volume the issue named; the windowing and sampling rules including why the last point is pinned; the pre-window seed query and the dormant-account correctness problem it solves; the two new settings and their defaults; and that #215's chart-library migration was deliberately not folded in, with the constitution's stack constraint as the reason.
 - [ ] T042 Record the outcome of each phase in this file, ticking the boxes, so the spec artifacts reflect what was actually built (constitution Development Workflow step 5c).
 - [X] T043 Commit, push the branch `robot-army/issue-279-fix-index-page-chart-when-lots-of-data` to `origin`, and open a pull request describing the change, the Constitution Check result, the deliberate deferral of #215, the one behaviour change existing endpoint callers will see (no `days` parameter now means the default window, with `days=0` restoring the old response), and the recorded Principle I deviation on milestone approval.
-- [ ] T044 Monitor the pull request's CI jobs to completion, then use `/answer-reviews` to respond to review feedback, repeating until Claude's review reports "No issues found" and Copilot's, if present, recommends approval.
+- [X] T044 Monitor the pull request's CI jobs to completion, then use `/answer-reviews` to respond to review feedback, repeating until Claude's review reports "No issues found" and Copilot's, if present, recommends approval.
 
 ---
 
@@ -304,3 +304,40 @@ plan and at each milestone boundary. This session was dispatched to run the whol
 lifecycle autonomously through to an opened pull request; that is the dispatcher's call
 and is recorded here rather than left as a silent omission. The pull request is the review
 artifact, and nothing merges without it.
+
+---
+
+## Review Record (PR #331)
+
+**Round 1** — Claude's review raised two findings. Both were real, both are fixed in
+`0be6526`, and both were replied to and their threads resolved.
+
+1. **`OverflowError` → HTTP 500 on an absurd `days`.** `dtnow() - timedelta(days=999999)`
+   puts the window start below `datetime.MINYEAR`, so a mistyped URL got a traceback
+   rather than a chart — contradicting `parse_chart_days()`'s own "This never raises"
+   docstring and `http_api.rst`. The review also correctly identified that
+   `test_huge_value_is_accepted` had *blessed* the very value that crashed the view,
+   calling it "harmless"; that test was replaced, not adjusted. `research.md` R6 argued no
+   clamp was needed because "`days=0` already means unbounded, so any large positive value
+   is equivalent to one the user can already request" — right about the semantics, and it
+   should have followed that the two must produce the same *result* rather than one of
+   them crashing.
+2. **Out-of-order chart responses.** The range buttons fired unsequenced AJAX requests, so
+   clicking **All** (slowest) then **1m** (fastest) could leave all history plotted beneath
+   a highlighted **1m** button. This is the same class of error the pinned-last-point rule
+   exists to prevent — the chart contradicting what sits next to it — in a place this spec
+   did not think to look. The acceptance tests could not have caught it: they call
+   `wait_for_jquery_done()` between clicks and never overlap two requests.
+
+**Round 2** — "No issues found." The review mentioned one candidate it decided not to
+report: `parse_chart_days()` clamped `raw` but returned `default` unclamped. That was
+verified to be real (`ACCOUNT_BALANCE_CHART_DEFAULT_DAYS=999999` plus a request with no
+`days` parameter → HTTP 500) and fixed in `fb1715f` rather than left, because the setting
+is operator-settable by environment variable and a contract with an exception in it is one
+somebody has to remember.
+
+**Round 3** — "No issues found", scoped to `fb1715f`. No Copilot review was present on
+this PR.
+
+**Final CI state**, all green on `fb1715f`: acceptance, claude-review, coverage, docker,
+docs, jsdoc, migrations, plaid, py314, screenshots, snyk.
