@@ -203,11 +203,29 @@ credit-card payment, both unreconciled in a funding account, must leave the
 banner's unreconciled figure and its verdict unmoved, while both remain listed and
 reconcilable in the reconcile view. Delivers FR-009 and FR-010 (User Story 3).
 
-**M4 — Documentation, version, changelog and close-out. [IN PROGRESS]** Add the
+**M4 — Documentation, version, changelog and close-out. [COMPLETE]** Add the
 `app_usage.rst` section describing the comparison and each figure (FR-012). Bump
 `version.py` (PATCH) and add the `CHANGES.rst` entry. Run the full unit and
 acceptance suites to completion, plus `tox -e docs` and `tox -e migrations`.
 Then push and open the pull request.
+
+## Final suite results
+
+Run to completion on the final tree, per Constitution principle II. No suite was
+narrowed and none timed out.
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` | 624 passed, 139 skipped |
+| `tox -e acceptance` | 752 passed, 24 skipped, 0 failed (16m18s) |
+| `tox -e docs` | OK, zero errors |
+| `tox -e migrations` | 7 passed |
+
+Note on the date-dependent failure recorded below:
+`TestPayPeriodsIndex::test_6_notification_panels` **passed** in the full run.
+It had failed in two earlier partial runs, including one with `master`'s
+`notifications.py` restored in place, so it is flaky with respect to run timing
+or preceding DB state rather than a regression from this change.
 
 ## Outcome notes
 
