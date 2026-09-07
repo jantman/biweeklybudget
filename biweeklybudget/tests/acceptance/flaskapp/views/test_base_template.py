@@ -571,3 +571,127 @@ class TestCreditAccountSumAccountSelection(AcceptanceHelper):
         assert any(
             'less credit account balances' in c for c in contents
         ), contents
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestNoCashImpactNotification(AcceptanceHelper):
+    """
+    Regression coverage for the second defect in GitHub issue #320:
+    transactions that move no real cash must not inflate the unreconciled
+    figure the banner reports, and so must not shift the banner's verdict.
+
+    The exclusion itself is not implemented here. It already exists, from the
+    work for issues #210 and #319: ``Transaction.is_excluded_from_budget`` is
+    true both for a transaction flagged ``no_budget_impact`` and for one that
+    is a payment toward a credit account, and ``Account.unreconciled_sum``
+    skips both. Nothing tied that to the banner, though, so a regression there
+    would silently reintroduce an error of thousands of dollars for days at a
+    time -- which is exactly what the issue describes. These tests are that
+    tie.
+
+    If they fail, the fault is in the exclusion code, not in the notification.
+    """
+
+    def test_0_baseline(self, testdb):
+        assert NotificationsController.budget_account_unreconciled(
+            testdb
+        ) == Decimal('-333.33')
+
+    def test_1_ordinary_unreconciled_counts(self, testdb):
+        """
+        An ordinary unreconciled transaction is real money leaving the
+        account and must be counted, so the exclusions below are shown to be
+        about the exclusion and not about unreconciled transactions in
+        general.
+        """
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('250.00')},
+            description='ordinary unreconciled',
+            account=acct
+        ))
+        testdb.flush()
+        testdb.commit()
+        assert NotificationsController.budget_account_unreconciled(
+            testdb
+        ) == Decimal('-83.33')
+
+    def test_2_no_budget_impact_excluded(self, testdb):
+        """
+        A no-budget-impact transaction -- the pseudo-transaction pattern the
+        issue describes -- must not move the figure at all, however large.
+        """
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
+        testdb.add(Transaction(
+            date=pp.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('2000.00')},
+            description='pseudo-transaction',
+            account=acct,
+            no_budget_impact=True
+        ))
+        testdb.flush()
+        testdb.commit()
+        assert NotificationsController.budget_account_unreconciled(
+            testdb
+        ) == Decimal('-83.33')
+
+    def test_3_credit_payment_excluded(self, testdb):
+        """
+        A payment toward a credit account is likewise excluded, without
+        needing the flag set as well.
+        """
+        acct = testdb.query(Account).get(1)
+        budget = testdb.query(Budget).get(1)
+        card = Account.active_credit_accounts(testdb).first()
+        pp = BiweeklyPayPeriod.period_for_date(dtnow(), testdb)
+        t = Transaction(
+            date=pp.start_date + timedelta(days=1),
+            budget_amounts={budget: Decimal('3000.00')},
+            description='card payment',
+            account=acct,
+            credit_payment_acct=card
+        )
+        testdb.add(t)
+        testdb.flush()
+        testdb.commit()
+        assert t.is_excluded_from_budget is True
+        assert t.no_budget_impact is False
+        assert NotificationsController.budget_account_unreconciled(
+            testdb
+        ) == Decimal('-83.33')
+
+    def test_4_banner_reports_excluding_them(self, base_url, selenium):
+        """
+        The banner itself, not just the helper, reports the figure that
+        excludes them: $5,000 of no-cash-impact transactions are outstanding,
+        and the banner must still say -$83.33.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/budgets')
+        div = selenium.find_elements(
+            By.XPATH, "//div[@id='notifications-row']/div/div"
+        )[1]
+        assert '-$83.33 unreconciled' in div.text
+        assert '$2,000.00' not in div.text
+        assert '$3,000.00' not in div.text
+
+    def test_5_still_reconcilable(self, base_url, selenium):
+        """
+        Excluding these from the arithmetic must not hide them from
+        reconciliation: both still appear in the reconcile view, and are
+        still there to be reconciled (FR-010).
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/reconcile')
+        self.wait_for_jquery_done(selenium)
+        src = selenium.page_source
+        assert 'pseudo-transaction' in src
+        assert 'card payment' in src
+        assert 'ordinary unreconciled' in src
