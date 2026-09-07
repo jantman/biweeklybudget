@@ -130,6 +130,15 @@ def parse_chart_days(raw, default):
     (``dtnow() - timedelta(days=days)``) from overflowing
     :py:class:`datetime.datetime`'s minimum year on an absurd input.
 
+    That ceiling is applied to ``default`` as well, not only to ``raw``. The
+    default comes from
+    :py:attr:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`,
+    which an operator can set to anything at all, so clamping only the query
+    parameter would leave the same crash reachable through a misconfigured
+    setting instead of a mistyped URL. The guarantee this function offers is
+    unconditional: whatever it returns is safe to pass to
+    :py:class:`datetime.timedelta`.
+
     This never raises. The chart endpoint has no side effects, and for a
     mistyped or stale URL, quietly showing a sensible view is a better outcome
     than a traceback or a ``400`` where a chart should be (FR-010).
@@ -142,13 +151,26 @@ def parse_chart_days(raw, default):
     :rtype: int
     """
     if raw is None:
-        return default
+        return _clamp_chart_days(default)
     try:
         days = int(str(raw).strip())
     except (TypeError, ValueError):
-        return default
+        return _clamp_chart_days(default)
     if days < 0:
-        return default
+        return _clamp_chart_days(default)
+    return _clamp_chart_days(days)
+
+
+def _clamp_chart_days(days):
+    """
+    Return ``days`` unless it is beyond :py:const:`~.MAX_CHART_DAYS`, in which
+    case return ``0`` ("all history"). See :py:func:`~.parse_chart_days`.
+
+    :param days: a number of days of history
+    :type days: int
+    :return: ``days``, or 0 if it exceeds the ceiling
+    :rtype: int
+    """
     if days > MAX_CHART_DAYS:
         return 0
     return days

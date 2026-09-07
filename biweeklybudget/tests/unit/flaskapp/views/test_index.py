@@ -113,6 +113,16 @@ class TestParseChartDays(object):
         # the default is whatever the caller passed, including 0
         assert parse_chart_days('nope', 0) == 0
 
+    @pytest.mark.parametrize('raw', [None, '', 'abc', '-1', '1.5'])
+    def test_absurd_default_is_clamped_too(self, raw):
+        # ACCOUNT_BALANCE_CHART_DEFAULT_DAYS is operator-settable, so clamping
+        # only the query parameter would leave the same OverflowError reachable
+        # through a misconfigured setting instead of a mistyped URL. Every
+        # fallback path is clamped, so the guarantee is unconditional.
+        days = parse_chart_days(raw, 999999)
+        assert days == 0
+        dtnow() - timedelta(days=days or 1)  # must not raise
+
 
 class TestSampleChartRows(object):
     """
