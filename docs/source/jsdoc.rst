@@ -19,6 +19,7 @@ Files
    jsdoc.forms
    jsdoc.fuel
    jsdoc.fuel_charts
+   jsdoc.index
    jsdoc.ofx
    jsdoc.payperiod_modal
    jsdoc.payperiods

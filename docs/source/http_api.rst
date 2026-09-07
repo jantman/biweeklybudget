@@ -755,3 +755,60 @@ Redirect to the pay period page for a given date, or the current date if no date
 **Response:**
 
 HTTP 302 redirect to ``/payperiod/YYYY-MM-DD`` where the date is the start of the pay period containing the requested date.
+
+.. _http_api.charts:
+
+Charts
+------
+
+.. _http_api.charts.account_balances:
+
+Account Balance Chart Data
+++++++++++++++++++++++++++
+
+``GET /ajax/chart-data/account-balances``
+
+Retrieve the data behind the **Account Balances** chart on the index page: each
+account's :py:class:`~.AccountBalance` history, forward-filled so every account
+has a value on every returned date. Handled by
+:py:class:`~.AcctBalanaceChartView`.
+
+**Query Parameters:**
+
+- ``days`` *(integer, optional)* - Days of history to return, counting back from now. ``0`` means all recorded history. Defaults to :py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`. A value that is absent, negative, or not an integer falls back to that default rather than returning an error.
+
+**Example Request:**
+
+.. code-block:: bash
+
+    $ curl 'http://127.0.0.1:8080/ajax/chart-data/account-balances?days=90'
+
+**Response:**
+
+- ``data`` *(array)* - One object per date, ascending. Each has a ``date`` key in ``YYYY-MM-DD`` format plus one key per account name, whose value is that account's balance on that date, or ``null`` if the account had no recorded balance at or before it. A ``NULL`` ledger balance is reported as ``0.0``.
+- ``keys`` *(array)* - Account names, sorted. Includes inactive accounts.
+
+.. code-block:: json
+
+    {
+      "data": [
+        {"date": "2017-07-26", "BankOne": 12345.67, "CreditOne": -876.54},
+        {"date": "2017-07-27", "BankOne": 12789.01, "CreditOne": -952.06}
+      ],
+      "keys": ["BankOne", "CreditOne"]
+    }
+
+.. note::
+
+   ``data`` never contains more than
+   :py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_MAX_POINTS` dates,
+   for any ``days`` value and any amount of stored history. When the requested
+   range holds more dates than that, they are sampled at a regular interval;
+   the most recent date is always included. See
+   :ref:`Account Balances Chart <app_usage.account_balance_chart>`.
+
+.. warning::
+
+   Before biweeklybudget 1.10.0 this endpoint took no parameters and always
+   returned all recorded history. A request with no ``days`` parameter now
+   returns only the default window. Pass ``days=0`` for the previous behaviour.

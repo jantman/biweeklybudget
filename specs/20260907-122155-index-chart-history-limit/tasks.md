@@ -146,9 +146,9 @@ initial span, the active button, and the point cap all follow the configuration.
 
 **Purpose**: Constitution Principle IV — documentation ships with the change, not after it.
 
-- [ ] T032 [P] Add an "Account Balances Chart" section to `docs/source/app_usage.rst` with an `.. _app_usage.account_balance_chart:` label, describing the default window, the range selector, that sampling keeps the most recent point so the chart agrees with the account tables below it, and that dormant accounts show a flat carried-forward line rather than dropping to zero. Name both settings with `:py:const:` cross-references, as the surrounding sections do.
-- [ ] T033 [P] Check whether `docs/source/http_api.rst` documents `/ajax/chart-data/account-balances`. It currently does not; add a short entry for it under the existing GET-endpoint pattern, covering the `days` parameter, the response shape, and the point cap. External scripts are exactly who that page is for, and the default-window change is the one behaviour an existing caller would notice.
-- [ ] T034 Run `tox -e jsdoc` to regenerate JavaScript documentation. The named functions from T022 will produce a new `docs/source/jsdoc.index.rst` and a new line in `docs/source/jsdoc.rst`; commit both, per the release checklist's requirement that regenerated docs are committed.
+- [X] T032 [P] Add an "Account Balances Chart" section to `docs/source/app_usage.rst` with an `.. _app_usage.account_balance_chart:` label, describing the default window, the range selector, that sampling keeps the most recent point so the chart agrees with the account tables below it, and that dormant accounts show a flat carried-forward line rather than dropping to zero. Name both settings with `:py:const:` cross-references, as the surrounding sections do.
+- [X] T033 [P] Check whether `docs/source/http_api.rst` documents `/ajax/chart-data/account-balances`. It currently does not; add a short entry for it under the existing GET-endpoint pattern, covering the `days` parameter, the response shape, and the point cap. External scripts are exactly who that page is for, and the default-window change is the one behaviour an existing caller would notice.
+- [X] T034 Run `tox -e jsdoc` to regenerate JavaScript documentation. The named functions from T022 will produce a new `docs/source/jsdoc.index.rst` and a new line in `docs/source/jsdoc.rst`; commit both, per the release checklist's requirement that regenerated docs are committed.
 
 **Checkpoint**: Every documentation surface this change touches is updated.
 
