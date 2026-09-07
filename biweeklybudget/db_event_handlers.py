@@ -320,41 +320,60 @@ def handle_transaction_budget_exclusion_change(session):
         if not isinstance(obj, Transaction):
             continue
         state = inspect(obj)
-        was_excluded = None
+        # Reconstruct what is_excluded_from_budget was BEFORE this save, from
+        # the old value of *both* fields. Both must be resolved before either
+        # is evaluated: the Add/Edit Transaction form assigns both on every
+        # submit, so a single save can change both, and pairing one field's old
+        # value with the other's already-mutated current value gives the wrong
+        # answer.
+        old_values = {}
+        changed = False
         for attrname in ['no_budget_impact', 'credit_payment_acct_id']:
             hist = state.attrs[attrname].history
-            if not hist.has_changes():
-                continue
-            # Reconstruct what is_excluded_from_budget was before this change,
-            # from the old value of whichever field changed plus the current
-            # value of the other.
-            old = hist.deleted[0] if hist.deleted else None
-            if attrname == 'no_budget_impact':
-                was_excluded = bool(old) or (
-                    obj.credit_payment_acct_id is not None
+            if hist.has_changes():
+                old_values[attrname] = (
+                    hist.deleted[0] if hist.deleted else None
                 )
+                if old_values[attrname] != getattr(obj, attrname):
+                    changed = True
             else:
-                was_excluded = bool(obj.no_budget_impact) or (
-                    old is not None
-                )
-        if was_excluded is None:
+                old_values[attrname] = getattr(obj, attrname)
+        if not changed:
             continue
+        was_excluded = bool(old_values['no_budget_impact']) or (
+            old_values['credit_payment_acct_id'] is not None
+        )
         is_excluded = obj.is_excluded_from_budget
         if was_excluded == is_excluded:
             continue
         for btrans in obj.budget_transactions:
+            if btrans in session.new:
+                # Never debited under either state;
+                # handle_new_or_deleted_budget_transaction owns it and has
+                # already applied the correct rule for the new state.
+                continue
             budg = btrans.budget
             if budg is None:
                 budg = session.query(Budget).get(btrans.budget_id)
             if budg is None or budg.is_periodic:
                 continue
+            # Correct by the amount that was actually debited, not the live
+            # value. set_budget_amounts() reassigns btrans.amount before the
+            # flush, and handle_budget_trans_amount_change has already applied
+            # (or deliberately skipped) the delta between the two; using the
+            # current amount here would double-count or drop that delta.
+            amt_hist = inspect(btrans).attrs['amount'].history
+            if amt_hist.has_changes() and amt_hist.deleted:
+                amount = amt_hist.deleted[0]
+            else:
+                amount = btrans.amount
             old_amt = budg.current_balance
             if is_excluded:
                 # Now excluded; refund the debit it made.
-                budg.current_balance = old_amt + btrans.amount
+                budg.current_balance = old_amt + amount
             else:
                 # No longer excluded; debit it as an ordinary transaction.
-                budg.current_balance = old_amt - btrans.amount
+                budg.current_balance = old_amt - amount
             logger.info(
                 'Transaction %s budget exclusion changed to %s; update '
                 'standing budget id=%s current_balance from %s to %s',

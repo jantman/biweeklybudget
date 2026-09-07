@@ -492,3 +492,156 @@ class TestStandingBudgetExcludedTransactions(AcceptanceHelper):
     def test_16_verify_balance_after_amount_change(self, testdb):
         assert testdb.query(Budget).get(5).current_balance == \
             Decimal('9482.29')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
+@pytest.mark.incremental
+class TestStandingBudgetExclusionCombinedChanges(AcceptanceHelper):
+    """
+    Standing budget corrections when an exclusion change is combined with
+    another change in the same save. Both cases were found in review of
+    PR #329; GitHub issue #210.
+
+    The Add/Edit Transaction form assigns ``no_budget_impact`` and
+    ``credit_payment_acct_id`` on every submit and then calls
+    ``set_budget_amounts()``, so a single save can change both exclusion fields
+    at once, and can change the amount at the same time. Each of those
+    interacts with ``handle_budget_trans_amount_change``, which runs
+    synchronously on assignment rather than at flush.
+
+    Budget 5 is "Standing2", starting at 9482.29. Account 3 is CreditOne.
+    """
+
+    def test_00_baseline(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_01_add_ordinary(self, testdb):
+        testdb.add(Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('100.00')},
+            description='CombinedA',
+            account=testdb.query(Account).get(1)
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_ordinary_was_debited(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9382.29')
+
+    def test_03_both_fields_change_becoming_excluded(self, testdb):
+        """Both exclusion fields change in one save. Reconstructing the prior
+        state from one field's old value paired with the other's already
+        mutated value gives the wrong answer; both old values must be resolved
+        before either is evaluated."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedA')
+        ).one()
+        t.no_budget_impact = True
+        t.credit_payment_acct_id = 3
+        testdb.flush()
+        testdb.commit()
+
+    def test_04_verify_refunded_once(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_05_both_fields_change_becoming_ordinary(self, testdb):
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedA')
+        ).one()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = None
+        testdb.flush()
+        testdb.commit()
+
+    def test_06_verify_debited_once(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9382.29')
+
+    def test_07_becoming_excluded_while_amount_changes(self, testdb):
+        """The correction must use the amount that was actually debited
+        (100.00), not the new amount (150.00). The amount-change handler skips
+        here, because by the time it fires the transaction is already
+        excluded."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedA')
+        ).one()
+        t.no_budget_impact = True
+        t.set_budget_amounts({
+            testdb.query(Budget).get(5): Decimal('150.00')
+        })
+        testdb.flush()
+        testdb.commit()
+
+    def test_08_verify_refunded_old_amount(self, testdb):
+        # 9382.29 + 100.00 debited, not + 150.00
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9482.29')
+
+    def test_09_becoming_ordinary_while_amount_changes(self, testdb):
+        """Here the amount-change handler does *not* skip, so it applies the
+        150 -> 200 delta itself; this handler must then debit only the old
+        amount or the delta is counted twice."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedA')
+        ).one()
+        t.no_budget_impact = False
+        t.set_budget_amounts({
+            testdb.query(Budget).get(5): Decimal('200.00')
+        })
+        testdb.flush()
+        testdb.commit()
+
+    def test_10_verify_debited_new_amount_once(self, testdb):
+        # 9482.29 - 200.00, reached as -50 (delta) then -150 (old amount)
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9282.29')
+
+    def test_11_add_excluded_transaction(self, testdb):
+        testdb.add(Transaction(
+            budget_amounts={testdb.query(Budget).get(5): Decimal('50.00')},
+            description='CombinedB',
+            account=testdb.query(Account).get(1),
+            no_budget_impact=True
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_12_excluded_not_debited(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9282.29')
+
+    def test_13_both_fields_change_still_excluded(self, testdb):
+        """Both fields change but the transaction is excluded before and
+        after, so nothing should move. The overwrite bug made this look like a
+        transition and applied a phantom refund."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedB')
+        ).one()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = 3
+        testdb.flush()
+        testdb.commit()
+
+    def test_14_verify_no_phantom_refund(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9282.29')
+
+    def test_15_resave_with_no_real_change(self, testdb):
+        """The form assigns both fields on every submit, so they always have
+        attribute history even when the value is unchanged. That must not be
+        treated as a transition."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('CombinedB')
+        ).one()
+        t.no_budget_impact = False
+        t.credit_payment_acct_id = 3
+        t.notes = 'touched'
+        testdb.flush()
+        testdb.commit()
+
+    def test_16_verify_unchanged_on_resave(self, testdb):
+        assert testdb.query(Budget).get(5).current_balance == \
+            Decimal('9282.29')
