@@ -114,6 +114,45 @@
             </div>
             <!-- /.row -->
             <div class="row">
+                <div class="col-xs-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Per-Account Transaction Totals</div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="pp-acct-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th><a href="/payperiod/{{ pp_prev_date|dateymd }}">{{ pp_prev_date|dateymd }} <em>{{ pp_prev_suffix }}</em></a></th>
+                                            <th class="info">{{ pp_curr_date|dateymd }} <em>{{ pp_curr_suffix }}</em></th>
+                                            <th><a href="/payperiod/{{ pp_next_date|dateymd }}">{{ pp_next_date|dateymd }} <em>{{ pp_next_suffix }}</em></a></th>
+                                            <th><a href="/payperiod/{{ pp_following_date|dateymd }}">{{ pp_following_date|dateymd }} <em>{{ pp_following_suffix }}</em></a></th>
+                                            <th><a href="/payperiod/{{ pp_last_date|dateymd }}">{{ pp_last_date|dateymd }} <em>{{ pp_last_suffix }}</em></a></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in acct_period_sums %}
+                                        <tr>
+                                            <td><a href="/accounts/{{ row['id'] }}">{{ row['name'] }}</a></td>
+                                            {% for amt in row['totals'] %}
+                                            <td{% if loop.index0 == 1 %} class="info"{% endif %}>{{ amt|reddollars|safe }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                        <tr>
+                                            <td><strong>Total</strong></td>
+                                            {% for amt in acct_period_totals %}
+                                            <td{% if loop.index0 == 1 %} class="info"{% endif %}>{{ amt|reddollars|safe }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- /.table-responsive -->
+                    </div> <!-- /.panel -->
+                </div> <!-- /.col -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
                 <div class="col-lg-4 col-md-6">
                     <div class="panel panel-warning">
                         <div class="panel-heading">Periodic Budgets - <button type="button" class="btn btn-xs btn-primary" id="btn-budg-txfr-periodic">Transfer</button>

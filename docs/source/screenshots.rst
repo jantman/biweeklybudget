@@ -68,7 +68,7 @@ Summary of previous, current and upcoming pay periods, plus date selector to fin
 Single Pay Period View
 ----------------------
 
-Shows a pay period (current in this example) balances (income, allocated, spent, remaining), budgets and transactions (previous/manually-entered and scheduled).
+Shows a pay period (current in this example) balances (income, allocated, spent, remaining), per-account transaction totals across the five periods shown at the top of the page, budgets and transactions (previous/manually-entered and scheduled).
 
 .. image:: payperiod_sm.png
    :target: payperiod.png

@@ -246,3 +246,48 @@ Payment For** field and do not need the checkbox as well. The two fields are
 independent: clearing the card designation from a transaction restores its
 ordinary budget impact, unless you had also checked **No Budget Impact?**
 yourself, in which case that choice stands.
+
+.. _app_usage.per_account_totals:
+
+Per-Account Transaction Totals
+------------------------------
+
+Each pay period view carries a **Per-Account Transaction Totals** table, below
+the income/allocated/spent/remaining summary and above the budget and
+transaction tables. It answers a question the rest of the page does not: how
+much money moved through each of your accounts.
+
+There is one row per account with any activity, and one column per pay period —
+the same five periods, in the same order, as the *Remaining Balances* table at
+the top of the page: the previous period, the one being viewed, and the three
+that follow. The column headers link to those periods, and the account names
+link to the accounts, so an unexpected number is one click from its detail.
+
+An account with no transactions in any of the five periods gets no row at all;
+one with no transactions in a particular period shows ``$0.00`` in that column.
+Amounts keep their usual sign, so spending is positive, income is negative and
+shown in red, and the bottom row totals each column.
+
+.. _app_usage.per_account_totals.not_budget_totals:
+
+Why these totals do not match the budget totals
+```````````````````````````````````````````````
+
+They are not supposed to, and the difference is deliberate.
+
+The budget figures elsewhere on the page exclude credit card payments and any
+transaction marked :ref:`No Budget Impact <app_usage.no_budget_impact>`,
+because counting a card payment as well as the charges it settles would charge
+the same money against your income twice.
+
+The per-account totals include them. That exclusion is a statement about
+budgets; the money leaves the paying account either way, and a total that
+omitted it would not match the account's statement. An account whose only
+activity in a period is a card payment therefore shows that payment in full
+here, while contributing nothing to the period's *spent* figure above.
+
+The totals do reconcile, exactly, with the Transactions table further down the
+same page. They are that same list of transactions, grouped by account and
+added up — including the scheduled transactions the period projects, and
+including the rows marked *(no budget impact)*. If you want to check a cell,
+add up the visible rows for that account.

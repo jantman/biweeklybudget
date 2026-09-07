@@ -35,5 +35,5 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-VERSION = '1.8.0'
+VERSION = '1.9.0'
 PROJECT_URL = 'https://github.com/jantman/biweeklybudget'
