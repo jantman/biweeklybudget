@@ -204,42 +204,37 @@ class NotificationsController(object):
                                                                       a)
             })
         accounts_bal = NotificationsController.budget_account_sum()
+        credit_bal = NotificationsController.credit_account_sum()
         unrec_amt = NotificationsController.budget_account_unreconciled()
         standing_bal = NotificationsController.standing_budgets_sum()
         curr_pp = NotificationsController.pp_sum()
-        logger.info('accounts_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
-                    accounts_bal, standing_bal, curr_pp, unrec_amt)
+        logger.info(
+            'accounts_bal=%s credit_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
+            accounts_bal, credit_bal, standing_bal, curr_pp, unrec_amt
+        )
+        # Money owed on a credit account is recorded as a negative balance, so
+        # adding credit_bal here subtracts what is owed from the funds that are
+        # actually available to spend. See GitHub issue #320.
+        available = accounts_bal + credit_bal
         bal_sum = standing_bal + curr_pp + unrec_amt
-        if accounts_bal < bal_sum:
+        if available != bal_sum:
+            verb = 'is less than' if available < bal_sum else 'is more than'
+            classes = 'alert alert-danger'
+            if available > bal_sum:
+                classes = 'alert alert-info'
             res.append({
-                'classes': 'alert alert-danger',
+                'classes': classes,
                 'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is less than all allocated funds total of '
+                           'budget-funding accounts</a> less <a '
+                           'href="/accounts">credit account balances</a> '
+                           '(%s) %s all allocated funds total of '
                            '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!'
+                           '%s <a href="/pay_period_for">current pay period '
+                           'allocated but unspent</a>; %s <a '
+                           'href="/reconcile">unreconciled</a>)!'
                            '' % (
-                               fmt_currency(accounts_bal),
-                               fmt_currency(bal_sum),
-                               fmt_currency(standing_bal),
-                               fmt_currency(curr_pp),
-                               fmt_currency(unrec_amt)
-                           )
-            })
-        elif accounts_bal > bal_sum:
-            res.append({
-                'classes': 'alert alert-info',
-                'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is more than all allocated funds total of '
-                           '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!'
-                           '' % (
-                               fmt_currency(accounts_bal),
+                               fmt_currency(available),
+                               verb,
                                fmt_currency(bal_sum),
                                fmt_currency(standing_bal),
                                fmt_currency(curr_pp),

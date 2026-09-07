@@ -77,7 +77,8 @@ class TestNotifications(object):
             standing_budgets_sum=DEFAULT,
             num_unreconciled_ofx=DEFAULT,
             budget_account_unreconciled=DEFAULT,
-            pp_sum=DEFAULT
+            pp_sum=DEFAULT,
+            credit_account_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
             mocks['budget_account_sum'].return_value = 1000
@@ -85,6 +86,7 @@ class TestNotifications(object):
             mocks['num_unreconciled_ofx'].return_value = 0
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
+            mocks['credit_account_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == []
 
@@ -96,7 +98,8 @@ class TestNotifications(object):
                 standing_budgets_sum=DEFAULT,
                 num_unreconciled_ofx=DEFAULT,
                 budget_account_unreconciled=DEFAULT,
-                pp_sum=DEFAULT
+                pp_sum=DEFAULT,
+                credit_account_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
             mocks['budget_account_sum'].return_value = 1000
@@ -104,19 +107,22 @@ class TestNotifications(object):
             mocks['num_unreconciled_ofx'].return_value = 0
             mocks['budget_account_unreconciled'].return_value = 700
             mocks['pp_sum'].return_value = 600
+            # $200 owed on credit accounts, so only $800 is really available
+            mocks['credit_account_sum'].return_value = -200
             res = NotificationsController.get_notifications()
         assert res == [
             {
                 'classes': 'alert alert-danger',
                 'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is less than all allocated funds total of '
+                           'budget-funding accounts</a> less <a '
+                           'href="/accounts">credit account balances</a> '
+                           '(%s) %s all allocated funds total of '
                            '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!' % (
-                               '$1,000.00', '$1,800.00', '$500.00',
-                               '$600.00', '$700.00'
+                           '%s <a href="/pay_period_for">current pay period '
+                           'allocated but unspent</a>; %s <a '
+                           'href="/reconcile">unreconciled</a>)!' % (
+                               '$800.00', 'is less than', '$1,800.00',
+                               '$500.00', '$600.00', '$700.00'
                            )
             }
         ]
@@ -129,7 +135,8 @@ class TestNotifications(object):
                 standing_budgets_sum=DEFAULT,
                 num_unreconciled_ofx=DEFAULT,
                 budget_account_unreconciled=DEFAULT,
-                pp_sum=DEFAULT
+                pp_sum=DEFAULT,
+                credit_account_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 0
             mocks['budget_account_sum'].return_value = 2000
@@ -137,22 +144,83 @@ class TestNotifications(object):
             mocks['num_unreconciled_ofx'].return_value = 0
             mocks['budget_account_unreconciled'].return_value = 700
             mocks['pp_sum'].return_value = 600
+            # $100 owed on credit accounts leaves $1,900 available, which is
+            # still more than the $1,800 committed
+            mocks['credit_account_sum'].return_value = -100
             res = NotificationsController.get_notifications()
         assert res == [
             {
                 'classes': 'alert alert-info',
                 'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is more than all allocated funds total of '
+                           'budget-funding accounts</a> less <a '
+                           'href="/accounts">credit account balances</a> '
+                           '(%s) %s all allocated funds total of '
                            '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!' % (
-                               '$2,000.00', '$1,800.00', '$500.00',
-                               '$600.00', '$700.00'
+                           '%s <a href="/pay_period_for">current pay period '
+                           'allocated but unspent</a>; %s <a '
+                           'href="/reconcile">unreconciled</a>)!' % (
+                               '$1,900.00', 'is more than', '$1,800.00',
+                               '$500.00', '$600.00', '$700.00'
                            )
             }
         ]
+
+    def test_get_notifications_credit_balance_cancels_excess(self):
+        """
+        The case GitHub issue #320 was filed about: funding accounts hold more
+        than is committed, but only because the money owed on the credit cards
+        has not been subtracted. Once it is, the two sides are equal and no
+        notification should be shown at all.
+        """
+        with patch.multiple(
+            pb,
+            num_stale_accounts=DEFAULT,
+            budget_account_sum=DEFAULT,
+            standing_budgets_sum=DEFAULT,
+            num_unreconciled_ofx=DEFAULT,
+            budget_account_unreconciled=DEFAULT,
+            pp_sum=DEFAULT,
+            credit_account_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = Decimal('3000.00')
+            mocks['standing_budgets_sum'].return_value = Decimal('1000.00')
+            mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = Decimal('0.0')
+            mocks['pp_sum'].return_value = Decimal('1000.00')
+            mocks['credit_account_sum'].return_value = Decimal('-1000.00')
+            res = NotificationsController.get_notifications()
+        assert res == []
+
+    def test_get_notifications_available_negative(self):
+        """
+        Money owed on credit accounts can exceed the balance of the funding
+        accounts. The available figure is then negative, and must be reported
+        as such rather than clamped or made positive.
+        """
+        with patch.multiple(
+            pb,
+            num_stale_accounts=DEFAULT,
+            budget_account_sum=DEFAULT,
+            standing_budgets_sum=DEFAULT,
+            num_unreconciled_ofx=DEFAULT,
+            budget_account_unreconciled=DEFAULT,
+            pp_sum=DEFAULT,
+            credit_account_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = Decimal('1000.00')
+            mocks['standing_budgets_sum'].return_value = Decimal('500.00')
+            mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = Decimal('0.0')
+            mocks['pp_sum'].return_value = Decimal('0.0')
+            mocks['credit_account_sum'].return_value = Decimal('-1500.00')
+            res = NotificationsController.get_notifications()
+        assert len(res) == 1
+        assert res[0]['classes'] == 'alert alert-danger'
+        assert '(-$500.00) is less than' in res[0]['content']
+        assert 'current pay period allocated but unspent' in res[0]['content']
+        assert 'remaining' not in res[0]['content']
 
     def test_get_notifications_one_stale(self):
         with patch.multiple(
@@ -162,7 +230,8 @@ class TestNotifications(object):
                 standing_budgets_sum=DEFAULT,
                 num_unreconciled_ofx=DEFAULT,
                 budget_account_unreconciled=DEFAULT,
-                pp_sum=DEFAULT
+                pp_sum=DEFAULT,
+                credit_account_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 1
             mocks['budget_account_sum'].return_value = 1000
@@ -170,6 +239,7 @@ class TestNotifications(object):
             mocks['num_unreconciled_ofx'].return_value = 28
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
+            mocks['credit_account_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == [
             {
@@ -192,7 +262,8 @@ class TestNotifications(object):
                 standing_budgets_sum=DEFAULT,
                 num_unreconciled_ofx=DEFAULT,
                 budget_account_unreconciled=DEFAULT,
-                pp_sum=DEFAULT
+                pp_sum=DEFAULT,
+                credit_account_sum=DEFAULT
         ) as mocks:
             mocks['num_stale_accounts'].return_value = 3
             mocks['budget_account_sum'].return_value = 1000
@@ -200,6 +271,7 @@ class TestNotifications(object):
             mocks['num_unreconciled_ofx'].return_value = 28
             mocks['budget_account_unreconciled'].return_value = 0
             mocks['pp_sum'].return_value = 0
+            mocks['credit_account_sum'].return_value = 0
             res = NotificationsController.get_notifications()
         assert res == [
             {

@@ -249,6 +249,8 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         assert pp_bal == Decimal('11.76')
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == Decimal('-333.33')
+        credit_bal = NotificationsController.credit_account_sum(testdb)
+        assert credit_bal == Decimal('-6450.71')
 
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
@@ -256,21 +258,24 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         div = selenium.find_elements(By.XPATH,
                                      "//div[@id='notifications-row']/div/div"
                                      )[1]
-        assert div.text == 'Combined balance of all budget-funding accounts ' \
-                           '($12,889.24) is less than all allocated funds ' \
+        assert div.text == 'Combined balance of all budget-funding ' \
+                           'accounts less credit account balances ' \
+                           '($6,438.53) is less than all allocated funds ' \
                            'total of $132,617.50 ($132,939.07 standing ' \
-                           'budgets; $11.76 current pay period remaining; ' \
-                           '-$333.33 unreconciled)!'
+                           'budgets; $11.76 current pay period allocated ' \
+                           'but unspent; -$333.33 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-danger'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
-        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
-        assert a[1].text == 'standing budgets'
-        assert self.relurl(a[2].get_attribute('href')) == '/pay_period_for'
-        assert a[2].text == 'current pay period remaining'
-        assert self.relurl(a[3].get_attribute('href')) == '/reconcile'
-        assert a[3].text == 'unreconciled'
+        assert self.relurl(a[1].get_attribute('href')) == '/accounts'
+        assert a[1].text == 'credit account balances'
+        assert self.relurl(a[2].get_attribute('href')) == '/budgets'
+        assert a[2].text == 'standing budgets'
+        assert self.relurl(a[3].get_attribute('href')) == '/pay_period_for'
+        assert a[3].text == 'current pay period allocated but unspent'
+        assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
+        assert a[4].text == 'unreconciled'
 
 
 @pytest.mark.acceptance
@@ -334,6 +339,8 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         assert pp_bal == Decimal('11.76')
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == Decimal('33666.67')
+        credit_bal = NotificationsController.credit_account_sum(testdb)
+        assert credit_bal == Decimal('-6450.71')
 
     def test_2_notification(self, base_url, selenium):
         self.baseurl = base_url
@@ -341,21 +348,24 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         div = selenium.find_elements(By.XPATH,
                                      "//div[@id='notifications-row']/div/div"
                                      )[1]
-        assert div.text == 'Combined balance of all budget-funding accounts ' \
-                           '($12,889.24) is less than all allocated funds ' \
+        assert div.text == 'Combined balance of all budget-funding ' \
+                           'accounts less credit account balances ' \
+                           '($6,438.53) is less than all allocated funds ' \
                            'total of $44,778.28 ($11,099.85 standing ' \
-                           'budgets; $11.76 current pay period remaining; ' \
-                           '$33,666.67 unreconciled)!'
+                           'budgets; $11.76 current pay period allocated ' \
+                           'but unspent; $33,666.67 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-danger'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
-        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
-        assert a[1].text == 'standing budgets'
-        assert self.relurl(a[2].get_attribute('href')) == '/pay_period_for'
-        assert a[2].text == 'current pay period remaining'
-        assert self.relurl(a[3].get_attribute('href')) == '/reconcile'
-        assert a[3].text == 'unreconciled'
+        assert self.relurl(a[1].get_attribute('href')) == '/accounts'
+        assert a[1].text == 'credit account balances'
+        assert self.relurl(a[2].get_attribute('href')) == '/budgets'
+        assert a[2].text == 'standing budgets'
+        assert self.relurl(a[3].get_attribute('href')) == '/pay_period_for'
+        assert a[3].text == 'current pay period allocated but unspent'
+        assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
+        assert a[4].text == 'unreconciled'
 
 
 @pytest.mark.acceptance
@@ -388,6 +398,8 @@ class TestUnderBalanceNotification(AcceptanceHelper):
         assert pp_bal == Decimal('11.76')
         unrec_amt = NotificationsController.budget_account_unreconciled(testdb)
         assert unrec_amt == Decimal('-333.33')
+        credit_bal = NotificationsController.credit_account_sum(testdb)
+        assert credit_bal == Decimal('-6450.71')
 
     def test_3_notification(self, base_url, selenium):
         self.baseurl = base_url
@@ -395,18 +407,167 @@ class TestUnderBalanceNotification(AcceptanceHelper):
         div = selenium.find_elements(By.XPATH,
                                      "//div[@id='notifications-row']/div/div"
                                      )[1]
-        assert div.text == 'Combined balance of all budget-funding accounts ' \
-                           '($428,990.47) is more than all allocated funds ' \
+        assert div.text == 'Combined balance of all budget-funding ' \
+                           'accounts less credit account balances ' \
+                           '($422,539.76) is more than all allocated funds ' \
                            'total of $10,444.95 ($10,766.52 standing ' \
-                           'budgets; $11.76 current pay period remaining; ' \
-                           '-$333.33 unreconciled)!'
+                           'budgets; $11.76 current pay period allocated ' \
+                           'but unspent; -$333.33 unreconciled)!'
         assert div.get_attribute('class') == 'alert alert-info'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
         assert a[0].text == 'budget-funding accounts'
-        assert self.relurl(a[1].get_attribute('href')) == '/budgets'
-        assert a[1].text == 'standing budgets'
-        assert self.relurl(a[2].get_attribute('href')) == '/pay_period_for'
-        assert a[2].text == 'current pay period remaining'
-        assert self.relurl(a[3].get_attribute('href')) == '/reconcile'
-        assert a[3].text == 'unreconciled'
+        assert self.relurl(a[1].get_attribute('href')) == '/accounts'
+        assert a[1].text == 'credit account balances'
+        assert self.relurl(a[2].get_attribute('href')) == '/budgets'
+        assert a[2].text == 'standing budgets'
+        assert self.relurl(a[3].get_attribute('href')) == '/pay_period_for'
+        assert a[3].text == 'current pay period allocated but unspent'
+        assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
+        assert a[4].text == 'unreconciled'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestCreditAccountSumAccountSelection(AcceptanceHelper):
+    """
+    Covers which accounts contribute to the credit deduction, against the real
+    database rather than a mocked query. See GitHub issue #320 FR-002.
+
+    The sample data holds two active credit accounts, CreditOne (-952.06) and
+    CreditTwo (-5498.65), for a combined -6450.71.
+    """
+
+    def test_0_baseline(self, testdb):
+        assert NotificationsController.credit_account_sum(
+            testdb
+        ) == Decimal('-6450.71')
+
+    def test_1_inactive_credit_account_excluded(self, testdb):
+        """
+        An inactive credit account is not money the person still has to
+        settle, and must not be deducted.
+        """
+        acct = Account(
+            description='Closed Card',
+            name='ClosedCard',
+            ofx_cat_memo_to_name=False,
+            acct_type=AcctType.Credit,
+            is_active=False
+        )
+        testdb.add(acct)
+        acct.set_balance(
+            ledger=Decimal('-1000.00'),
+            avail=Decimal('-1000.00'),
+            ledger_date=dtnow(),
+            avail_date=dtnow(),
+            overall_date=dtnow()
+        )
+        testdb.flush()
+        testdb.commit()
+        assert NotificationsController.credit_account_sum(
+            testdb
+        ) == Decimal('-6450.71')
+
+    def test_2_active_credit_account_included(self, testdb):
+        """
+        Activating that same account brings its balance into the deduction,
+        proving the previous assertion turned on is_active and not on some
+        other property of the account.
+        """
+        acct = testdb.query(Account).filter(
+            Account.name.__eq__('ClosedCard')
+        ).one()
+        acct.is_active = True
+        testdb.add(acct)
+        testdb.flush()
+        testdb.commit()
+        assert NotificationsController.credit_account_sum(
+            testdb
+        ) == Decimal('-7450.71')
+
+    def test_3_non_credit_accounts_excluded(self, testdb):
+        """
+        Bank, cash and investment balances are not credit balances; only the
+        credit accounts are deducted, never the funding accounts that are
+        already counted on the other side of the comparison.
+        """
+        acct = Account(
+            description='Another Bank',
+            name='AnotherBank',
+            ofx_cat_memo_to_name=False,
+            acct_type=AcctType.Bank,
+            is_active=True
+        )
+        testdb.add(acct)
+        acct.set_balance(
+            ledger=Decimal('5000.00'),
+            avail=Decimal('5000.00'),
+            ledger_date=dtnow(),
+            avail_date=dtnow(),
+            overall_date=dtnow()
+        )
+        inv = Account(
+            description='Another Investment',
+            name='AnotherInvestment',
+            ofx_cat_memo_to_name=False,
+            acct_type=AcctType.Investment,
+            is_active=True
+        )
+        testdb.add(inv)
+        inv.set_balance(
+            ledger=Decimal('90000.00'),
+            avail=Decimal('90000.00'),
+            ledger_date=dtnow(),
+            avail_date=dtnow(),
+            overall_date=dtnow()
+        )
+        testdb.flush()
+        testdb.commit()
+        assert NotificationsController.credit_account_sum(
+            testdb
+        ) == Decimal('-7450.71')
+
+    def test_4_credit_account_without_balance(self, testdb):
+        """
+        A credit account that has never had a balance recorded contributes
+        nothing, and must not stop the notification being produced (FR-003).
+        """
+        acct = Account(
+            description='Brand New Card',
+            name='BrandNewCard',
+            ofx_cat_memo_to_name=False,
+            acct_type=AcctType.Credit,
+            is_active=True
+        )
+        testdb.add(acct)
+        testdb.flush()
+        testdb.commit()
+        assert acct.balance is None
+        assert NotificationsController.credit_account_sum(
+            testdb
+        ) == Decimal('-7450.71')
+
+    def test_5_notification_still_rendered(self, base_url, selenium):
+        """
+        With a balance-less credit account present, the banner still renders
+        (FR-003). The banner lives in the base template, so any page shows it.
+
+        This deliberately uses /budgets rather than the index. The index page
+        crashes outright on an *active* account that has no AccountBalance row
+        at all: templates/index.html dereferences ``acct.balance.ledger`` in
+        the credit accounts table with no None guard. That is a pre-existing
+        limitation, unrelated to and untouched by this change, and fixing it
+        is out of scope here -- but it means the index is the one page that
+        cannot be used to prove this requirement.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/budgets')
+        divs = selenium.find_elements(
+            By.XPATH, "//div[@id='notifications-row']/div/div"
+        )
+        contents = [d.text for d in divs]
+        assert any(
+            'less credit account balances' in c for c in contents
+        ), contents
