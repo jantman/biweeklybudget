@@ -51,6 +51,7 @@ from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.flaskapp.views.searchableajaxview import SearchableAjaxView
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+from biweeklybudget.models.utils import resolve_by_name_or_id
 from biweeklybudget.utils import (
     parse_currency, CurrencyParseError, dtnow
 )
@@ -321,10 +322,96 @@ class TransactionFormHandler(FormHandlerView):
                 )
         return errors
 
+    def _resolve_references(self, data):
+        """
+        Resolve the fields that identify an Account or a Budget, each of which
+        may be given as a numeric ID or as a name, and rewrite ``data`` in
+        place so that every one of them is the numeric ID as a string.
+
+        Doing this here, before :py:meth:`~.validate` checks anything, is what
+        lets the rest of that method and the whole of :py:meth:`~.submit` go on
+        working purely in terms of IDs; it is the same in-place normalization
+        that :py:meth:`~.FormHandlerView.normalize_currency` already performs
+        for currency fields. See GitHub issue #322.
+
+        The lookup rules themselves live in
+        :py:func:`~biweeklybudget.models.utils.resolve_by_name_or_id`: an
+        all-digits value is an ID, anything else is a name, and a digits value
+        matching no ID falls back to being tried as a name.
+
+        The ``budgets`` mapping is rekeyed by resolved Budget ID. Because two
+        different keys can denote the same Budget once names are allowed
+        (``"7"`` and ``"Groceries"``, say), rekeying could silently collapse
+        two allocations into one and leave a Transaction whose budget amounts
+        no longer sum to its amount; that case is rejected rather than merged.
+
+        :param data: submitted form data; modified in place
+        :type data: dict
+        :return: 2-tuple of (hash of field name to list of error strings, hash
+          of the resolved model objects). The second element has keys
+          ``account`` and ``credit_payment_acct`` (an
+          :py:class:`~.Account` or None) and ``budgets`` (a hash of Budget ID
+          as string to :py:class:`~.Budget`), so that callers need not query
+          for them a second time.
+        :rtype: tuple
+        """
+        errors = {}
+        refs = {'account': None, 'credit_payment_acct': None, 'budgets': {}}
+        acct_val = data.get('account', 'None')
+        if acct_val is not None and str(acct_val).strip() != 'None':
+            acct = resolve_by_name_or_id(db_session, Account, acct_val)
+            if acct is None:
+                errors.setdefault('account', []).append(
+                    'Account "%s" is invalid.' % acct_val
+                )
+            else:
+                refs['account'] = acct
+                data['account'] = str(acct.id)
+        budgets = data.get('budgets', None)
+        if 'budgets' in data and not isinstance(budgets, dict):
+            errors.setdefault('budgets', []).append(
+                'Budgets must be a mapping of budget to amount.'
+            )
+        elif isinstance(budgets, dict):
+            resolved = {}
+            for bid, budg_amt in budgets.items():
+                budg = resolve_by_name_or_id(db_session, Budget, bid)
+                if budg is None:
+                    errors.setdefault('budgets', []).append(
+                        'Budget "%s" is invalid.' % bid
+                    )
+                    continue
+                key = str(budg.id)
+                if key in resolved:
+                    errors.setdefault('budgets', []).append(
+                        'Budget %s specified more than once.' % budg.name
+                    )
+                    continue
+                resolved[key] = budg_amt
+                refs['budgets'][key] = budg
+            if 'budgets' not in errors:
+                data['budgets'] = resolved
+        cp_acct = data.get('credit_payment_acct', 'None')
+        if cp_acct is not None and str(cp_acct).strip() not in ['', 'None']:
+            cp = resolve_by_name_or_id(db_session, Account, cp_acct)
+            if cp is None:
+                errors.setdefault('credit_payment_acct', []).append(
+                    'Account "%s" is invalid.' % cp_acct
+                )
+            else:
+                refs['credit_payment_acct'] = cp
+                data['credit_payment_acct'] = str(cp.id)
+        return errors, refs
+
     def validate(self, data):
         """
         Validate the form data. Return None if it is valid, or else a hash of
         field names to list of error strings for each field.
+
+        Accounts and Budgets may be identified by name or by ID; see
+        :py:meth:`~._resolve_references`, which runs first and canonicalizes
+        them to IDs so that every check below - and the whole of
+        :py:meth:`~.submit` - deals only in IDs.
 
         :param data: submitted form data
         :type data: dict
@@ -333,6 +420,10 @@ class TransactionFormHandler(FormHandlerView):
         """
         have_errors = False
         errors = {k: [] for k in data.keys()}
+        ref_errors, refs = self._resolve_references(data)
+        for key, messages in ref_errors.items():
+            errors.setdefault(key, []).extend(messages)
+            have_errors = True
         txn = None
         if 'id' in data and data['id'].strip() != '':
             # updating an existing budget
@@ -346,20 +437,19 @@ class TransactionFormHandler(FormHandlerView):
         if data['account'] == 'None':
             errors['account'].append('Transactions must have an account')
             have_errors = True
-        if len(data['budgets']) < 1:
+        if 'budgets' in ref_errors:
+            # data['budgets'] was left un-rekeyed, so the checks below cannot
+            # run against it; the resolution errors already recorded are the
+            # answer for this field.
+            pass
+        elif len(data['budgets']) < 1:
             errors['budgets'].append('Transactions must have a budget.')
             have_errors = True
         else:
             budgets_total = Decimal('0.0')
             for bid, budg_amt in data['budgets'].items():
-                budg = db_session.query(Budget).get(int(bid))
+                budg = refs['budgets'][bid]
                 budgets_total += Decimal(budg_amt)
-                if budg is None:
-                    errors['budgets'].append(
-                        'Budget ID %s is invalid.' % bid
-                    )
-                    have_errors = True
-                    continue
                 if not budg.is_active and txn is None:
                     errors['budgets'].append(
                         'New transactions cannot use an inactive budget '
@@ -383,25 +473,13 @@ class TransactionFormHandler(FormHandlerView):
                     'amount (%s).' % (budgets_total, Decimal(data['amount']))
                 )
                 have_errors = True
-        cp_acct = data.get('credit_payment_acct', 'None')
-        if cp_acct is not None and str(cp_acct).strip() not in ['', 'None']:
-            errors.setdefault('credit_payment_acct', [])
-            try:
-                cp_id = int(cp_acct)
-            except (TypeError, ValueError):
-                cp_id = None
-            cp = None if cp_id is None else db_session.query(Account).get(cp_id)
-            if cp is None:
-                errors['credit_payment_acct'].append(
-                    'Account ID %s is invalid.' % cp_acct
-                )
-                have_errors = True
-            elif cp.acct_type != AcctType.Credit:
-                errors['credit_payment_acct'].append(
-                    '%s is not a credit account; only credit accounts can be '
-                    'paid.' % cp.name
-                )
-                have_errors = True
+        cp = refs['credit_payment_acct']
+        if cp is not None and cp.acct_type != AcctType.Credit:
+            errors.setdefault('credit_payment_acct', []).append(
+                '%s is not a credit account; only credit accounts can be '
+                'paid.' % cp.name
+            )
+            have_errors = True
         if data['date'].strip() == '':
             errors['date'].append('Transactions must have a date')
             have_errors = True
@@ -444,8 +522,12 @@ class TransactionFormHandler(FormHandlerView):
         trans.description = data['description'].strip()
         trans.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         trans.account_id = int(data['account'])
-        trans.notes = data['notes'].strip()
-        if data['sales_tax'].strip() != '':
+        # notes and sales_tax are documented as optional, but until GitHub
+        # issue #322 a request that actually omitted either got a 500 out of
+        # this method rather than the documented default. An external caller
+        # has no reason to send an empty string for a field it does not use.
+        trans.notes = data.get('notes', '').strip()
+        if data.get('sales_tax', '').strip() != '':
             trans.sales_tax = Decimal(data['sales_tax'])
         else:
             trans.sales_tax = Decimal('0.0')
