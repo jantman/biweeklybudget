@@ -77,25 +77,95 @@ Create a new :py:class:`~.Transaction` or update an existing one. Handled by :py
 
 **Request Fields:**
 
-- ``id`` *(integer, optional)* - Transaction ID. If provided, updates the existing transaction; if omitted, creates a new one.
+- ``id`` *(integer, optional)* - Transaction ID. If provided, updates the existing transaction; if omitted, creates a new one. This is a Transaction ID only; unlike the account and budget fields it does not accept a name, because Transactions do not have one.
 - ``description`` *(string, required)* - Transaction description. Cannot be empty.
 - ``amount`` *(decimal, required)* - Transaction amount. Cannot be zero.
-- ``account`` *(integer, required)* - :py:class:`~.Account` ID.
+- ``account`` *(string or integer, required)* - :py:class:`~.Account` ID **or** name. See :ref:`Identifying Accounts and Budgets <http_api.transactions.name_or_id>`.
 - ``date`` *(string, required)* - Date in ``YYYY-MM-DD`` format.
-- ``notes`` *(string, required)* - Free-text notes. Use an empty string if not needed. Although semantically optional, this field **must be present** in the request or the server will return a 500 error.
+- ``notes`` *(string, optional)* - Free-text notes. Defaults to an empty string.
 - ``sales_tax`` *(decimal, optional)* - Sales tax amount. Defaults to ``0``.
-- ``budgets`` *(object, required)* - A mapping of :py:class:`~.Budget` ID (as string key) to the decimal amount allocated to that budget. At least one budget is required, and the sum of all budget amounts must equal the transaction ``amount``. New transactions cannot use inactive budgets.
+- ``credit_payment_acct`` *(string or integer, optional)* - :py:class:`~.Account` ID **or** name of the credit account that this transaction is a payment for. Must name an account of type Credit. Omit it, or send an empty string or the string ``"None"``, for a transaction that is not a credit card payment.
+- ``no_budget_impact`` *(boolean, optional)* - Mark the transaction as not counting against its budget.
+- ``budgets`` *(object, required)* - A mapping of :py:class:`~.Budget` ID **or** name (as string key) to the decimal amount allocated to that budget. At least one budget is required, and the sum of all budget amounts must equal the transaction ``amount``. New transactions cannot use inactive budgets.
 
   .. note::
 
      This field must be a JSON object (``{"2": "52.34"}``), not a JSON-encoded string. This means you **must** use ``Content-Type: application/json`` for this endpoint; form-encoded POST data cannot represent nested objects.
 
-**Example Request:**
+.. _http_api.transactions.name_or_id:
+
+Identifying Accounts and Budgets
+````````````````````````````````
+
+``account``, ``credit_payment_acct``, and each key of ``budgets`` accept either
+the record's numeric ID or its name, so a script that knows only the names shown
+in the UI can use this endpoint without first looking IDs up. Names and IDs may
+be mixed freely within a single request.
+
+Each value is resolved like this:
+
+1. Surrounding whitespace is stripped.
+2. If what remains is all digits, it is looked up as an ID. A match ends the
+   search.
+3. Otherwise -- or if no record has that ID -- it is matched against the
+   record's name: the whole name, compared case-insensitively.
+   :py:class:`~.Account` and :py:class:`~.Budget` names are unique, so at most
+   one record can match.
+4. If nothing matches, the request is rejected with a validation error naming
+   the value that could not be resolved, and nothing is written.
+
+Four consequences are worth knowing:
+
+- **IDs win over names for all-digit values.** If Budget 12 exists and a
+  *different* budget is named ``"12"``, the value ``12`` means Budget 12. Step 3
+  running after a missed ID lookup is what keeps a budget named ``"2024"``
+  reachable when no budget has that ID.
+- **Names must match exactly.** There is no prefix, substring or fuzzy matching;
+  only case and surrounding whitespace are ignored. A near miss is an error
+  rather than a silent match against the wrong budget.
+- **The** ``(income)`` **suffix is not part of a name.** The web UI labels income
+  budgets ``"Bonus (income)"`` in its select boxes; the budget's name is
+  ``"Bonus"``.
+- **The string** ``"None"`` **is a sentinel, not a name.** In ``account`` it means
+  "no account selected" and is rejected as a missing account; in
+  ``credit_payment_acct`` it means "not a credit card payment". An account
+  literally named ``None`` therefore cannot be addressed by name, and must be
+  given by ID.
+
+Two keys of ``budgets`` that resolve to the same Budget are rejected, rather
+than being merged into a single allocation:
+
+.. code-block:: json
+
+    {
+      "success": false,
+      "errors": {
+        "budgets": ["Budget Groceries specified more than once."]
+      }
+    }
+
+**Example Request (by ID):**
 
 .. code-block:: bash
 
     $ curl -X POST -H 'Content-Type: application/json' \
         -d '{"description": "Grocery Store", "amount": "52.34", "account": "1", "date": "2017-07-15", "notes": "", "budgets": {"2": "52.34"}}' \
+        http://127.0.0.1:8080/forms/transaction
+
+**Example Request (by name):**
+
+.. code-block:: bash
+
+    $ curl -X POST -H 'Content-Type: application/json' \
+        -d '{"description": "Grocery Store", "amount": "52.34", "account": "CHASE", "date": "2017-07-15", "budgets": {"Groceries": "52.34"}}' \
+        http://127.0.0.1:8080/forms/transaction
+
+**Example Request (a credit card payment, naming the card):**
+
+.. code-block:: bash
+
+    $ curl -X POST -H 'Content-Type: application/json' \
+        -d '{"description": "CHASE payment", "amount": "500.00", "account": "BankOne", "date": "2017-07-15", "credit_payment_acct": "CHASE", "budgets": {"Credit Card Payments": "500.00"}}' \
         http://127.0.0.1:8080/forms/transaction
 
 **Success Response:**
@@ -107,6 +177,11 @@ Create a new :py:class:`~.Transaction` or update an existing one. Handled by :py
       "success_message": "Successfully saved Transaction 123 in database.",
       "trans_id": 123
     }
+
+.. note::
+
+   The :ref:`addtrans <getting_started.entrypoints>` console script shipped with
+   biweeklybudget is a worked example of driving this endpoint from a script.
 
 .. _http_api.transactions.get:
 

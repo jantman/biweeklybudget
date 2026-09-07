@@ -92,6 +92,7 @@ setup(
     include_package_data=True,
     entry_points="""
     [console_scripts]
+    addtrans = biweeklybudget.addtrans:main
     loaddata = biweeklybudget.load_data:main
     ofxgetter = biweeklybudget.ofxgetter:main
     ofxbackfiller = biweeklybudget.backfill_ofx:main

@@ -1344,7 +1344,7 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
                 'account': [],
                 'amount': [],
                 'budgets': [
-                    'Budget ID 99 is invalid.'
+                    'Budget "99" is invalid.'
                 ],
                 'date': [],
                 'description': [],
@@ -2604,7 +2604,7 @@ class TestTransModalNoBudgetImpactAndCreditPayment(AcceptanceHelper):
         j = res.json()
         assert j['success'] is False
         assert j['errors']['credit_payment_acct'] == [
-            'Account ID 98765 is invalid.'
+            'Account "98765" is invalid.'
         ]
 
 
@@ -2883,3 +2883,307 @@ class TestTransModalCreditPaymentPanel(AcceptanceHelper):
         assert selenium.find_element(
             By.ID, 'modalSaveButton'
         ).is_enabled() is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestTransactionFormNameOrId(AcceptanceHelper):
+    """
+    ``POST /forms/transaction`` accepting Accounts and Budgets by name as well
+    as by ID, so that external tooling that only knows the names shown in the
+    UI can use it. GitHub issue #322.
+
+    The sample data these assert against: Account 1 is ``BankOne`` (Bank),
+    Account 3 is ``CreditOne`` (Credit); Budget 1 is ``Periodic1`` (active),
+    Budget 3 is ``Periodic3 Inactive``.
+    """
+
+    def _post(self, base_url, **overrides):
+        payload = {
+            'date': dtnow().strftime('%Y-%m-%d'),
+            'amount': '10.00',
+            'description': 'NameOrId',
+            'notes': '',
+            'account': 'BankOne',
+            'budgets': {'Periodic1': '10.00'}
+        }
+        payload.update(overrides)
+        return requests.post(base_url + '/forms/transaction', json=payload)
+
+    def _created(self, res, testdb):
+        """Assert success and return the created Transaction, freshly read."""
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is True, j
+        # this session began its read transaction before the POST, so under
+        # REPEATABLE READ it cannot see the app's committed write until the
+        # transaction ends and a new snapshot is taken
+        testdb.rollback()
+        testdb.expire_all()
+        return testdb.query(Transaction).get(j['trans_id'])
+
+    def test_01_account_and_budget_by_name(self, base_url, testdb):
+        """FR-001, FR-002: the headline case, no numeric IDs anywhere."""
+        res = self._post(base_url, description='NameOrIdBothNames')
+        t = self._created(res, testdb)
+        assert t.description == 'NameOrIdBothNames'
+        assert t.account_id == 1
+        assert {
+            bt.budget_id: bt.amount for bt in t.budget_transactions
+        } == {1: Decimal('10.00')}
+
+    def test_02_mixed_id_account_and_name_budget(self, base_url, testdb):
+        """FR-008: IDs and names may be mixed within one request."""
+        res = self._post(
+            base_url, description='NameOrIdMixed', account='1',
+            budgets={'Periodic1': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert t.account_id == 1
+        assert [bt.budget_id for bt in t.budget_transactions] == [1]
+
+    def test_03_mixed_name_account_and_id_budget(self, base_url, testdb):
+        res = self._post(
+            base_url, description='NameOrIdMixed2', account='BankOne',
+            budgets={'1': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert t.account_id == 1
+        assert [bt.budget_id for bt in t.budget_transactions] == [1]
+
+    def test_04_ids_only_still_work(self, base_url, testdb):
+        """FR-008: the web UI's own request shape is unaffected."""
+        res = self._post(
+            base_url, description='NameOrIdIdsOnly', account='1',
+            budgets={'1': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert t.account_id == 1
+        assert [bt.budget_id for bt in t.budget_transactions] == [1]
+
+    def test_05_names_are_case_and_whitespace_insensitive(
+        self, base_url, testdb
+    ):
+        """FR-005."""
+        res = self._post(
+            base_url, description='NameOrIdSloppy', account='  bankONE ',
+            budgets={' PERIODIC1  ': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert t.account_id == 1
+        assert [bt.budget_id for bt in t.budget_transactions] == [1]
+
+    def test_06_split_across_budgets_by_name(self, base_url, testdb):
+        res = self._post(
+            base_url, description='NameOrIdSplit', amount='30.00',
+            budgets={'Periodic1': '10.00', 'Periodic2': '20.00'}
+        )
+        t = self._created(res, testdb)
+        assert {
+            bt.budget_id: bt.amount for bt in t.budget_transactions
+        } == {1: Decimal('10.00'), 2: Decimal('20.00')}
+
+    def test_07_credit_payment_acct_by_name(self, base_url, testdb):
+        """FR-003."""
+        res = self._post(
+            base_url, description='NameOrIdCardPayment',
+            credit_payment_acct='CreditOne'
+        )
+        t = self._created(res, testdb)
+        assert t.credit_payment_acct_id == 3
+
+    def test_08_credit_payment_acct_none_still_means_none(
+        self, base_url, testdb
+    ):
+        """The empty sentinel must not be resolved as a name."""
+        res = self._post(
+            base_url, description='NameOrIdNoCardPayment',
+            credit_payment_acct='None'
+        )
+        t = self._created(res, testdb)
+        assert t.credit_payment_acct_id is None
+
+    def test_09_update_existing_transaction_by_name(self, base_url, testdb):
+        """Resolution behaves identically on the update path."""
+        t = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('NameOrIdBothNames')
+        ).one()
+        res = self._post(
+            base_url, id=str(t.id), description='NameOrIdUpdated',
+            amount='11.00', account='BankTwoStale',
+            budgets={'Periodic2': '11.00'}
+        )
+        t = self._created(res, testdb)
+        assert t.description == 'NameOrIdUpdated'
+        assert t.account_id == 2
+        assert [bt.budget_id for bt in t.budget_transactions] == [2]
+
+    def test_10_notes_and_sales_tax_may_be_omitted(self, base_url, testdb):
+        """Both are documented as optional but used to 500 when absent; an
+        external caller has no reason to send an empty string for a field it
+        does not use."""
+        res = requests.post(
+            base_url + '/forms/transaction',
+            json={
+                'date': dtnow().strftime('%Y-%m-%d'),
+                'amount': '10.00',
+                'description': 'NameOrIdNoOptionalFields',
+                'account': 'BankOne',
+                'budgets': {'Periodic1': '10.00'}
+            }
+        )
+        t = self._created(res, testdb)
+        assert t.notes == ''
+        assert t.sales_tax == Decimal('0.0')
+
+    def test_20_unknown_account_name_rejected(self, base_url, testdb):
+        """FR-006: quote the offending value, and write nothing."""
+        before = testdb.query(Transaction).count()
+        res = self._post(
+            base_url, description='NameOrIdBadAcct', account='No Such Account'
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['account'] == [
+            'Account "No Such Account" is invalid.'
+        ]
+        testdb.rollback()
+        testdb.expire_all()
+        assert testdb.query(Transaction).count() == before
+
+    def test_21_unknown_budget_name_rejected(self, base_url, testdb):
+        before = testdb.query(Transaction).count()
+        res = self._post(
+            base_url, description='NameOrIdBadBudget',
+            budgets={'No Such Budget': '10.00'}
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['budgets'] == [
+            'Budget "No Such Budget" is invalid.'
+        ]
+        testdb.rollback()
+        testdb.expire_all()
+        assert testdb.query(Transaction).count() == before
+
+    def test_22_unknown_credit_payment_acct_name_rejected(self, base_url):
+        res = self._post(
+            base_url, description='NameOrIdBadCPA',
+            credit_payment_acct='No Such Card'
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['credit_payment_acct'] == [
+            'Account "No Such Card" is invalid.'
+        ]
+
+    def test_23_partial_name_is_not_a_match(self, base_url):
+        """FR-005: exact matching only. A near miss must fail loudly rather
+        than land on the wrong budget."""
+        res = self._post(
+            base_url, description='NameOrIdPartial',
+            budgets={'Periodic': '10.00'}
+        )
+        assert res.json()['errors']['budgets'] == [
+            'Budget "Periodic" is invalid.'
+        ]
+
+    def test_24_income_display_suffix_is_not_the_name(self, base_url):
+        """The UI labels income budgets "Income (income)"; the name is
+        "Income". Documented, not special-cased."""
+        res = self._post(
+            base_url, description='NameOrIdIncomeSuffix',
+            budgets={'Income (income)': '10.00'}
+        )
+        assert res.json()['errors']['budgets'] == [
+            'Budget "Income (income)" is invalid.'
+        ]
+
+    def test_25_inactive_budget_by_name_still_rejected(self, base_url):
+        """FR-007: resolving by name does not weaken any existing rule."""
+        res = self._post(
+            base_url, description='NameOrIdInactive',
+            budgets={'Periodic3 Inactive': '10.00'}
+        )
+        assert res.json()['errors']['budgets'] == [
+            'New transactions cannot use an inactive budget '
+            '(Periodic3 Inactive).'
+        ]
+
+    def test_26_non_credit_account_by_name_still_rejected(self, base_url):
+        """FR-007."""
+        res = self._post(
+            base_url, description='NameOrIdNonCredit',
+            credit_payment_acct='BankOne'
+        )
+        assert res.json()['errors']['credit_payment_acct'] == [
+            'BankOne is not a credit account; only credit accounts can be '
+            'paid.'
+        ]
+
+    def test_27_duplicate_budget_reference_rejected(self, base_url, testdb):
+        """Rule R7: two keys denoting one Budget would silently collapse into
+        one allocation, so the request is refused instead."""
+        before = testdb.query(Transaction).count()
+        res = self._post(
+            base_url, description='NameOrIdDupBudget', amount='20.00',
+            budgets={'1': '10.00', 'Periodic1': '10.00'}
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j['success'] is False
+        assert j['errors']['budgets'] == [
+            'Budget Periodic1 specified more than once.'
+        ]
+        testdb.rollback()
+        testdb.expire_all()
+        assert testdb.query(Transaction).count() == before
+
+    def test_30_add_numerically_named_budget(self, testdb):
+        """Set up the digits-first precedence tests below: a Budget whose name
+        is the decimal string of a *different* Budget's ID."""
+        testdb.add(Budget(
+            name='2',
+            is_periodic=True,
+            description='Budget literally named "2"',
+            starting_balance=Decimal('100.00')
+        ))
+        testdb.add(Budget(
+            name='99999',
+            is_periodic=True,
+            description='Budget literally named "99999"',
+            starting_balance=Decimal('100.00')
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_31_digits_resolve_to_the_id_not_the_name(
+        self, base_url, testdb
+    ):
+        """Rule R2: Budget 2 exists, and a different Budget is named "2".
+        The ID wins."""
+        res = self._post(
+            base_url, description='NameOrIdDigitsAreIds',
+            budgets={'2': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert [bt.budget_id for bt in t.budget_transactions] == [2]
+
+    def test_32_digits_fall_back_to_name_when_no_such_id(
+        self, base_url, testdb
+    ):
+        """Rule R3: no Budget has ID 99999, so the Budget *named* "99999"
+        stays reachable."""
+        named = testdb.query(Budget).filter(
+            Budget.name.__eq__('99999')
+        ).one()
+        assert named.id != 99999
+        res = self._post(
+            base_url, description='NameOrIdDigitsFallBack',
+            budgets={'99999': '10.00'}
+        )
+        t = self._created(res, testdb)
+        assert [bt.budget_id for bt in t.budget_transactions] == [named.id]

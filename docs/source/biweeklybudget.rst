@@ -22,6 +22,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   biweeklybudget.addtrans
    biweeklybudget.backfill_ofx
    biweeklybudget.biweeklypayperiod
    biweeklybudget.cliutils
