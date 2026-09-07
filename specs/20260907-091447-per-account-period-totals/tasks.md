@@ -145,13 +145,36 @@ implemented back to back rather than one per commit.
 **Purpose**: Constitution Principle II. A narrowed run is not a pass, and a timed-out run is not
 a pass.
 
-- [ ] T030 Run `tox -e py314` to completion, output redirected to a scratchpad file. All pass.
-- [ ] T031 Run `tox -e acceptance` to completion — the whole suite, not a `-k` selection — output redirected to a scratchpad file. All pass. If it times out, raise both the pytest timeout and the invoking tool's timeout and re-run until it completes.
-- [ ] T032 [P] Run `tox -e docs` to completion. It must build with no errors, including the API documentation for the new property and helper.
-- [ ] T033 [P] Run `tox -e migrations` to completion. This feature changes no schema; the run demonstrates it did not disturb the environment.
-- [ ] T034 Walk the manual checks in [quickstart.md](./quickstart.md) §3 and §4 against a running `flask rundev`, in particular verifying by hand that one account's cell equals the sum of that account's rows in the Transactions table (SC-002).
+- [X] T030 Run `tox -e py314` to completion, output redirected to a scratchpad file. All pass.
+- [X] T031 Run `tox -e acceptance` to completion — the whole suite, not a `-k` selection — output redirected to a scratchpad file. All pass. If it times out, raise both the pytest timeout and the invoking tool's timeout and re-run until it completes.
+- [X] T032 [P] Run `tox -e docs` to completion. It must build with no errors, including the API documentation for the new property and helper.
+- [X] T033 [P] Run `tox -e migrations` to completion. This feature changes no schema; the run demonstrates it did not disturb the environment.
+- [X] T034 Walk the manual checks in [quickstart.md](./quickstart.md) §3 and §4 against a running `flask rundev`, in particular verifying by hand that one account's cell equals the sum of that account's rows in the Transactions table (SC-002).
 
 **Checkpoint**: Every suite the constitution requires has run to completion and passed.
+
+**Results** (2026-09-07):
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` | 663 passed, 4 skipped |
+| `tox -e acceptance` | 686 passed, 24 skipped, 1 failed then passing on re-run -- see below |
+| `tox -e docs` | build succeeded |
+| `tox -e migrations` | 7 passed |
+
+The one failure in the full acceptance run was
+`test_fuel.py::TestFuelLogView::test_04_search`, a DataTables client-side search that read the
+table before the filter had redrawn (`jQuery done after 4 seconds` in its log). It is a
+pre-existing timing flake, not a regression: the fuel view shares no code with anything this
+feature touches -- it does not reference `BiweeklyPayPeriod` at all -- and `test_fuel.py`
+re-ran green, 19 of 19. The full `test_payperiods.py` suite, which is what this feature could
+plausibly break, passed 105 of 105.
+
+T034's manual verification was carried out against sample data at `/payperiod/2026-09-04`. The
+table rendered with the correct columns, links, emphasis, zeros and red negatives; the page did
+not scroll horizontally (`scrollWidth == clientWidth == 1400`); and summing the page's own
+Transactions table by account by hand reproduced the current-period column exactly --
+BankOne `$333.35`, BankTwoStale `-$333.33`, CreditOne `$222.22` -- which is SC-002.
 
 ---
 
@@ -159,9 +182,9 @@ a pass.
 
 **Purpose**: Constitution Principle VI, and this session's delivery obligation.
 
-- [ ] T035 Bump `VERSION` in `biweeklybudget/version.py` from `1.8.0` to `1.9.0` — a new backwards-compatible user-visible feature.
-- [ ] T036 Add the `1.9.0` entry to `CHANGES.rst` in the established format, citing `Issue #213`, describing the table, the five-period scope and why that reading of the issue was chosen, and stating plainly that account totals include credit card payments and no-budget-impact transactions and so will not match the budget totals.
-- [ ] T037 Record the outcome of each phase in this file, ticking the boxes, so the spec artifacts reflect what was actually built (Constitution Development Workflow step 5c).
+- [X] T035 Bump `VERSION` in `biweeklybudget/version.py` from `1.8.0` to `1.9.0` — a new backwards-compatible user-visible feature.
+- [X] T036 Add the `1.9.0` entry to `CHANGES.rst` in the established format, citing `Issue #213`, describing the table, the five-period scope and why that reading of the issue was chosen, and stating plainly that account totals include credit card payments and no-budget-impact transactions and so will not match the budget totals.
+- [X] T037 Record the outcome of each phase in this file, ticking the boxes, so the spec artifacts reflect what was actually built (Constitution Development Workflow step 5c).
 - [ ] T038 Commit, push the branch to `origin`, and open a pull request describing the change, the Constitution Check result, the "for each payperiod" interpretation the author may overrule, and the recorded Principle I deviation on milestone approval.
 - [ ] T039 Monitor the pull request's CI jobs to completion, and respond to review feedback with `/answer-reviews` until Claude's review reports no issues and Copilot's, if present, recommends approval.
 

@@ -1,6 +1,20 @@
 Changelog
 =========
 
+1.9.0 (2026-09-07)
+------------------
+
+* `Issue #213 <https://github.com/jantman/biweeklybudget/issues/213>`_ - Add a per-account transaction totals table to the single pay period view.
+
+  * The pay period view could say how much was budgeted, spent and remaining overall, and how much per budget, but not how much moved through each account. Answering that meant scanning the transaction list and adding amounts up by hand -- exactly the sort of thing to get wrong when reconciling a statement or checking a card's activity before its payment comes due.
+  * The new **Per-Account Transaction Totals** table sits below the income/allocated/spent/remaining tiles. Accounts are rows, ordered by name; the columns are the same five pay periods the *Remaining Balances* table at the top of the page already shows -- previous, current, and the three following -- with the same labels, the same ``(prev.)``/``(curr.)``/``(next)`` suffixes, the same links to those periods and the same emphasis on the current one. Account names link to the account, empty account/period combinations show ``$0.00``, negatives are red, and the bottom row totals each column.
+  * The issue asked for "the per-account transaction totals for each payperiod", which could be read as one column or several. Five columns was chosen because it is a superset of the narrower reading, gives the period-over-period comparison that makes an account total actionable, and costs nothing: the view already computes all five periods' data in full in order to render the *Remaining Balances* table.
+  * **These totals deliberately do not match the budget totals on the same page.** ``_make_budget_sums()`` excludes credit card payments and transactions flagged as having no budget impact, because counting a payment as well as the charges it settles would charge the same money against income twice (issues #210 and #319). That exclusion is a statement about budgets. The money leaves the paying account either way, so an account activity total that omitted it would not match the account's statement. ``docs/source/app_usage.rst`` gains a section saying so, since the discrepancy would otherwise read as a bug.
+  * Add ``BiweeklyPayPeriod.account_sums``, returning ``{account_id: {'name': str, 'total': Decimal}}`` for the accounts with activity in the period, cached in ``_data_cache`` alongside ``budget_sums`` and ``overall_sums``. It is computed by summing ``transactions_list`` -- the same list the page's transaction table renders -- rather than by a query of its own. That is what makes every cell verifiable by adding up the rows on screen, keeps scheduled transactions and split transactions handled identically to the rest of the page, and adds no database round trip.
+  * Accounts with no activity are absent from ``account_sums`` rather than present with a zero; the zeros are supplied by the view, which is the only thing that knows which accounts are on screen and therefore need one.
+  * ``PayPeriodView.get()`` now binds its five pay period objects once rather than re-walking ``pp.next.next.next`` for each value it needs. ``next`` and ``previous`` construct a new object on every read, and each object builds and caches its own data on first use, so without this, reading both ``overall_sums`` and ``account_sums`` from a period would compute that period's data twice. The values passed to the template are unchanged.
+  * No schema change, no migration, no new endpoint, no new setting, no new dependency, and no JavaScript: the table is plain server-rendered Bootstrap markup.
+
 1.8.0 (2026-09-06)
 ------------------
 
