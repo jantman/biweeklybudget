@@ -18,7 +18,7 @@ and reports. The sentence is rewritten so the credit deduction is a visible,
 linked term and the pay-period figure is named "current pay period allocated but
 unspent" instead of "remaining".
 
-The issue's third defect (pseudo-transactions inflating the unreconciled figure)
+The issue's second defect (pseudo-transactions inflating the unreconciled figure)
 was verified as already fixed on `master` by the #210/#319 work; it is covered
 here by tests that pin the behaviour through the banner, not by new logic. See
 [research.md](./research.md) R4.
@@ -182,7 +182,7 @@ milestone closes with the relevant suites run to completion and passing, docs
 updated, spec artifacts updated, and the whole committed together (Constitution
 Workflow step 5).
 
-**M1 — The credit-account figure.** Add `credit_account_sum()` with its
+**M1 — The credit-account figure. [COMPLETE]** Add `credit_account_sum()` with its
 docstring. Add unit tests covering: money owed reduces the figure with the correct
 sign; multiple accounts sum; inactive credit accounts excluded; non-credit
 accounts excluded; an account with no balance row contributes zero; an account
@@ -190,24 +190,58 @@ with a `NULL` ledger contributes zero; a positive (overpaid) balance increases t
 figure. Delivers FR-001, FR-002, FR-003 and the R1 sign guarantee independently
 of any wording change.
 
-**M2 — The corrected notification.** Rewrite `get_notifications()` to compare
+**M2 — The corrected notification. [COMPLETE]** Rewrite `get_notifications()` to compare
 funds available against funds committed and to emit the sentence from the
 contract. Update the unit tests (including adding the new static to every
 `patch.multiple`) and the three acceptance notification classes, recomputing each
 expected figure from the actual fixture data and confirming each class still
 demonstrates the case its name claims. Delivers FR-004 through FR-008 and FR-011.
 
-**M3 — No-cash-impact regression coverage.** Add the acceptance coverage that
+**M3 — No-cash-impact regression coverage. [COMPLETE]** Add the acceptance coverage that
 ties `is_excluded_from_budget` to the banner: a no-budget-impact transaction and a
 credit-card payment, both unreconciled in a funding account, must leave the
 banner's unreconciled figure and its verdict unmoved, while both remain listed and
 reconcilable in the reconcile view. Delivers FR-009 and FR-010 (User Story 3).
 
-**M4 — Documentation, version, changelog and close-out.** Add the
+**M4 — Documentation, version, changelog and close-out. [IN PROGRESS]** Add the
 `app_usage.rst` section describing the comparison and each figure (FR-012). Bump
 `version.py` (PATCH) and add the `CHANGES.rst` entry. Run the full unit and
 acceptance suites to completion, plus `tox -e docs` and `tox -e migrations`.
 Then push and open the pull request.
+
+## Outcome notes
+
+Recorded during implementation, as Constitution principle V requires for
+anything the plan did not anticipate:
+
+- **The verdicts did not flip.** The plan flagged as a risk that subtracting the
+  sample data's $6,450.71 of credit balances might flip the over/under verdict
+  the three acceptance classes were written to demonstrate. Measured against the
+  fixtures, all three keep their verdict (two shortfall, one surplus), so no
+  fixture needed adjusting and no assertion was relabelled.
+- **FR-002 moved from the unit layer to the acceptance layer.** The task list
+  put the inactive-account and non-credit-account exclusions in the unit tests.
+  Since `credit_account_sum()` delegates that filtering to
+  `Account.active_credit_accounts()`, asserting it there would have meant mocking
+  that helper and then asserting it filtered — a test of the mock. The coverage
+  moved to a new acceptance class against the real database (T014a).
+- **A pre-existing index page defect was found and deliberately not fixed.**
+  `templates/index.html` dereferences `acct.balance.ledger` in the credit
+  accounts table with no `None` guard, so an *active* account that has never had
+  a balance recorded makes the index page fail to render. Confirmed present on
+  `master` and untouched by this change. Out of scope here; the affected test
+  uses `/budgets` instead and says why.
+- **A pre-existing acceptance failure was confirmed unrelated.**
+  `TestPayPeriodsIndex::test_6_notification_panels` fails locally on today's
+  date. It was re-run with `master`'s `notifications.py` restored in place and
+  failed identically, and the panel colour it asserts comes from
+  `overall_sums['remaining']` via a template filter, never from
+  `NotificationsController`.
+- **`tox -e docs` emitted seven RST heading-level errors**, three of them
+  pre-existing. `docs/source/app_usage.rst` establishes `+` as its level-3
+  underline; four new subsections and three older ones used backticks, which
+  RST reads as level 4 under a level-2 section. All seven were converted, so the
+  docs build is now error-free rather than merely exit-zero.
 
 ## Risks
 

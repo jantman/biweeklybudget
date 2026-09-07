@@ -271,7 +271,7 @@ shown in red, and the bottom row totals each column.
 .. _app_usage.per_account_totals.not_budget_totals:
 
 Why these totals do not match the budget totals
-```````````````````````````````````````````````
++++++++++++++++++++++++++++++++++++++++++++++++
 
 They are not supposed to, and the difference is deliberate.
 
@@ -317,7 +317,7 @@ largest number of dates the chart will ever plot.
 .. _app_usage.account_balance_chart.sampling:
 
 Why not every date is plotted
-`````````````````````````````
++++++++++++++++++++++++++++++
 
 When the selected range holds more dates than
 :py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_MAX_POINTS`, the chart
@@ -337,7 +337,7 @@ account tables immediately below it on the same page.
 .. _app_usage.account_balance_chart.dormant:
 
 Accounts with no recent balances
-````````````````````````````````
+++++++++++++++++++++++++++++++++
 
 An account with no balance recorded inside the selected range still gets a line.
 It is drawn flat at that account's most recent known balance from before the
@@ -352,3 +352,85 @@ very different statement from "nothing new has been recorded".
 An account whose data begins part-way through the selected range is not treated
 this way — its line simply starts where its data starts, rather than being
 extended back over dates when the account had no recorded balance.
+
+.. _app_usage.unallocated_funds:
+
+The Unallocated Funds Notification
+----------------------------------
+
+Every page carries a banner at the top comparing the money you actually have
+available against the money you have already committed. When the two are equal
+no banner appears at all; that is the state to aim for.
+
+.. _app_usage.unallocated_funds.available:
+
+What counts as available
+++++++++++++++++++++++++
+
+**Funds available** is the combined balance of your budget-funding accounts --
+the bank and cash accounts -- *less what you currently owe on your active
+credit accounts*.
+
+Subtracting the card balances matters more than it might appear. Every charge
+you make on a card is budgeted on the day you make it, in the pay period it
+falls in, so it is already accounted for on the committed side. The cash to
+settle that charge, however, is still sitting in your checking account. If the
+card balance were left out, that cash would be counted as available when it is
+already spoken for, and the banner would report a surplus you do not have --
+roughly one to two pay periods of card spending, permanently, for anyone who
+puts most of their spending on cards. See `issue #320
+<https://github.com/jantman/biweeklybudget/issues/320>`_.
+
+A credit account carrying a *positive* balance -- an overpaid card, or one
+holding a statement credit larger than its balance -- adds to the funds
+available, because that money really is yours. Inactive accounts are ignored,
+and a credit account with no recorded balance contributes nothing.
+
+.. _app_usage.unallocated_funds.committed:
+
+What counts as committed
+++++++++++++++++++++++++
+
+**Funds committed** is the sum of three figures, each shown in the banner and
+linked to the view it comes from:
+
+* **standing budgets** -- the combined current balance of your active standing
+  budgets, which carry over from period to period.
+* **current pay period allocated but unspent** -- what you have allocated in
+  the current pay period minus what you have spent against it. This is money
+  still committed against the cash you are holding.
+* **unreconciled** -- the net of transactions you have entered but not yet
+  matched to a real bank transaction.
+
+.. _app_usage.unallocated_funds.not_pp_remaining:
+
+"Allocated but unspent" is not the pay period's "remaining"
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+These are two different quantities and they routinely disagree, sometimes by
+thousands of dollars and sometimes in sign. The banner reports *allocated minus
+spent*. The pay period view's own **remaining** figure is *income minus
+budgeted*. Neither is wrong; they answer different questions.
+
+Allocated-but-unspent is the right figure for this banner because it is what is
+still committed against the cash you are holding right now. The pay period's
+remaining figure tells you instead whether that period's income covers what you
+budgeted for it.
+
+The banner used to call its figure "current pay period remaining" while linking
+to a view that showed a different number under that word, which was the whole
+of `issue #209 <https://github.com/jantman/biweeklybudget/issues/209>`_.
+
+.. _app_usage.unallocated_funds.no_cash_impact:
+
+Transactions that move no real cash
++++++++++++++++++++++++++++++++++++
+
+The unreconciled figure counts only transactions that actually move money.
+Transactions marked :ref:`No Budget Impact <app_usage.no_budget_impact>`, and
+payments toward a credit account, are excluded from it -- otherwise entering a
+card payoff would swing the banner by the full amount of the payoff for the
+days between entering it and reconciling it.
+
+They are excluded from this figure only. Both still appear in the reconcile
+view and still need to be reconciled against the real bank transaction.

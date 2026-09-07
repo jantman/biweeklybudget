@@ -218,9 +218,11 @@ class NotificationsController(object):
         available = accounts_bal + credit_bal
         bal_sum = standing_bal + curr_pp + unrec_amt
         if available != bal_sum:
-            verb = 'is less than' if available < bal_sum else 'is more than'
-            classes = 'alert alert-danger'
-            if available > bal_sum:
+            if available < bal_sum:
+                verb = 'is less than'
+                classes = 'alert alert-danger'
+            else:
+                verb = 'is more than'
                 classes = 'alert alert-info'
             res.append({
                 'classes': classes,
