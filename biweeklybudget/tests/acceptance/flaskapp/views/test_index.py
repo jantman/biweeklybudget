@@ -812,3 +812,141 @@ class TestAcctBalanceChartLargeData(AcceptanceHelper):
         testdb.commit()
         after = len(requests.get(base_url + CHART_URL).json()['data'])
         assert after == before
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestAcctBalanceChartRanges(AcceptanceHelper):
+    """
+    Tests for the chart's date range selector, added for GitHub issue #279.
+    """
+
+    EXPECTED = [
+        ('1m', '30'), ('3m', '90'), ('6m', '180'), ('1y', '365'),
+        ('2y', '730'), ('5y', '1825'), ('All', '0')
+    ]
+
+    @pytest.fixture(autouse=True)
+    def get_page(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url)
+
+    def _buttons(self, selenium):
+        return selenium.find_elements(
+            By.CSS_SELECTOR, '#account-balance-chart-ranges button'
+        )
+
+    def test_range_buttons_present_in_order(self, selenium):
+        btns = self._buttons(selenium)
+        assert [
+            (b.text, b.get_attribute('data-days')) for b in btns
+        ] == self.EXPECTED
+
+    def test_configured_default_is_the_active_button(self, selenium):
+        # test_settings.py does not set ACCOUNT_BALANCE_CHART_DEFAULT_DAYS, so
+        # the shipped default of 365 applies -- which is itself the check that
+        # a settings module predating this feature keeps working untouched.
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == '1y'
+
+    def test_chart_renders_an_svg(self, selenium):
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+    def test_nodata_message_is_hidden_when_there_is_data(self, selenium):
+        nodata = selenium.find_element(
+            By.ID, 'account-balance-chart-nodata'
+        )
+        assert nodata.is_displayed() is False
+
+    def test_selecting_a_range_moves_active_and_redraws_in_place(
+        self, selenium, base_url
+    ):
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['All'].click()
+        self.wait_for_jquery_done(selenium)
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == 'All'
+        # no navigation: FR-008 requires an in-place redraw
+        assert selenium.current_url.rstrip('/') == base_url.rstrip('/')
+        # and the chart is still one chart, not a second drawn over the first
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+    def test_narrowing_the_range_again(self, selenium):
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['All'].click()
+        self.wait_for_jquery_done(selenium)
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['1m'].click()
+        self.wait_for_jquery_done(selenium)
+        active = [
+            b for b in self._buttons(selenium) if 'active' in
+            b.get_attribute('class').split()
+        ]
+        assert len(active) == 1
+        assert active[0].text == '1m'
+        chart = selenium.find_element(By.ID, 'account-balance-chart')
+        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb')
+class TestAcctBalanceChartSettings(AcceptanceHelper):
+    """
+    The two settings added for GitHub issue #279 must actually drive the
+    endpoint, not merely exist beside constants baked into the code.
+
+    These use the Flask test client rather than the live server, because the
+    live server runs in a separate process where monkeypatching the settings
+    module in this process would have no effect. The route, view and database
+    are the real ones either way.
+    """
+
+    def _get(self, qs=''):
+        from biweeklybudget.flaskapp.app import app
+        with app.test_client() as c:
+            return c.get(CHART_URL + qs).get_json()
+
+    def test_max_points_is_read_from_settings(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        assert len(self._get('?days=0')['data']) == 5
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_MAX_POINTS', 3
+        )
+        data = self._get('?days=0')['data']
+        assert len(data) == 3
+        # the cap must never cost us the most recent balance
+        assert data[-1]['date'] == '2017-07-27'
+
+    def test_default_days_is_read_from_settings(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 15
+        )
+        # no days parameter: the configured default must be what applies
+        assert [x['date'] for x in self._get()['data']] == [
+            '2017-07-15', '2017-07-26', '2017-07-27'
+        ]
+
+    def test_default_days_of_zero_means_all_history(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 0
+        )
+        assert len(self._get()['data']) == 5
+
+    def test_bad_days_falls_back_to_the_configured_default(self, monkeypatch):
+        from biweeklybudget.flaskapp.views import index as index_view
+        monkeypatch.setattr(
+            index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 15
+        )
+        assert self._get('?days=garbage') == self._get()

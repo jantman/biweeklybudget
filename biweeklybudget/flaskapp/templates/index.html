@@ -16,6 +16,10 @@
         {% for id in active_budgets.keys()|sort %}
         active_budget_names_to_id["{{ active_budgets[id] }}"] = "{{ id }}";
         {% endfor %}
+        // Days of account balance history the chart opens on; see
+        // biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS. 0 means
+        // all recorded history.
+        var ACCOUNT_BALANCE_CHART_DEFAULT_DAYS = {{ settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS }};
     </script>
 {% endblock %}
 {% block body %}
@@ -26,10 +30,16 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <i class="fa fa-bar-chart-o fa-fw"></i> Account Balances
+                            <div class="btn-group btn-group-xs pull-right" id="account-balance-chart-ranges" role="group" aria-label="Account balance chart date range">
+                                {% for label, days in [('1m', 30), ('3m', 90), ('6m', 180), ('1y', 365), ('2y', 730), ('5y', 1825), ('All', 0)] %}
+                                <button type="button" class="btn btn-default{% if settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS == days %} active{% endif %}" data-days="{{ days }}">{{ label }}</button>
+                                {% endfor %}
+                            </div>
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <div id="account-balance-chart"></div>
+                            <div id="account-balance-chart-nodata" style="display: none;">No account balance data to display.</div>
                         </div>
                         <!-- /.panel-body -->
                     </div>
