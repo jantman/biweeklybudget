@@ -195,6 +195,33 @@ def sample_chart_rows(rows, max_points):
 class AcctBalanaceChartView(MethodView):
     """
     Handle GET /ajax/chart-data/account-balances endpoint.
+
+    Accepts one optional query parameter, ``days``: the number of days of
+    history to return, counting back from now. ``0`` means all recorded
+    history. When it is absent or cannot be read as a non-negative integer,
+    :py:attr:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS` is
+    used; see :py:func:`~.parse_chart_days`.
+
+    The response shape is ``{'data': [...], 'keys': [...]}``, unchanged from
+    before the windowing added for GitHub issue #279, so external scripts
+    reading this endpoint keep working. ``days=0`` reproduces the previous
+    full-history response, subject to the point cap below.
+
+    It guarantees that:
+
+    * at most
+      :py:attr:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_MAX_POINTS`
+      dates are returned, for any ``days`` and any amount of stored history;
+    * ``data`` is ascending by date, with no duplicates;
+    * when the window holds no more dates than that cap, every one of them is
+      returned and nothing is sampled away;
+    * the most recent date in the window is always the last element;
+    * every account keeps a continuous line: an account with no balance
+      recorded inside the window carries forward its most recent value from
+      *before* the window rather than being reported as absent or zero;
+    * a ``NULL`` ledger is reported as ``0.0``, as it always has been;
+    * with no balance records at all, ``data`` is empty and the status is still
+      200.
     """
 
     def get(self):
@@ -202,11 +229,19 @@ class AcctBalanaceChartView(MethodView):
             x.id: x.name for x in db_session.query(Account).all()
         }
         acct_names = accounts.values()
+        days = parse_chart_days(
+            request.args.get('days'),
+            settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS
+        )
+        window_start = None
+        if days > 0:
+            window_start = dtnow() - timedelta(days=days)
         datedict = {x: None for x in acct_names}
         data = {}
-        for bal in db_session.query(AccountBalance).order_by(
-            asc(AccountBalance.overall_date)
-        ).all():
+        q = db_session.query(AccountBalance)
+        if window_start is not None:
+            q = q.filter(AccountBalance.overall_date >= window_start)
+        for bal in q.order_by(asc(AccountBalance.overall_date)).all():
             ds = bal.overall_date.strftime('%Y-%m-%d')
             if ds not in data:
                 data[ds] = copy(datedict)
@@ -221,12 +256,16 @@ class AcctBalanaceChartView(MethodView):
                 data[ds][name] = 0.0
             else:
                 data[ds][name] = float(bal.ledger)
+        # Seed the forward-fill with each account's last known balance from
+        # before the window. Without this, an account whose most recent balance
+        # predates the window has no row to carry forward from and is plotted
+        # as null -- which on a balance chart reads as "this account went to
+        # zero". That is the one way windowing can be quietly, financially
+        # wrong, so the seed is not optional. It costs one query bounded by the
+        # number of accounts, never by the amount of history.
+        last = self._balances_before(accounts, window_start)
         resdata = []
-        last = None
         for k in sorted(data.keys()):
-            if last is None:
-                last = data[k]
-                continue
             d = copy(data[k])
             for subk in acct_names:
                 if d[subk] is None:
@@ -234,10 +273,54 @@ class AcctBalanaceChartView(MethodView):
             last = d
             resdata.append(d)
         res = {
-            'data': resdata,
+            'data': sample_chart_rows(
+                resdata, settings.ACCOUNT_BALANCE_CHART_MAX_POINTS
+            ),
             'keys': sorted(acct_names)
         }
         return jsonify(res)
+
+    def _balances_before(self, accounts, window_start):
+        """
+        Return each account's most recent ledger balance strictly before
+        ``window_start``, as ``{account_name: float or None}``.
+
+        This is the starting state for the forward-fill in :py:meth:`~.get`,
+        so that an account with no balance recorded inside the requested window
+        keeps its last known value instead of appearing to have dropped to
+        zero. An account with no record at all before the window gets ``None``:
+        its line legitimately begins where its data begins and must not be
+        back-filled to a date on which the account did not yet exist.
+
+        :param accounts: mapping of account ID to account name
+        :type accounts: dict
+        :param window_start: start of the requested window, or None when all
+          history was requested (in which case there is nothing before it)
+        :type window_start: datetime.datetime or None
+        :return: mapping of account name to its pre-window balance, or None
+        :rtype: dict
+        """
+        res = {name: None for name in accounts.values()}
+        if window_start is None:
+            return res
+        # one row per account: the newest overall_date before the window
+        latest = db_session.query(
+            AccountBalance.account_id,
+            func.max(AccountBalance.overall_date).label('overall_date')
+        ).filter(
+            AccountBalance.overall_date < window_start
+        ).group_by(AccountBalance.account_id).subquery()
+        q = db_session.query(AccountBalance).join(
+            latest,
+            (AccountBalance.account_id == latest.c.account_id) &
+            (AccountBalance.overall_date == latest.c.overall_date)
+        )
+        for bal in q.all():
+            name = accounts.get(bal.account_id)
+            if name is None:
+                continue
+            res[name] = 0.0 if bal.ledger is None else float(bal.ledger)
+        return res
 
 
 app.add_url_rule('/', view_func=IndexView.as_view('index_view'))
