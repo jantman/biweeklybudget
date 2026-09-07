@@ -159,11 +159,11 @@ initial span, the active button, and the point cap all follow the configuration.
 **Purpose**: Constitution Principle II. A narrowed run is not a pass, and a timed-out run is
 not a pass.
 
-- [ ] T035 Run `tox -e py314` to completion, output redirected to a scratchpad file. All must pass.
-- [ ] T036 Run `tox -e acceptance` to completion — the whole suite, not a `-k` selection — output redirected to a scratchpad file. All must pass. If it times out, raise both the pytest timeout and the invoking tool's timeout and re-run until it completes.
-- [ ] T037 [P] Run `tox -e docs` to completion; it must build with no errors, including the autodoc for the new settings and the new view helpers.
-- [ ] T038 [P] Run `tox -e migrations` to completion. This feature changes no schema; the run is the check that this is still true.
-- [ ] T039 Walk the manual checks in [quickstart.md](./quickstart.md) §3 and §4 against a running `flask rundev`, in particular verifying by eye that a dormant account holds a flat line rather than dropping to zero (§3 step 5), and that the environment-variable overrides in §4 take effect.
+- [X] T035 Run `tox -e py314` to completion, output redirected to a scratchpad file. All must pass.
+- [X] T036 Run `tox -e acceptance` to completion — the whole suite, not a `-k` selection — output redirected to a scratchpad file. All must pass. If it times out, raise both the pytest timeout and the invoking tool's timeout and re-run until it completes.
+- [X] T037 [P] Run `tox -e docs` to completion; it must build with no errors, including the autodoc for the new settings and the new view helpers.
+- [X] T038 [P] Run `tox -e migrations` to completion. This feature changes no schema; the run is the check that this is still true.
+- [X] T039 Walk the manual checks in [quickstart.md](./quickstart.md) §3 and §4 against a running `flask rundev`, in particular verifying by eye that a dormant account holds a flat line rather than dropping to zero (§3 step 5), and that the environment-variable overrides in §4 take effect.
 
 **Checkpoint**: Every suite the constitution requires has run to completion and passed.
 
@@ -173,8 +173,8 @@ not a pass.
 
 **Purpose**: Constitution Principle VI, and this session's delivery obligation.
 
-- [ ] T040 Bump `VERSION` in `biweeklybudget/version.py` from `1.9.0` to `1.10.0` — a new backwards-compatible user-visible capability plus new settings.
-- [ ] T041 Add the `1.10.0` entry to `CHANGES.rst` in the established per-issue format, citing `Issue #279`. It must state: that the dominant cost was an N+1 lazy load rather than the data volume the issue named; the windowing and sampling rules including why the last point is pinned; the pre-window seed query and the dormant-account correctness problem it solves; the two new settings and their defaults; and that #215's chart-library migration was deliberately not folded in, with the constitution's stack constraint as the reason.
+- [X] T040 Bump `VERSION` in `biweeklybudget/version.py` from `1.9.0` to `1.10.0` — a new backwards-compatible user-visible capability plus new settings.
+- [X] T041 Add the `1.10.0` entry to `CHANGES.rst` in the established per-issue format, citing `Issue #279`. It must state: that the dominant cost was an N+1 lazy load rather than the data volume the issue named; the windowing and sampling rules including why the last point is pinned; the pre-window seed query and the dormant-account correctness problem it solves; the two new settings and their defaults; and that #215's chart-library migration was deliberately not folded in, with the constitution's stack constraint as the reason.
 - [ ] T042 Record the outcome of each phase in this file, ticking the boxes, so the spec artifacts reflect what was actually built (constitution Development Workflow step 5c).
 - [ ] T043 Commit, push the branch `robot-army/issue-279-fix-index-page-chart-when-lots-of-data` to `origin`, and open a pull request describing the change, the Constitution Check result, the deliberate deferral of #215, the one behaviour change existing endpoint callers will see (no `days` parameter now means the default window, with `days=0` restoring the old response), and the recorded Principle I deviation on milestone approval.
 - [ ] T044 Monitor the pull request's CI jobs to completion, then use `/answer-reviews` to respond to review feedback, repeating until Claude's review reports "No issues found" and Copilot's, if present, recommends approval.
@@ -249,3 +249,58 @@ changes no UI and could be shipped by itself.
 - T013 and T019 are the correctness core. Everything else is performance and presentation;
   those two are the difference between a windowed chart that is right and one that quietly
   misreports a dormant account's balance as zero.
+
+---
+
+## Delivery Record
+
+**Phase 7 results** (2026-09-07):
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` | 694 passed, 4 skipped |
+| `tox -e acceptance` | 716 passed, 24 skipped, **0 failed** (15m31s, run to completion, whole suite) |
+| `tox -e docs` | build succeeded; 127 warnings, all pre-existing, none from new content |
+| `tox -e migrations` | 7 passed |
+| `tox -e jsdoc` | OK; generated `docs/source/jsdoc.index.rst` |
+
+No suite timed out and none was narrowed to a subset. The acceptance run took just
+over 15 minutes and completed on its own.
+
+**T039 manual verification** was carried out against `flask run` with 1,809 balance rows
+seeded (900 days × 2 accounts plus the sample data):
+
+* The default view returned 184 points and "All" returned 226, both under the 300 cap,
+  where the raw data holds 900+ distinct dates.
+* The chart drew legibly on the 1y default with the ``1y`` button highlighted; clicking
+  ``All`` widened the x-axis from 2016-08–2017-07 to 2015-04–2017-07, moved the
+  highlight, left the page on ``/``, and left exactly one ``<svg>`` in the chart div —
+  it redrew rather than stacking a second chart.
+* Both halves of the carry-forward rule were checked at the boundary. With ``days=15``
+  the window starts 2017-07-13, after BankTwoStale's only balance (2017-07-10), and the
+  account holds a flat ``100.23`` across every row with no nulls — the seed working.
+  With ``days=30`` that same record falls *inside* the window, and the rows before it are
+  correctly ``null``, with values beginning exactly at 2017-07-10 — no back-filling onto
+  dates when the account had no recorded balance.
+* Quickstart §4: with ``ACCOUNT_BALANCE_CHART_DEFAULT_DAYS=30`` and
+  ``ACCOUNT_BALANCE_CHART_MAX_POINTS=2`` in the environment, the ``1m`` button was
+  active, the emitted JS variable read 30, and every request returned exactly 2 points,
+  still ending at the latest date.
+
+**Deviations from this task list**, both recorded rather than silently taken:
+
+1. T028 (settings-driven active button) landed together with T021 rather than replacing a
+   hardcoded value two commits later. Writing the hardcoded form only to delete it would
+   have been churn, and doing it settings-driven from the start does not reduce user
+   story 2's independence.
+2. A latent bug in T007's specified algorithm was found and fixed before it shipped. The
+   stride form the task described — stride the whole list, then append the last row if
+   missed — returns ``max_points + 1`` rows whenever the length is an exact multiple of
+   the stride. `sample_chart_rows` reserves the final slot instead, and
+   `test_exact_multiple_does_not_overflow_the_limit` is a named regression guard.
+
+**Constitution note.** Development Workflow steps 3 and 5 require human approval of the
+plan and at each milestone boundary. This session was dispatched to run the whole
+lifecycle autonomously through to an opened pull request; that is the dispatcher's call
+and is recorded here rather than left as a silent omission. The pull request is the review
+artifact, and nothing merges without it.
