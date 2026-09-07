@@ -211,10 +211,16 @@ class AcctBalanaceChartView(MethodView):
             if ds not in data:
                 data[ds] = copy(datedict)
                 data[ds]['date'] = ds
+            # accounts[bal.account_id], not bal.account.name: the latter is a
+            # lazy-loaded relationship, so it issues one SELECT per balance row
+            # for a name this method already loaded into `accounts` above. At
+            # five years of daily balances across ten accounts that was ~18,000
+            # round trips, and it was the dominant cost of this endpoint.
+            name = accounts[bal.account_id]
             if bal.ledger is None:
-                data[ds][bal.account.name] = 0.0
+                data[ds][name] = 0.0
             else:
-                data[ds][bal.account.name] = float(bal.ledger)
+                data[ds][name] = float(bal.ledger)
         resdata = []
         last = None
         for k in sorted(data.keys()):
