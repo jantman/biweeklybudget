@@ -45,8 +45,8 @@ The prefix for this feature is **`Transaction API - M{n}.{t}`**, mapped as:
 
 **Purpose**: Working environment. No production code is written or changed in this phase, and nothing here is committed.
 
-- [ ] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md` and in [quickstart.md](./quickstart.md) (`docker run ... --name budgettest`, `DB_CONNSTRING`, `SETTINGS_MODULE`, `MYSQL_*`), then run `python dev/setup_test_db.py` from the activated `venv`
-- [ ] T002 Confirm the baseline is green before changing anything: run `tox -e py314` from the activated `venv`, redirecting output to a scratchpad file per `CLAUDE.md`, and record any pre-existing failures so they are not later mistaken for regressions
+- [X] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md` and in [quickstart.md](./quickstart.md) (`docker run ... --name budgettest`, `DB_CONNSTRING`, `SETTINGS_MODULE`, `MYSQL_*`), then run `python dev/setup_test_db.py` from the activated `venv`
+- [X] T002 Confirm the baseline is green before changing anything: run `tox -e py314` from the activated `venv`, redirecting output to a scratchpad file per `CLAUDE.md`, and record any pre-existing failures so they are not later mistaken for regressions
 
 **Checkpoint**: Test database reachable, baseline unit suite result known.
 
@@ -58,9 +58,9 @@ The prefix for this feature is **`Transaction API - M{n}.{t}`**, mapped as:
 
 **⚠️ CRITICAL**: US1 cannot begin until T004 is complete. US2 depends on US1.
 
-- [ ] T003 [P] Write failing unit tests for the resolution helper in `biweeklybudget/tests/unit/models/test_utils.py`, in a new `TestResolveByNameOrId` class using mocked query objects in the style of the existing tests in that file. Cover: digits-only value hits by primary key (R2); non-digit value hits by name (R3); a digits-only value that misses by ID then hits by name (R3 fallback, the "budget named 2024" case); leading/trailing whitespace is stripped (R1); matching is case-insensitive; a value matching nothing returns `None` (R4); `None`, `''` and `'   '` return `None` without querying; a non-string value such as the integer `5` is coerced and resolved
-- [ ] T004 Implement `resolve_by_name_or_id(db_sess, cls, value)` in `biweeklybudget/models/utils.py`, following rules R1–R4 of [data-model.md](./data-model.md). Return the model instance or `None`. Use `db_sess.query(cls).get(int(value))` for the ID path and `db_sess.query(cls).filter(func.lower(cls.name) == value.lower()).one_or_none()` for the name path — `func.lower()` explicitly rather than relying on the database collation, per decision D4 in [research.md](./research.md). Include a full docstring in the project's `:param:`/`:type:`/`:return:`/`:rtype:` style, noting that the caller is responsible for reporting a `None` result as a validation error
-- [ ] T005 Run `pytest biweeklybudget/tests/unit/models/test_utils.py` and confirm the new tests pass; confirm the file is pycodestyle- and pyflakes-clean under the exceptions in `pytest.ini`
+- [X] T003 [P] Write failing unit tests for the resolution helper in `biweeklybudget/tests/unit/models/test_utils.py`, in a new `TestResolveByNameOrId` class using mocked query objects in the style of the existing tests in that file. Cover: digits-only value hits by primary key (R2); non-digit value hits by name (R3); a digits-only value that misses by ID then hits by name (R3 fallback, the "budget named 2024" case); leading/trailing whitespace is stripped (R1); matching is case-insensitive; a value matching nothing returns `None` (R4); `None`, `''` and `'   '` return `None` without querying; a non-string value such as the integer `5` is coerced and resolved
+- [X] T004 Implement `resolve_by_name_or_id(db_sess, cls, value)` in `biweeklybudget/models/utils.py`, following rules R1–R4 of [data-model.md](./data-model.md). Return the model instance or `None`. Use `db_sess.query(cls).get(int(value))` for the ID path and `db_sess.query(cls).filter(func.lower(cls.name) == value.lower()).one_or_none()` for the name path — `func.lower()` explicitly rather than relying on the database collation, per decision D4 in [research.md](./research.md). Include a full docstring in the project's `:param:`/`:type:`/`:return:`/`:rtype:` style, noting that the caller is responsible for reporting a `None` result as a validation error
+- [X] T005 Run `pytest biweeklybudget/tests/unit/models/test_utils.py` and confirm the new tests pass; confirm the file is pycodestyle- and pyflakes-clean under the exceptions in `pytest.ini`
 
 **Checkpoint**: Helper implemented and unit-tested. Commit as `Transaction API - M1.1` … `M1.3`. Foundation ready.
 

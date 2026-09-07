@@ -36,10 +36,82 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 import logging
 
+from sqlalchemy import func
+
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_by_name_or_id(db_sess, cls, value):
+    """
+    Resolve a single :py:class:`~.Account` or :py:class:`~.Budget` from a value
+    that may be either its numeric ID or its name.
+
+    This exists so that the Transaction HTTP API is usable by external tooling
+    that knows records by the names shown in the UI, rather than only by the
+    database IDs the web frontend happens to have to hand. See GitHub issue
+    #322.
+
+    The resolution order is deliberate:
+
+    1. The value is coerced to a string and stripped of surrounding whitespace.
+       An empty result, or ``None``, is not a reference at all and yields
+       ``None`` without touching the database; the caller decides whether an
+       absent reference is an error for that particular field.
+    2. If what remains is all ASCII digits it is looked up as a primary key. A
+       hit ends resolution - IDs are the pre-existing meaning of these fields
+       and keep precedence over names.
+    3. Otherwise - a non-digit value, or a digit value matching no primary key
+       - it is looked up as a name, matched whole and case-insensitively.
+       ``Account.name`` and ``Budget.name`` are both unique, so at most one
+       record can match.
+
+    Step 3 running after a *missed* ID lookup is what keeps a record whose name
+    happens to be numeric (a budget called "2024", say) reachable. The residual
+    ambiguity - ID 12 existing alongside a different record named "12" - is
+    resolved in favor of the ID, and is documented as such in
+    ``docs/source/http_api.rst``.
+
+    ``func.lower()`` is used explicitly rather than relying on the database's
+    collation being case-insensitive, so that the behavior is a property of
+    this code and is pinned by a test.
+
+    :param db_sess: active database session to use for queries
+    :type db_sess: sqlalchemy.orm.session.Session
+    :param cls: the model class to resolve; must have ``id`` and a unique
+      ``name`` column
+    :type cls: type
+    :param value: the ID or name to resolve; anything falsy or blank yields
+      ``None``
+    :type value: str or int or None
+    :return: the matching instance of ``cls``, or ``None`` if the value
+      resolves to no record. Callers are responsible for turning ``None`` into
+      a validation error naming the value that could not be resolved.
+    :rtype: ``cls`` or None
+    """
+    if value is None:
+        return None
+    value = str(value).strip()
+    if value == '':
+        return None
+    if value.isdigit():
+        res = db_sess.query(cls).get(int(value))
+        if res is not None:
+            return res
+        logger.debug(
+            'No %s with ID %s; trying to resolve "%s" as a name',
+            cls.__name__, value, value
+        )
+    res = db_sess.query(cls).filter(
+        func.lower(cls.name) == value.lower()
+    ).one_or_none()
+    if res is not None:
+        logger.debug(
+            'Resolved %s name "%s" to ID %s', cls.__name__, value, res.id
+        )
+    return res
 
 
 def do_budget_transfer(db_sess, txn_date, amount, account,
