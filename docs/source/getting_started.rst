@@ -286,6 +286,8 @@ We run explicitly in the statements directory so that if ``ofxgetter`` encounter
 when using a :py:class:`~biweeklybudget.screenscraper.ScreenScraper` class, the screenshots
 and HTML output will be saved to the host filesystem.
 
+.. _getting_started.entrypoints:
+
 Command Line Entrypoints and Scripts
 ------------------------------------
 
@@ -294,6 +296,7 @@ script wrappers in ``bin/``). First setup your environment according to the
 instructions above.
 
 * ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work. To get an interactive session, use ``python -i bin/db_tester.py``.
+* ``addtrans`` - Create a Transaction through the :ref:`HTTP API <http_api.transactions.create_update>`, taking inputs similar to the Add Transaction form. Accounts and Budgets may be given by name or by ID. Unlike the other entrypoints it talks to a *running* application over HTTP rather than to the database, so it needs no settings module; point it at the application with ``--url``, the ``BIWEEKLYBUDGET_URL`` environment variable, or leave it to default to ``http://127.0.0.1:8080``. Run ``addtrans --help`` for the full argument list, and ``--dry-run`` to see the request it would send. See :py:mod:`biweeklybudget.addtrans`.
 * ``loaddata`` - Entrypoint for dropping **all** existing data and loading test fixture data, or your base data. This is an awful, manual hack right now.
 * ``ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
 * ``ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB. See :ref:`OFX <ofx>`.
