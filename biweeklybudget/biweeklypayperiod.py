@@ -426,6 +426,7 @@ class BiweeklyPayPeriod(object):
         }
         self._data_cache['all_trans_list'] = self._make_combined_transactions()
         self._data_cache['budget_sums'] = self._make_budget_sums()
+        self._data_cache['account_sums'] = self._make_account_sums()
         self._data_cache['overall_sums'] = self._make_overall_sums()
         return self._data_cache
 
@@ -492,6 +493,17 @@ class BiweeklyPayPeriod(object):
         :rtype: dict
         """
         return self._data['budget_sums']
+
+    @property
+    def account_sums(self):
+        """
+        Return a dict of per-account transaction sums; the return value of
+        :py:meth:`~._make_account_sums`.
+
+        :return: dict of dicts, transaction sums per account
+        :rtype: dict
+        """
+        return self._data['account_sums']
 
     def _make_budget_sums(self):
         """
@@ -614,6 +626,53 @@ class BiweeklyPayPeriod(object):
                     b]['budget_amount'] - res[b]['allocated']
             if res[b]['is_income']:
                 res[b]['remaining'] = abs(res[b]['remaining'])
+        return res
+
+    def _make_account_sums(self):
+        """
+        Find the sum of all transactions per Account for this pay period;
+        return a dict where keys are Account IDs and values are per-account
+        dicts containing:
+
+        - ``name`` *(str)* - the :py:attr:`~.Account.name`.
+        - ``total`` *(Decimal.decimal)* - the sum of the amounts of all
+          transactions against the account in this pay period.
+
+        An Account is present in the result if and only if it has at least one
+        transaction in this pay period; accounts with no activity are omitted
+        rather than being returned with a zero total.
+
+        This sums :py:attr:`~.transactions_list` and applies **no** filtering
+        whatsoever. In particular, unlike :py:meth:`~._make_budget_sums`, it
+        counts transactions with no budget impact -- payments toward a credit
+        account, and transactions explicitly flagged as such (GitHub issues
+        #210 and #319). Those exclusions exist to stop the same money being
+        charged to a budget twice, which is a statement about budgets. The
+        money does move through the account either way, so an account activity
+        total that omitted it would not match the account's statement.
+
+        These totals therefore are **not** expected to reconcile with
+        :py:meth:`~._make_budget_sums` or :py:meth:`~._make_overall_sums`. They
+        are a different sum over a deliberately different set. What they do
+        reconcile with, exactly, is the list of transactions the pay period
+        view renders, because that is the same list summed here.
+
+        Amounts keep the sign they have elsewhere in the application: spending
+        is positive and income is negative, so a total may be positive,
+        negative or zero.
+
+        :return: dict of dicts, transaction sums per account
+        :rtype: dict
+        """
+        res = {}
+        for t in self.transactions_list:
+            acct_id = t['account_id']
+            if acct_id not in res:
+                res[acct_id] = {
+                    'name': t['account_name'],
+                    'total': Decimal('0.0')
+                }
+            res[acct_id]['total'] += t['amount']
         return res
 
     @property

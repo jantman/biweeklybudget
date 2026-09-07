@@ -335,6 +335,18 @@ class TestBudgetSums(object):
         assert self.cls.budget_sums == m
 
 
+class TestAccountSums(object):
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 17), self.mock_sess)
+
+    def test_simple(self):
+        m = Mock()
+        self.cls._data_cache = {'account_sums': m}
+        assert self.cls.account_sums == m
+
+
 class TestOverallSums(object):
 
     def setup_method(self):
@@ -401,6 +413,7 @@ class TestData(object):
         mock_sta_filtered = Mock()
         mock_mct = Mock()
         mock_mbs = Mock()
+        mock_mas = Mock()
         mock_mos = Mock()
         with patch.multiple(
             pb,
@@ -414,6 +427,7 @@ class TestData(object):
             _filter_annual_for_period=DEFAULT,
             _make_combined_transactions=DEFAULT,
             _make_budget_sums=DEFAULT,
+            _make_account_sums=DEFAULT,
             _make_overall_sums=DEFAULT
         ) as mocks:
             mocks['_transactions'].return_value.all.return_value = mock_t
@@ -430,6 +444,7 @@ class TestData(object):
             mocks['_filter_annual_for_period'].return_value = mock_sta_filtered
             mocks['_make_combined_transactions'].return_value = mock_mct
             mocks['_make_budget_sums'].return_value = mock_mbs
+            mocks['_make_account_sums'].return_value = mock_mas
             mocks['_make_overall_sums'].return_value = mock_mos
             res = self.cls._data
         assert res == {
@@ -441,6 +456,7 @@ class TestData(object):
             'st_annual': mock_sta_filtered,
             'all_trans_list': mock_mct,
             'budget_sums': mock_mbs,
+            'account_sums': mock_mas,
             'overall_sums': mock_mos
         }
         assert mocks['_transactions'].mock_calls == [
@@ -470,6 +486,9 @@ class TestData(object):
         assert mocks['_make_budget_sums'].mock_calls == [
             call(self.cls)
         ]
+        assert mocks['_make_account_sums'].mock_calls == [
+            call(self.cls)
+        ]
         assert mocks['_make_overall_sums'].mock_calls == [
             call(self.cls)
         ]
@@ -481,6 +500,7 @@ class TestData(object):
         mock_stm = Mock()
         mock_mct = Mock()
         mock_mbs = Mock()
+        mock_mas = Mock()
         mock_mos = Mock()
         with patch.multiple(
             pb,
@@ -491,6 +511,7 @@ class TestData(object):
             _scheduled_transactions_monthly=DEFAULT,
             _make_combined_transactions=DEFAULT,
             _make_budget_sums=DEFAULT,
+            _make_account_sums=DEFAULT,
             _make_overall_sums=DEFAULT
         ) as mocks:
             mocks['_transactions'].return_value.all.return_value = mock_t
@@ -502,6 +523,7 @@ class TestData(object):
                   ''].return_value.all.return_value = mock_stm
             mocks['_make_combined_transactions'].return_value = mock_mct
             mocks['_make_budget_sums'].return_value = mock_mbs
+            mocks['_make_account_sums'].return_value = mock_mas
             mocks['_make_overall_sums'].return_value = mock_mos
             self.cls._data_cache = {'foo': 'bar'}
             res = self.cls._data
@@ -512,6 +534,7 @@ class TestData(object):
         assert mocks['_scheduled_transactions_monthly'].mock_calls == []
         assert mocks['_make_combined_transactions'].mock_calls == []
         assert mocks['_make_budget_sums'].mock_calls == []
+        assert mocks['_make_account_sums'].mock_calls == []
         assert mocks['_make_overall_sums'].mock_calls == []
 
 
@@ -977,6 +1000,180 @@ class TestMakeBudgetSumsNoBudgetImpact(object):
         ]}
         self.cls._data_cache['budget_sums'] = self.cls._make_budget_sums()
         assert self.cls._make_overall_sums() == baseline
+
+
+class TestMakeAccountSums(object):
+    """
+    Per-account transaction totals for a pay period. Unlike the budget sums,
+    these apply no filtering at all: every entry of ``transactions_list``
+    counts, including transactions with no budget impact, because the money
+    moves through the account regardless of what it does to a budget.
+    """
+
+    def setup_method(self):
+        self.mock_sess = Mock(spec_set=Session)
+        self.cls = BiweeklyPayPeriod(date(2017, 3, 7), self.mock_sess)
+
+    def _trans(self, amount, acct_id=1, acct_name='BankOne',
+               no_budget_impact=False, budgets=None, _type='Transaction'):
+        return {
+            'type': _type,
+            'no_budget_impact': no_budget_impact,
+            'amount': amount,
+            'account_id': acct_id,
+            'account_name': acct_name,
+            'budgets': budgets or {
+                1: {'name': 'Groceries', 'amount': amount}
+            }
+        }
+
+    def test_sums_per_account(self):
+        """Transactions are grouped by account id and summed, and each entry
+        carries the account's name."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('10.00')),
+            self._trans(Decimal('22.50')),
+            self._trans(Decimal('5.25'), acct_id=2, acct_name='CreditOne'),
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('32.50')},
+            2: {'name': 'CreditOne', 'total': Decimal('5.25')}
+        }
+
+    def test_scheduled_transactions_are_counted(self):
+        """A ScheduledTransaction the period projects counts at its amount,
+        exactly as it is listed on the pay period view."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('100.00')),
+            self._trans(
+                Decimal('11.11'), _type='ScheduledTransaction'
+            ),
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('111.11')}
+        }
+
+    def test_split_transaction_counted_once(self):
+        """A transaction split across two budgets contributes its own amount
+        once, not once per budget split."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('30.00'), budgets={
+                1: {'name': 'Groceries', 'amount': Decimal('10.00')},
+                2: {'name': 'Fuel', 'amount': Decimal('20.00')}
+            })
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('30.00')}
+        }
+
+    def test_no_budget_impact_transactions_are_counted(self):
+        """The explicit inverse of TestMakeBudgetSumsNoBudgetImpact: a
+        transaction excluded from budget arithmetic -- a credit card payment,
+        or one flagged as having no budget impact -- still moved money through
+        the account, so it counts here. See GitHub issues #210 and #319."""
+        without = [self._trans(Decimal('100.00'))]
+        with_excluded = [
+            self._trans(Decimal('100.00')),
+            self._trans(Decimal('40.00'), no_budget_impact=True)
+        ]
+
+        self.cls._data_cache = {'all_trans_list': without}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('100.00')}
+        }
+
+        self.cls._data_cache = {'all_trans_list': with_excluded}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('140.00')}
+        }
+
+    def test_credit_card_payment_counted_on_both_accounts(self):
+        """A card payment is one transaction on the paying account. It counts
+        there in full; the card's own charges count on the card."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(
+                Decimal('250.00'), acct_id=1, acct_name='BankOne',
+                no_budget_impact=True
+            ),
+            self._trans(
+                Decimal('80.00'), acct_id=2, acct_name='CreditOne'
+            ),
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('250.00')},
+            2: {'name': 'CreditOne', 'total': Decimal('80.00')}
+        }
+
+    def test_empty(self):
+        """No transactions at all yields no accounts, not accounts of zero."""
+        self.cls._data_cache = {'all_trans_list': []}
+        assert self.cls._make_account_sums() == {}
+
+    def test_negative_and_zero_totals(self):
+        """Income is negative; an account whose transactions cancel out is
+        still present, with a zero total."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('-2345.67')),
+            self._trans(Decimal('100.00'), acct_id=2, acct_name='CreditOne'),
+            self._trans(Decimal('-100.00'), acct_id=2, acct_name='CreditOne'),
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('-2345.67')},
+            2: {'name': 'CreditOne', 'total': Decimal('0.00')}
+        }
+
+    def test_totals_are_decimal(self):
+        """Every total is a Decimal, including for an account whose single
+        transaction supplies the value."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('1.00'))
+        ]}
+        res = self.cls._make_account_sums()
+        assert isinstance(res[1]['total'], Decimal)
+
+    def test_nothing_dropped_or_double_counted(self):
+        """The invariant that makes the rendered table verifiable by adding up
+        the transactions on screen: the sum of every account total equals the
+        sum of every transaction amount, and the account ids are exactly those
+        appearing in the transaction list."""
+        trans = [
+            self._trans(Decimal('10.00')),
+            self._trans(Decimal('-2345.67')),
+            self._trans(Decimal('40.00'), no_budget_impact=True),
+            self._trans(Decimal('5.25'), acct_id=2, acct_name='CreditOne'),
+            self._trans(
+                Decimal('11.11'), acct_id=3, acct_name='CashOne',
+                _type='ScheduledTransaction'
+            ),
+            self._trans(Decimal('30.00'), acct_id=2, acct_name='CreditOne',
+                        budgets={
+                            1: {'name': 'Groceries', 'amount': Decimal('10')},
+                            2: {'name': 'Fuel', 'amount': Decimal('20')}
+                        }),
+        ]
+        self.cls._data_cache = {'all_trans_list': trans}
+        res = self.cls._make_account_sums()
+        assert sum(
+            [x['total'] for x in res.values()]
+        ) == sum([t['amount'] for t in trans])
+        assert set(res.keys()) == set([t['account_id'] for t in trans])
+        for acct_id, data in res.items():
+            names = set([
+                t['account_name'] for t in trans
+                if t['account_id'] == acct_id
+            ])
+            assert data['name'] in names
+
+    def test_uses_transactions_list(self):
+        """The sums come from transactions_list -- the same list the pay
+        period view renders -- and not from a query of its own."""
+        self.cls._data_cache = {'all_trans_list': [
+            self._trans(Decimal('1.23'))
+        ]}
+        assert self.cls._make_account_sums() == {
+            1: {'name': 'BankOne', 'total': Decimal('1.23')}
+        }
+        assert self.mock_sess.mock_calls == []
 
 
 class TestMakeOverallSums(object):
