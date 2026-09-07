@@ -114,7 +114,7 @@ Each value is resolved like this:
 4. If nothing matches, the request is rejected with a validation error naming
    the value that could not be resolved, and nothing is written.
 
-Three consequences are worth knowing:
+Four consequences are worth knowing:
 
 - **IDs win over names for all-digit values.** If Budget 12 exists and a
   *different* budget is named ``"12"``, the value ``12`` means Budget 12. Step 3
