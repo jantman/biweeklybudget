@@ -175,6 +175,12 @@ that the command prints the new Transaction ID and exits successfully.
 - **FR-016**: Documentation MUST be updated in the same change: the HTTP API reference
   MUST describe name-or-ID acceptance and the resolution rule for every affected field,
   and the new console script MUST be documented alongside the project's other scripts.
+- **FR-017**: Fields the HTTP API reference already documents as optional MUST actually
+  be optional. *(Added during implementation. `notes` and `sales_tax` were documented as
+  optional but returned a 500 when genuinely omitted — the reference said so of `notes`
+  in as many words. The console script hit this immediately, and no external caller has
+  reason to send an empty string for a field it does not use. Sending either value
+  behaves exactly as before.)*
 
 ### Key Entities
 

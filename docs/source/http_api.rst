@@ -126,6 +126,11 @@ Three consequences are worth knowing:
 - **The** ``(income)`` **suffix is not part of a name.** The web UI labels income
   budgets ``"Bonus (income)"`` in its select boxes; the budget's name is
   ``"Bonus"``.
+- **The string** ``"None"`` **is a sentinel, not a name.** In ``account`` it means
+  "no account selected" and is rejected as a missing account; in
+  ``credit_payment_acct`` it means "not a credit card payment". An account
+  literally named ``None`` therefore cannot be addressed by name, and must be
+  given by ID.
 
 Two keys of ``budgets`` that resolve to the same Budget are rejected, rather
 than being merged into a single allocation:

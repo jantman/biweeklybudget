@@ -65,7 +65,8 @@ from biweeklybudget.cliutils import set_log_debug, set_log_info
 
 logger = logging.getLogger(__name__)
 
-#: Base URL used when neither ``--url`` nor :py:const:`~biweeklybudget.addtrans.URL_ENV_VAR` is set.
+#: Base URL used when neither ``--url`` nor
+#: :py:const:`~biweeklybudget.addtrans.URL_ENV_VAR` is set.
 DEFAULT_URL = 'http://127.0.0.1:8080'
 
 #: Environment variable consulted for the base URL when ``--url`` is absent.
@@ -78,8 +79,9 @@ REQUEST_TIMEOUT = 30
 def base_url_for(url_arg):
     """
     Determine the base URL of the application to talk to: the ``--url``
-    argument if given, else the :py:const:`~biweeklybudget.addtrans.URL_ENV_VAR` environment
-    variable, else :py:const:`~biweeklybudget.addtrans.DEFAULT_URL`.
+    argument if given, else the
+    :py:const:`~biweeklybudget.addtrans.URL_ENV_VAR` environment variable,
+    else :py:const:`~biweeklybudget.addtrans.DEFAULT_URL`.
 
     :param url_arg: value of the ``--url`` argument, or None
     :type url_arg: str

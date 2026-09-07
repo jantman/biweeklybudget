@@ -479,6 +479,10 @@ class DockerImageBuilder(object):
         """
         test_cmds = [
             {
+                'cmd': '/app/bin/addtrans --help',
+                'output': 'Create a Transaction via the'
+            },
+            {
                 'cmd': '/app/bin/ofxclient --help',
                 'output': '--ofx-version OFX_VERSION'
             },

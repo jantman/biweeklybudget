@@ -151,7 +151,8 @@ The prefix for this feature is **`Transaction API - M{n}.{t}`**, mapped as:
 
 - [ ] T036 Run the complete unit suite to completion: `tox -e py314`, output redirected to a scratchpad file. All tests must pass. If it times out, raise both the pytest and the tool timeout and re-run to completion — a timed-out suite has not passed
 - [ ] T037 Run the complete acceptance suite to completion: `tox -e acceptance`, output redirected to a scratchpad file. All tests must pass, under the same no-timeout rule
-- [ ] T038 Run `tox -e docker` to completion, output redirected to a scratchpad file. In scope because `setup.py` changed, which is a packaging change (Constitution II)
+- [X] T038a Add `addtrans --help` to the entrypoint list in `biweeklybudget/tests/docker_build.py`, so the packaging suite actually covers the new console script
+- [X] T038 Run `tox -e docker` to completion, output redirected to a scratchpad file. In scope because `setup.py` changed, which is a packaging change (Constitution II)
 - [ ] T039 Work through [quickstart.md](./quickstart.md) section 2 end to end against a running app, including the check that the web UI's own Add Transaction modal is unchanged
 - [ ] T040 Update this `tasks.md` and, if anything was learned that contradicts them, `spec.md` and `plan.md`, to record the outcome; commit everything from M4 and M5 together as the milestone close
 - [ ] T041 Push `robot-army/issue-322-implement-the-transaction-http-api-and` to `origin` and open a pull request describing the change, the decisions from [research.md](./research.md), and the constitution compliance check from [plan.md](./plan.md)
@@ -238,3 +239,23 @@ tox -e acceptance -- -k 'name_or_id or by_name' > /tmp/acc-us1.txt 2>&1
 - **Out of scope**, and not to be drifted into: the missed-payment detection described in
   issue #322's "Follow-on" section, and any change to how the negating offset transaction
   (#210) is calculated
+
+## Found during implementation
+
+Two things the plan did not anticipate, both handled inside the feature's scope rather
+than deferred:
+
+1. **`notes` and `sales_tax` were not really optional.** `submit()` indexed both directly,
+   so a request that omitted either got a 500 instead of the documented default —
+   `docs/source/http_api.rst` stated this of `notes` outright. The first `addtrans` run
+   hit it. Fixed with `data.get(...)`, recorded as **FR-017** in [spec.md](./spec.md), and
+   covered by an acceptance test. Strictly backward compatible: sending either value
+   behaves exactly as before.
+2. **The Docker suite `--help`-tests every console entrypoint.** `biweeklybudget/tests/
+   docker_build.py` carries an explicit list, so a new entrypoint that is not added to it
+   is not covered by the packaging test that Constitution II requires for this change.
+   `addtrans` was added to that list (task T038a) and the suite re-run.
+
+Neither is a deviation from the feature's scope under Constitution V: the first is
+required for FR-009/FR-010 to work at all, and the second is required for the Test Gate
+to actually cover the packaging change.
