@@ -107,6 +107,15 @@ class IndexView(MethodView):
         )
 
 
+#: Largest ``days`` value :py:func:`~.parse_chart_days` will return as a window.
+#: A hundred years is far more history than this application can hold, and
+#: anything larger reaches back past every recorded balance, so it is treated as
+#: 0 ("all history") -- which is both what the caller meant and what keeps
+#: ``dtnow() - timedelta(days=days)`` clear of the OverflowError that
+#: :py:class:`datetime.datetime` raises below ``MINYEAR``.
+MAX_CHART_DAYS = 36500
+
+
 def parse_chart_days(raw, default):
     """
     Parse the ``days`` query parameter for
@@ -115,9 +124,14 @@ def parse_chart_days(raw, default):
 
     A value of ``0`` means "all recorded history" and is returned as-is; any
     other non-negative integer is a number of days to count back from now.
+    Values above :py:const:`~.MAX_CHART_DAYS` are also returned as ``0``: a
+    window that starts before every balance ever recorded *is* all history, and
+    collapsing it here is what keeps the caller's arithmetic
+    (``dtnow() - timedelta(days=days)``) from overflowing
+    :py:class:`datetime.datetime`'s minimum year on an absurd input.
 
     This never raises. The chart endpoint has no side effects, and for a
-    mistyped or stale URL, quietly showing the default view is a better outcome
+    mistyped or stale URL, quietly showing a sensible view is a better outcome
     than a traceback or a ``400`` where a chart should be (FR-010).
 
     :param raw: the raw query parameter value, or None if it was not given
@@ -135,6 +149,8 @@ def parse_chart_days(raw, default):
         return default
     if days < 0:
         return default
+    if days > MAX_CHART_DAYS:
+        return 0
     return days
 
 

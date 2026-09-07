@@ -7,6 +7,9 @@ File: ``biweeklybudget/flaskapp/static/js/index.js``
 
    Fetch account balance chart data for a given number of days of history.
 
+   The callback is only invoked if no newer request has been issued in the
+   meantime, so a slow response can never overwrite a newer, faster one.
+
    :param days: days of history to request; 0 means all history.
    :param cb: callback, passed the decoded response object.
    :type days: **number**

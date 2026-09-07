@@ -37,9 +37,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 
+from datetime import timedelta
+
 from biweeklybudget import settings
+from biweeklybudget.utils import dtnow
 from biweeklybudget.flaskapp.views.index import (
-    parse_chart_days, sample_chart_rows
+    MAX_CHART_DAYS, parse_chart_days, sample_chart_rows
 )
 
 
@@ -80,10 +83,27 @@ class TestParseChartDays(object):
     def test_float_like_uses_default(self):
         assert parse_chart_days('1.5', 365) == 365
 
-    def test_huge_value_is_accepted(self):
-        # far more days than any stored history; harmless, and equivalent to a
-        # value the user can already ask for with days=0
-        assert parse_chart_days('999999', 365) == 999999
+    def test_large_but_sane_value_is_accepted(self):
+        assert parse_chart_days('3650', 365) == 3650
+
+    def test_value_at_the_ceiling_is_accepted(self):
+        assert parse_chart_days(str(MAX_CHART_DAYS), 365) == MAX_CHART_DAYS
+
+    def test_absurd_value_collapses_to_all_history(self):
+        # A window reaching back before every balance ever recorded *is* all
+        # history, so 0 is the honest answer. It is also the answer that keeps
+        # the caller's `dtnow() - timedelta(days=days)` from raising
+        # OverflowError once the window start would fall below datetime.MINYEAR
+        # -- which turned a mistyped URL into an HTTP 500.
+        assert parse_chart_days('999999', 365) == 0
+        assert parse_chart_days(str(MAX_CHART_DAYS + 1), 365) == 0
+
+    def test_absurd_value_does_not_overflow_the_window_arithmetic(self):
+        # the regression this guards, expressed as the caller expresses it
+        days = parse_chart_days('99999999999', 365)
+        if days > 0:
+            dtnow() - timedelta(days=days)  # must not raise
+        assert days == 0
 
     def test_integer_input_is_accepted(self):
         # request.args.get returns str, but the helper must not care

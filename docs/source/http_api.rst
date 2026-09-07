@@ -775,7 +775,7 @@ has a value on every returned date. Handled by
 
 **Query Parameters:**
 
-- ``days`` *(integer, optional)* - Days of history to return, counting back from now. ``0`` means all recorded history. Defaults to :py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`. A value that is absent, negative, or not an integer falls back to that default rather than returning an error.
+- ``days`` *(integer, optional)* - Days of history to return, counting back from now. ``0`` means all recorded history. Defaults to :py:const:`~biweeklybudget.settings.ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`. A value that is absent, negative, or not an integer falls back to that default rather than returning an error. A value above 36,500 (a hundred years) is treated as ``0``, since such a window starts before every recorded balance anyway.
 
 **Example Request:**
 

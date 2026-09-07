@@ -43,15 +43,35 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 var acctBalanceChart = null;
 
 /**
+ * Sequence number of the most recently issued account balance chart request.
+ *
+ * Range changes fire independent AJAX requests whose response times differ by
+ * a lot -- "All" is the slowest query on the page and "1m" is among the
+ * fastest -- so responses can arrive out of order. Without this, clicking
+ * "All" and then "1m" before the first returns leaves the chart showing all
+ * history under a highlighted "1m" button: the chart would silently disagree
+ * with the label the user is reading.
+ */
+var acctBalanceChartSeq = 0;
+
+/**
  * Fetch account balance chart data for a given number of days of history.
+ *
+ * The callback is only invoked if no newer request has been issued in the
+ * meantime, so a slow response can never overwrite a newer, faster one.
  *
  * @param {number} days - days of history to request; 0 means all history.
  * @param {function} cb - callback, passed the decoded response object.
  */
 function acctBalanceChartData(days, cb) {
+  acctBalanceChartSeq++;
+  var seq = acctBalanceChartSeq;
   $.ajax(
     '/ajax/chart-data/account-balances', { data: { days: days } }
-  ).done(cb);
+  ).done(function(ajaxdata) {
+    if (seq !== acctBalanceChartSeq) { return; }
+    cb(ajaxdata);
+  });
 }
 
 /**

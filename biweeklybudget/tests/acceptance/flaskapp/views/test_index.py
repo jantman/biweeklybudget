@@ -705,6 +705,21 @@ class TestAcctBalanceChartData(AcceptanceHelper):
         assert r.status_code == 200
         assert r.json() == requests.get(base_url + CHART_URL).json()
 
+    @pytest.mark.parametrize('param', ['999999', '99999999999', '36501'])
+    def test_absurd_days_returns_all_history_not_a_500(self, base_url, param):
+        """
+        Regression guard for the OverflowError found in review of PR #331.
+
+        A window start of ``now - timedelta(days=999999)`` falls below
+        ``datetime.MINYEAR``, so the subtraction raised OverflowError and the
+        endpoint answered a mistyped URL with an HTTP 500 rather than a chart.
+        Such a window reaches back before every recorded balance, so all
+        history is the honest answer as well as the safe one.
+        """
+        r = requests.get(base_url + CHART_URL + '?days=' + param)
+        assert r.status_code == 200
+        assert r.json() == requests.get(base_url + CHART_URL + '?days=0').json()
+
     def test_dormant_account_keeps_its_line(self, base_url):
         """
         The correctness guarantee that windowing most easily breaks (FR-011).
