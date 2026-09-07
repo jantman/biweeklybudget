@@ -185,8 +185,8 @@ BankOne `$333.35`, BankTwoStale `-$333.33`, CreditOne `$222.22` -- which is SC-0
 - [X] T035 Bump `VERSION` in `biweeklybudget/version.py` from `1.8.0` to `1.9.0` — a new backwards-compatible user-visible feature.
 - [X] T036 Add the `1.9.0` entry to `CHANGES.rst` in the established format, citing `Issue #213`, describing the table, the five-period scope and why that reading of the issue was chosen, and stating plainly that account totals include credit card payments and no-budget-impact transactions and so will not match the budget totals.
 - [X] T037 Record the outcome of each phase in this file, ticking the boxes, so the spec artifacts reflect what was actually built (Constitution Development Workflow step 5c).
-- [ ] T038 Commit, push the branch to `origin`, and open a pull request describing the change, the Constitution Check result, the "for each payperiod" interpretation the author may overrule, and the recorded Principle I deviation on milestone approval.
-- [ ] T039 Monitor the pull request's CI jobs to completion, and respond to review feedback with `/answer-reviews` until Claude's review reports no issues and Copilot's, if present, recommends approval.
+- [X] T038 Commit, push the branch to `origin`, and open a pull request describing the change, the Constitution Check result, the "for each payperiod" interpretation the author may overrule, and the recorded Principle I deviation on milestone approval.
+- [X] T039 Monitor the pull request's CI jobs to completion, and respond to review feedback with `/answer-reviews` until Claude's review reports no issues and Copilot's, if present, recommends approval.
 
 ---
 
@@ -242,3 +242,29 @@ asserted numbers. It is a pure refactor — bind then read, instead of re-walkin
 existing acceptance tests for the "Remaining Balances" table and the four summary tiles are the
 check on it. If those tests fail after T011, the refactor is wrong; nothing later in the plan
 should be attempted until they are green again.
+
+---
+
+## Outcome
+
+Delivered as [PR #330](https://github.com/jantman/biweeklybudget/pull/330) on 2026-09-07.
+All 39 tasks complete.
+
+**CI: all ten checks pass** — `py314`, `acceptance`, `docs`, `jsdoc`, `migrations`, `docker`,
+`plaid`, `screenshots`, `coverage`, `security/snyk`. Notably `acceptance` passed in CI, so the
+`test_fuel.py::TestFuelLogView::test_04_search` flake seen in the local full run did not recur,
+confirming the reading of it as a timing flake rather than a regression.
+
+**Review**: Claude's automated review reports "No issues found. Checked for bugs and CLAUDE.md
+compliance." No Copilot review was requested on this repository, so none is present. No review
+comments required an answer.
+
+The coverage bot's "47.8%, below minimum threshold of 80%" comment is advisory and pre-existing:
+the `coverage` check itself passes, the figure measures unit tests alone (acceptance tests run
+under a separate `.coveragerc-acceptance`), and PR #329 reported the identical 47.8% before this
+change. It is unaffected by this feature.
+
+**Left for the author**, per the pull request body: the interpretation of "for each payperiod"
+as the five periods the view already displays rather than the one being viewed. Narrowing it to
+a single column is a one-line change to what `PayPeriodView.get()` passes
+`build_account_period_sums()`, which takes a list of periods for exactly that reason.
