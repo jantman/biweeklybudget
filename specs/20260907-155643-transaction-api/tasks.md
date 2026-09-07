@@ -149,12 +149,13 @@ The prefix for this feature is **`Transaction API - M{n}.{t}`**, mapped as:
 
 **Purpose**: Constitution II (The Test Gate) and Development Workflow step 6.
 
-- [ ] T036 Run the complete unit suite to completion: `tox -e py314`, output redirected to a scratchpad file. All tests must pass. If it times out, raise both the pytest and the tool timeout and re-run to completion — a timed-out suite has not passed
-- [ ] T037 Run the complete acceptance suite to completion: `tox -e acceptance`, output redirected to a scratchpad file. All tests must pass, under the same no-timeout rule
+- [X] T036 Run the complete unit suite to completion: `tox -e py314`, output redirected to a scratchpad file. All tests must pass. If it times out, raise both the pytest and the tool timeout and re-run to completion — a timed-out suite has not passed
+- [X] T037 Run the complete acceptance suite to completion: `tox -e acceptance`, output redirected to a scratchpad file. All tests must pass, under the same no-timeout rule
 - [X] T038a Add `addtrans --help` to the entrypoint list in `biweeklybudget/tests/docker_build.py`, so the packaging suite actually covers the new console script
 - [X] T038 Run `tox -e docker` to completion, output redirected to a scratchpad file. In scope because `setup.py` changed, which is a packaging change (Constitution II)
-- [ ] T039 Work through [quickstart.md](./quickstart.md) section 2 end to end against a running app, including the check that the web UI's own Add Transaction modal is unchanged
-- [ ] T040 Update this `tasks.md` and, if anything was learned that contradicts them, `spec.md` and `plan.md`, to record the outcome; commit everything from M4 and M5 together as the milestone close
+- [X] T039 Work through [quickstart.md](./quickstart.md) section 2 end to end against a running app, including the check that the web UI's own Add Transaction modal is unchanged
+- [X] T039a Run `tox -e migrations` as well. Not required by Constitution II, which scopes it to schema changes, but it is what actually *demonstrates* the claim that there is no schema change: it verifies the Alembic head still matches the models. 7 passed.
+- [X] T040 Update this `tasks.md` and, if anything was learned that contradicts them, `spec.md` and `plan.md`, to record the outcome; commit everything from M4 and M5 together as the milestone close
 - [ ] T041 Push `robot-army/issue-322-implement-the-transaction-http-api-and` to `origin` and open a pull request describing the change, the decisions from [research.md](./research.md), and the constitution compliance check from [plan.md](./plan.md)
 - [ ] T042 Monitor the PR's CI jobs to completion and fix any failure
 - [ ] T043 Run `/answer-reviews` to address review feedback, repeating until Claude's review reports "No issues found" and any Copilot review recommends approval
