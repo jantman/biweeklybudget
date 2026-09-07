@@ -89,6 +89,33 @@ class NotificationsController(object):
         return sum
 
     @staticmethod
+    def credit_account_sum(sess=None):
+        """
+        Return the sum of current balances for all active credit accounts.
+
+        Credit account ledger balances are stored *negative* when money is
+        owed, so the value returned here is negative in the ordinary case and
+        is *added* to :py:meth:`~.budget_account_sum` to arrive at the funds
+        actually available. Do not negate it and do not take its absolute
+        value: a credit account carrying a positive balance -- an overpaid
+        card, or one holding a statement credit larger than its balance --
+        really does hold money that is available to spend, and applying the
+        recorded balance with its own sign gets that case right for free.
+        See GitHub issue #320.
+
+        :return: Combined balance of all active credit accounts, negative
+          when money is owed
+        :rtype: decimal.Decimal
+        """
+        if sess is None:
+            sess = db_session
+        sum = Decimal('0.0')
+        for acct in Account.active_credit_accounts(sess):
+            if acct.balance is not None and acct.balance.ledger is not None:
+                sum += acct.balance.ledger
+        return sum
+
+    @staticmethod
     def budget_account_unreconciled(sess=None):
         """
         Return the sum of unreconciled txns for all is_budget_source accounts.

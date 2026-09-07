@@ -37,9 +37,9 @@ Single-project layout, unchanged: application code in `biweeklybudget/`, tests i
 **Purpose**: Get a working test environment and a recorded pre-change baseline, so
 every later number can be shown to have moved for the right reason.
 
-- [ ] T001 Start the MariaDB test container and export the test-database environment variables per `CLAUDE.md`, then run `python dev/setup_test_db.py` and `initdb` from the activated venv. No commit.
-- [ ] T002 Run the unit suite unchanged and save the output to the scratchpad: `tox -e py314 > <scratchpad>/baseline-unit.txt 2>&1`. Confirm it passes before any edit, so later failures are attributable to this feature. No commit.
-- [ ] T003 Record, in `<scratchpad>/baseline-figures.txt`, the current expected values asserted by `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py` (`acct_bal` 12889.24, `stand_bal` 132939.07, `pp_bal` 11.76, `unrec_amt` -333.33) and the two active credit-account ledger balances from `biweeklybudget/tests/fixtures/sampledata.py` (CreditOne latest -952.06, CreditTwo -5498.65). No commit.
+- [X] T001 Start the MariaDB test container and export the test-database environment variables per `CLAUDE.md`, then run `python dev/setup_test_db.py` and `initdb` from the activated venv. No commit.
+- [X] T002 Run the unit suite unchanged and save the output to the scratchpad: `tox -e py314 > <scratchpad>/baseline-unit.txt 2>&1`. Confirm it passes before any edit, so later failures are attributable to this feature. No commit.
+- [X] T003 Record, in `<scratchpad>/baseline-figures.txt`, the current expected values asserted by `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py` (`acct_bal` 12889.24, `stand_bal` 132939.07, `pp_bal` 11.76, `unrec_amt` -333.33) and the two active credit-account ledger balances from `biweeklybudget/tests/fixtures/sampledata.py` (CreditOne latest -952.06, CreditTwo -5498.65). No commit.
 
 **Checkpoint**: Environment works, suite is green, baseline recorded.
 
@@ -54,7 +54,7 @@ There is deliberately **no** foundational construction work. Per
 migration change is involved, and no new module or package is created. The two
 capabilities this feature depends on already exist and are reused as-is.
 
-- [ ] T004 Re-confirm against the working tree, and note the result in [research.md](./research.md) if it differs from R2/R4: that `Account.active_credit_accounts()` (`biweeklybudget/models/account.py`) filters on `AcctType.Credit` **and** `is_active`, and that `Account.unreconciled_sum()` skips `Transaction.is_excluded_from_budget`. If either is not as recorded, STOP and escalate (Constitution principle V) — the plan's scoping of defect #2 depends on it. No commit unless research.md changes.
+- [X] T004 Re-confirm against the working tree, and note the result in [research.md](./research.md) if it differs from R2/R4: that `Account.active_credit_accounts()` (`biweeklybudget/models/account.py`) filters on `AcctType.Credit` **and** `is_active`, and that `Account.unreconciled_sum()` skips `Transaction.is_excluded_from_budget`. If either is not as recorded, STOP and escalate (Constitution principle V) — the plan's scoping of defect #2 depends on it. No commit unless research.md changes.
 
 **Checkpoint**: Prerequisites verified. User story work can begin.
 
@@ -76,13 +76,13 @@ balance contribute nothing.
 
 > Write these first and confirm they fail against the unmodified controller.
 
-- [ ] T005 [US1] Add a `TestCreditAccountSum` class to `biweeklybudget/tests/unit/flaskapp/test_notifications.py` covering, with a mocked session: (a) one active credit account owing money reduces the figure by exactly that amount, asserted as a **signed** `Decimal` — not merely "smaller"; (b) two credit accounts sum; (c) an inactive credit account is excluded; (d) a bank/cash account is excluded; (e) an account whose `balance` is `None` contributes zero without raising; (f) an account whose `balance.ledger` is `None` contributes zero without raising; (g) **an overpaid card with a positive ledger increases the figure** — this is the case an `abs()`-based implementation fails, per [research.md](./research.md) R1. Commit prefix: `Unallocated Funds Notification - M1.1`.
+- [X] T005 [US1] Add a `TestCreditAccountSum` class to `biweeklybudget/tests/unit/flaskapp/test_notifications.py` covering, with a mocked session: (a) one active credit account owing money reduces the figure by exactly that amount, asserted as a **signed** `Decimal` — not merely "smaller"; (b) two credit accounts sum; (c) delegation to ``Account.active_credit_accounts()`` with the given session, which is where the active/credit filtering lives -- **note**: asserting the inactive-account and non-credit-account exclusions here by mocking that helper would be a tautology, so FR-002 is covered for real against the database in T014a instead; (e) an account whose `balance` is `None` contributes zero without raising; (f) an account whose `balance.ledger` is `None` contributes zero without raising; (g) **an overpaid card with a positive ledger increases the figure** — this is the case an `abs()`-based implementation fails, per [research.md](./research.md) R1. Commit prefix: `Unallocated Funds Notification - M1.1`.
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add the `credit_account_sum(sess=None)` static to `NotificationsController` in `biweeklybudget/flaskapp/notifications.py`, immediately after `budget_account_sum()`. Mirror that method's shape: `sess` defaulting to `db_session`, a `Decimal('0.0')` accumulator, iteration in Python. Source accounts from `Account.active_credit_accounts(sess)`; skip any account where `acct.balance is None` or `acct.balance.ledger is None`; add `acct.balance.ledger` **with its own sign** — never `abs()`, never negated. Docstring must state the sign convention (negative when owed) and cite issue #320, so the next reader does not "fix" the sign. Commit prefix: `Unallocated Funds Notification - M1.2`.
-- [ ] T007 [US1] Run `tox -e py314 > <scratchpad>/m1-unit.txt 2>&1` and confirm the new tests pass and nothing regressed. Fix any pycodestyle/pyflakes failure. Commit prefix: `Unallocated Funds Notification - M1.3`.
-- [ ] T008 [US1] Update the Milestone section of [plan.md](./plan.md) to record M1 complete, and commit T005–T008 together with the passing-suite evidence noted in the commit body (Constitution Workflow step 5). Commit prefix: `Unallocated Funds Notification - M1.4`.
+- [X] T006 [US1] Add the `credit_account_sum(sess=None)` static to `NotificationsController` in `biweeklybudget/flaskapp/notifications.py`, immediately after `budget_account_sum()`. Mirror that method's shape: `sess` defaulting to `db_session`, a `Decimal('0.0')` accumulator, iteration in Python. Source accounts from `Account.active_credit_accounts(sess)`; skip any account where `acct.balance is None` or `acct.balance.ledger is None`; add `acct.balance.ledger` **with its own sign** — never `abs()`, never negated. Docstring must state the sign convention (negative when owed) and cite issue #320, so the next reader does not "fix" the sign. Commit prefix: `Unallocated Funds Notification - M1.2`.
+- [X] T007 [US1] Run `tox -e py314 > <scratchpad>/m1-unit.txt 2>&1` and confirm the new tests pass and nothing regressed. Fix any pycodestyle/pyflakes failure. Commit prefix: `Unallocated Funds Notification - M1.3`.
+- [X] T008 [US1] Update the Milestone section of [plan.md](./plan.md) to record M1 complete, and commit T005–T008 together with the passing-suite evidence noted in the commit body (Constitution Workflow step 5). Commit prefix: `Unallocated Funds Notification - M1.4`.
 
 **Checkpoint (M1 — human approval required before Phase 4)**: The credit figure is
 correct and independently proven. The banner does not use it yet, so nothing
