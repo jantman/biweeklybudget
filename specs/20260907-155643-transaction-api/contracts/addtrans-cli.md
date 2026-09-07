@@ -29,7 +29,7 @@ usage: addtrans [-h] [-v] [-U URL] [-d DATE] -b BUDGET [-b BUDGET ...]
 |--------|---------|
 | `-b`, `--budget BUDGET` | Repeatable, at least one required. Either `NAME` / `ID`, or `NAME=AMOUNT` / `ID=AMOUNT` to split. With exactly one `-b` and no `=AMOUNT`, the whole transaction amount is allocated to it. With more than one `-b`, every one must carry an `=AMOUNT`. |
 | `-d`, `--date DATE` | `YYYY-MM-DD`. Defaults to today. |
-| `-n`, `--notes NOTES` | Free-text notes. Defaults to the empty string, which the endpoint requires to be present. |
+| `-n`, `--notes NOTES` | Free-text notes. Defaults to the empty string, sent explicitly. |
 | `-t`, `--sales-tax AMOUNT` | Sales tax. Omitted from the payload when not given. |
 | `-p`, `--credit-payment-acct ACCOUNT` | Name or ID of the credit account this transaction pays. |
 | `--no-budget-impact` | Mark the transaction as not counting against its budget. |

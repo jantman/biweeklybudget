@@ -21,8 +21,15 @@ condition* below, which cannot be triggered by any request expressible before th
 | `budgets` | object | **Was**: mapping of Budget ID (string key) to decimal amount. **Now**: each key may be a Budget ID *or* a Budget name. At least one required; amounts must still sum to `amount`. |
 | `credit_payment_acct` | string or integer | **Was**: Account ID of the credit account being paid, or absent/`""`/`"None"`. **Now**: Account ID *or* Account name, or absent/`""`/`"None"` for "not a credit card payment". Must still resolve to an account of type Credit. |
 
-Unchanged fields: `id`, `description`, `amount`, `date`, `notes`, `sales_tax`,
-`no_budget_impact`. `id` remains a Transaction ID only.
+Unchanged fields: `id`, `description`, `amount`, `date`, `no_budget_impact`. `id`
+remains a Transaction ID only.
+
+`notes` and `sales_tax` become **genuinely** optional. Both were already documented as
+optional, but `submit()` indexed them directly, so a request that actually omitted either
+got a 500 rather than the documented default — `docs/source/http_api.rst` said so of
+`notes` in as many words. An external caller has no reason to send an empty string for a
+field it does not use, and the console script would have tripped over this immediately.
+Sending either behaves exactly as before.
 
 ## Resolution rule (normative)
 
