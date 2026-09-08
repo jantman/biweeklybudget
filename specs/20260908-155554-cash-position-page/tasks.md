@@ -169,13 +169,13 @@ sum to it, the page calls each situation out by name with the amount involved.
 **Purpose**: Constitution IV (documentation is part of the change), VI
 (versioned, changelogged releases), and II (the full test gate).
 
-- [ ] T-M5.1 [P] Add a "Cash Position" section to `docs/source/app_usage.rst` explaining the waterfall, coverage groups, and why deltas are reported per group rather than per account; cross-link it from the existing "The Unallocated Funds Notification" section.
-- [ ] T-M5.2 [P] Create `docs/source/biweeklybudget.cashposition.rst`, `docs/source/biweeklybudget.models.budget_account_link.rst` and `docs/source/biweeklybudget.flaskapp.views.cashposition.rst`, and reference them from `docs/source/biweeklybudget.rst`, `docs/source/biweeklybudget.models.rst` and `docs/source/biweeklybudget.flaskapp.views.rst`.
-- [ ] T-M5.3 [P] Add the new page to `docs/source/screenshots.rst` and `docs/make_screenshots.py`.
-- [ ] T-M5.4 Bump `VERSION` in `biweeklybudget/version.py` from `1.11.1` to `1.12.0`.
-- [ ] T-M5.5 Add the 1.12.0 entry to `CHANGES.rst` in the established format, covering the page, the shared calculation refactor, the schema change, and why deltas are per coverage group.
-- [ ] T-M5.6 Update `specs/20260908-155554-cash-position-page/spec.md` and `plan.md` to record what was built, and add a completion note to `checklists/requirements.md`.
-- [ ] T-M5.7 Confirm every new Python file carries the standard AGPL v3 copyright header, and that new code is pycodestyle- and pyflakes-clean under the exceptions in `pytest.ini`.
+- [X] T-M5.1 [P] Add a "Cash Position" section to `docs/source/app_usage.rst` explaining the waterfall, coverage groups, and why deltas are reported per group rather than per account; cross-link it from the existing "The Unallocated Funds Notification" section.
+- [X] T-M5.2 [P] Create `docs/source/biweeklybudget.cashposition.rst`, `docs/source/biweeklybudget.models.budget_account_link.rst` and `docs/source/biweeklybudget.flaskapp.views.cashposition.rst`, and reference them from `docs/source/biweeklybudget.rst`, `docs/source/biweeklybudget.models.rst` and `docs/source/biweeklybudget.flaskapp.views.rst`.
+- [X] T-M5.3 [P] Add the new page to `docs/source/screenshots.rst` and `docs/make_screenshots.py`.
+- [X] T-M5.4 Bump `VERSION` in `biweeklybudget/version.py` from `1.11.1` to `1.12.0`.
+- [X] T-M5.5 Add the 1.12.0 entry to `CHANGES.rst` in the established format, covering the page, the shared calculation refactor, the schema change, and why deltas are per coverage group.
+- [X] T-M5.6 Update `specs/20260908-155554-cash-position-page/spec.md` and `plan.md` to record what was built, and add a completion note to `checklists/requirements.md`.
+- [X] T-M5.7 Confirm every new Python file carries the standard AGPL v3 copyright header, and that new code is pycodestyle- and pyflakes-clean under the exceptions in `pytest.ini`.
 - [ ] T-M5.8 Run the full `tox` suite to completion — `py314`, `docs`, `jsdoc`, `screenshots`, `acceptance`, `docker`, `migrations`, `plaid` — redirecting output to a scratchpad file. A timeout is **not** a pass: raise the timeout and re-run until the suite completes (constitution II).
 - [ ] T-M5.9 Walk [quickstart.md](./quickstart.md) end to end against a running `flask rundev` to confirm the feature behaves as documented.
 - [ ] T-M5.10 Commit, push the branch to `origin`, and open a pull request describing the change and its constitution compliance.

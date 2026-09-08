@@ -218,3 +218,17 @@ acceptance tests for all of it. **Done when** `tox -e acceptance` and
 `CHANGES.rst`, and the spec artifacts updated to record what was built.
 **Done when** unit, acceptance, migrations, docs, jsdoc and docker suites have
 all run to completion and passed (constitution II).
+
+---
+
+## Outcome
+
+All five milestones complete. See the Implementation Record in
+[spec.md](./spec.md) for what was decided during implementation and why,
+including the one place the plan was wrong: `CashPosition` computes its terms
+lazily rather than eagerly, because eager construction broke existing unit
+tests that pass a mock session, and because the banner reads five figures and
+should not pay for the rest.
+
+The Constitution Check above stands as written. No principle moved to FAIL
+during implementation and no violation needed justifying.

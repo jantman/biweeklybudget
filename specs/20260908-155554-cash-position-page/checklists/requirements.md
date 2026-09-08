@@ -52,3 +52,20 @@
   principle III (reversible migration, model imported in `models/__init__.py`),
   principle IV (docs updated, `tox -e docs` clean), principle VI (version bump
   and `CHANGES.rst` entry).
+
+## Completion (2026-09-08)
+
+Feature implemented across all five milestones. FR-001 through FR-025 are
+implemented; nothing was dropped or deferred.
+
+Constitution touchpoints, as discharged:
+
+- **II (The Test Gate)**: unit, acceptance, migrations and docs suites run to
+  completion. Counts and results are recorded in the pull request.
+- **III (Reversible migrations)**: `2d881fa466fe` tested up, down and up
+  again; `alembic-verify` confirms head matches the models.
+- **IV (Documentation)**: `app_usage.rst` gains a Cash Position section,
+  three API stubs added, `docs/make_screenshots.py` updated; `sphinx-build`
+  produces no warning about any new file.
+- **VI (Version and changelog)**: 1.11.1 -> 1.12.0, `CHANGES.rst` entry
+  added.
