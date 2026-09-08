@@ -221,11 +221,10 @@ narrowed and none timed out.
 | `tox -e docs` | OK, zero errors |
 | `tox -e migrations` | 7 passed |
 
-Note on the date-dependent failure recorded below:
-`TestPayPeriodsIndex::test_6_notification_panels` **passed** in the full run.
-It had failed in two earlier partial runs, including one with `master`'s
-`notifications.py` restored in place, so it is flaky with respect to run timing
-or preceding DB state rather than a regression from this change.
+Note on `TestPayPeriodsIndex::test_6_notification_panels`, corrected below:
+it **passed** in the full run, and it is neither flaky nor date-dependent. The
+two earlier failures were an artifact of how it was invoked; see the Outcome
+notes.
 
 ## Outcome notes
 
@@ -243,18 +242,32 @@ anything the plan did not anticipate:
   `Account.active_credit_accounts()`, asserting it there would have meant mocking
   that helper and then asserting it filtered — a test of the mock. The coverage
   moved to a new acceptance class against the real database (T014a).
-- **A pre-existing index page defect was found and deliberately not fixed.**
-  `templates/index.html` dereferences `acct.balance.ledger` in the credit
-  accounts table with no `None` guard, so an *active* account that has never had
-  a balance recorded makes the index page fail to render. Confirmed present on
-  `master` and untouched by this change. Out of scope here; the affected test
-  uses `/budgets` instead and says why.
-- **A pre-existing acceptance failure was confirmed unrelated.**
-  `TestPayPeriodsIndex::test_6_notification_panels` fails locally on today's
-  date. It was re-run with `master`'s `notifications.py` restored in place and
-  failed identically, and the panel colour it asserts comes from
-  `overall_sums['remaining']` via a template filter, never from
-  `NotificationsController`.
+- **A pre-existing defect was found and deliberately not fixed; now filed as
+  issue #334.** Both `templates/index.html` and `templates/accounts.html`
+  dereference `acct.balance.ledger` with no `None` guard, so an *active* account
+  that has never had an `AccountBalance` row makes **both** `/` and `/accounts`
+  return HTTP 500 — verified by request, and true for any active account type,
+  not only credit. Confirmed present on `master` and untouched by this change.
+  Out of scope here; the affected test uses `/budgets` instead and says why.
+- **A supposed pre-existing acceptance failure turned out to be a testing
+  error, not a defect.** `TestPayPeriodsIndex::test_6_notification_panels`
+  failed in two runs that were narrowed with `-k`, and was initially recorded
+  here as date-dependent flakiness. It is neither. `TestPayPeriodsIndex` is an
+  `@pytest.mark.incremental` class whose `test_0_clean_db` restores an *empty*
+  schema and whose `test_1`..`test_3` then build the exact fixture the
+  assertions expect. Only `test_6_notification_panels` matches `-k
+  "Notification"`, so those runs executed it without its setup chain, against
+  unrelated leftover data. Running the whole class passes (7 passed), as does
+  the full suite and CI.
+
+  Nor is it date-dependent: `tox.ini` sets
+  `BIWEEKLYBUDGET_TEST_TIMESTAMP=1501223084` in `setenv`, and
+  `biweeklybudget/utils.py:247` makes `dtnow()` return that fixed instant, so
+  "now" is frozen for every tox run.
+
+  **Lesson for this repo**: never narrow an acceptance run with `-k` across an
+  incremental class. Filter by class name (`-k "TestPayPeriodsIndex"`) or by
+  file, never by a pattern that matches only some of its methods.
 - **`tox -e docs` emitted seven RST heading-level errors**, three of them
   pre-existing. `docs/source/app_usage.rst` establishes `+` as its level-3
   underline; four new subsections and three older ones used backticks, which
