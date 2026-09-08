@@ -874,3 +874,122 @@ class TestBudgetTransferStoP(AcceptanceHelper):
         assert rec2.ofx_fitid is None
         assert rec2.ofx_account_id is None
         assert rec2.note == desc
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestBudgetAccountLinks(AcceptanceHelper):
+    """
+    The budget modal's "Held in accounts" checkboxes, which record which
+    accounts physically hold a standing budget's money for the Cash Position
+    page. See GitHub issue #321.
+
+    The sample data links Standing1 (budget 4) to BankOne (account 1) and to
+    nothing else.
+    """
+
+    def test_00_verify_db(self, testdb):
+        b = testdb.query(Budget).get(4)
+        assert b.name == 'Standing1'
+        assert b.is_periodic is False
+        assert [a.id for a in b.accounts] == [1]
+
+    def test_01_checkboxes_shown_for_standing_budget(self, base_url,
+                                                     selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        group = selenium.find_element(By.ID, 'budget_frm_accounts_group')
+        assert group.is_displayed()
+        assert 'Held in accounts' in group.text
+
+    def test_02_existing_link_is_checked(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'budget_frm_acct_1'
+        ).is_selected() is True
+        assert selenium.find_element(
+            By.ID, 'budget_frm_acct_2'
+        ).is_selected() is False
+
+    def test_03_checkboxes_hidden_for_periodic_budget(self, base_url,
+                                                      selenium):
+        """
+        A periodic budget resets each pay period and holds no balance, so
+        naming the account its money lives in would mean nothing.
+        """
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Periodic1 (1)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'budget_frm_accounts_group'
+        ).is_displayed() is False
+
+    def test_04_hidden_when_type_switched_to_periodic(self, base_url,
+                                                      selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'budget_frm_accounts_group'
+        ).is_displayed() is True
+        selenium.find_element(By.ID, 'budget_frm_type_periodic').click()
+        assert selenium.find_element(
+            By.ID, 'budget_frm_accounts_group'
+        ).is_displayed() is False
+
+    def test_05_change_links(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        # untick BankOne, tick BankTwoStale
+        selenium.find_element(By.ID, 'budget_frm_acct_1').click()
+        selenium.find_element(By.ID, 'budget_frm_acct_2').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        x = selenium.find_elements(By.CLASS_NAME, 'alert-success')
+        assert len(x) == 1
+        assert 'Successfully saved Budget 4 in database.' in x[0].text
+
+    def test_06_verify_db_after_change(self, testdb):
+        b = testdb.query(Budget).get(4)
+        assert [a.id for a in b.accounts] == [2]
+
+    def test_07_link_round_trips_in_modal(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'budget_frm_acct_1'
+        ).is_selected() is False
+        assert selenium.find_element(
+            By.ID, 'budget_frm_acct_2'
+        ).is_selected() is True
+
+    def test_08_unlink_everything(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        selenium.find_element(By.ID, 'budget_frm_acct_2').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        x = selenium.find_elements(By.CLASS_NAME, 'alert-success')
+        assert len(x) == 1
+
+    def test_09_verify_db_unlinked(self, testdb):
+        """
+        Unchecking every box must actually clear the links, not leave the
+        last one behind.
+        """
+        b = testdb.query(Budget).get(4)
+        assert b.accounts == []

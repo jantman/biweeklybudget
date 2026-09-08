@@ -144,21 +144,21 @@ sum to it, the page calls each situation out by name with the amount involved.
 
 ### Tests for Phase 4
 
-- [ ] T-M4.1 [P] [US3] Add unlinked-account tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the account is named with its balance and the explanation that its balance sits in the uncommitted total (FR-017, SC-006).
-- [ ] T-M4.2 [P] [US3] Add coverage-group tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` covering the one-account/many-budget case with an exact delta (SC-007), the many-to-many case reported at group level only (FR-019), a balanced group shown as balanced rather than omitted (FR-020), and the all-clear message (FR-021).
-- [ ] T-M4.3 [P] [US3] Add a no-links-configured test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the waterfall is unaffected, every budget-funding account is listed as unlinked, and the page says the links are not configured (SC-008).
-- [ ] T-M4.4 [P] [US3] Add budget modal tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_budgets.py`: link checkboxes appear for a standing budget, are hidden when the type is switched to Periodic, and a saved selection round-trips on reopen.
+- [X] T-M4.1 [P] [US3] Add unlinked-account tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the account is named with its balance and the explanation that its balance sits in the uncommitted total (FR-017, SC-006).
+- [X] T-M4.2 [P] [US3] Add coverage-group tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` covering the one-account/many-budget case with an exact delta (SC-007), the many-to-many case reported at group level only (FR-019), a balanced group shown as balanced rather than omitted (FR-020), and the all-clear message (FR-021).
+- [X] T-M4.3 [P] [US3] Add a no-links-configured test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the waterfall is unaffected, every budget-funding account is listed as unlinked, and the page says the links are not configured (SC-008).
+- [X] T-M4.4 [P] [US3] Add budget modal tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_budgets.py`: link checkboxes appear for a standing budget, are hidden when the type is switched to Periodic, and a saved selection round-trips on reopen.
 
 ### Implementation for Phase 4
 
-- [ ] T-M4.5 [US3] Add the diagnostics section to `biweeklybudget/flaskapp/templates/cash-position.html` — `cash-position-diagnostics`, `table-unlinked-accounts`, `coverage-group-<n>` and `diagnostics-all-clear` per the page contract.
-- [ ] T-M4.6 [US3] Render the group-level explanation in `biweeklybudget/flaskapp/templates/cash-position.html`: a one-account group is labelled a per-account delta; a multi-account group states that the delta is reported for the group because the application records no split (FR-019).
-- [ ] T-M4.7 [US3] Mark accounts in a coverage group that do not contribute to the waterfall — inactive, or not budget-funding — as not counted in `biweeklybudget/flaskapp/templates/cash-position.html`, rather than dropping them (spec Edge Cases).
-- [ ] T-M4.8 [P] [US3] Add the `budget_source_accounts` JS global (id → name for active budget-funding accounts) to `biweeklybudget/flaskapp/templates/budgets.html`, and pass the data from both `BudgetsView.get` and `OneBudgetView.get` in `biweeklybudget/flaskapp/views/budgets.py`.
-- [ ] T-M4.9 [US3] Add one `acct_<id>` checkbox per budget-funding account to the budget form in `biweeklybudget/flaskapp/static/js/budgets_modal.js`, shown and hidden by `budgetModalDivHandleType()` alongside the standing-balance field, and checked from the `account_ids` returned by `/ajax/budget/<id>` (FR-015, research R4).
-- [ ] T-M4.10 [US3] Handle the `acct_<id>` keys in `BudgetFormHandler.submit()` in `biweeklybudget/flaskapp/views/budgets.py`, replacing the budget's linked account set. Ignore them for periodic budgets.
-- [ ] T-M4.11 [P] [US3] Add budget/account links to `biweeklybudget/tests/fixtures/sampledata.py` so the acceptance tests have a non-empty coverage group, a balanced group, and at least one unlinked budget-funding account.
-- [ ] T-M4.12 Run `tox -e acceptance` and `tox -e py314` to completion, redirecting output to scratchpad files.
+- [X] T-M4.5 [US3] Add the diagnostics section to `biweeklybudget/flaskapp/templates/cash-position.html` — `cash-position-diagnostics`, `table-unlinked-accounts`, `coverage-group-<n>` and `diagnostics-all-clear` per the page contract.
+- [X] T-M4.6 [US3] Render the group-level explanation in `biweeklybudget/flaskapp/templates/cash-position.html`: a one-account group is labelled a per-account delta; a multi-account group states that the delta is reported for the group because the application records no split (FR-019).
+- [X] T-M4.7 [US3] Mark accounts in a coverage group that do not contribute to the waterfall — inactive, or not budget-funding — as not counted in `biweeklybudget/flaskapp/templates/cash-position.html`, rather than dropping them (spec Edge Cases).
+- [X] T-M4.8 [P] [US3] Add the `budget_source_accounts` JS global (id → name for active budget-funding accounts) to `biweeklybudget/flaskapp/templates/budgets.html`, and pass the data from both `BudgetsView.get` and `OneBudgetView.get` in `biweeklybudget/flaskapp/views/budgets.py`.
+- [X] T-M4.9 [US3] Add one `acct_<id>` checkbox per budget-funding account to the budget form in `biweeklybudget/flaskapp/static/js/budgets_modal.js`, shown and hidden by `budgetModalDivHandleType()` alongside the standing-balance field, and checked from the `account_ids` returned by `/ajax/budget/<id>` (FR-015, research R4).
+- [X] T-M4.10 [US3] Handle the `acct_<id>` keys in `BudgetFormHandler.submit()` in `biweeklybudget/flaskapp/views/budgets.py`, replacing the budget's linked account set. Ignore them for periodic budgets.
+- [X] T-M4.11 [P] [US3] Add budget/account links to `biweeklybudget/tests/fixtures/sampledata.py` so the acceptance tests have a non-empty coverage group, a balanced group, and at least one unlinked budget-funding account.
+- [X] T-M4.12 Run `tox -e acceptance` and `tox -e py314` to completion, redirecting output to scratchpad files.
 
 **Checkpoint**: all three user stories independently functional.
 

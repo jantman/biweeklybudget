@@ -47,7 +47,7 @@ from biweeklybudget.db import db_session
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.budget_transaction import BudgetTransaction
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
-from biweeklybudget.models.account import Account
+from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.utils import do_budget_transfer
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.transaction import Transaction
@@ -55,6 +55,27 @@ from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.utils import dtnow
 
 logger = logging.getLogger(__name__)
+
+
+def budget_source_accounts():
+    """
+    Return the active budget-funding accounts, as a list of ``(id, name)``
+    tuples ordered by name.
+
+    These are the accounts a standing budget's money can be held in, offered
+    as checkboxes on the budget modal. Only bank and cash accounts are listed:
+    a standing budget's balance is cash you are holding, and a credit or
+    investment account is not where it lives. See GitHub issue #321.
+
+    :return: ``(id, name)`` for each active budget-funding account
+    :rtype: list
+    """
+    return [
+        (a.id, a.name) for a in db_session.query(Account).filter(
+            Account.is_active.__eq__(True),
+            Account.acct_type.in_([AcctType.Bank, AcctType.Cash])
+        ).order_by(Account.name).all()
+    ]
 
 
 class BudgetsView(MethodView):
@@ -101,7 +122,8 @@ class BudgetsView(MethodView):
             accts=accts,
             budgets=budgets,
             active_budgets=active_budgets,
-            allocated_by_budget=allocated_by_budget
+            allocated_by_budget=allocated_by_budget,
+            budget_source_accounts=budget_source_accounts()
         )
 
 
@@ -151,7 +173,8 @@ class OneBudgetView(MethodView):
             accts=accts,
             budgets=budgets,
             active_budgets=active_budgets,
-            allocated_by_budget=allocated_by_budget
+            allocated_by_budget=allocated_by_budget,
+            budget_source_accounts=budget_source_accounts()
         )
 
 
@@ -236,10 +259,52 @@ class BudgetFormHandler(FormHandlerView):
         budget.is_active = data['is_active']
         budget.is_income = data['is_income']
         budget.omit_from_graphs = data['omit_from_graphs']
+        self._set_linked_accounts(budget, data)
         logger.info('%s: %s', action, budget.as_dict)
         db_session.add(budget)
         db_session.commit()
         return 'Successfully saved Budget %d in database.' % budget.id
+
+    def _set_linked_accounts(self, budget, data):
+        """
+        Replace ``budget``'s linked accounts from the ``acct_<id>`` checkbox
+        fields in the submitted form data.
+
+        The modal renders one checkbox per active budget-funding account,
+        named ``acct_<account id>``; ``serializeForm()`` sends each as a
+        boolean. Only checkboxes actually present in the submission are
+        considered, so a form that carries none -- anything posting to this
+        endpoint that predates the Cash Position page, for instance -- leaves
+        the existing links untouched rather than silently clearing them.
+
+        Links are meaningful only for standing budgets, since a periodic
+        budget holds no balance. Existing links on a budget that has been
+        switched to periodic are left alone rather than deleted: the modal
+        hides the checkboxes in that state, and quietly discarding
+        configuration the user cannot see would be worse than keeping it.
+
+        See GitHub issue #321.
+
+        :param budget: the Budget being saved
+        :type budget: biweeklybudget.models.budget_model.Budget
+        :param data: submitted form data
+        :type data: dict
+        """
+        submitted = {
+            k: v for k, v in data.items() if k.startswith('acct_')
+        }
+        if not submitted or budget.is_periodic:
+            return
+        wanted = set()
+        for key, checked in submitted.items():
+            if checked in [True, 'true', 'True']:
+                try:
+                    wanted.add(int(key[len('acct_'):]))
+                except ValueError:
+                    logger.warning('Ignoring malformed field name: %s', key)
+        budget.accounts = db_session.query(Account).filter(
+            Account.id.in_(wanted)
+        ).all() if wanted else []
 
 
 class BudgetTxfrFormHandler(FormHandlerView):
