@@ -13,8 +13,18 @@ property of the code rather than of two implementations happening to match.
 CashPosition(sess)          # sess defaults to biweeklybudget.db.db_session
 ```
 
-Computed eagerly on construction, from the state of the database at that
-moment. Not cached across requests, not refreshed after construction.
+Each term is computed **lazily** on first access and cached on the instance
+(`functools.cached_property`), from the state of the database at that moment.
+Not cached across requests, not refreshed after first access.
+
+**Lazy, not eager, and this is load-bearing.** `NotificationsController`'s
+five arithmetic methods delegate to one property each, and the existing
+`TestCreditAccountSum` unit tests call `credit_account_sum()` with a `Mock`
+session, patching only `Account.active_credit_accounts`. Eager construction
+would run every other query against that Mock -- `sess.query(...)` returns a
+Mock, which is not iterable -- and those tests would fail for reasons that
+have nothing to do with what they test. Lazy evaluation also means the banner
+pays for the five numbers it uses and nothing more.
 
 ## Inputs, exactly
 

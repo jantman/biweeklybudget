@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 from decimal import Decimal
 
+from biweeklybudget.cashposition import CashPosition
 from biweeklybudget.models.account import Account
 from biweeklybudget.flaskapp.notifications import NotificationsController
 
@@ -373,3 +374,53 @@ class TestCreditAccountSum(object):
                 res = NotificationsController.credit_account_sum()
         assert res == Decimal('0.0')
         assert mock_aca.mock_calls == [call(mock_db)]
+
+
+class TestDelegationParity(object):
+    """
+    The five arithmetic methods on
+    :py:class:`~.NotificationsController` are now thin delegations to
+    :py:class:`~biweeklybudget.cashposition.CashPosition`, which exists so the
+    notification banner and the Cash Position page cannot report different
+    numbers (GitHub issue #321).
+
+    These tests pin the delegation itself: that each method returns the
+    matching CashPosition attribute, and -- the part that is easy to get
+    wrong -- that each resolves ``sess=None`` against *this* module's
+    ``db_session`` before delegating, so that existing callers and the tests
+    above keep working unchanged.
+    """
+
+    DELEGATIONS = [
+        ('budget_account_sum', 'budget_account_ledger'),
+        ('credit_account_sum', 'credit_balance'),
+        ('budget_account_unreconciled', 'unreconciled'),
+        ('standing_budgets_sum', 'standing_total'),
+        ('pp_sum', 'pay_period_allocated_unspent')
+    ]
+
+    def test_delegates_with_given_session(self):
+        sess = Mock()
+        for method, attribute in self.DELEGATIONS:
+            with patch('%s.CashPosition' % pbm) as mock_cp:
+                setattr(mock_cp.return_value, attribute, Decimal('12.34'))
+                res = getattr(NotificationsController, method)(sess)
+            assert res == Decimal('12.34'), method
+            assert mock_cp.mock_calls[0] == call(sess), method
+
+    def test_resolves_db_session_before_delegating(self):
+        for method, attribute in self.DELEGATIONS:
+            with patch('%s.db_session' % pbm) as mock_db:
+                with patch('%s.CashPosition' % pbm) as mock_cp:
+                    setattr(mock_cp.return_value, attribute, Decimal('1.00'))
+                    getattr(NotificationsController, method)()
+            assert mock_cp.mock_calls[0] == call(mock_db), method
+
+    def test_all_five_terms_come_from_one_calculation(self):
+        """
+        Whatever else changes, these five figures must all be attributes of
+        CashPosition. A term that grew a second implementation here would be
+        free to drift from the page's, which is the failure #320 was.
+        """
+        for _, attribute in self.DELEGATIONS:
+            assert hasattr(CashPosition, attribute)
