@@ -89,6 +89,33 @@ class NotificationsController(object):
         return sum
 
     @staticmethod
+    def credit_account_sum(sess=None):
+        """
+        Return the sum of current balances for all active credit accounts.
+
+        Credit account ledger balances are stored *negative* when money is
+        owed, so the value returned here is negative in the ordinary case and
+        is *added* to :py:meth:`~.budget_account_sum` to arrive at the funds
+        actually available. Do not negate it and do not take its absolute
+        value: a credit account carrying a positive balance -- an overpaid
+        card, or one holding a statement credit larger than its balance --
+        really does hold money that is available to spend, and applying the
+        recorded balance with its own sign gets that case right for free.
+        See GitHub issue #320.
+
+        :return: Combined balance of all active credit accounts, negative
+          when money is owed
+        :rtype: decimal.Decimal
+        """
+        if sess is None:
+            sess = db_session
+        sum = Decimal('0.0')
+        for acct in Account.active_credit_accounts(sess):
+            if acct.balance is not None and acct.balance.ledger is not None:
+                sum += acct.balance.ledger
+        return sum
+
+    @staticmethod
     def budget_account_unreconciled(sess=None):
         """
         Return the sum of unreconciled txns for all is_budget_source accounts.
@@ -177,42 +204,39 @@ class NotificationsController(object):
                                                                       a)
             })
         accounts_bal = NotificationsController.budget_account_sum()
+        credit_bal = NotificationsController.credit_account_sum()
         unrec_amt = NotificationsController.budget_account_unreconciled()
         standing_bal = NotificationsController.standing_budgets_sum()
         curr_pp = NotificationsController.pp_sum()
-        logger.info('accounts_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
-                    accounts_bal, standing_bal, curr_pp, unrec_amt)
+        logger.info(
+            'accounts_bal=%s credit_bal=%s standing_bal=%s curr_pp=%s unrec=%s',
+            accounts_bal, credit_bal, standing_bal, curr_pp, unrec_amt
+        )
+        # Money owed on a credit account is recorded as a negative balance, so
+        # adding credit_bal here subtracts what is owed from the funds that are
+        # actually available to spend. See GitHub issue #320.
+        available = accounts_bal + credit_bal
         bal_sum = standing_bal + curr_pp + unrec_amt
-        if accounts_bal < bal_sum:
+        if available != bal_sum:
+            if available < bal_sum:
+                verb = 'is less than'
+                classes = 'alert alert-danger'
+            else:
+                verb = 'is more than'
+                classes = 'alert alert-info'
             res.append({
-                'classes': 'alert alert-danger',
+                'classes': classes,
                 'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is less than all allocated funds total of '
+                           'budget-funding accounts</a> less <a '
+                           'href="/accounts">credit account balances</a> '
+                           '(%s) %s all allocated funds total of '
                            '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!'
+                           '%s <a href="/pay_period_for">current pay period '
+                           'allocated but unspent</a>; %s <a '
+                           'href="/reconcile">unreconciled</a>)!'
                            '' % (
-                               fmt_currency(accounts_bal),
-                               fmt_currency(bal_sum),
-                               fmt_currency(standing_bal),
-                               fmt_currency(curr_pp),
-                               fmt_currency(unrec_amt)
-                           )
-            })
-        elif accounts_bal > bal_sum:
-            res.append({
-                'classes': 'alert alert-info',
-                'content': 'Combined balance of all <a href="/accounts">'
-                           'budget-funding accounts</a> '
-                           '(%s) is more than all allocated funds total of '
-                           '%s (%s <a href="/budgets">standing budgets</a>; '
-                           '%s <a href="/pay_period_for">current pay '
-                           'period remaining</a>; %s <a href="/reconcile">'
-                           'unreconciled</a>)!'
-                           '' % (
-                               fmt_currency(accounts_bal),
+                               fmt_currency(available),
+                               verb,
                                fmt_currency(bal_sum),
                                fmt_currency(standing_bal),
                                fmt_currency(curr_pp),
