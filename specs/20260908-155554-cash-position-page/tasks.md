@@ -49,14 +49,14 @@ autogenerate compares the models against the live database; if the model
 changes first, `initdb` brings the database up to the new state and
 autogenerate silently produces an empty migration (constitution III).
 
-- [ ] T-M1.1 Bring the test database up to current head `f9df90273cdd` following [quickstart.md](./quickstart.md) §1 — `docker run` the MariaDB container, export the environment, `python dev/setup_test_db.py`, then `initdb`. Confirm with `alembic -c biweeklybudget/alembic/alembic.ini current`.
-- [ ] T-M1.2 Create the `budget_accounts` table in `biweeklybudget/models/budget_account_link.py` as a `sqlalchemy.Table` on `Base.metadata`: `budget_id` and `account_id`, both non-null `Integer` FKs with `ondelete='CASCADE'`, composite primary key over the pair, `mysql_engine='InnoDB'`. Include the standard AGPL v3 header copied from an existing model module.
-- [ ] T-M1.3 Import the new module in `biweeklybudget/models/__init__.py` so Alembic and `alembic-verify` see the table.
-- [ ] T-M1.4 Add the `accounts` relationship to `Budget` in `biweeklybudget/models/budget_model.py` — `relationship('Account', secondary=budget_accounts, backref='budgets')` — plus an `account_ids` property and its `_dict_properties` entry, per [data-model.md](./data-model.md).
-- [ ] T-M1.5 Generate the migration with `alembic ... revision --autogenerate -m "add budget_accounts table"`, then review and hand-correct the generated file in `biweeklybudget/alembic/versions/`. Verify `down_revision = 'f9df90273cdd'`, that `upgrade()` creates the table with both cascading FKs and the composite PK, and that `downgrade()` drops it.
-- [ ] T-M1.6 Test the migration both ways against the live test database: `upgrade head`, `downgrade -1`, `upgrade head`. Both directions must run clean (constitution III).
-- [ ] T-M1.7 Write `biweeklybudget/tests/migrations/test_migration_<rev>.py` following the shape of `test_migration_f9df90273cdd.py`: assert `budget_accounts` is absent in `verify_before` and present in `verify_after`, and that it has the expected columns.
-- [ ] T-M1.8 Run `tox -e migrations` to completion, redirecting output to a scratchpad file. `alembic-verify` must confirm head matches the models — it only can if T-M1.3 was done.
+- [X] T-M1.1 Bring the test database up to current head `f9df90273cdd` following [quickstart.md](./quickstart.md) §1 — `docker run` the MariaDB container, export the environment, `python dev/setup_test_db.py`, then `initdb`. Confirm with `alembic -c biweeklybudget/alembic/alembic.ini current`.
+- [X] T-M1.2 Create the `budget_accounts` table in `biweeklybudget/models/budget_account_link.py` as a `sqlalchemy.Table` on `Base.metadata`: `budget_id` and `account_id`, both non-null `Integer` FKs with `ondelete='CASCADE'`, composite primary key over the pair, `mysql_engine='InnoDB'`. Include the standard AGPL v3 header copied from an existing model module.
+- [X] T-M1.3 Import the new module in `biweeklybudget/models/__init__.py` so Alembic and `alembic-verify` see the table.
+- [X] T-M1.4 Add the `accounts` relationship to `Budget` in `biweeklybudget/models/budget_model.py` — `relationship('Account', secondary=budget_accounts, backref='budgets')` — plus an `account_ids` property and its `_dict_properties` entry, per [data-model.md](./data-model.md).
+- [X] T-M1.5 Generate the migration with `alembic ... revision --autogenerate -m "add budget_accounts table"`, then review and hand-correct the generated file in `biweeklybudget/alembic/versions/`. Verify `down_revision = 'f9df90273cdd'`, that `upgrade()` creates the table with both cascading FKs and the composite PK, and that `downgrade()` drops it.
+- [X] T-M1.6 Test the migration both ways against the live test database: `upgrade head`, `downgrade -1`, `upgrade head`. Both directions must run clean (constitution III).
+- [X] T-M1.7 Write `biweeklybudget/tests/migrations/test_migration_<rev>.py` following the shape of `test_migration_f9df90273cdd.py`: assert `budget_accounts` is absent in `verify_before` and present in `verify_after`, and that it has the expected columns.
+- [X] T-M1.8 Run `tox -e migrations` to completion, redirecting output to a scratchpad file. `alembic-verify` must confirm head matches the models — it only can if T-M1.3 was done.
 
 **Checkpoint**: schema in place and reversible; `tox -e py314` unaffected.
 

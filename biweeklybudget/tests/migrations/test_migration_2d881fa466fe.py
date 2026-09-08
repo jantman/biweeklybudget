@@ -35,19 +35,47 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.models.account_balance import AccountBalance
-from biweeklybudget.models.budget_account_link import budget_accounts
-from biweeklybudget.models.budget_model import Budget
-from biweeklybudget.models.budget_transaction import BudgetTransaction
-from biweeklybudget.models.dbsetting import DBSetting
-from biweeklybudget.models.fuel import FuelFill, Vehicle
-from biweeklybudget.models.ofx_statement import OFXStatement
-from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.models.plaid_items import PlaidItem
-from biweeklybudget.models.projects import Project, BoMItem
-from biweeklybudget.models.reconcile_rule import ReconcileRule
-from biweeklybudget.models.scheduled_transaction import ScheduledTransaction
-from biweeklybudget.models.transaction import Transaction
-from biweeklybudget.models.txn_reconcile import TxnReconcile
+import pytest
+import logging
+from sqlalchemy import text
+
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.mark.migrations
+class TestAddBudgetAccountsTable(MigrationTest):
+    """
+    Test for revision 2d881fa466fe - add the budget_accounts association table
+    linking standing Budgets to the Accounts that hold their money. See GitHub
+    issue #321.
+    """
+
+    migration_rev = '2d881fa466fe'
+
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
+
+    def _tables(self, engine):
+        conn = engine.connect()
+        tables = [
+            row[0] for row in conn.execute(text('SHOW TABLES;')).fetchall()
+        ]
+        conn.close()
+        return tables
+
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        assert 'budget_accounts' not in self._tables(engine)
+
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        assert 'budget_accounts' in self._tables(engine)
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM budget_accounts WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert sorted(columns) == ['account_id', 'budget_id']
