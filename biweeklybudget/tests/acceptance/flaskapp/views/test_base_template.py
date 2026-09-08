@@ -87,6 +87,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             )
         assert navlinks == [
             ('/', 'Home'),
+            ('/cash-position', 'Cash Position'),
             ('/payperiods', 'Pay Periods'),
             ('/accounts', 'Accounts'),
             ('/accounts/credit-payoff', 'Credit Payoffs'),
@@ -263,7 +264,7 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
                            '($6,438.53) is less than all allocated funds ' \
                            'total of $132,617.50 ($132,939.07 standing ' \
                            'budgets; $11.76 current pay period allocated ' \
-                           'but unspent; -$333.33 unreconciled)!'
+                           'but unspent; -$333.33 unreconciled)! View Cash Position.'
         assert div.get_attribute('class') == 'alert alert-danger'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
@@ -276,6 +277,8 @@ class TestBudgetOverBalanceNotification(AcceptanceHelper):
         assert a[3].text == 'current pay period allocated but unspent'
         assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
         assert a[4].text == 'unreconciled'
+        assert self.relurl(a[5].get_attribute('href')) == '/cash-position'
+        assert a[5].text == 'View Cash Position'
 
 
 @pytest.mark.acceptance
@@ -353,7 +356,7 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
                            '($6,438.53) is less than all allocated funds ' \
                            'total of $44,778.28 ($11,099.85 standing ' \
                            'budgets; $11.76 current pay period allocated ' \
-                           'but unspent; $33,666.67 unreconciled)!'
+                           'but unspent; $33,666.67 unreconciled)! View Cash Position.'
         assert div.get_attribute('class') == 'alert alert-danger'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
@@ -366,6 +369,8 @@ class TestPPOverBalanceNotification(AcceptanceHelper):
         assert a[3].text == 'current pay period allocated but unspent'
         assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
         assert a[4].text == 'unreconciled'
+        assert self.relurl(a[5].get_attribute('href')) == '/cash-position'
+        assert a[5].text == 'View Cash Position'
 
 
 @pytest.mark.acceptance
@@ -412,7 +417,7 @@ class TestUnderBalanceNotification(AcceptanceHelper):
                            '($422,539.76) is more than all allocated funds ' \
                            'total of $10,444.95 ($10,766.52 standing ' \
                            'budgets; $11.76 current pay period allocated ' \
-                           'but unspent; -$333.33 unreconciled)!'
+                           'but unspent; -$333.33 unreconciled)! View Cash Position.'
         assert div.get_attribute('class') == 'alert alert-info'
         a = div.find_elements(By.TAG_NAME, 'a')
         assert self.relurl(a[0].get_attribute('href')) == '/accounts'
@@ -425,6 +430,8 @@ class TestUnderBalanceNotification(AcceptanceHelper):
         assert a[3].text == 'current pay period allocated but unspent'
         assert self.relurl(a[4].get_attribute('href')) == '/reconcile'
         assert a[4].text == 'unreconciled'
+        assert self.relurl(a[5].get_attribute('href')) == '/cash-position'
+        assert a[5].text == 'View Cash Position'
 
 
 @pytest.mark.acceptance

@@ -121,7 +121,9 @@ class TestNotifications(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                '$800.00', 'is less than', '$1,800.00',
                                '$500.00', '$600.00', '$700.00'
                            )
@@ -159,7 +161,9 @@ class TestNotifications(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                '$1,900.00', 'is more than', '$1,800.00',
                                '$500.00', '$600.00', '$700.00'
                            )
@@ -222,6 +226,35 @@ class TestNotifications(object):
         assert '(-$500.00) is less than' in res[0]['content']
         assert 'current pay period allocated but unspent' in res[0]['content']
         assert 'remaining' not in res[0]['content']
+
+    def test_get_notifications_links_to_cash_position(self):
+        """
+        The banner states the discrepancy in one sentence; the Cash Position
+        page is where the six figures behind it can actually be inspected, so
+        the banner must offer a way to get there. Everything else about the
+        banner's wording is deliberately unchanged (GitHub issue #321).
+        """
+        with patch.multiple(
+            pb,
+            num_stale_accounts=DEFAULT,
+            budget_account_sum=DEFAULT,
+            standing_budgets_sum=DEFAULT,
+            num_unreconciled_ofx=DEFAULT,
+            budget_account_unreconciled=DEFAULT,
+            pp_sum=DEFAULT,
+            credit_account_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = Decimal('1000.00')
+            mocks['standing_budgets_sum'].return_value = Decimal('500.00')
+            mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = Decimal('0.0')
+            mocks['pp_sum'].return_value = Decimal('0.0')
+            mocks['credit_account_sum'].return_value = Decimal('0.0')
+            res = NotificationsController.get_notifications()
+        assert len(res) == 1
+        assert '<a href="/cash-position" class="alert-link">' \
+               'View Cash Position</a>.' in res[0]['content']
 
     def test_get_notifications_one_stale(self):
         with patch.multiple(

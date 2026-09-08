@@ -107,26 +107,26 @@ resolves.
 
 ### Tests for Phase 3
 
-- [ ] T-M3.1 [P] [US1] Write `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` asserting the five terms, both subtotals and the final figure by the element IDs fixed in [contracts/cash-position-page.md](./contracts/cash-position-page.md), reading `data-amount` rather than formatted currency.
-- [ ] T-M3.2 [US1] Add the page-versus-banner agreement test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the final figure equals the discrepancy the notification banner reports (FR-004, SC-001).
-- [ ] T-M3.3 [P] [US1] Add an empty/degenerate-database test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` — the page renders a complete waterfall of zeros rather than failing or omitting lines (FR-022, SC-005).
-- [ ] T-M3.4 [P] [US2] Add itemization tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: each detail table's rows sum to its total, and that total equals the waterfall term above it (FR-011, SC-004).
-- [ ] T-M3.5 [P] [US2] Add link tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` asserting every aggregate and per-record link resolves to the URL named in the page contract (FR-012, SC-003).
+- [X] T-M3.1 [P] [US1] Write `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` asserting the five terms, both subtotals and the final figure by the element IDs fixed in [contracts/cash-position-page.md](./contracts/cash-position-page.md), reading `data-amount` rather than formatted currency.
+- [X] T-M3.2 [US1] Add the page-versus-banner agreement test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: the final figure equals the discrepancy the notification banner reports (FR-004, SC-001).
+- [X] T-M3.3 [P] [US1] Add an empty/degenerate-database test to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` — the page renders a complete waterfall of zeros rather than failing or omitting lines (FR-022, SC-005).
+- [X] T-M3.4 [P] [US2] Add itemization tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py`: each detail table's rows sum to its total, and that total equals the waterfall term above it (FR-011, SC-004).
+- [X] T-M3.5 [P] [US2] Add link tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_cash_position.py` asserting every aggregate and per-record link resolves to the URL named in the page contract (FR-012, SC-003).
 
 ### Implementation for Phase 3
 
-- [ ] T-M3.6 [US1] Create `biweeklybudget/flaskapp/views/cashposition.py` with the AGPL v3 header, a `CashPositionView` `MethodView` rendering `cash-position.html` from a `CashPosition`, and `app.add_url_rule('/cash-position', ...)`.
-- [ ] T-M3.7 [US1] Create `biweeklybudget/flaskapp/templates/cash-position.html` extending `base.html` and including `notifications.html`, rendering the five terms and two subtotals with the element IDs and `data-amount` attributes from the page contract.
-- [ ] T-M3.8 [US1] Add the plain-language explanation beside each term in `biweeklybudget/flaskapp/templates/cash-position.html`, in particular that credit balances are recorded negative when money is owed (FR-013).
-- [ ] T-M3.9 [US1] Render negative amounts distinctly in `biweeklybudget/flaskapp/templates/cash-position.html` using the existing `dollars` and `reddollars` filters; never clamp or `abs()` a subtotal (FR-007).
-- [ ] T-M3.10 [US1] Add the pay period and per-balance as-of reporting to `biweeklybudget/flaskapp/templates/cash-position.html` (FR-024).
-- [ ] T-M3.11 [P] [US2] Add the budget-funding account detail table to `biweeklybudget/flaskapp/templates/cash-position.html` — name, ledger, unreconciled, projected, as-of — rendering "no balance recorded" and `data-counted="false"` for an account with no balance (FR-008, FR-023).
-- [ ] T-M3.12 [P] [US2] Add the credit account and standing budget detail tables to `biweeklybudget/flaskapp/templates/cash-position.html`, each with its own total row (FR-009, FR-010, FR-011).
-- [ ] T-M3.13 [US2] Add the per-line links in `biweeklybudget/flaskapp/templates/cash-position.html` to `/accounts`, `/accounts/<id>`, `/reconcile`, `/budgets`, `/budgets/<id>` and `/pay_period_for` (FR-012).
-- [ ] T-M3.14 [US1] Add the "Cash Position" nav entry to `biweeklybudget/flaskapp/templates/nav.html` immediately after "Home", with the `fa-balance-scale` icon.
-- [ ] T-M3.15 [US1] Update the exact nav link list assertion in `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py` to include `('/cash-position', 'Cash Position')` in its new position.
-- [ ] T-M3.16 [US1] Add the `/cash-position` link to the discrepancy banner in `biweeklybudget/flaskapp/notifications.py`, leaving its wording otherwise unchanged (FR-025), and update the banner-link assertions in `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py`.
-- [ ] T-M3.17 Run `tox -e acceptance` to completion, redirecting output to a scratchpad file.
+- [X] T-M3.6 [US1] Create `biweeklybudget/flaskapp/views/cashposition.py` with the AGPL v3 header, a `CashPositionView` `MethodView` rendering `cash-position.html` from a `CashPosition`, and `app.add_url_rule('/cash-position', ...)`.
+- [X] T-M3.7 [US1] Create `biweeklybudget/flaskapp/templates/cash-position.html` extending `base.html` and including `notifications.html`, rendering the five terms and two subtotals with the element IDs and `data-amount` attributes from the page contract.
+- [X] T-M3.8 [US1] Add the plain-language explanation beside each term in `biweeklybudget/flaskapp/templates/cash-position.html`, in particular that credit balances are recorded negative when money is owed (FR-013).
+- [X] T-M3.9 [US1] Render negative amounts distinctly in `biweeklybudget/flaskapp/templates/cash-position.html` using the existing `dollars` and `reddollars` filters; never clamp or `abs()` a subtotal (FR-007).
+- [X] T-M3.10 [US1] Add the pay period and per-balance as-of reporting to `biweeklybudget/flaskapp/templates/cash-position.html` (FR-024).
+- [X] T-M3.11 [P] [US2] Add the budget-funding account detail table to `biweeklybudget/flaskapp/templates/cash-position.html` — name, ledger, unreconciled, projected, as-of — rendering "no balance recorded" and `data-counted="false"` for an account with no balance (FR-008, FR-023).
+- [X] T-M3.12 [P] [US2] Add the credit account and standing budget detail tables to `biweeklybudget/flaskapp/templates/cash-position.html`, each with its own total row (FR-009, FR-010, FR-011).
+- [X] T-M3.13 [US2] Add the per-line links in `biweeklybudget/flaskapp/templates/cash-position.html` to `/accounts`, `/accounts/<id>`, `/reconcile`, `/budgets`, `/budgets/<id>` and `/pay_period_for` (FR-012).
+- [X] T-M3.14 [US1] Add the "Cash Position" nav entry to `biweeklybudget/flaskapp/templates/nav.html` immediately after "Home", with the `fa-balance-scale` icon.
+- [X] T-M3.15 [US1] Update the exact nav link list assertion in `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py` to include `('/cash-position', 'Cash Position')` in its new position.
+- [X] T-M3.16 [US1] Add the `/cash-position` link to the discrepancy banner in `biweeklybudget/flaskapp/notifications.py`, leaving its wording otherwise unchanged (FR-025), and update the banner-link assertions in `biweeklybudget/tests/acceptance/flaskapp/views/test_base_template.py`.
+- [X] T-M3.17 Run `tox -e acceptance` to completion, redirecting output to a scratchpad file.
 
 **Checkpoint**: US1 and US2 fully functional. The page answers the issue's core question and every line is traceable.
 

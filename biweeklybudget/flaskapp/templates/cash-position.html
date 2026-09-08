@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Cash Position - BiweeklyBudget{% endblock %}
+{% block extra_head_css %}
+    <style>
+        .waterfall td { vertical-align: middle; }
+        .waterfall .wf-op { width: 3em; text-align: center; font-weight: bold; font-size: 1.2em; color: #777; }
+        .waterfall .wf-amount { text-align: right; white-space: nowrap; width: 12em; font-family: monospace; font-size: 1.1em; }
+        .waterfall .wf-subtotal { border-top: 2px solid #333; font-weight: bold; background-color: #f5f5f5; }
+        .waterfall .wf-subtotal .wf-amount { font-size: 1.3em; }
+        .waterfall .wf-note { color: #777; font-size: 0.9em; display: block; }
+        .wf-detail td.num, .wf-detail th.num { text-align: right; white-space: nowrap; font-family: monospace; }
+        .wf-nodata { color: #999; font-style: italic; font-family: inherit; }
+        .wf-excluded { color: #999; }
+        .cp-asof { color: #777; font-size: 0.9em; }
+    </style>
+{% endblock %}
+{% block body %}
+{% include 'notifications.html' %}
+            <div class="row" id="content-row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-cash-position">
+                        <div class="panel-heading">
+                            <i class="fa fa-balance-scale fa-fw"></i> Cash Position
+                        </div><!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <p>
+                                How much money you actually have that is not already spoken for.
+                                Every figure below is a term of the calculation reported by the
+                                banner at the top of every page; each one links to the view it
+                                comes from, so a number that looks wrong can be tracked down
+                                rather than just observed.
+                            </p>
+                            <p class="cp-asof" id="cash-position-as-of">
+                                Current pay period:
+                                <a href="/pay_period_for">{{ cp.pay_period.start_date|dateymd }} to {{ cp.pay_period.end_date|dateymd }}</a>.
+                                Account balances are as of the dates shown in the detail tables
+                                below; a ledger balance can lag reality by days.
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table waterfall" id="cash-position-waterfall">
+                                    <tbody>
+                                        <tr id="waterfall-budget-accounts" data-amount="{{ cp.budget_account_ledger }}">
+                                            <td class="wf-op">+</td>
+                                            <td>
+                                                <a href="/accounts">Budget-funding account balances</a>
+                                                <span class="wf-note">Ledger balance of every active bank and cash account.</span>
+                                            </td>
+                                            <td class="wf-amount">{{ cp.budget_account_ledger|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr id="waterfall-unreconciled" data-amount="{{ cp.unreconciled }}">
+                                            <td class="wf-op">&minus;</td>
+                                            <td>
+                                                <a href="/reconcile">Adjustment for unreconciled transactions</a>
+                                                <span class="wf-note">
+                                                    Transactions you have entered but not yet matched to a real bank
+                                                    transaction. Subtracting these turns the ledger balance above into
+                                                    the projected balance. Transactions that move no real cash are
+                                                    already excluded.
+                                                </span>
+                                            </td>
+                                            <td class="wf-amount">{{ cp.unreconciled|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr id="waterfall-credit" data-amount="{{ cp.credit_balance }}">
+                                            <td class="wf-op">+</td>
+                                            <td>
+                                                <a href="/accounts">Outstanding credit account balances</a>
+                                                <span class="wf-note">
+                                                    Money owed on a card is recorded as a <strong>negative</strong>
+                                                    balance, so adding this subtracts what you owe. A card carrying a
+                                                    positive balance &mdash; overpaid, or holding a statement credit
+                                                    larger than its balance &mdash; really does hold money you can
+                                                    spend, and correctly raises the figure below.
+                                                </span>
+                                            </td>
+                                            <td class="wf-amount">{{ cp.credit_balance|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr class="wf-subtotal" id="subtotal-net-liquid" data-amount="{{ cp.net_liquid }}">
+                                            <td class="wf-op">=</td>
+                                            <td>Net liquid position</td>
+                                            <td class="wf-amount">{{ cp.net_liquid|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr id="waterfall-standing" data-amount="{{ cp.standing_total }}">
+                                            <td class="wf-op">&minus;</td>
+                                            <td>
+                                                <a href="/budgets">Standing budget balances</a>
+                                                <span class="wf-note">
+                                                    Money carried over from period to period in your active standing
+                                                    budgets. It is money you hold, but it is already assigned.
+                                                </span>
+                                            </td>
+                                            <td class="wf-amount">{{ cp.standing_total|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr id="waterfall-payperiod" data-amount="{{ cp.pay_period_allocated_unspent }}">
+                                            <td class="wf-op">&minus;</td>
+                                            <td>
+                                                <a href="/pay_period_for">Current pay period: allocated but not yet spent</a>
+                                                <span class="wf-note">
+                                                    Allocated minus spent for the pay period containing today. This is
+                                                    not the pay period view's own &ldquo;remaining&rdquo; figure, which
+                                                    is income minus budgeted; the two answer different questions and
+                                                    routinely disagree.
+                                                </span>
+                                            </td>
+                                            <td class="wf-amount">{{ cp.pay_period_allocated_unspent|reddollars|safe }}</td>
+                                        </tr>
+                                        <tr class="wf-subtotal" id="total-uncommitted" data-amount="{{ cp.uncommitted }}">
+                                            <td class="wf-op">=</td>
+                                            <td>Truly unallocated / uncommitted funds</td>
+                                            <td class="wf-amount">{{ cp.uncommitted|reddollars|safe }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-budget-account-detail">
+                        <div class="panel-heading">
+                            <i class="fa fa-bank fa-fw"></i> Budget-Funding Accounts
+                        </div><!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <p>
+                                The projected balance is the ledger balance net of that account's
+                                unreconciled transactions. The raw ledger figure can be several
+                                days out of date and is misleading on its own.
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped wf-detail" id="table-budget-account-detail">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th class="num">Ledger Balance</th>
+                                            <th class="num">Unreconciled</th>
+                                            <th class="num">Projected Balance</th>
+                                            <th>Balance As Of</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for line in cp.budget_account_lines %}
+                                        <tr data-amount="{{ line.amount }}" data-counted="{{ 'true' if line.counted else 'false' }}">
+                                            <td><a href="/accounts/{{ line.account.id }}">{{ line.account.name }}</a></td>
+                                        {% if line.has_balance %}
+                                            <td class="num">{{ line.ledger|reddollars|safe }}</td>
+                                            <td class="num">{{ line.unreconciled|reddollars|safe }}</td>
+                                            <td class="num">{{ line.projected|reddollars|safe }}</td>
+                                            <td>{{ line.as_of|isodate }}</td>
+                                        {% else %}
+                                            <td class="num wf-nodata" colspan="3">no balance recorded</td>
+                                            <td class="wf-nodata">&mdash;</td>
+                                        {% endif %}
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="5"><em>No active budget-funding accounts.</em></td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr id="total-budget-account-detail" data-amount="{{ cp.budget_account_ledger }}">
+                                            <th>Total</th>
+                                            <th class="num">{{ cp.budget_account_ledger|reddollars|safe }}</th>
+                                            <th class="num">{{ cp.unreconciled|reddollars|safe }}</th>
+                                            <th class="num">{{ (cp.budget_account_ledger - cp.unreconciled)|reddollars|safe }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-credit-account-detail">
+                        <div class="panel-heading">
+                            <i class="fa fa-credit-card fa-fw"></i> Credit Accounts
+                        </div><!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <p>
+                                Balances are shown as recorded: negative when money is owed. Each
+                                charge on a card was budgeted on the day you made it, so it is
+                                already counted as committed; the cash to settle it is still in
+                                your checking account, which is why the card balance has to be
+                                taken off the available side.
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped wf-detail" id="table-credit-account-detail">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th class="num">Balance</th>
+                                            <th>Balance As Of</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for line in cp.credit_account_lines %}
+                                        <tr data-amount="{{ line.amount }}" data-counted="{{ 'true' if line.counted else 'false' }}">
+                                            <td><a href="/accounts/{{ line.account.id }}">{{ line.account.name }}</a></td>
+                                        {% if line.has_balance %}
+                                            <td class="num">{{ line.ledger|reddollars|safe }}</td>
+                                            <td>{{ line.as_of|isodate }}</td>
+                                        {% else %}
+                                            <td class="num wf-nodata">no balance recorded</td>
+                                            <td class="wf-nodata">&mdash;</td>
+                                        {% endif %}
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3"><em>No active credit accounts.</em></td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr id="total-credit-account-detail" data-amount="{{ cp.credit_balance }}">
+                                            <th>Total</th>
+                                            <th class="num">{{ cp.credit_balance|reddollars|safe }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="panel-standing-budget-detail">
+                        <div class="panel-heading">
+                            <i class="fa fa-envelope fa-fw"></i> Standing Budgets
+                        </div><!-- /.panel-heading -->
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped wf-detail" id="table-standing-budget-detail">
+                                    <thead>
+                                        <tr>
+                                            <th>Budget</th>
+                                            <th class="num">Current Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for line in cp.standing_budget_lines %}
+                                        <tr data-amount="{{ line.amount }}">
+                                            <td><a href="/budgets/{{ line.budget.id }}">{{ line.budget.name }}</a></td>
+                                            <td class="num">{{ line.amount|reddollars|safe }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="2"><em>No active standing budgets.</em></td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr id="total-standing-budget-detail" data-amount="{{ cp.standing_total }}">
+                                            <th>Total</th>
+                                            <th class="num">{{ cp.standing_total|reddollars|safe }}</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div><!-- /.table-responsive -->
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+
+                <div class="col-lg-12">
+                    <div class="panel panel-default" id="cash-position-diagnostics">
+                        <div class="panel-heading">
+                            <i class="fa fa-search fa-fw"></i> Why Is Money Unallocated?
+                        </div><!-- /.panel-heading -->
+                        <div class="panel-body">
+                        {% if not cp.has_links_configured %}
+                            <div class="alert alert-info" id="diagnostics-not-configured">
+                                <strong>No budget/account links are configured.</strong>
+                                Tell the application which accounts hold each standing budget's
+                                money &mdash; edit a standing budget on the
+                                <a href="/budgets" class="alert-link">Budgets</a> page and tick the
+                                accounts it lives in &mdash; and this section will show you which
+                                account balances nothing accounts for, and where a budget and the
+                                account holding it have drifted apart.
+                            </div>
+                        {% elif cp.diagnostics_all_clear %}
+                            <div class="alert alert-success" id="diagnostics-all-clear">
+                                <strong>Nothing to report.</strong>
+                                Every active budget-funding account is linked to a standing budget,
+                                and every group of linked accounts and budgets balances exactly.
+                            </div>
+                        {% endif %}
+
+                        {% if cp.unlinked_accounts %}
+                            <h4>Budget-funding accounts nothing allocates</h4>
+                            <p>
+                                No active standing budget is linked to these accounts, so their
+                                balances sit in the uncommitted total above with nothing
+                                accounting for them. That is usually the reason that figure is
+                                stubbornly non-zero.
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped wf-detail" id="table-unlinked-accounts">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th class="num">Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for line in cp.unlinked_accounts %}
+                                        <tr data-amount="{{ line.amount }}">
+                                            <td><a href="/accounts/{{ line.account.id }}">{{ line.account.name }}</a></td>
+                                        {% if line.has_balance %}
+                                            <td class="num">{{ line.ledger|reddollars|safe }}</td>
+                                        {% else %}
+                                            <td class="num wf-nodata">no balance recorded</td>
+                                        {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div><!-- /.table-responsive -->
+                        {% endif %}
+
+                        {% if cp.coverage_groups %}
+                            <h4>Standing budgets against the accounts holding them</h4>
+                            <p>
+                                A budget's money can be spread across several accounts, and one
+                                account commonly holds several earmarked budgets. Nothing records
+                                <em>how much</em> of a budget sits in which account, so where a
+                                group holds more than one account the difference is reported for
+                                the group as a whole rather than invented per account.
+                            </p>
+                            {% for group in cp.coverage_groups %}
+                            <div class="panel {% if group.is_balanced %}panel-success{% else %}panel-warning{% endif %}" id="coverage-group-{{ loop.index }}" data-delta="{{ group.delta }}" data-simple="{{ 'true' if group.is_simple else 'false' }}" data-balanced="{{ 'true' if group.is_balanced else 'false' }}">
+                                <div class="panel-heading">
+                                {% if group.is_simple %}
+                                    {{ group.accounts[0].account.name }}
+                                {% else %}
+                                    {{ group.accounts|length }} accounts, {{ group.budgets|length }} standing {{ 'budget'|pluralize(group.budgets|length) }}
+                                {% endif %}
+                                </div><!-- /.panel-heading -->
+                                <div class="panel-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-condensed wf-detail">
+                                            <tbody>
+                                            {% for line in group.accounts %}
+                                                <tr class="{% if not line.counted %}wf-excluded{% endif %}" data-amount="{{ line.amount }}" data-counted="{{ 'true' if line.counted else 'false' }}">
+                                                    <td>Account: <a href="/accounts/{{ line.account.id }}">{{ line.account.name }}</a>
+                                                    {% if not line.counted %}<em>({{ line.exclusion_reason }} &mdash; not counted)</em>{% endif %}
+                                                    </td>
+                                                    <td class="num">{% if line.has_balance %}{{ line.ledger|reddollars|safe }}{% else %}<span class="wf-nodata">no balance recorded</span>{% endif %}</td>
+                                                </tr>
+                                            {% endfor %}
+                                                <tr class="wf-subtotal" data-amount="{{ group.account_total }}">
+                                                    <th>Accounts hold</th>
+                                                    <th class="num">{{ group.account_total|reddollars|safe }}</th>
+                                                </tr>
+                                            {% for line in group.budgets %}
+                                                <tr data-amount="{{ line.amount }}">
+                                                    <td>Budget: <a href="/budgets/{{ line.budget.id }}">{{ line.budget.name }}</a></td>
+                                                    <td class="num">{{ line.amount|reddollars|safe }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                                <tr class="wf-subtotal" data-amount="{{ group.budget_total }}">
+                                                    <th>Budgets claim</th>
+                                                    <th class="num">{{ group.budget_total|reddollars|safe }}</th>
+                                                </tr>
+                                                <tr class="wf-subtotal" data-amount="{{ group.delta }}">
+                                                    <th>
+                                                    {% if group.is_balanced %}
+                                                        Balanced
+                                                    {% elif group.is_simple %}
+                                                        Unexplained difference for this account
+                                                    {% else %}
+                                                        Unexplained difference for this group
+                                                    {% endif %}
+                                                    </th>
+                                                    <th class="num">{{ group.delta|reddollars|safe }}</th>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div><!-- /.table-responsive -->
+                                </div><!-- /.panel-body -->
+                            </div><!-- /.panel -->
+                            {% endfor %}
+                        {% endif %}
+                        </div><!-- /.panel-body -->
+                    </div><!-- /.panel -->
+                </div><!-- /.col-lg-12 -->
+            </div><!-- /.row -->
+{% endblock %}

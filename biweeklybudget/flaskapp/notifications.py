@@ -221,8 +221,9 @@ class NotificationsController(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!'
-                           '' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                fmt_currency(available),
                                verb,
                                fmt_currency(bal_sum),

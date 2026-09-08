@@ -35,18 +35,41 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from .accounts import *
-from .budgets import *
-from .cashposition import *
-from .credit_payoffs import *
-from .index import *
-from .ofx import *
-from .payperiods import *
-from .reconcile import *
-from .scheduled import *
-from .transactions import *
-from .help import *
-from .fuel import *
-from .projects import *
-from .utils import *
-from .plaid import *
+import logging
+
+from flask.views import MethodView
+from flask import render_template
+
+from biweeklybudget.cashposition import CashPosition
+from biweeklybudget.db import db_session
+from biweeklybudget.flaskapp.app import app
+
+logger = logging.getLogger(__name__)
+
+
+class CashPositionView(MethodView):
+    """
+    Render the GET /cash-position view using the ``cash-position.html``
+    template.
+
+    Lays the available-funds calculation out as a waterfall, itemized and with
+    every line linked to the view it derives from. The notification banner on
+    every page reports the bottom line of this calculation in a single
+    sentence; this page is where you find out how it got there. See GitHub
+    issue #321.
+
+    The page is read-only. Everything on it is edited somewhere else, and each
+    line links to wherever that is.
+    """
+
+    def get(self):
+        return render_template(
+            'cash-position.html',
+            cp=CashPosition(db_session)
+        )
+
+
+app.add_url_rule(
+    '/cash-position',
+    view_func=CashPositionView.as_view('cash_position_view')
+)
