@@ -15,6 +15,7 @@ Submodules
    biweeklybudget.models.account
    biweeklybudget.models.account_balance
    biweeklybudget.models.base
+   biweeklybudget.models.budget_account_link
    biweeklybudget.models.budget_model
    biweeklybudget.models.budget_transaction
    biweeklybudget.models.dbsetting

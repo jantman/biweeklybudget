@@ -36,15 +36,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
-from sqlalchemy import func
-from decimal import Decimal
 
+from biweeklybudget.cashposition import CashPosition
 from biweeklybudget.db import db_session
-from biweeklybudget.utils import dtnow, fmt_currency
+from biweeklybudget.utils import fmt_currency
 from biweeklybudget.models.account import Account
-from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 
 logger = logging.getLogger(__name__)
 
@@ -74,19 +71,19 @@ class NotificationsController(object):
         """
         Return the sum of current balances for all is_budget_source accounts.
 
+        Delegates to :py:attr:`~.CashPosition.budget_account_ledger`. The
+        arithmetic behind this banner lives in
+        :py:class:`~biweeklybudget.cashposition.CashPosition` so that the
+        banner and the Cash Position page cannot report different numbers;
+        two implementations of one calculation, free to drift apart, is
+        precisely what GitHub issue #320 turned out to be. See issue #321.
+
         :return: Combined balance of all budget source accounts
-        :rtype: float
+        :rtype: decimal.Decimal
         """
         if sess is None:
             sess = db_session
-        sum = Decimal('0.0')
-        for acct in sess.query(Account).filter(
-                Account.is_budget_source.__eq__(True),
-                Account.is_active.__eq__(True)
-        ):
-            if acct.balance is not None:
-                sum += acct.balance.ledger
-        return sum
+        return CashPosition(sess).budget_account_ledger
 
     @staticmethod
     def credit_account_sum(sess=None):
@@ -103,53 +100,46 @@ class NotificationsController(object):
         recorded balance with its own sign gets that case right for free.
         See GitHub issue #320.
 
+        Delegates to :py:attr:`~.CashPosition.credit_balance`.
+
         :return: Combined balance of all active credit accounts, negative
           when money is owed
         :rtype: decimal.Decimal
         """
         if sess is None:
             sess = db_session
-        sum = Decimal('0.0')
-        for acct in Account.active_credit_accounts(sess):
-            if acct.balance is not None and acct.balance.ledger is not None:
-                sum += acct.balance.ledger
-        return sum
+        return CashPosition(sess).credit_balance
 
     @staticmethod
     def budget_account_unreconciled(sess=None):
         """
         Return the sum of unreconciled txns for all is_budget_source accounts.
 
+        Delegates to :py:attr:`~.CashPosition.unreconciled`.
+
         :return: Combined unreconciled amount of all budget source accounts
-        :rtype: float
+        :rtype: decimal.Decimal
         """
         if sess is None:
             sess = db_session
-        sum = Decimal('0.0')
-        for acct in sess.query(Account).filter(
-                Account.is_budget_source.__eq__(True),
-                Account.is_active.__eq__(True)
-        ):
-            sum += acct.unreconciled_sum
-        return sum
+        return CashPosition(sess).unreconciled
 
     @staticmethod
     def standing_budgets_sum(sess=None):
         """
         Return the sum of current balances of all standing budgets.
 
+        Delegates to :py:attr:`~.CashPosition.standing_total`. Note that with
+        no standing budgets this now returns ``Decimal('0.0')`` where it
+        previously returned the integer ``0``; the two compare equal, so
+        callers and their tests are unaffected.
+
         :return: sum of current balances of all standing budgets
-        :rtype: float
+        :rtype: decimal.Decimal
         """
         if sess is None:
             sess = db_session
-        res = sess.query(func.sum(Budget.current_balance)).filter(
-            Budget.is_periodic.__eq__(False),
-            Budget.is_active.__eq__(True)
-        ).all()[0][0]
-        if res is None:
-            return 0
-        return res
+        return CashPosition(sess).standing_total
 
     @staticmethod
     def pp_sum(sess=None):
@@ -157,18 +147,16 @@ class NotificationsController(object):
         Return the overall allocated sum for the current payperiod minus the
         sum of all reconciled Transactions for the pay period.
 
+        Delegates to
+        :py:attr:`~.CashPosition.pay_period_allocated_unspent`.
+
         :return: overall allocated sum for the current pay period minus the sum
           of all reconciled Transactions for the pay period.
-        :rtype: float
+        :rtype: decimal.Decimal
         """
         if sess is None:
             sess = db_session
-        pp = BiweeklyPayPeriod.period_for_date(dtnow(), sess)
-        allocated = pp.overall_sums['allocated']
-        spent = pp.overall_sums['spent']
-        logger.debug('PayPeriod=%s; allocated=%s; spent=%s',
-                     pp, allocated, spent)
-        return allocated - spent
+        return CashPosition(sess).pay_period_allocated_unspent
 
     @staticmethod
     def num_unreconciled_ofx(sess=None):
@@ -233,8 +221,9 @@ class NotificationsController(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!'
-                           '' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                fmt_currency(available),
                                verb,
                                fmt_currency(bal_sum),

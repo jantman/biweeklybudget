@@ -434,3 +434,122 @@ days between entering it and reconciling it.
 
 They are excluded from this figure only. Both still appear in the reconcile
 view and still need to be reconciled against the real bank transaction.
+
+.. _app_usage.cash_position:
+
+The Cash Position Page
+----------------------
+
+The :ref:`unallocated funds banner <app_usage.unallocated_funds>` compresses a
+six-term calculation into one sentence. When the number in it looks wrong,
+there is nothing in the sentence that tells you which term is responsible. The
+**Cash Position** page, linked from the sidebar and from the banner itself,
+lays the same calculation out in full.
+
+.. _app_usage.cash_position.waterfall:
+
+The waterfall
++++++++++++++
+
+Read top to bottom, each line adding to or subtracting from a running total::
+
+    Budget-funding account balances (itemized by account)      +
+    Adjustment for unreconciled transactions                   -
+    Outstanding credit account balances                        +
+    ------------------------------------------------------------
+    Net liquid position
+    Standing budget balances (itemized)                        -
+    Current pay period: allocated but not yet spent            -
+    ------------------------------------------------------------
+    Truly unallocated / uncommitted funds
+
+Two things about the signs are worth stating plainly, because both look wrong
+until you know why:
+
+* **Credit balances are added, not subtracted.** Money owed on a card is
+  *recorded* as a negative balance, so adding it performs the subtraction. The
+  reason for applying the recorded sign rather than negating is that a card
+  carrying a *positive* balance -- overpaid, or holding a statement credit
+  larger than the balance -- really does hold money you can spend, and adding
+  it with its own sign gets that case right without a special case.
+* **The unreconciled adjustment is subtracted**, because spending is entered
+  positive. Ledger minus unreconciled is the projected balance, which is why
+  the per-account table shows the same subtraction one account at a time.
+
+The bottom line is, by construction, the exact amount by which the banner says
+available funds differ from allocated funds. The page and the banner are the
+same calculation -- both read
+:py:class:`~biweeklybudget.cashposition.CashPosition` -- rather than two
+implementations that happen to agree, which is the arrangement that let
+`issue #320 <https://github.com/jantman/biweeklybudget/issues/320>`_ go
+unnoticed. A test asserts the identity directly.
+
+Every aggregate line links to the view it comes from, and each itemized
+account and budget links to its own detail view, so a figure that looks wrong
+can be tracked down rather than just observed.
+
+.. _app_usage.cash_position.ledger_vs_projected:
+
+Ledger versus projected balances
+++++++++++++++++++++++++++++++++
+
+The account table shows the raw ledger balance, that account's unreconciled
+total, and the projected balance side by side, along with the date the balance
+was recorded. A ledger balance can lag reality by days, and on its own it is
+misleading; the projected figure is what you will actually have once the
+transactions you have already entered land.
+
+An account for which no balance has ever been recorded shows **no balance
+recorded** rather than ``$0.00``. It contributes nothing to the totals, but
+"no data" and "zero dollars" are very different answers to "how much money do
+I have", and the page does not conflate them.
+
+.. _app_usage.cash_position.links:
+
+Telling the app which accounts hold which budgets
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The most common reason the uncommitted figure is stubbornly non-zero is a
+budget-funding account whose balance no standing budget accounts for -- a
+savings account, typically. Its balance sits in the uncommitted total forever
+with no explanation.
+
+To let the page explain that, edit a standing budget on the Budgets page and
+tick the accounts its money is held in, under **Held in accounts**. The
+relationship is **many-to-many**: one savings account commonly holds several
+earmarked standing budgets (an emergency fund, a vacation fund, a car repair
+fund), and a budget may be spread across more than one account. The links are
+entirely optional, and the waterfall is identical whether or not you configure
+any.
+
+With links configured, the page reports:
+
+* **Budget-funding accounts nothing allocates** -- active accounts that no
+  active standing budget is linked to, named with their balances.
+* **Coverage groups** -- each set of accounts and standing budgets reachable
+  from one another through the links, with the total each side holds and the
+  difference between them.
+
+.. _app_usage.cash_position.coverage_groups:
+
+Why differences are reported per group
+++++++++++++++++++++++++++++++++++++++
+
+A link records only that a budget's money is held in an account. It does not
+record *how much* of that budget sits in that account, and nothing else in the
+application does either.
+
+So where one account holds three budgets, the difference between the account
+balance and the three budget balances is exact and is reported for that
+account. But where a budget spans two accounts, there is no honest way to say
+how much of it belongs to each. Rather than invent an allocation rule, the
+page groups everything reachable through the links and compares the two sides
+of the group as a whole. A group holding a single account is labelled as a
+per-account difference; a larger one says explicitly that the difference is
+for the group.
+
+A group whose two sides agree is still shown, marked as balanced. That is
+deliberate: it means a group's *absence* from the page always tells you the
+links are not configured, and never that they were checked and found fine. If
+no links exist at all, the page says so rather than listing every account as a
+problem.

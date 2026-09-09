@@ -92,6 +92,7 @@ class SampleDataLoader(object):
         # Link P1 to Standing1 budget
         self.projects['P1'].standing_budget = self.budgets['Standing1']
         self.db.add(self.projects['P1'])
+        self._budget_account_links()
         self.scheduled_transactions = self._scheduled_transactions()
         self.transactions = self._transactions()
         self.db.add(TxnReconcile(
@@ -218,6 +219,23 @@ class SampleDataLoader(object):
         ]:
             self.db.add(res[x])
         return res
+
+    def _budget_account_links(self):
+        """
+        Link standing budgets to the accounts that hold their money, for the
+        Cash Position page (GitHub issue #321).
+
+        Both standing budgets are linked to BankOne and neither to
+        BankTwoStale, which gives the acceptance tests all three cases at
+        once: a coverage group holding one account and several budgets (the
+        motivating "one savings account, several earmarked funds" case), a
+        group whose two sides do not agree, and an active budget-funding
+        account that nothing allocates.
+        """
+        bank_one = self.accounts['BankOne']['account']
+        for name in ['Standing1', 'Standing2']:
+            self.budgets[name].accounts.append(bank_one)
+            self.db.add(self.budgets[name])
 
     def _scheduled_transactions(self):
         res = [

@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 from decimal import Decimal
 
+from biweeklybudget.cashposition import CashPosition
 from biweeklybudget.models.account import Account
 from biweeklybudget.flaskapp.notifications import NotificationsController
 
@@ -120,7 +121,9 @@ class TestNotifications(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                '$800.00', 'is less than', '$1,800.00',
                                '$500.00', '$600.00', '$700.00'
                            )
@@ -158,7 +161,9 @@ class TestNotifications(object):
                            '%s (%s <a href="/budgets">standing budgets</a>; '
                            '%s <a href="/pay_period_for">current pay period '
                            'allocated but unspent</a>; %s <a '
-                           'href="/reconcile">unreconciled</a>)!' % (
+                           'href="/reconcile">unreconciled</a>)! '
+                           '<a href="/cash-position" class="alert-link">'
+                           'View Cash Position</a>.' % (
                                '$1,900.00', 'is more than', '$1,800.00',
                                '$500.00', '$600.00', '$700.00'
                            )
@@ -221,6 +226,35 @@ class TestNotifications(object):
         assert '(-$500.00) is less than' in res[0]['content']
         assert 'current pay period allocated but unspent' in res[0]['content']
         assert 'remaining' not in res[0]['content']
+
+    def test_get_notifications_links_to_cash_position(self):
+        """
+        The banner states the discrepancy in one sentence; the Cash Position
+        page is where the six figures behind it can actually be inspected, so
+        the banner must offer a way to get there. Everything else about the
+        banner's wording is deliberately unchanged (GitHub issue #321).
+        """
+        with patch.multiple(
+            pb,
+            num_stale_accounts=DEFAULT,
+            budget_account_sum=DEFAULT,
+            standing_budgets_sum=DEFAULT,
+            num_unreconciled_ofx=DEFAULT,
+            budget_account_unreconciled=DEFAULT,
+            pp_sum=DEFAULT,
+            credit_account_sum=DEFAULT
+        ) as mocks:
+            mocks['num_stale_accounts'].return_value = 0
+            mocks['budget_account_sum'].return_value = Decimal('1000.00')
+            mocks['standing_budgets_sum'].return_value = Decimal('500.00')
+            mocks['num_unreconciled_ofx'].return_value = 0
+            mocks['budget_account_unreconciled'].return_value = Decimal('0.0')
+            mocks['pp_sum'].return_value = Decimal('0.0')
+            mocks['credit_account_sum'].return_value = Decimal('0.0')
+            res = NotificationsController.get_notifications()
+        assert len(res) == 1
+        assert '<a href="/cash-position" class="alert-link">' \
+               'View Cash Position</a>.' in res[0]['content']
 
     def test_get_notifications_one_stale(self):
         with patch.multiple(
@@ -373,3 +407,53 @@ class TestCreditAccountSum(object):
                 res = NotificationsController.credit_account_sum()
         assert res == Decimal('0.0')
         assert mock_aca.mock_calls == [call(mock_db)]
+
+
+class TestDelegationParity(object):
+    """
+    The five arithmetic methods on
+    :py:class:`~.NotificationsController` are now thin delegations to
+    :py:class:`~biweeklybudget.cashposition.CashPosition`, which exists so the
+    notification banner and the Cash Position page cannot report different
+    numbers (GitHub issue #321).
+
+    These tests pin the delegation itself: that each method returns the
+    matching CashPosition attribute, and -- the part that is easy to get
+    wrong -- that each resolves ``sess=None`` against *this* module's
+    ``db_session`` before delegating, so that existing callers and the tests
+    above keep working unchanged.
+    """
+
+    DELEGATIONS = [
+        ('budget_account_sum', 'budget_account_ledger'),
+        ('credit_account_sum', 'credit_balance'),
+        ('budget_account_unreconciled', 'unreconciled'),
+        ('standing_budgets_sum', 'standing_total'),
+        ('pp_sum', 'pay_period_allocated_unspent')
+    ]
+
+    def test_delegates_with_given_session(self):
+        sess = Mock()
+        for method, attribute in self.DELEGATIONS:
+            with patch('%s.CashPosition' % pbm) as mock_cp:
+                setattr(mock_cp.return_value, attribute, Decimal('12.34'))
+                res = getattr(NotificationsController, method)(sess)
+            assert res == Decimal('12.34'), method
+            assert mock_cp.mock_calls[0] == call(sess), method
+
+    def test_resolves_db_session_before_delegating(self):
+        for method, attribute in self.DELEGATIONS:
+            with patch('%s.db_session' % pbm) as mock_db:
+                with patch('%s.CashPosition' % pbm) as mock_cp:
+                    setattr(mock_cp.return_value, attribute, Decimal('1.00'))
+                    getattr(NotificationsController, method)()
+            assert mock_cp.mock_calls[0] == call(mock_db), method
+
+    def test_all_five_terms_come_from_one_calculation(self):
+        """
+        Whatever else changes, these five figures must all be attributes of
+        CashPosition. A term that grew a second implementation here would be
+        free to drift from the page's, which is the failure #320 was.
+        """
+        for _, attribute in self.DELEGATIONS:
+            assert hasattr(CashPosition, attribute)

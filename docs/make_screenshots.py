@@ -126,6 +126,15 @@ class Screenshotter(object):
             'preshot_func': '_index_preshot'
         },
         {
+            'path': '/cash-position',
+            'filename': 'cash-position',
+            'title': 'Cash Position',
+            'description': 'The full available-funds waterfall: what you '
+                           'have, what is already spoken for, and what is '
+                           'left over, itemized and with every line linked '
+                           'to the view it comes from.'
+        },
+        {
             'path': '/transactions',
             'filename': 'transactions',
             'title': 'Transactions View',

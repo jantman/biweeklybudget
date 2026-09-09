@@ -35,5 +35,47 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-VERSION = '1.12.0'
-PROJECT_URL = 'https://github.com/jantman/biweeklybudget'
+import pytest
+import logging
+from sqlalchemy import text
+
+from biweeklybudget.tests.migrations.migration_test_helpers import MigrationTest
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.mark.migrations
+class TestAddBudgetAccountsTable(MigrationTest):
+    """
+    Test for revision 2d881fa466fe - add the budget_accounts association table
+    linking standing Budgets to the Accounts that hold their money. See GitHub
+    issue #321.
+    """
+
+    migration_rev = '2d881fa466fe'
+
+    def data_setup(self, engine):
+        """method to setup sample data in empty tables"""
+        return
+
+    def _tables(self, engine):
+        conn = engine.connect()
+        tables = [
+            row[0] for row in conn.execute(text('SHOW TABLES;')).fetchall()
+        ]
+        conn.close()
+        return tables
+
+    def verify_before(self, engine):
+        """method to verify data before forward migration, and after reverse"""
+        assert 'budget_accounts' not in self._tables(engine)
+
+    def verify_after(self, engine):
+        """method to verify data after forward migration"""
+        assert 'budget_accounts' in self._tables(engine)
+        conn = engine.connect()
+        columns = conn.execute(
+            text('SELECT * FROM budget_accounts WHERE 1=2;')
+        ).keys()
+        conn.close()
+        assert sorted(columns) == ['account_id', 'budget_id']

@@ -36,16 +36,77 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 */
 
 /**
- * Handle change of the "Type" radio buttons on the modal
+ * Handle change of the "Type" radio buttons on the modal.
+ *
+ * The account links are shown for standing budgets only. A periodic budget
+ * resets every pay period and holds no balance, so saying which account holds
+ * its money would be meaningless.
  */
 function budgetModalDivHandleType() {
     if($('#budget_frm_type_standing').is(':checked')) {
         $('#budget_frm_starting_balance_group').hide();
         $('#budget_frm_current_balance_group').show();
+        $('#budget_frm_accounts_group').show();
     } else {
         $('#budget_frm_current_balance_group').hide();
         $('#budget_frm_starting_balance_group').show();
+        $('#budget_frm_accounts_group').hide();
     }
+}
+
+/**
+ * Escape a string for interpolation into HTML text content.
+ *
+ * Account names are entered by the user, so they cannot be concatenated into
+ * an HTML string as-is.
+ *
+ * @param {String} s - the string to escape
+ * @return {String} the escaped string
+ */
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Generate the HTML for the "Held in accounts" checkboxes on the budget
+ * modal, one per active budget-funding account.
+ *
+ * Checkboxes rather than a multi-select: :js:func:`serializeForm` reads
+ * ``select`` elements with ``.find(':selected').val()``, which returns only
+ * the first selection, so a ``<select multiple>`` would silently drop every
+ * account but one. Checkboxes already serialize correctly, one boolean per
+ * ``acct_<id>`` field, and need no change to the shared form JavaScript.
+ *
+ * Reads the ``budget_source_accounts`` global defined by ``budgets.html``,
+ * which is the only template that loads this file.
+ *
+ * @return {String} HTML for the account links form group
+ */
+function budgetModalDivAccountsGroup() {
+    var html = '<div class="form-group" id="budget_frm_accounts_group">' +
+        '<label class="control-label">Held in accounts</label>';
+    if (typeof budget_source_accounts === 'undefined' ||
+        budget_source_accounts.length === 0) {
+        return html + '<p class="help-block">No active budget-funding ' +
+            'accounts.</p></div>\n';
+    }
+    budget_source_accounts.forEach(function(acct) {
+        var id = 'budget_frm_acct_' + acct.id;
+        html += '<div class="checkbox"><label for="' + id + '">' +
+            '<input type="checkbox" id="' + id + '" name="acct_' + acct.id +
+            '"> ' + escapeHtml(acct.name) + '</label></div>';
+    });
+    html += '<p class="help-block">Which accounts physically hold this ' +
+        'budget\'s money. Used by the <a href="/cash-position">Cash ' +
+        'Position</a> page to show where a budget and the accounts holding ' +
+        'it have drifted apart. Optional; leave all unchecked if you do not ' +
+        'track this.</p></div>\n';
+    return html;
 }
 
 /**
@@ -69,6 +130,7 @@ function budgetModalDivForm() {
         .addCheckbox('budget_frm_active', 'is_active', 'Active?', true)
         .addCheckbox('budget_frm_income', 'is_income', 'Income?')
         .addCheckbox('budget_frm_omit_from_graphs', 'omit_from_graphs', 'Omit from graphs?')
+        .addHTML(budgetModalDivAccountsGroup())
         .render();
 }
 
@@ -106,6 +168,11 @@ function budgetModalDivFillAndShow(msg) {
     } else {
         $('#budget_frm_omit_from_graphs').prop('checked', false);
     }
+    var linked = msg['account_ids'] || [];
+    $('#budget_frm_accounts_group input[type=checkbox]').each(function() {
+        var acct_id = parseInt($(this).attr('name').substring(5), 10);
+        $(this).prop('checked', linked.indexOf(acct_id) > -1);
+    });
     $("#modalDiv").modal('show');
 }
 
@@ -129,6 +196,7 @@ function budgetModal(id, dataTableObj) {
         $.ajax(url).done(budgetModalDivFillAndShow);
     } else {
         $('#modalLabel').text('Add New Budget');
+        budgetModalDivHandleType();
         $("#modalDiv").modal('show');
     }
 }
