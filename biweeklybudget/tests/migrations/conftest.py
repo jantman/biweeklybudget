@@ -35,26 +35,51 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+import os
+
 import pytest
 
 from alembicverify.util import make_alembic_config
 
-
-@pytest.fixture
-def alembic_config_left(uri_left, alembic_root):
-    """Alembic config pointed at the "left" (migrations) test database.
-
-    This replaces the deprecated fixture of the same name shipped by
-    alembic-verify, which resolves the script location from ``alembic.ini``
-    as a path relative to the current working directory.
-    """
-    return make_alembic_config(uri_left, alembic_root)
+from biweeklybudget.tests.migrations.alembic_helpers import (
+    uri_for_db, empty_db_by_uri
+)
 
 
 @pytest.fixture
-def alembic_config_right(uri_right, alembic_root):
-    """Alembic config pointed at the "right" (models) test database.
+def alembic_root():
+    """Absolute path to the Alembic script directory.
 
-    See :py:func:`~.alembic_config_left`.
+    Resolved from ``TOXINIDIR`` rather than from the current working
+    directory; see :py:func:`~.alembic_config`.
     """
-    return make_alembic_config(uri_right, alembic_root)
+    return os.path.join(
+        os.path.abspath(os.environ['TOXINIDIR']), 'biweeklybudget', 'alembic'
+    )
+
+
+@pytest.fixture
+def alembic_db_uri():
+    """URI of the (emptied) database that the migration suite builds.
+
+    This is one of the fixture names alembic-verify 1.x expects a project to
+    supply; the database it names comes from the ``MYSQL_DBNAME_LEFT``
+    environment variable.
+    """
+    uri = uri_for_db(os.environ['MYSQL_DBNAME_LEFT'])
+    empty_db_by_uri(uri)
+    return uri
+
+
+@pytest.fixture
+def alembic_config(alembic_db_uri, alembic_root):
+    """Alembic config pointed at the migration test database.
+
+    alembic-verify ships a fixture of this name, but it resolves the Alembic
+    script location out of ``alembic.ini``, where this project records it as
+    the *relative* path ``biweeklybudget/alembic`` - which only resolves when
+    the tests are run from the repository root. Ours uses the absolute path
+    from the :py:func:`~.alembic_root` fixture instead, so the suite does not
+    depend on the working directory.
+    """
+    return make_alembic_config(alembic_db_uri, alembic_root)

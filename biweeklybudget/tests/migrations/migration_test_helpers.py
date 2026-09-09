@@ -108,32 +108,32 @@ class MigrationTest(object):
         revs.reverse()
         return revs
 
-    def test_migration_roundtrip(self, uri_left, alembic_config_left):
+    def test_migration_roundtrip(self, alembic_db_uri, alembic_config):
         """DO NOT OVERRIDE. Method that runs migration tests."""
-        alembic_config_left.set_section_option(
-            'bwbTest', 'connstring', uri_left
+        alembic_config.set_section_option(
+            'bwbTest', 'connstring', alembic_db_uri
         )
-        load_premigration_sql(uri_left)
-        engine = create_engine(uri_left)
-        revs = self._rev_list(alembic_config_left)
+        load_premigration_sql(alembic_db_uri)
+        engine = create_engine(alembic_db_uri)
+        revs = self._rev_list(alembic_config)
         up_to_rev = None
         for rev in revs:
             if rev['revision'] == self.migration_rev:
                 break
             up_to_rev = rev['revision']
-        self._migrate_up_to(up_to_rev, alembic_config_left)
+        self._migrate_up_to(up_to_rev, alembic_config)
         logger.info('Migrated up to revision: %s', up_to_rev)
         self.data_setup(engine)
         self.verify_before(engine)
-        self._apply_migration(self.migration_rev, alembic_config_left)
+        self._apply_migration(self.migration_rev, alembic_config)
         logger.info(
             'Migrated up to revision: %s',
-            self._get_current_rev(alembic_config_left, engine)
+            self._get_current_rev(alembic_config, engine)
         )
         self.verify_after(engine)
-        self._reverse_migration(up_to_rev, alembic_config_left)
+        self._reverse_migration(up_to_rev, alembic_config)
         logger.info(
             'Migrated back to revision: %s',
-            self._get_current_rev(alembic_config_left, engine)
+            self._get_current_rev(alembic_config, engine)
         )
         self.verify_before(engine)
