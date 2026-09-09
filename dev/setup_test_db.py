@@ -73,7 +73,7 @@ for _ in range(0, 40):
 have_dbs = []
 want_dbs = [
     os.environ.get(x, None) for x in [
-        'MYSQL_DBNAME', 'MYSQL_DBNAME_LEFT', 'MYSQL_DBNAME_RIGHT'
+        'MYSQL_DBNAME', 'MYSQL_DBNAME_LEFT'
     ] if os.environ.get(x, None)
 ]
 

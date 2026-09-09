@@ -18,7 +18,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
     services:
       mariadb:
         image: 'mariadb:10.4.7'
@@ -91,7 +90,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
     services:
       mariadb:
         image: 'mariadb:10.4.7'
@@ -124,7 +122,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
     services:
       mariadb:
         image: 'mariadb:10.4.7'
@@ -170,7 +167,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
       PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
       PLAID_COUNTRY_CODES: ${{ secrets.PLAID_COUNTRY_CODES }}
       PLAID_ENV: ${{ secrets.PLAID_ENV }}
@@ -220,7 +216,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
     services:
       mariadb:
         image: 'mariadb:10.4.7'
@@ -276,7 +271,6 @@ jobs:
       MYSQL_PASS: dbroot
       MYSQL_DBNAME: budgettest
       MYSQL_DBNAME_LEFT: alembicLeft
-      MYSQL_DBNAME_RIGHT: alembicRight
     services:
       mariadb:
         image: 'mariadb:10.4.7'

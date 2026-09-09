@@ -94,7 +94,6 @@ export MYSQL_USER=root
 export MYSQL_PASS=dbroot
 export MYSQL_DBNAME=budgettest
 export MYSQL_DBNAME_LEFT=alembicLeft
-export MYSQL_DBNAME_RIGHT=alembicRight
 ```
 
 3. **Create the test databases:**
