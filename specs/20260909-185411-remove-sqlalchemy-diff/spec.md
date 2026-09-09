@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-09
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#311](https://github.com/jantman/biweeklybudget/issues/311) — "Un-pin alembic-verify and remove sqlalchemy-diff dependency"
 

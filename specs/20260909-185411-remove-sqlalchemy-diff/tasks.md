@@ -104,11 +104,11 @@ second database.
 **Goal**: Everything passes, from a clean environment, with the removed dependency
 genuinely absent.
 
-- [ ] T020 Rebuild the virtualenv or explicitly `pip uninstall sqlalchemy-diff`, then run the migrations suite to completion and confirm 8 passed with the package absent. Redirect output to a file rather than piping through `tail`, per the project's testing convention
+- [x] T020 Rebuild the virtualenv or explicitly `pip uninstall sqlalchemy-diff`, then run the migrations suite to completion and confirm 8 passed with the package absent. Redirect output to a file rather than piping through `tail`, per the project's testing convention
 - [x] T021 [P] Run the repository-wide grep from [quickstart.md](./quickstart.md) §5 and confirm `sqlalchemy-diff` / `sqlalchemy_diff` / `sqlalchemydiff` appear only in `CHANGES.rst` history entries (SC-001)
-- [ ] T022 Run the unit suite (`tox -e py314`) to completion; all tests pass, and the run is pycodestyle- and pyflakes-clean under `pytest.ini`'s exceptions (Constitution II)
-- [ ] T023 Run the docs build (`tox -e docs`) to completion with no errors (Constitution IV)
-- [ ] T024 Run the acceptance suite (`tox -e acceptance`) to completion; all tests pass. A timeout is not a pass — raise the timeout and re-run rather than narrowing the selection (Constitution II). The known-flaky `TestDragLimitations::test_11_unreconcile` should be re-run in isolation before being attributed to this change
+- [x] T022 Run the unit suite (`tox -e py314`) to completion; all tests pass, and the run is pycodestyle- and pyflakes-clean under `pytest.ini`'s exceptions (Constitution II)
+- [x] T023 Run the docs build (`tox -e docs`) to completion with no errors (Constitution IV)
+- [x] T024 Run the acceptance suite (`tox -e acceptance`) to completion; all tests pass. A timeout is not a pass — raise the timeout and re-run rather than narrowing the selection (Constitution II). The known-flaky `TestDragLimitations::test_11_unreconcile` should be re-run in isolation before being attributed to this change
 
 **Checkpoint**: The full Test Gate is green.
 
@@ -118,8 +118,8 @@ genuinely absent.
 
 - [x] T025 [US4] Update `docs/source/development.rst`: drop `MYSQL_DBNAME_RIGHT` from the setup export lines (~38, ~59–60) and from the environment-variable list (~154); drop the "requires *two* test databases" sentence; and rewrite the Database Migration Tests prose (~141) so it describes what the suite now does — drives the migrations with alembic-verify and compares the resulting schema against the models with Alembic's own autogenerate comparison. Describe `MYSQL_DBNAME_LEFT` as the database the migration suite builds, rather than as "the first (left)" of a pair
 - [x] T026 [US4] Bump `biweeklybudget/version.py` from 1.12.0 and add the matching `CHANGES.rst` entry in the existing format, covering: `sqlalchemy-diff` removed entirely; the schema comparison rebuilt on `alembic.autogenerate.compare_metadata` with server-default comparison enabled and no exclusion list; the migration fixtures renamed to alembic-verify 1.x's supported names; and `MYSQL_DBNAME_RIGHT` no longer used. Note in the entry that check constraints are not compared by Alembic autogenerate, and that they were already excluded from the previous comparison
-- [ ] T027 [US4] Re-run `tox -e docs` after the documentation edits and confirm it still builds clean
-- [ ] T028 Record the final results in this file and in [spec.md](./spec.md) (status → Complete), then commit
+- [x] T027 [US4] Re-run `tox -e docs` after the documentation edits and confirm it still builds clean
+- [x] T028 Record the final results in this file and in [spec.md](./spec.md) (status → Complete), then commit
 
 ---
 
@@ -190,3 +190,47 @@ gate rather than an assumption.
 **Do not touch** `specs/*/quickstart.md` belonging to earlier features. Those record how
 the environment looked when each of those features was built, and rewriting them would
 falsify history.
+
+---
+
+## Results
+
+All 28 tasks complete. Recorded 2026-09-09.
+
+### Test Gate (Constitution II)
+
+| Suite | Local | CI (PR #336) |
+|-------|-------|--------------|
+| `migrations` | 8 passed — re-run with `sqlalchemy-diff` uninstalled from the environment | pass |
+| `py314` (unit) | 885 passed, 4 skipped | pass |
+| `acceptance` | 793 passed, 24 skipped | pass |
+| `docs` | build succeeded; `sphinx-apidoc` regenerated no changed files | pass |
+| `docker` | not run locally | pass |
+| `plaid` / `jsdoc` / `screenshots` / `coverage` / Snyk | not run locally | pass |
+
+Every CI check on PR #336 passed. The `claude-review` job reported **"No issues found."**
+No Copilot review was requested on the PR.
+
+The known-flaky `TestDragLimitations::test_11_unreconcile` passed on the first run and
+needed no isolated re-run.
+
+### Success criteria
+
+| ID | Outcome |
+|----|---------|
+| SC-001 | `sqlalchemy-diff` appears nowhere outside `CHANGES.rst` history and one explanatory comment in `test_alembic_verify.py`; absent from the installed package list |
+| SC-002 | Migrations suite runs to completion, all passing |
+| SC-003 | Zero `alembic-verify` deprecation warnings (one unrelated `datetime.utcnow()` warning from `biweeklybudget/utils.py` remains, pre-existing) |
+| SC-004 | Injected `drift_check` column produced a failure naming `add_column`, `accounts` and `drift_check` |
+| SC-005 | Unit and acceptance suites pass; docs build clean |
+| SC-006 | Documented setup produces exactly the databases and variables the suite consumes |
+
+### Baseline comparison
+
+Before: 8 passed in 123s. After: 8 passed in 121s. Same test count, same result, one
+fewer dependency and one fewer database.
+
+### Judgement calls, surfaced in PR #336 for the maintainer
+
+- `alembic-verify` keeps its exact pin at `1.0.2` (research R2)
+- `MYSQL_DBNAME_LEFT` keeps its name (research R7)
