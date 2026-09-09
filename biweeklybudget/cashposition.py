@@ -738,8 +738,9 @@ class CashPosition(object):
         the latter state immediately after the migration that added the links.
 
         Links belonging to inactive or periodic budgets do not count, for the
-        same reason they are excluded from :py:attr:`~._link_pairs`: an
-        inactive budget allocates nothing, so it explains nothing, and a
+        same reason they are excluded from the association pairs the
+        diagnostics are built from: an inactive budget allocates nothing, so
+        it explains nothing, and a
         configuration made up entirely of such links leaves the page with
         nothing to say. Deactivating every linked budget therefore returns
         this to False.
