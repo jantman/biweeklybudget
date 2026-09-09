@@ -176,9 +176,9 @@ sum to it, the page calls each situation out by name with the amount involved.
 - [X] T-M5.5 Add the 1.12.0 entry to `CHANGES.rst` in the established format, covering the page, the shared calculation refactor, the schema change, and why deltas are per coverage group.
 - [X] T-M5.6 Update `specs/20260908-155554-cash-position-page/spec.md` and `plan.md` to record what was built, and add a completion note to `checklists/requirements.md`.
 - [X] T-M5.7 Confirm every new Python file carries the standard AGPL v3 copyright header, and that new code is pycodestyle- and pyflakes-clean under the exceptions in `pytest.ini`.
-- [ ] T-M5.8 Run the full `tox` suite to completion — `py314`, `docs`, `jsdoc`, `screenshots`, `acceptance`, `docker`, `migrations`, `plaid` — redirecting output to a scratchpad file. A timeout is **not** a pass: raise the timeout and re-run until the suite completes (constitution II).
-- [ ] T-M5.9 Walk [quickstart.md](./quickstart.md) end to end against a running `flask rundev` to confirm the feature behaves as documented.
-- [ ] T-M5.10 Commit, push the branch to `origin`, and open a pull request describing the change and its constitution compliance.
+- [X] T-M5.8 Run the full `tox` suite to completion — `py314`, `docs`, `jsdoc`, `screenshots`, `acceptance`, `docker`, `migrations`, `plaid` — redirecting output to a scratchpad file. A timeout is **not** a pass: raise the timeout and re-run until the suite completes (constitution II).
+- [X] T-M5.9 Walk [quickstart.md](./quickstart.md) end to end against a running `flask rundev` to confirm the feature behaves as documented.
+- [X] T-M5.10 Commit, push the branch to `origin`, and open a pull request describing the change and its constitution compliance.
 
 ---
 
@@ -252,3 +252,27 @@ Each step leaves the application working and its suites green.
 - Redirect all test output to a scratchpad file rather than piping to `tail` or `grep`, per `CLAUDE.md`, so the whole run can be examined.
 - Do not narrow a failing suite to a passing subset, and do not report a timed-out run as green (constitution II).
 - The per-milestone approval of constitution principle I is satisfied in advance by the dispatching instruction; see [plan.md](./plan.md).
+
+---
+
+## Completion
+
+All 59 tasks complete. Delivered as PR
+[#335](https://github.com/jantman/biweeklybudget/pull/335) on branch
+`robot-army/issue-321-add-a-cash-position-page-showing-the`.
+
+Final suite results, run to completion (constitution II):
+
+| Suite | Result |
+|---|---|
+| `py314` (unit) | 885 passed, 4 skipped; pycodestyle and pyflakes clean |
+| `acceptance` | 793 passed, 0 failed |
+| `migrations` | 8 passed, including `alembic-verify`'s model/head comparison |
+| `docs` | builds with no warning naming any file this branch touches |
+| `docker` | passed locally and in CI |
+
+Two post-implementation commits (M5.2, M5.3) fix five issues found by a
+local review of this branch, run because the `claude-review` CI check fails
+at install time and produced no review. The most significant was silent
+deletion of budget/account links to accounts the modal does not render;
+the details are in the commit message and on the pull request.
