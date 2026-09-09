@@ -55,6 +55,24 @@ function budgetModalDivHandleType() {
 }
 
 /**
+ * Escape a string for interpolation into HTML text content.
+ *
+ * Account names are entered by the user, so they cannot be concatenated into
+ * an HTML string as-is.
+ *
+ * @param {String} s - the string to escape
+ * @return {String} the escaped string
+ */
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * Generate the HTML for the "Held in accounts" checkboxes on the budget
  * modal, one per active budget-funding account.
  *
@@ -81,7 +99,7 @@ function budgetModalDivAccountsGroup() {
         var id = 'budget_frm_acct_' + acct.id;
         html += '<div class="checkbox"><label for="' + id + '">' +
             '<input type="checkbox" id="' + id + '" name="acct_' + acct.id +
-            '"> ' + acct.name + '</label></div>';
+            '"> ' + escapeHtml(acct.name) + '</label></div>';
     });
     html += '<p class="help-block">Which accounts physically hold this ' +
         'budget\'s money. Used by the <a href="/cash-position">Cash ' +

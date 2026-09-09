@@ -20,12 +20,15 @@
         active_budget_names_to_id["{{ active_budgets[id] }}"] = "{{ id }}";
         {% endfor %}
         /* Active budget-funding accounts, for the standing-budget account
-           links on the budget modal. See GitHub issue #321. */
-        var budget_source_accounts = [
-        {% for id, name in budget_source_accounts %}
-            { id: {{ id }}, name: "{{ name }}" }{{ "," if not loop.last }}
-        {% endfor %}
-        ];
+           links on the budget modal. See GitHub issue #321.
+
+           Serialized with |tojson rather than interpolated into a quoted JS
+           string. Inside a script element, Jinja's HTML autoescaping is the
+           wrong escaper: an account name containing a double quote would
+           arrive as &#34;, and one containing a closing script tag would end
+           the block early. tojson escapes for the JavaScript context this
+           actually is, including that tag. */
+        var budget_source_accounts = {{ budget_source_accounts|tojson }};
     </script>
 {% endblock %}
 {% block body %}

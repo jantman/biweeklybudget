@@ -141,15 +141,10 @@
                                     {% for line in cp.budget_account_lines %}
                                         <tr data-amount="{{ line.amount }}" data-counted="{{ 'true' if line.counted else 'false' }}">
                                             <td><a href="/accounts/{{ line.account.id }}">{{ line.account.name }}</a></td>
-                                        {% if line.has_balance %}
-                                            <td class="num">{{ line.ledger|reddollars|safe }}</td>
+                                            <td class="num">{% if line.has_balance %}{{ line.ledger|reddollars|safe }}{% else %}<span class="wf-nodata">no balance recorded</span>{% endif %}</td>
                                             <td class="num">{{ line.unreconciled|reddollars|safe }}</td>
-                                            <td class="num">{{ line.projected|reddollars|safe }}</td>
-                                            <td>{{ line.as_of|isodate }}</td>
-                                        {% else %}
-                                            <td class="num wf-nodata" colspan="3">no balance recorded</td>
-                                            <td class="wf-nodata">&mdash;</td>
-                                        {% endif %}
+                                            <td class="num">{% if line.has_balance %}{{ line.projected|reddollars|safe }}{% else %}<span class="wf-nodata">unknown</span>{% endif %}</td>
+                                            <td>{% if line.has_balance %}{{ line.as_of|isodate }}{% else %}<span class="wf-nodata">&mdash;</span>{% endif %}</td>
                                         </tr>
                                     {% else %}
                                         <tr><td colspan="5"><em>No active budget-funding accounts.</em></td></tr>

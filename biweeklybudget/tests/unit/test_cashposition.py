@@ -154,6 +154,34 @@ class TestConnectedComponents(object):
         assert pairs == [(1, 10), (2, 10)]
 
 
+class CountingAccount(object):
+    """
+    A minimal stand-in for an Account that counts how many times its
+    ``unreconciled_sum`` property is read. A Mock cannot express this: a
+    ``property`` object assigned to a Mock *instance* is never invoked, so a
+    test written that way would pass whether or not the value was computed
+    eagerly.
+    """
+
+    is_active = True
+    is_budget_source = True
+    acct_type = AcctType.Bank
+    id = 1
+    name = 'Counting'
+
+    def __init__(self, ledger, unreconciled):
+        self.balance = Mock(
+            ledger=ledger, ledger_date=None, overall_date=None
+        )
+        self._unreconciled = unreconciled
+        self.unreconciled_calls = 0
+
+    @property
+    def unreconciled_sum(self):
+        self.unreconciled_calls += 1
+        return self._unreconciled
+
+
 class TestAccountLine(object):
 
     def test_ledger_and_projected(self):
@@ -168,6 +196,28 @@ class TestAccountLine(object):
         assert line.has_balance is True
         assert line.counted is True
         assert line.exclusion_reason is None
+
+    def test_unreconciled_is_not_computed_until_asked_for(self):
+        """
+        Account.unreconciled_sum walks every unreconciled transaction in
+        Python. The banner reads both the ledger term and the unreconciled
+        term on every page load, so computing this in __init__ would make
+        every page perform that scan twice where it previously did it once.
+        """
+        acct = CountingAccount(Decimal('1000.00'), Decimal('50.00'))
+        line = AccountLine(acct, with_unreconciled=True)
+        assert line.ledger == Decimal('1000.00')
+        assert acct.unreconciled_calls == 0
+        assert line.unreconciled == Decimal('50.00')
+        assert acct.unreconciled_calls == 1
+
+    def test_unreconciled_is_computed_only_once(self):
+        acct = CountingAccount(Decimal('1000.00'), Decimal('50.00'))
+        line = AccountLine(acct, with_unreconciled=True)
+        line.unreconciled
+        line.unreconciled
+        line.projected
+        assert acct.unreconciled_calls == 1
 
     def test_unreconciled_not_looked_up_when_not_wanted(self):
         """

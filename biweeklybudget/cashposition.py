@@ -146,15 +146,36 @@ class AccountLine(object):
         self.as_of = None
         if balance is not None:
             self.as_of = balance.ledger_date or balance.overall_date
-        #: sum of this account's unreconciled transactions; always a Decimal
-        self.unreconciled = ZERO
-        if with_unreconciled:
-            self.unreconciled = account.unreconciled_sum
+        self._with_unreconciled = with_unreconciled
 
     def __repr__(self):
         return '<AccountLine(account=%s, ledger=%s)>' % (
             self.account, self.ledger
         )
+
+    @cached_property
+    def unreconciled(self):
+        """
+        Return the sum of this account's unreconciled transactions, or zero
+        for a line that does not display one.
+
+        Computed on first access rather than in ``__init__``, and this is not
+        an incidental optimization.
+        :py:attr:`~.Account.unreconciled_sum` walks every unreconciled
+        transaction in Python, checking each against
+        :py:attr:`~.Transaction.is_excluded_from_budget`. The notification
+        banner is rendered on *every* page and reads both
+        :py:attr:`~.CashPosition.budget_account_ledger` and
+        :py:attr:`~.CashPosition.unreconciled`; if the ledger term dragged
+        this scan along with it, every page load would perform it twice where
+        it previously performed it once. See GitHub issue #321.
+
+        :return: sum of unreconciled transaction amounts, or zero
+        :rtype: decimal.Decimal
+        """
+        if not self._with_unreconciled:
+            return ZERO
+        return self.account.unreconciled_sum
 
     @property
     def has_balance(self):
@@ -709,12 +730,19 @@ class CashPosition(object):
     @cached_property
     def has_links_configured(self):
         """
-        Return whether any budget/account link exists at all.
+        Return whether any link to an *active standing* budget exists.
 
         Distinguishes "checked, and everything is accounted for" from "nothing
         has been configured yet", which are very different messages to show
         somebody looking at an unexplained surplus. Every installation is in
         the latter state immediately after the migration that added the links.
+
+        Links belonging to inactive or periodic budgets do not count, for the
+        same reason they are excluded from :py:attr:`~._link_pairs`: an
+        inactive budget allocates nothing, so it explains nothing, and a
+        configuration made up entirely of such links leaves the page with
+        nothing to say. Deactivating every linked budget therefore returns
+        this to False.
 
         :return: whether any link to an active standing budget exists
         :rtype: bool

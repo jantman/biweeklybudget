@@ -39,6 +39,7 @@ import pytest
 from decimal import Decimal
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
+from biweeklybudget.models.account import Account
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
@@ -993,3 +994,42 @@ class TestBudgetAccountLinks(AcceptanceHelper):
         """
         b = testdb.query(Budget).get(4)
         assert b.accounts == []
+
+    def test_10_link_an_inactive_account(self, testdb):
+        """
+        Set up the case the modal cannot represent: a budget linked to an
+        account that is no longer active, and so has no checkbox.
+        """
+        b = testdb.query(Budget).get(4)
+        disabled = testdb.query(Account).filter(
+            Account.name == 'DisabledBank'
+        ).one()
+        assert disabled.is_active is False
+        b.accounts = [disabled]
+        testdb.add(b)
+        testdb.flush()
+        testdb.commit()
+
+    def test_11_saving_does_not_drop_the_unlisted_link(self, base_url,
+                                                       selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.XPATH, '//a[text()="Standing1 (4)"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        # the inactive account is not offered
+        assert selenium.find_elements(By.ID, 'budget_frm_acct_6') == []
+        selenium.find_element(By.ID, 'budget_frm_acct_1').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        x = selenium.find_elements(By.CLASS_NAME, 'alert-success')
+        assert len(x) == 1
+
+    def test_12_verify_inactive_link_survived(self, testdb):
+        """
+        An absent checkbox means "not asked about", not "unchecked". Replacing
+        the whole collection with what the form returned would have deleted
+        the DisabledBank link on a save that never mentioned it.
+        """
+        b = testdb.query(Budget).get(4)
+        names = sorted(a.name for a in b.accounts)
+        assert names == ['BankOne', 'DisabledBank']

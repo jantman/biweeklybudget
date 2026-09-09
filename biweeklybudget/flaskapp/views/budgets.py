@@ -59,19 +59,23 @@ logger = logging.getLogger(__name__)
 
 def budget_source_accounts():
     """
-    Return the active budget-funding accounts, as a list of ``(id, name)``
-    tuples ordered by name.
+    Return the active budget-funding accounts, as a list of
+    ``{'id': ..., 'name': ...}`` dicts ordered by name.
 
     These are the accounts a standing budget's money can be held in, offered
     as checkboxes on the budget modal. Only bank and cash accounts are listed:
     a standing budget's balance is cash you are holding, and a credit or
     investment account is not where it lives. See GitHub issue #321.
 
-    :return: ``(id, name)`` for each active budget-funding account
+    Dicts rather than tuples so that ``budgets.html`` can hand the whole list
+    to ``|tojson``, which escapes account names for the JavaScript context
+    they are actually placed in.
+
+    :return: id and name of each active budget-funding account
     :rtype: list
     """
     return [
-        (a.id, a.name) for a in db_session.query(Account).filter(
+        {'id': a.id, 'name': a.name} for a in db_session.query(Account).filter(
             Account.is_active.__eq__(True),
             Account.acct_type.in_([AcctType.Bank, AcctType.Cash])
         ).order_by(Account.name).all()
@@ -302,9 +306,19 @@ class BudgetFormHandler(FormHandlerView):
                     wanted.add(int(key[len('acct_'):]))
                 except ValueError:
                     logger.warning('Ignoring malformed field name: %s', key)
-        budget.accounts = db_session.query(Account).filter(
+        # Links to accounts the modal did not offer a checkbox for are kept.
+        # The modal lists only *active* budget-funding accounts, so replacing
+        # the whole collection with what came back would silently delete the
+        # link to an account that had since been deactivated -- on a save that
+        # only changed the budget's description, with nothing on screen to say
+        # it had happened. An absent checkbox means "not asked about", not
+        # "unchecked". See GitHub issue #321.
+        offered = {a['id'] for a in budget_source_accounts()}
+        keep = [a for a in budget.accounts if a.id not in offered]
+        chosen = db_session.query(Account).filter(
             Account.id.in_(wanted)
         ).all() if wanted else []
+        budget.accounts = keep + [a for a in chosen if a not in keep]
 
 
 class BudgetTxfrFormHandler(FormHandlerView):
