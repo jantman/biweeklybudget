@@ -28,6 +28,12 @@ Guidelines
   heading, creating that heading if it doesn't exist. Do not change the version in
   ``version.py``; it is only incremented when a release is cut (see
   :ref:`development.release_checklist` below).
+* Keep changelog entries concise, following the format and level of detail of the entries
+  for 1.6.0 and earlier: one bullet per change, starting with the issue or pull request
+  link if there is one, a sentence or two describing the user-visible change, and at most
+  a few short sub-bullets for things users need to know (new settings, database
+  migrations, UI changes, breaking changes, upgrade steps). Background and rationale
+  belong in the pull request, not the changelog.
 
 .. _development.docker_database:
 

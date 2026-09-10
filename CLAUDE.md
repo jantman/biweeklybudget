@@ -261,6 +261,13 @@ All Python files include a standard copyright header with AGPL v3 license text. 
   Unreleased
   ----------
   ```
+- **Keep entries concise.** Use the entries for 1.6.0 and earlier as the guide for format
+  and level of detail: one bullet per change, starting with the issue/PR link if there is
+  one, a sentence or two describing the user-visible change, and at most a few short
+  sub-bullets for what users need to know (new settings, migrations, UI changes, breaking
+  changes, upgrade steps). Problem narratives, investigation, rationale, and design
+  discussion go in the spec and PR, not the changelog. Do **not** imitate the much longer
+  1.7.0–1.12.1 entries.
 - When a release is requested, choose the version per
   [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) from *all* entries under
   `Unreleased`: MAJOR if any change is backwards-incompatible for users (e.g. a removed or
