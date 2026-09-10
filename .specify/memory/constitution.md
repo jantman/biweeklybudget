@@ -1,6 +1,26 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.0 → 2.1.1
+Rationale: PATCH. version.py was reset to 1.6.0 (the latest release) and the never-
+released 1.6.1-1.12.1 changelog entries were rewritten concisely under "Unreleased".
+Principle VI's references to "the entries for 1.6.0 and earlier" as the model and to
+1.7.0-1.12.1 as a counter-example no longer point at anything, so it now refers to the
+existing entries. Its rationale is corrected: 1.6.1 (not 1.7.0) through 1.12.1 were
+never tagged. What is required is unchanged.
+
+Modified principles:
+  - VI. Changelog Every Change; Release Only On Request (wording only)
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: CLAUDE.md, docs/source/development.rst
+(Guidelines), .github/PULL_REQUEST_TEMPLATE.md.
+
+Follow-up TODOs: none.
+
+Previous amendment 2.1.0 (2026-09-10):
 Version change: 2.0.0 → 2.1.0
 Rationale: MINOR. Principle VI gains a requirement that CHANGES.rst entries be concise,
 matching the format and level of detail of the 1.6.0-and-earlier entries. This expands
@@ -129,14 +149,13 @@ under an `Unreleased` heading, creating that heading directly beneath the `Chang
 title if it is absent. Completing a feature or opening a pull request MUST NOT
 increment `biweeklybudget/version.py`, create a tag, or cut a release.
 
-Entries MUST be concise, following the format and level of detail of the entries for
-1.6.0 and earlier: one bullet per change, led by the issue or pull request link where
-there is one, stating the user-visible change in a sentence or two, with at most a few
-short sub-bullets for what a user or operator needs to know (new settings, schema
+Entries MUST be concise, following the format and level of detail of the existing
+entries: one bullet per change, led by the issue or pull request link where there is
+one, stating the user-visible change in a sentence or two, with at most a few short
+sub-bullets for what a user or operator needs to know (new settings, schema
 migrations, UI changes, breaking changes, upgrade steps). Problem narratives,
 investigation, rationale, and design discussion belong in the spec and pull request,
-not the changelog. The 1.7.0 through 1.12.1 entries are far more verbose than this and
-MUST NOT be used as a model.
+not the changelog.
 
 Version increments, tags, and releases happen only when the maintainer explicitly
 requests a release. The new version MUST then be chosen per Semantic Versioning 2.0.0
@@ -146,8 +165,8 @@ otherwise PATCH. The `Unreleased` heading MUST then be renamed to `X.Y.Z (YYYY-M
 and the tag MUST be exactly the version number.
 
 Rationale: bumping the version with every feature produced numbers that were never
-released (1.7.0 through 1.12.1 were never tagged), so a version stopped identifying
-anything a user could install. Accumulating entries under `Unreleased` keeps the
+released (1.6.1 through 1.12.1 were never tagged, and were later folded back under
+`Unreleased`), so a version stopped identifying anything a user could install. Accumulating entries under `Unreleased` keeps the
 changelog current while making each version number correspond to a real release.
 
 New Python files MUST carry the standard AGPL v3 copyright header used throughout
@@ -229,4 +248,4 @@ unjustified deviation is grounds to reject the change. Principles marked
 NON-NEGOTIABLE are not subject to case-by-case waiver — changing them requires
 amending this constitution first.
 
-**Version**: 2.1.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10
+**Version**: 2.1.1 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10
