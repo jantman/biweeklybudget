@@ -884,6 +884,6 @@ has a value on every returned date. Handled by
 
 .. warning::
 
-   Before biweeklybudget 1.10.0 this endpoint took no parameters and always
-   returned all recorded history. A request with no ``days`` parameter now
+   In biweeklybudget 1.6.0 and earlier, this endpoint took no parameters and
+   always returned all recorded history. A request with no ``days`` parameter now
    returns only the default window. Pass ``days=0`` for the previous behaviour.
