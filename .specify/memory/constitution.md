@@ -1,6 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.0.0 → 2.1.0
+Rationale: MINOR. Principle VI gains a requirement that CHANGES.rst entries be concise,
+matching the format and level of detail of the 1.6.0-and-earlier entries. This expands
+existing guidance without invalidating work done under 2.0.0.
+
+Modified principles:
+  - VI. Changelog Every Change; Release Only On Request (title unchanged; adds the
+    conciseness requirement, and names 1.7.0-1.12.1 as entries not to be imitated)
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: CLAUDE.md, docs/source/development.rst
+(Guidelines), .github/PULL_REQUEST_TEMPLATE.md, CHANGES.rst (Unreleased entry trimmed).
+
+Follow-up TODOs: none.
+
+Previous amendment 2.0.0 (2026-09-10):
 Version change: 1.0.0 → 2.0.0
 Rationale: MAJOR. Principle VI is redefined in a backward-incompatible way: under
 1.0.0 every completed feature was REQUIRED to increment version.py; under 2.0.0 doing
@@ -111,6 +129,15 @@ under an `Unreleased` heading, creating that heading directly beneath the `Chang
 title if it is absent. Completing a feature or opening a pull request MUST NOT
 increment `biweeklybudget/version.py`, create a tag, or cut a release.
 
+Entries MUST be concise, following the format and level of detail of the entries for
+1.6.0 and earlier: one bullet per change, led by the issue or pull request link where
+there is one, stating the user-visible change in a sentence or two, with at most a few
+short sub-bullets for what a user or operator needs to know (new settings, schema
+migrations, UI changes, breaking changes, upgrade steps). Problem narratives,
+investigation, rationale, and design discussion belong in the spec and pull request,
+not the changelog. The 1.7.0 through 1.12.1 entries are far more verbose than this and
+MUST NOT be used as a model.
+
 Version increments, tags, and releases happen only when the maintainer explicitly
 requests a release. The new version MUST then be chosen per Semantic Versioning 2.0.0
 from all `Unreleased` entries accumulated since the last release: MAJOR if any change
@@ -202,4 +229,4 @@ unjustified deviation is grounds to reject the change. Principles marked
 NON-NEGOTIABLE are not subject to case-by-case waiver — changing them requires
 amending this constitution first.
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10
+**Version**: 2.1.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10
