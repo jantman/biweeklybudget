@@ -24,6 +24,10 @@ Guidelines
 
 * pep8 compliant with some exceptions (see pytest.ini)
 * 100% test coverage with pytest (with valid tests)
+* Add an entry for your change at the top of ``CHANGES.rst`` under an ``Unreleased``
+  heading, creating that heading if it doesn't exist. Do not change the version in
+  ``version.py``; it is only incremented when a release is cut (see
+  :ref:`development.release_checklist` below).
 
 .. _development.docker_database:
 
@@ -284,12 +288,26 @@ To updated the vendored projects:
 2. Run ``cd biweeklybudget/vendored && install_vendored.sh``
 3. Ensure that our main ``setup.py`` includes all dependencies of the vendored projects.
 
+.. _development.release_checklist:
+
 Release Checklist
 -----------------
 
-1. Ensure that ``CHANGES.rst`` has entries for all changes.
-2. Ensure that the version in ``version.py`` has been incremented.
-3. Update the header in ``CHANGES.rst`` to have the new version number and release date.
+Releases are cut only when the maintainer chooses to make one; individual changes and pull
+requests do not change the version. Until then, changes accumulate under the ``Unreleased``
+heading at the top of ``CHANGES.rst``. Version numbers follow
+`Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_.
+
+1. Ensure that ``CHANGES.rst`` has entries under ``Unreleased`` for all changes since the last release.
+2. Choose the new version from those entries: a MAJOR increment if any change is
+   backwards-incompatible for users (for example a removed or renamed setting, console
+   script, or HTTP endpoint or parameter; a dropped Python version; or an upgrade that
+   requires manual steps), otherwise a MINOR increment if any change adds functionality,
+   otherwise a PATCH increment. Set it in ``biweeklybudget/version.py``.
+3. Rename the ``Unreleased`` header in ``CHANGES.rst`` to the new version number and release
+   date, in the form ``X.Y.Z (YYYY-MM-DD)``, adjusting the underline to match.
 4. Regenerate all docs with ``tox -e docs -e jsdoc -e screenshots`` and commit the results.
 5. Merge all of the above to master.
-6. To cut release, tag master.
+6. To cut release, tag master with exactly the version number (for example ``1.13.0``, with
+   no ``v`` prefix). The release workflow fails if the tag does not match ``version.py``, and
+   takes the GitHub release notes from the ``CHANGES.rst`` section for that version.

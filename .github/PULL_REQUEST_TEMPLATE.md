@@ -9,6 +9,9 @@ __IMPORTANT:__ Please take note of the below checklist, especially the first two
       writing tests for the code, feel free to ask for help or submit the PR without tests.
     - [ ] Complete, correctly-formatted documentation for all classes, functions and methods.
     - [ ] documentation has been rebuilt with ``tox -e docs``
+    - [ ] An entry for this change has been added at the top of ``CHANGES.rst``, under the
+      ``Unreleased`` heading. Please do **not** change ``version.py``; the version is only
+      incremented when a release is cut.
     - [ ] All modules should have (and use) module-level loggers.
     - [ ] **Commit messages** should be meaningful, and reference the Issue number
       if you're working on a GitHub issue (i.e. "issue #x - <message>"). Please

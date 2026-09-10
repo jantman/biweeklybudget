@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Change the release process: changelog entries now accumulate under this ``Unreleased`` heading, and ``version.py`` is incremented only when a release is cut, instead of every change bumping the version. Release versions follow `Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_. ``CLAUDE.md``, the project constitution (``.specify/memory/constitution.md``), the Release Checklist in the development documentation, and the pull request template are updated to match.
+
 1.12.1 (2026-09-09)
 -------------------
 
