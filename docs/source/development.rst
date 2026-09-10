@@ -35,7 +35,7 @@ To run a Dockerized database for your test environment:
 .. code-block:: bash
 
     $ docker run -d --name budgettest -p 13306:3306 --env MYSQL_ROOT_PASSWORD=dbroot --env MYSQL_ROOT_HOST='%' mariadb:10.4.7
-    $ export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME=budgettest; export MYSQL_DBNAME_LEFT=alembicLeft; export MYSQL_DBNAME_RIGHT=alembicRight
+    $ export DB_CONNSTRING='mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'; export MYSQL_HOST=127.0.0.1; export MYSQL_PORT=13306; export MYSQL_USER=root; export MYSQL_PASS=dbroot; export MYSQL_DBNAME=budgettest; export MYSQL_DBNAME_LEFT=alembicLeft
     $ python dev/setup_test_db.py
     # run your tests
     $ docker stop budgettest && docker rm budgettest
@@ -57,7 +57,6 @@ After starting your test database (i.e. :ref:`development.docker_database` above
    export MYSQL_PASS=dbroot
    export MYSQL_DBNAME=budgettest
    export MYSQL_DBNAME_LEFT=alembicLeft
-   export MYSQL_DBNAME_RIGHT=alembicRight
 
 you can set up the test databases by running ``dev/setup_test_db.py``
 
@@ -138,20 +137,27 @@ end with a trailing slash.
 Database Migration Tests
 ++++++++++++++++++++++++
 
-There is a ``migrations`` tox environment that runs `alembic-verify <https://github.com/gianchub/alembic-verify>`_
-tests on migrations. This tests running through all upgrade migrations in order and then all downgrade migrations
-in order, and also tests that the latest (head) migration revision matches the current state of the models.
+There is a ``migrations`` tox environment that tests the Alembic migrations. It uses
+`alembic-verify <https://github.com/gianchub/alembic-verify>`_ to drive the migrations, running through all
+upgrade migrations in order and then all downgrade migrations in order, and then verifies that the schema
+produced by the migrations matches the schema defined by the models.
+
+That schema comparison uses Alembic's own autogenerate machinery -
+``alembic.autogenerate.compare_metadata()`` - which is the same code that backs
+``alembic revision --autogenerate``. A reported difference is therefore literally the migration that would need
+to be written to bring the migrations back in line with the models. Tables, columns, column types, nullability,
+server defaults, indexes and foreign keys are compared. CHECK constraints are not; Alembic's autogenerate does
+not examine them.
 
 The environment also runs manually-curated acceptance tests for any migrations that involve data manipulation.
 
-This tox environment is configured via environment variables. Please note that it requires *two* test databases.
+This tox environment is configured via environment variables:
 
 * **MYSQL_HOST** - MySQL DB hostname/IP. Defaults to ``127.0.0.1``
 * **MYSQL_PORT** - MySQL DB Port. Defaults to ``3306``.
 * **MYSQL_USER** - MySQL DB username. Defaults to ``root``.
 * **MYSQL_PASS** - MySQL DB password. Defaults to no password.
-* **MYSQL_DBNAME_LEFT** - MySQL Database name for the first ("left") test database.
-* **MYSQL_DBNAME_RIGHT** - MySQL Database name for the second ("right") test database.
+* **MYSQL_DBNAME_LEFT** - MySQL Database name for the database that the migration tests build.
 
 .. _development.alembic:
 

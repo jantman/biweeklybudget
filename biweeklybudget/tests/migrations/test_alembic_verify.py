@@ -37,17 +37,23 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import pytest
 import logging
-import json
+from pprint import pformat
 
 from alembic import command
-from sqlalchemy import create_engine
-from sqlalchemydiff.comparer import Comparer
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
 
 from alembicverify.util import (
     get_current_revision,
     get_head_revision,
     prepare_schema_from_migrations,
 )
+
+# Importing the models package is load-bearing, not incidental: it is what
+# registers every model class against ``Base.metadata``. Importing
+# ``biweeklybudget.models.base`` alone leaves the metadata empty, which would
+# make the schema comparison below pass vacuously.
+import biweeklybudget.models  # noqa
 from biweeklybudget.models.base import Base
 
 import biweeklybudget.tests.migrations.alembic_helpers as ah
@@ -55,80 +61,64 @@ import biweeklybudget.tests.migrations.alembic_helpers as ah
 logger = logging.getLogger(__name__)
 
 
-def prepare_schema_from_models(uri, sqlalchemy_base):
-    """Create all tables of ``sqlalchemy_base`` in the database at ``uri``.
-
-    sqlalchemy-diff removed its ``util.prepare_schema_from_models`` helper in
-    1.0.0; this is a local equivalent.
-    """
-    engine = create_engine(uri)
-    try:
-        sqlalchemy_base.metadata.create_all(engine)
-    finally:
-        engine.dispose()
-
-
 @pytest.mark.migrations
-def test_upgrade_and_downgrade(uri_left, alembic_config_left):
+def test_upgrade_and_downgrade(alembic_db_uri, alembic_config):
     """Test all migrations up and down.
 
     Tests that we can apply all migrations from a brand new empty
     database, and also that we can remove them all.
     """
-    alembic_config_left.set_section_option('bwbTest', 'connstring', uri_left)
-    logger.info('Set alembic config bwbTest.connstring to: %s', uri_left)
-    ah.load_premigration_sql(uri_left)
-    engine, script = prepare_schema_from_migrations(
-        uri_left, alembic_config_left
+    alembic_config.set_section_option('bwbTest', 'connstring', alembic_db_uri)
+    logger.info(
+        'Set alembic config bwbTest.connstring to: %s', alembic_db_uri
     )
+    ah.load_premigration_sql(alembic_db_uri)
+    with prepare_schema_from_migrations(
+        alembic_db_uri, alembic_config
+    ) as (engine, script):
+        head = get_head_revision(alembic_config, engine, script)
+        current = get_current_revision(alembic_config, engine, script)
 
-    head = get_head_revision(alembic_config_left, engine, script)
-    current = get_current_revision(alembic_config_left, engine, script)
+        assert head == current
 
-    assert head == current
-
-    while current is not None:
-        command.downgrade(alembic_config_left, '-1')
-        current = get_current_revision(alembic_config_left, engine, script)
+        while current is not None:
+            command.downgrade(alembic_config, '-1')
+            current = get_current_revision(alembic_config, engine, script)
 
 
 @pytest.mark.migrations
 def test_model_and_migration_schemas_are_the_same(
-        uri_left, uri_right, alembic_config_left):
+        alembic_db_uri, alembic_config):
     """Compares the database schema obtained with all migrations against the
     one we get out of the models.
+
+    This uses Alembic's own autogenerate comparison - the same machinery that
+    backs ``alembic revision --autogenerate``. A non-empty diff list is
+    literally the migration that would need to be written to bring the
+    migration chain back in line with the models.
+
+    Note that Alembic's autogenerate does not examine CHECK constraints, so
+    differences in them are neither detected nor reported. This is not a
+    reduction in what is verified here: the previous sqlalchemy-diff based
+    comparison listed every one of this schema's sixteen named check
+    constraints in its ``ignores`` argument, because they did not diff
+    correctly, so they were already excluded.
     """
-    alembic_config_left.set_section_option('bwbTest', 'connstring', uri_left)
-    logger.info('Set alembic config bwbTest.connstring to: %s', uri_left)
-    ah.load_premigration_sql(uri_left)
-    prepare_schema_from_migrations(uri_left, alembic_config_left)
-    prepare_schema_from_models(uri_right, Base)
-
-    result = Comparer.from_params(uri_left, uri_right).compare(
-        ignores=[
-            'alembic_version',
-            # for some reason, these constraints don't diff correctly,
-            # likely due to creation order
-            'accounts.check_constraints.CONSTRAINT_1',
-            'accounts.check_constraints.CONSTRAINT_2',
-            'accounts.check_constraints.CONSTRAINT_3',
-            'accounts.check_constraints.CONSTRAINT_4',
-            'budgets.check_constraints.CONSTRAINT_1',
-            'budgets.check_constraints.CONSTRAINT_2',
-            'budgets.check_constraints.CONSTRAINT_3',
-            'budgets.check_constraints.CONSTRAINT_4',
-            'ofx_trans.check_constraints.CONSTRAINT_1',
-            'ofx_trans.check_constraints.CONSTRAINT_2',
-            'ofx_trans.check_constraints.CONSTRAINT_3',
-            'ofx_trans.check_constraints.CONSTRAINT_4',
-            'ofx_trans.check_constraints.CONSTRAINT_5',
-            'reconcile_rules.check_constraints.CONSTRAINT_1',
-            'scheduled_transactions.check_constraints.CONSTRAINT_1',
-        ]
+    alembic_config.set_section_option('bwbTest', 'connstring', alembic_db_uri)
+    logger.info(
+        'Set alembic config bwbTest.connstring to: %s', alembic_db_uri
     )
+    ah.load_premigration_sql(alembic_db_uri)
+    with prepare_schema_from_migrations(
+        alembic_db_uri, alembic_config
+    ) as (engine, _):
+        with engine.connect() as conn:
+            context = MigrationContext.configure(
+                conn, opts={'compare_server_default': True}
+            )
+            diffs = compare_metadata(context, Base.metadata)
 
-    assert result.is_match is True, \
-        'Differences (left is migrations, right is models):\n' \
-        '%s' % json.dumps(
-            result.errors, sort_keys=True, indent=4, separators=(',', ': ')
-        )
+    assert diffs == [], \
+        'Migrations and models produce different schemas; Alembic would ' \
+        'autogenerate the following changes to bring the migrations in ' \
+        'line with the models:\n%s' % pformat(diffs)

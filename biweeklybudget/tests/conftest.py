@@ -80,9 +80,6 @@ import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.db_event_handlers import init_event_listeners  # noqa
 from biweeklybudget.tests.unit.test_interest import InterestData  # noqa
-from biweeklybudget.tests.migrations.alembic_helpers import (
-    uri_for_db, empty_db_by_uri  # noqa
-)
 
 # Monkey-patch datatables package for SQLAlchemy 2.0 compatibility
 # The package uses query.join('relationship_name') which no longer works in
@@ -170,27 +167,6 @@ def get_db_engine():
             pool_size=10, pool_timeout=120
         )
     return _DB_ENGINE
-
-
-@pytest.fixture
-def alembic_root():
-    return os.path.join(
-        os.path.abspath(os.environ['TOXINIDIR']), 'biweeklybudget', 'alembic'
-    )
-
-
-@pytest.fixture
-def uri_left():
-    uri = uri_for_db(os.environ['MYSQL_DBNAME_LEFT'])
-    empty_db_by_uri(uri)
-    return uri
-
-
-@pytest.fixture
-def uri_right():
-    uri = uri_for_db(os.environ['MYSQL_DBNAME_RIGHT'])
-    empty_db_by_uri(uri)
-    return uri
 
 
 @pytest.fixture(scope='session')
