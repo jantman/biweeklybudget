@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #261 <https://github.com/jantman/biweeklybudget/issues/261>`_ - ``/plaid-update`` now returns HTTP 500 instead of 200 when any Plaid Item fails to update, in all response formats. The response body is unchanged.
+
+  * Scripts calling the endpoint (for example with ``curl --fail``) will now see partial failures as errors.
+
 * Change the release process: changes accumulate under this ``Unreleased`` heading, and the version is only incremented when a release is cut, following `Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_. Changelog entries should be concise. The development documentation, ``CLAUDE.md``, project constitution, and pull request template are updated to match.
 
   * Reset ``version.py`` to ``1.6.0``, the most recent release. The changes below were previously listed under versions 1.6.1 through 1.12.1, which were never released, and have been rewritten more concisely.

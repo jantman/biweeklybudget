@@ -34,7 +34,7 @@ the cases their tests pin. The whole feature is one milestone (M1).
 
 **Purpose**: A working test environment, so the tests in Phase 3 can be seen to fail and then pass.
 
-- [ ] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), then confirm the unmodified `TestPlaidUpdate` class passes via `tox -e py314 -- biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`. That gives a green baseline before any change.
+- [X] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), then confirm the unmodified `TestPlaidUpdate` class passes via `tox -e py314 -- biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`. That gives a green baseline before any change.
 
 ---
 
@@ -54,14 +54,14 @@ None. No shared infrastructure, model, or migration is needed.
 
 > Write these first and confirm they FAIL against the current code (which returns a bare body, i.e. implicitly 200).
 
-- [ ] T002 [US1] In `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`, class `TestPlaidUpdate`:
+- [X] T002 [US1] In `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`, class `TestPlaidUpdate`:
   - Change the assertions in `test_update_template`, `test_update_plain`, and `test_update_plain_nondefault_num_days`. Each of these already includes a `success=False` result, so each must now assert `res == (<same body as today>, 500)`.
   - Add `test_update_json_failure`: `Accept: application/json` with one successful and one failed result. Assert `res == (mock_json, 500)` and that `jsonify` is called with both results' `as_dict`.
   - Add `test_update_all_failed`: `Accept: text/plain`, every result failed. Assert status 500 and a body listing each failure with `0 updated, 0 added, 2 account(s) failed`.
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] In `biweeklybudget/flaskapp/views/plaid.py`, `PlaidUpdate._update()`:
+- [X] T003 [US1] In `biweeklybudget/flaskapp/views/plaid.py`, `PlaidUpdate._update()`:
   - Right after `results = updater.update(...)`, compute `status = 200 if all(r.success for r in results) else 500`.
   - Return `(s, status)` from the `text/plain` branch, `(jsonify(...), status)` from the `application/json` branch, and `(render_template(...), status)` from the HTML branch.
   - Change nothing else in the bodies (spec FR-004).
@@ -79,7 +79,7 @@ None. No shared infrastructure, model, or migration is needed.
 
 ### Tests for User Story 2
 
-- [ ] T004 [US2] In `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`, class `TestPlaidUpdate`:
+- [X] T004 [US2] In `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py`, class `TestPlaidUpdate`:
   - Change `test_update_json`, which is all-successful, to assert `res == (mock_json, 200)`.
   - Add `test_update_template_all_success`: default `Accept`, all results successful. Assert `res == (rendered, 200)` and `render_template` called with `num_failed=0`.
   - Add `test_update_plain_all_success`: `text/plain`, all results successful. Assert status 200 and a body ending `0 account(s) failed`.
@@ -87,7 +87,7 @@ None. No shared infrastructure, model, or migration is needed.
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] No further code beyond T003, since `all([])` is `True` and so gives 200. Confirm the T004 tests pass against the T003 change, and fix T003 if they don't.
+- [X] T005 [US2] No further code beyond T003, since `all([])` is `True` and so gives 200. Confirm the T004 tests pass against the T003 change, and fix T003 if they don't.
 
 **Checkpoint**: Both stories pass.
 
@@ -95,10 +95,10 @@ None. No shared infrastructure, model, or migration is needed.
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T006 [P] In `biweeklybudget/flaskapp/views/plaid.py`, extend the `PlaidUpdate` class docstring's response-format list with the status rule: HTTP 200 when every Item updated successfully, HTTP 500 when one or more failed. The body is the same in both cases.
-- [ ] T007 [P] In `docs/source/plaid.rst`, section "Updating Transactions via API", add a paragraph stating the status codes (200 all succeeded; 500 one or more Items failed, with the body still reporting every Item; 400 for a POST missing `item_ids`) and noting that `curl --fail` can therefore detect failed updates.
-- [ ] T008 [P] In `docs/source/http_api.rst`, add the status-code rule to the one-paragraph `/plaid-update` summary (line ~804).
-- [ ] T009 [P] In `CHANGES.rst`, add one concise bullet at the top of the `Unreleased` section, led by the `Issue #261` link. It says that `/plaid-update` now returns HTTP 500 when any Plaid Item fails to update (all response formats; body unchanged), with a short sub-bullet warning API callers that previously saw 200 on partial failure. Do not touch `biweeklybudget/version.py`.
+- [X] T006 [P] In `biweeklybudget/flaskapp/views/plaid.py`, extend the `PlaidUpdate` class docstring's response-format list with the status rule: HTTP 200 when every Item updated successfully, HTTP 500 when one or more failed. The body is the same in both cases.
+- [X] T007 [P] In `docs/source/plaid.rst`, section "Updating Transactions via API", add a paragraph stating the status codes (200 all succeeded; 500 one or more Items failed, with the body still reporting every Item; 400 for a POST missing `item_ids`) and noting that `curl --fail` can therefore detect failed updates.
+- [X] T008 [P] In `docs/source/http_api.rst`, add the status-code rule to the one-paragraph `/plaid-update` summary (line ~804).
+- [X] T009 [P] In `CHANGES.rst`, add one concise bullet at the top of the `Unreleased` section, led by the `Issue #261` link. It says that `/plaid-update` now returns HTTP 500 when any Plaid Item fails to update (all response formats; body unchanged), with a short sub-bullet warning API callers that previously saw 200 on partial failure. Do not touch `biweeklybudget/version.py`.
 - [ ] T010 Run the Test Gate (Constitution II) to completion, redirecting output to scratchpad files:
   - `tox -e py314`, which also covers pycodestyle and pyflakes.
   - `tox -e acceptance`.
