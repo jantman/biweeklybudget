@@ -107,7 +107,7 @@ None. No shared infrastructure, model, or migration is needed.
   Raise the timeouts and re-run if a suite times out, rather than narrowing it. `migrations`, `docker`, and `plaid` are not engaged by this change and run in CI.
 - [X] T011 Record results in the spec artifacts: in `spec.md`, set Status to Complete, mark the tasks here done, and note the Test Gate results in `plan.md`. Commit with the prefix `Plaid Update Failure Status - M1.x`.
   - Deviation, recorded here: T001's baseline run of the *unmodified* `TestPlaidUpdate` was not done separately. Instead, the first run came after the T002/T004 test edits but before T003. In that run the 19 untouched tests in the file passed, and exactly the 9 new or changed tests failed, which shows the same baseline.
-- [ ] T012 Push the branch to `origin`, open the pull request (following `.github/PULL_REQUEST_TEMPLATE.md`, and surfacing research R1/R2's choices for the maintainer), then monitor CI and answer reviews.
+- [X] T012 Push the branch to `origin`, open the pull request (following `.github/PULL_REQUEST_TEMPLATE.md`, and surfacing research R1/R2's choices for the maintainer), then monitor CI and answer reviews.
 
 ---
 
