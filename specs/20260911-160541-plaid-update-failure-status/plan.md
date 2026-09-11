@@ -119,6 +119,20 @@ CHANGES.rst                                      # Unreleased entry
   (unit, acceptance, docs), record the results in the spec artifacts, then commit, push,
   and open the PR.
 
+## Test Gate Results (M1, 2026-09-11)
+
+Run locally against MariaDB 10.4.7 (the CI image), Python 3.14.7:
+
+| Suite | Result |
+|-------|--------|
+| `tox -e py314` (unit + pycodestyle + pyflakes) | 889 passed, 5 skipped, 0 failed. `views/plaid.py` 100% line and branch coverage |
+| `tox -e acceptance` | 793 passed, 24 skipped, 0 failed (17m03s) |
+| `tox -e docs` | builds (exit 0). No broken links, and no new warnings. The `_update`/`_form` cross-reference warnings in the `PlaidUpdate` docstrings predate this change |
+
+The new and changed `TestPlaidUpdate` assertions were first run against the unchanged
+view and failed (9 tests; the other 19 in the file passed), then all passed once T003 was
+in. `migrations`, `docker`, and `plaid` are not engaged and run in CI.
+
 ## Risks
 
 | Risk | Mitigation |

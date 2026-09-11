@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-11
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#261](https://github.com/jantman/biweeklybudget/issues/261) — "/plaid-update endpoint needs to return non-200 if any failed"
 
