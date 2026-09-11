@@ -1,33 +1,75 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (unversioned template) → 1.0.0
-Rationale: Initial ratification. The previous file was the unfilled scaffold with
-every placeholder intact, so this is the first substantive constitution.
+Version change: 2.1.0 → 2.1.1
+Rationale: PATCH. version.py was reset to 1.6.0 (the latest release) and the never-
+released 1.6.1-1.12.1 changelog entries were rewritten concisely under "Unreleased".
+Principle VI's references to "the entries for 1.6.0 and earlier" as the model and to
+1.7.0-1.12.1 as a counter-example no longer point at anything, so it now refers to the
+existing entries. Its rationale is corrected: 1.6.1 (not 1.7.0) through 1.12.1 were
+never tagged. What is required is unchanged.
 
-Modified principles: none (initial adoption; no prior named principles existed)
+Modified principles:
+  - VI. Changelog Every Change; Release Only On Request (wording only)
 
-Added sections:
-  - Core Principles
-    - I. Spec-Driven Change (NON-NEGOTIABLE)
-    - II. The Test Gate (NON-NEGOTIABLE)
-    - III. Schema Changes Ship With Reversible Migrations
-    - IV. Documentation Is Part Of The Change
-    - V. Escalate Instead Of Guessing
-    - VI. Versioned, Changelogged Releases
-  - Technology & Security Constraints (SECTION_2)
-  - Development Workflow (SECTION_3)
-  - Governance
-
+Added sections: none
 Removed sections: none
 
-Source material: docs/source/development.rst (Guidelines, Testing, Alembic DB
-Migrations, Release Checklist), tox.ini, pytest.ini, CLAUDE.md, README.rst, and the
-feature-development rules removed from docs/features/README.md in commit ffcf21f,
-which this constitution now supersedes.
+Dependent files updated in the same change: CLAUDE.md, docs/source/development.rst
+(Guidelines), .github/PULL_REQUEST_TEMPLATE.md.
 
-Follow-up TODOs: none. RATIFICATION_DATE is set to the date of this initial
-adoption rather than deferred, since no earlier constitution existed.
+Follow-up TODOs: none.
+
+Previous amendment 2.1.0 (2026-09-10):
+Version change: 2.0.0 → 2.1.0
+Rationale: MINOR. Principle VI gains a requirement that CHANGES.rst entries be concise,
+matching the format and level of detail of the 1.6.0-and-earlier entries. This expands
+existing guidance without invalidating work done under 2.0.0.
+
+Modified principles:
+  - VI. Changelog Every Change; Release Only On Request (title unchanged; adds the
+    conciseness requirement, and names 1.7.0-1.12.1 as entries not to be imitated)
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: CLAUDE.md, docs/source/development.rst
+(Guidelines), .github/PULL_REQUEST_TEMPLATE.md, CHANGES.rst (Unreleased entry trimmed).
+
+Follow-up TODOs: none.
+
+Previous amendment 2.0.0 (2026-09-10):
+Version change: 1.0.0 → 2.0.0
+Rationale: MAJOR. Principle VI is redefined in a backward-incompatible way: under
+1.0.0 every completed feature was REQUIRED to increment version.py; under 2.0.0 doing
+so is PROHIBITED. A change prepared under the previous wording is non-compliant under
+the new one. Motivation: per-feature bumps produced version numbers that were never
+released (remote tags stop at 1.6.0 while version.py reached 1.12.1), so a version
+number no longer identified anything a user could install.
+
+Modified principles:
+  - VI. Versioned, Changelogged Releases → VI. Changelog Every Change; Release Only
+    On Request (changes go under an "Unreleased" heading in CHANGES.rst; version
+    bumps, tags and releases only on explicit maintainer request, per SemVer 2.0.0)
+
+Modified sections:
+  - Development Workflow, step 6 (Complete the feature): no longer bumps version.py
+  - Development Workflow, step 7 (Release): only on explicit request; version chosen
+    per SemVer 2.0.0 from the accumulated Unreleased entries
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: CLAUDE.md, docs/source/development.rst
+(Guidelines, Release Checklist), .github/PULL_REQUEST_TEMPLATE.md, CHANGES.rst.
+.specify/templates/*: checked; none restate the version-bump rule (plan-template's
+Constitution Check is derived from this file at runtime). No update needed.
+
+Follow-up TODOs: none.
+
+Previous amendment: 1.0.0 (2026-09-06), initial ratification, derived from
+docs/source/development.rst, tox.ini, pytest.ini, CLAUDE.md, README.rst, and the
+feature-development rules removed from docs/features/README.md in commit ffcf21f.
 -->
 
 # biweeklybudget Constitution
@@ -100,12 +142,35 @@ Deviations from the current feature ("side quests") MUST be recorded in the feat
 spec — stating precisely where the work departed and what is needed to resume — and
 that record MUST be committed before the deviation begins.
 
-### VI. Versioned, Changelogged Releases
+### VI. Changelog Every Change; Release Only On Request
 
-`biweeklybudget/version.py` MUST be incremented per Semantic Versioning for the scope
-of the change, and `CHANGES.rst` MUST gain a matching entry in the existing format,
-as part of completing a feature. New Python files MUST carry the standard AGPL v3
-copyright header used throughout the source tree.
+Every change MUST add an entry, in the existing format, at the top of `CHANGES.rst`
+under an `Unreleased` heading, creating that heading directly beneath the `Changelog`
+title if it is absent. Completing a feature or opening a pull request MUST NOT
+increment `biweeklybudget/version.py`, create a tag, or cut a release.
+
+Entries MUST be concise, following the format and level of detail of the existing
+entries: one bullet per change, led by the issue or pull request link where there is
+one, stating the user-visible change in a sentence or two, with at most a few short
+sub-bullets for what a user or operator needs to know (new settings, schema
+migrations, UI changes, breaking changes, upgrade steps). Problem narratives,
+investigation, rationale, and design discussion belong in the spec and pull request,
+not the changelog.
+
+Version increments, tags, and releases happen only when the maintainer explicitly
+requests a release. The new version MUST then be chosen per Semantic Versioning 2.0.0
+from all `Unreleased` entries accumulated since the last release: MAJOR if any change
+is backwards-incompatible for users, otherwise MINOR if any adds functionality,
+otherwise PATCH. The `Unreleased` heading MUST then be renamed to `X.Y.Z (YYYY-MM-DD)`,
+and the tag MUST be exactly the version number.
+
+Rationale: bumping the version with every feature produced numbers that were never
+released (1.6.1 through 1.12.1 were never tagged, and were later folded back under
+`Unreleased`), so a version stopped identifying anything a user could install. Accumulating entries under `Unreleased` keeps the
+changelog current while making each version number correspond to a real release.
+
+New Python files MUST carry the standard AGPL v3 copyright header used throughout
+the source tree.
 
 ## Technology & Security Constraints
 
@@ -148,12 +213,15 @@ copyright header used throughout the source tree.
    c. Update the feature's spec artifacts to record progress.
    d. Commit the whole of the above together.
 6. **Complete the feature**: after all tests pass and the human has verified the
-   feature, bump `version.py`, add the `CHANGES.rst` entry, push, and open a detailed
-   pull request. All CI checks MUST pass before merge.
-7. **Release**: follow the Release Checklist in `docs/source/development.rst` —
-   changelog entries complete, version incremented, changelog header dated, docs
-   regenerated via `tox -e docs -e jsdoc -e screenshots` and committed, merged to
-   `master`, then tagged.
+   feature, add the `CHANGES.rst` entry under `Unreleased` (Principle VI), push, and
+   open a detailed pull request. Do not change `version.py`. All CI checks MUST pass
+   before merge.
+7. **Release** — only when the maintainer explicitly requests one: follow the Release
+   Checklist in `docs/source/development.rst` — `Unreleased` entries complete, version
+   chosen per Semantic Versioning 2.0.0 and set in `version.py`, `Unreleased` heading
+   renamed to the version and release date, docs regenerated via
+   `tox -e docs -e jsdoc -e screenshots` and committed, merged to `master`, then tagged
+   with exactly the version number.
 
 ## Governance
 
@@ -180,4 +248,4 @@ unjustified deviation is grounds to reject the change. Principles marked
 NON-NEGOTIABLE are not subject to case-by-case waiver — changing them requires
 amending this constitution first.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-06
+**Version**: 2.1.1 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10

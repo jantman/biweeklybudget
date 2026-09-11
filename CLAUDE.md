@@ -250,6 +250,34 @@ Core database models:
 **Copyright Headers**
 All Python files include a standard copyright header with AGPL v3 license text. When creating new files, include the header found in existing files.
 
+## Changelog, Versioning, and Releases
+
+- **Do not bump `biweeklybudget/version.py`, create tags, or cut releases** as part of
+  normal feature work or pull requests. Do so only when a release is specifically requested.
+- Every change adds its entry to the top of `CHANGES.rst` under an `Unreleased` heading,
+  in the existing entry format. If there is no `Unreleased` heading (e.g. just after a
+  release), create one directly under the `Changelog` title:
+  ```rst
+  Unreleased
+  ----------
+  ```
+- **Keep entries concise.** Use the existing entries as the guide for format and level of
+  detail: one bullet per change, starting with the issue/PR link if there is one, a
+  sentence or two describing the user-visible change, and at most a few short sub-bullets
+  for what users need to know (new settings, migrations, UI changes, breaking changes,
+  upgrade steps). Problem narratives, investigation, rationale, and design discussion go
+  in the spec and PR, not the changelog.
+- When a release is requested, choose the version per
+  [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) from *all* entries under
+  `Unreleased`: MAJOR if any change is backwards-incompatible for users (e.g. a removed or
+  renamed setting, console script, or HTTP endpoint/parameter; a dropped Python version; an
+  upgrade that needs manual steps), otherwise MINOR if any adds functionality, otherwise
+  PATCH. Set it in `version.py`, rename the heading to `X.Y.Z (YYYY-MM-DD)` (underline
+  matching its length), and follow the Release Checklist in `docs/source/development.rst`.
+- The tag must be exactly the version (no `v` prefix): `.github/workflows/release.yml`
+  fails if the tag differs from `version.py`, and it builds the GitHub release notes from
+  the `CHANGES.rst` section whose heading starts with that version.
+
 ## Important Notes
 
 - **Python Version**: Currently targets Python 3.14 (configurable in tox.ini)
