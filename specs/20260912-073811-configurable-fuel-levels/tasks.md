@@ -50,6 +50,7 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 - [X] T005 [P] In `biweeklybudget/flaskapp/static/js/fuel.js`:
   - Add a JSDoc-commented `fuelLevelOptions(selectedValue)` that returns an Array of `{value: pct, label: <HTML-escaped label>, selected: pct == selectedValue}` built from the global `FUEL_LEVELS` in order. Reuse an existing HTML-escape helper from `static/js` if there is one; otherwise add a small local one escaping `& < > " '`.
   - In `fuelModalDivForm()`, compute the min and max percentage in `FUEL_LEVELS`. Replace the two `addLabelToValueSelect(...)` calls for `fuel_frm_level_before`/`fuel_frm_level_after` with `addSelect(id, name, label, fuelLevelOptions(min|max))`, keeping the same ids, names and labels.
+  - Done as: the existing `escapeHtml()` was only in `budgets_modal.js`, which the fuel page doesn't load. So it moved to `custom.js`, which every page loads via `base.html`, instead of being duplicated (see plan.md, Test Gate Results).
 
 **Checkpoint**: T002 passes. With no configuration the form should look exactly as before (verified in US2).
 
@@ -118,14 +119,14 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 - [X] T012 [P] In `docs/source/app_usage.rst`, in the Fuel Log settings list (~line 66), add a bullet for `:py:attr:`biweeklybudget.settings.FUEL_LEVELS``, which sets the fuel level choices on the Add Fuel Fill form. Adjust the following sentence, which says these settings only affect display of units, so it stays accurate.
 - [X] T013 [P] In `docs/source/http_api.rst` (~line 730), change the `level_before`/`level_after` descriptions to say the value is a percentage of a full tank (0-100), normally one of the `FUEL_LEVELS` setting's percentages.
 - [X] T014 [P] In `CHANGES.rst`, add one concise bullet at the top of `Unreleased`, led by the `Issue #208` link: the fuel level choices on the Add Fuel Fill form are now configurable via the new `FUEL_LEVELS` setting; the default is unchanged. Add a short sub-bullet with the env-var format example. Do not touch `biweeklybudget/version.py`.
-- [ ] T015 Run the Test Gate (Constitution II) to completion, redirecting output to scratchpad files:
+- [X] T015 Run the Test Gate (Constitution II) to completion, redirecting output to scratchpad files:
   - `tox -e py314`, which also covers pycodestyle and pyflakes.
   - `tox -e acceptance`.
   - `tox -e docs`.
 
   Raise the timeouts and re-run if a suite times out, rather than narrowing it. `migrations`, `docker`, and `plaid` are not engaged and run in CI.
-- [ ] T016 Manually walk through `quickstart.md` steps 1–3 against `flask rundev`, or record why that wasn't possible.
-- [ ] T017 Record results in the spec artifacts: set `spec.md` Status to Complete, mark the tasks here done, and add a "Test Gate Results" section to `plan.md`. Commit with the prefix `Configurable Fuel Levels - M1.x`.
+- [X] T016 Manually walk through `quickstart.md` steps 1–3 against `flask rundev`, or record why that wasn't possible.
+- [X] T017 Record results in the spec artifacts: set `spec.md` Status to Complete, mark the tasks here done, and add a "Test Gate Results" section to `plan.md`. Commit with the prefix `Configurable Fuel Levels - M1.x`.
 - [ ] T018 Push the branch to `origin` and open the pull request, following `.github/PULL_REQUEST_TEMPLATE.md` and surfacing the spec's Assumptions (global list, percentages stored) for the maintainer. Then monitor CI and answer reviews until Claude's review says "No issues found" and Copilot's, if present, recommends approval.
 
 ---

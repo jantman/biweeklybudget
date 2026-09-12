@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-12
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#208](https://github.com/jantman/biweeklybudget/issues/208) — "Fuel Log - Configurable fuel levels"
 

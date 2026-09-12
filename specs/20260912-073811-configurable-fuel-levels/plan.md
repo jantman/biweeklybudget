@@ -130,6 +130,33 @@ CHANGES.rst                                            # Unreleased entry
   tests. Update the docs and `CHANGES.rst`. Run the Test Gate (unit, acceptance, docs),
   record the results in the spec artifacts, then commit, push, and open the PR.
 
+## Test Gate Results (M1, 2026-09-12)
+
+Run locally against MariaDB 10.4.7 (the CI image), Python 3.14.7:
+
+| Suite | Result |
+|-------|--------|
+| `tox -e py314` (unit + pycodestyle + pyflakes) | 936 passed, 6 skipped, 0 failed (`.pytest_cache` cleared first). Includes the 49 new tests in `test_settings_fuel_levels.py` |
+| `tox -e acceptance` | 797 passed, 24 skipped, 0 failed (17m42s). Includes the 4 new `TestFuelLevelsConfigured` tests, the extended `test_11`, and `TestFuelLogView::test_04_search`, which passed this time |
+| `tox -e docs` | Builds (exit 0). No warnings come from the new setting, functions, or doc edits. The warnings on `http_api.rst:722` (`FuelFormHandler`) and in the generated `jsdoc.fuel.rst` predate this change. |
+
+Coverage: `parse_fuel_levels()` and `validate_fuel_levels()` are fully covered. The
+four import-time lines that apply them (`settings.py` 402-403, env-var branch; 405-406,
+`SystemExit`) are exercised only by the subprocess tests in `TestFuelLevelsEnvVar`, which
+in-process coverage doesn't track. `settings.py` is 82% overall. Its other uncovered
+lines are the existing env-var loops, uncovered before this change too.
+
+Along the way:
+
+- **Baseline.** `test_fuel.py` passed 19/19 before any change.
+- **Red then green (unit).** The new unit module first failed to import (`cannot import name 'parse_fuel_levels'`), then passed 49/49 once T003/T007/T011 were in.
+- **Focused fuel acceptance run.** All 23 tests in `test_fuel.py` ran. The 4 new `TestFuelLevelsConfigured` tests passed, and so did the extended `test_11`. `TestFuelLogView::test_04_search` failed once: it read the fuel log table before the DataTables AJAX search for `v1 1` had applied, and saw all four unfiltered rows. That test and table aren't touched by this change. `TestFuelLogView` then passed 5/5 in each of three isolated re-runs with the change in place, so this is a timing race in that test, not a regression.
+- **Manual checks (quickstart).**
+  - Step 3: importing `biweeklybudget.settings` with `FUEL_LEVELS` set to `E:0,F:150`, `F:100`, or `E:0,E:50,F:100` exits 1 with `ERROR: FUEL_LEVELS setting is invalid: …` naming the problem. The quarters list is parsed in order.
+  - Step 2: `flask run` with `FUEL_LEVELS='E:0,1/4:25,1/2 </script>:50,3/4:75,F:100'` serves `/fuel` (HTTP 200) with `var FUEL_LEVELS = [["E", 0], ["1/4", 25], ["1/2 \u003c/script\u003e", 50], ["3/4", 75], ["F", 100]];`. The list arrives in order, and `tojson` escapes the `<` so the label can't break out of the script block. The in-browser form for a custom list is covered by `TestFuelLevelsConfigured`.
+  - Step 1 (the default) is covered by `test_11_fuel_populate_modal` and the unchanged `LEVEL_OPTS` assertions.
+- **Deviation from the file list above.** T005 said to reuse an existing HTML-escape helper if there was one. `escapeHtml()` existed, but only in `budgets_modal.js`, which the fuel page doesn't load. Rather than duplicate it, it moved to `custom.js`, which `base.html` loads on every page, and was removed from `budgets_modal.js`. Both pages that use it (`budgets.html`, `fuel.html`) extend `base.html`. The budgets acceptance tests cover the budgets page's use of it.
+
 ## Risks
 
 | Risk | Mitigation |
