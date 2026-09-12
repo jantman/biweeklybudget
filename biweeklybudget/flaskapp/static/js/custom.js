@@ -199,3 +199,22 @@ function isoformat(d) {
           (dd>9 ? '' : '0') + dd
          ].join('-');
 }
+
+/**
+ * Escape a string for interpolation into HTML text content or a quoted
+ * attribute value.
+ *
+ * Use this for any user-entered or configured text (such as account names or
+ * fuel level labels) that is concatenated into an HTML string.
+ *
+ * @param {String} s - the string to escape
+ * @return {String} the escaped string
+ */
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

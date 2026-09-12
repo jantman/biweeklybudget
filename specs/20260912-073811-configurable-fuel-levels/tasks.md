@@ -36,7 +36,7 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 **Purpose**: A working test environment, so the new tests can be seen to fail and then pass.
 
-- [ ] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), using tox from the main checkout's venv. Confirm a green baseline for the fuel acceptance tests with `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_fuel.py`, output redirected to the scratchpad.
+- [X] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), using tox from the main checkout's venv. Confirm a green baseline for the fuel acceptance tests with `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_fuel.py`, output redirected to the scratchpad.
 
 ---
 
@@ -44,10 +44,10 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 **Purpose**: The setting exists with today's values as its default, reaches the page, and the form is built from it.
 
-- [ ] T002 Create `biweeklybudget/tests/unit/test_settings_fuel_levels.py` with the standard AGPL header (copy from an existing test module). Add `TestFuelLevelsDefault.test_default`, asserting `settings.FUEL_LEVELS == [('%d/10' % i, i * 10) for i in range(11)]`. The test settings module does not set `FUEL_LEVELS`, so this pins the default. Confirm it fails (no attribute) before T003.
-- [ ] T003 In `biweeklybudget/settings.py`, after `FUEL_ECO_ABBREVIATION`, add `FUEL_LEVELS = [('%d/10' % i, i * 10) for i in range(11)]` with a `#:` docstring. The docstring covers: an ordered list of `(label, percentage)` pairs offered as the Add Fuel Fill form's starting and ending fuel levels; the percentage (whole number 0–100) is what is stored; the form shows them in order and defaults to the lowest and highest percentage; the env-var syntax `label:percentage` separated by commas, split on the last colon, with no commas in labels; an example `E:0,1/4:25,1/2:50,3/4:75,F:100`; the validation rules from `contracts/fuel-levels-setting.md`; and a pointer to `:ref:`Currency Formatting and Localization <app_usage.l10n>``.
-- [ ] T004 [P] In `biweeklybudget/flaskapp/templates/fuel.html`, in the inline `<script>` that sets `fuel_budget_id` (~line 155), add `var FUEL_LEVELS = {{ settings.FUEL_LEVELS|tojson }};`.
-- [ ] T005 [P] In `biweeklybudget/flaskapp/static/js/fuel.js`:
+- [X] T002 Create `biweeklybudget/tests/unit/test_settings_fuel_levels.py` with the standard AGPL header (copy from an existing test module). Add `TestFuelLevelsDefault.test_default`, asserting `settings.FUEL_LEVELS == [('%d/10' % i, i * 10) for i in range(11)]`. The test settings module does not set `FUEL_LEVELS`, so this pins the default. Confirm it fails (no attribute) before T003.
+- [X] T003 In `biweeklybudget/settings.py`, after `FUEL_ECO_ABBREVIATION`, add `FUEL_LEVELS = [('%d/10' % i, i * 10) for i in range(11)]` with a `#:` docstring. The docstring covers: an ordered list of `(label, percentage)` pairs offered as the Add Fuel Fill form's starting and ending fuel levels; the percentage (whole number 0–100) is what is stored; the form shows them in order and defaults to the lowest and highest percentage; the env-var syntax `label:percentage` separated by commas, split on the last colon, with no commas in labels; an example `E:0,1/4:25,1/2:50,3/4:75,F:100`; the validation rules from `contracts/fuel-levels-setting.md`; and a pointer to `:ref:`Currency Formatting and Localization <app_usage.l10n>``.
+- [X] T004 [P] In `biweeklybudget/flaskapp/templates/fuel.html`, in the inline `<script>` that sets `fuel_budget_id` (~line 155), add `var FUEL_LEVELS = {{ settings.FUEL_LEVELS|tojson }};`.
+- [X] T005 [P] In `biweeklybudget/flaskapp/static/js/fuel.js`:
   - Add a JSDoc-commented `fuelLevelOptions(selectedValue)` that returns an Array of `{value: pct, label: <HTML-escaped label>, selected: pct == selectedValue}` built from the global `FUEL_LEVELS` in order. Reuse an existing HTML-escape helper from `static/js` if there is one; otherwise add a small local one escaping `& < > " '`.
   - In `fuelModalDivForm()`, compute the min and max percentage in `FUEL_LEVELS`. Replace the two `addLabelToValueSelect(...)` calls for `fuel_frm_level_before`/`fuel_frm_level_after` with `addSelect(id, name, label, fuelLevelOptions(min|max))`, keeping the same ids, names and labels.
 
@@ -63,15 +63,15 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 ### Tests for User Story 1
 
-- [ ] T006 [US1] In `test_settings_fuel_levels.py`, add `TestParseFuelLevels`:
+- [X] T006 [US1] In `test_settings_fuel_levels.py`, add `TestParseFuelLevels`:
   - `E:0,1/4:25,1/2:50,3/4:75,F:100` → the five pairs in order.
   - Whitespace around labels and percentages is stripped (` E : 0 , F:100 `).
   - A label containing a colon splits on the last colon (`a:b:50` → `('a:b', 50)`).
   - A non-digit percentage (`E:x`, `E:-5`, `E:1.5`) and an entry with no colon raise `ValueError`.
 
   Also add `TestFuelLevelsEnvVar.test_env_var_is_used`, which runs `subprocess.run([sys.executable, '-c', 'import json; from biweeklybudget import settings; print(json.dumps(settings.FUEL_LEVELS))'], env={**os.environ, 'FUEL_LEVELS': 'E:0,1/2:50,F:100', 'DB_CONNSTRING': os.environ.get('DB_CONNSTRING', 'mysql+pymysql://u:p@127.0.0.1/x')}, capture_output=True, text=True)`. Assert return code 0 and the last stdout line parses to `[['E', 0], ['1/2', 50], ['F', 100]]`. Confirm these fail before T007.
-- [ ] T007 [US1] In `biweeklybudget/settings.py`, add module-level `parse_fuel_levels(value)` with a docstring, per research R3. Split on `,`; each entry is `rpartition(':')`, and an empty separator means `ValueError`. Strip both parts. The percentage must match `^\d+$`, else `ValueError` naming the offending entry. Return a list of `(label, int(pct))` tuples. After the `_DATE_VARS` env loop, add: `if 'FUEL_LEVELS' in os.environ: FUEL_LEVELS = parse_fuel_levels(os.environ['FUEL_LEVELS'])`, converting `ValueError` to `SystemExit('ERROR: FUEL_LEVELS setting is invalid: %s' % ex)`. T006 must pass.
-- [ ] T008 [US1] In `test_fuel.py`, append a new acceptance class `TestFuelLevelsConfigured` (same base class and `@pytest.mark.acceptance` / `usefixtures` pattern as the existing classes, checking how class-level DB refresh works so that fill IDs are predictable). Its tests:
+- [X] T007 [US1] In `biweeklybudget/settings.py`, add module-level `parse_fuel_levels(value)` with a docstring, per research R3. Split on `,`; each entry is `rpartition(':')`, and an empty separator means `ValueError`. Strip both parts. The percentage must match `^\d+$`, else `ValueError` naming the offending entry. Return a list of `(label, int(pct))` tuples. After the `_DATE_VARS` env loop, add: `if 'FUEL_LEVELS' in os.environ: FUEL_LEVELS = parse_fuel_levels(os.environ['FUEL_LEVELS'])`, converting `ValueError` to `SystemExit('ERROR: FUEL_LEVELS setting is invalid: %s' % ex)`. T006 must pass.
+- [X] T008 [US1] In `test_fuel.py`, append a new acceptance class `TestFuelLevelsConfigured` (same base class and `@pytest.mark.acceptance` / `usefixtures` pattern as the existing classes, checking how class-level DB refresh works so that fill IDs are predictable). Its tests:
   - `test_1_custom_levels`: load `/fuel` and run `selenium.execute_script("FUEL_LEVELS = [['E', 0], ['1/4', 25], ['1/2', 50], ['3/4', 75], ['F', 100]];")`. Open **Add Fill**. Assert both selects' `[value, text]` options are exactly `[['0','E'],['25','1/4'],['50','1/2'],['75','3/4'],['100','F']]`, with `level_before` selected `0` and `level_after` selected `100`.
   - `test_2_add_fill`: with the same override, fill the form like `test_12_fuel_add_no_trans` (add-transaction unchecked), choosing `1/4` → `F`. Save, and confirm the success message.
   - `test_3_verify_db`: the new `FuelFill` has `level_before == 25` and `level_after == 100`.
@@ -87,7 +87,7 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 **Independent Test**: The existing default-list acceptance assertions pass unchanged, plus the check below.
 
-- [ ] T009 [US2] In `test_fuel.py`, leave `LEVEL_OPTS` and the `test_11_fuel_populate_modal` / `test_12` / `test_14` level assertions exactly as they are, so they guard FR-003. In `test_11_fuel_populate_modal`, after loading `/fuel`, add `assert selenium.execute_script('return FUEL_LEVELS;') == [[l, int(v)] for v, l in LEVEL_OPTS]`. This proves the server renders the default setting into the page. Run the fuel acceptance tests; all existing and new ones pass.
+- [X] T009 [US2] In `test_fuel.py`, leave `LEVEL_OPTS` and the `test_11_fuel_populate_modal` / `test_12` / `test_14` level assertions exactly as they are, so they guard FR-003. In `test_11_fuel_populate_modal`, after loading `/fuel`, add `assert selenium.execute_script('return FUEL_LEVELS;') == [[l, int(v)] for v, l in LEVEL_OPTS]`. This proves the server renders the default setting into the page. Run the fuel acceptance tests; all existing and new ones pass.
 
 **Checkpoint**: US1 and US2 pass.
 
@@ -101,13 +101,13 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 ### Tests for User Story 3
 
-- [ ] T010 [US3] In `test_settings_fuel_levels.py`, add `TestValidateFuelLevels`:
+- [X] T010 [US3] In `test_settings_fuel_levels.py`, add `TestValidateFuelLevels`:
   - Valid lists of tuples and of lists return a list of `(label, pct)` tuples with labels stripped.
   - Each of these raises `ValueError`, parametrized: fewer than two levels (0 and 1 entries); an entry that isn't a 2-item list/tuple (`('E',)`, `('E', 0, 1)`, a bare string); an empty or whitespace label; a non-str label (`None`); percentage `0.5`, `'50'`, `True`; percentage `-1` or `101`; a duplicated label; a duplicated percentage; a non-list value (`None`, `'E:0,F:100'`).
   - The boundaries 0 and 100 are accepted.
 
   Add `TestFuelLevelsEnvVar.test_invalid_env_var_exits`, parametrized over `E:0,F:150`, `F:100`, `E:0,E:50,F:100`, `E:x,F:100` and using the T006 subprocess helper. Assert a non-zero return code and `'FUEL_LEVELS setting is invalid'` in stderr. Confirm these fail before T011.
-- [ ] T011 [US3] In `biweeklybudget/settings.py`, add module-level `validate_fuel_levels(levels)` with a docstring implementing the rules in `contracts/fuel-levels-setting.md` (research R4). It returns a new normalised list and raises `ValueError` with a specific reason. After the env-var step from T007, and before the `_REQUIRED_VARS` check, run `FUEL_LEVELS = validate_fuel_levels(FUEL_LEVELS)`, converting `ValueError` to the same `SystemExit` message. T010 and all earlier tests must pass.
+- [X] T011 [US3] In `biweeklybudget/settings.py`, add module-level `validate_fuel_levels(levels)` with a docstring implementing the rules in `contracts/fuel-levels-setting.md` (research R4). It returns a new normalised list and raises `ValueError` with a specific reason. After the env-var step from T007, and before the `_REQUIRED_VARS` check, run `FUEL_LEVELS = validate_fuel_levels(FUEL_LEVELS)`, converting `ValueError` to the same `SystemExit` message. T010 and all earlier tests must pass.
 
 **Checkpoint**: All three stories pass.
 
@@ -115,9 +115,9 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T012 [P] In `docs/source/app_usage.rst`, in the Fuel Log settings list (~line 66), add a bullet for `:py:attr:`biweeklybudget.settings.FUEL_LEVELS``, which sets the fuel level choices on the Add Fuel Fill form. Adjust the following sentence, which says these settings only affect display of units, so it stays accurate.
-- [ ] T013 [P] In `docs/source/http_api.rst` (~line 730), change the `level_before`/`level_after` descriptions to say the value is a percentage of a full tank (0-100), normally one of the `FUEL_LEVELS` setting's percentages.
-- [ ] T014 [P] In `CHANGES.rst`, add one concise bullet at the top of `Unreleased`, led by the `Issue #208` link: the fuel level choices on the Add Fuel Fill form are now configurable via the new `FUEL_LEVELS` setting; the default is unchanged. Add a short sub-bullet with the env-var format example. Do not touch `biweeklybudget/version.py`.
+- [X] T012 [P] In `docs/source/app_usage.rst`, in the Fuel Log settings list (~line 66), add a bullet for `:py:attr:`biweeklybudget.settings.FUEL_LEVELS``, which sets the fuel level choices on the Add Fuel Fill form. Adjust the following sentence, which says these settings only affect display of units, so it stays accurate.
+- [X] T013 [P] In `docs/source/http_api.rst` (~line 730), change the `level_before`/`level_after` descriptions to say the value is a percentage of a full tank (0-100), normally one of the `FUEL_LEVELS` setting's percentages.
+- [X] T014 [P] In `CHANGES.rst`, add one concise bullet at the top of `Unreleased`, led by the `Issue #208` link: the fuel level choices on the Add Fuel Fill form are now configurable via the new `FUEL_LEVELS` setting; the default is unchanged. Add a short sub-bullet with the env-var format example. Do not touch `biweeklybudget/version.py`.
 - [ ] T015 Run the Test Gate (Constitution II) to completion, redirecting output to scratchpad files:
   - `tox -e py314`, which also covers pycodestyle and pyflakes.
   - `tox -e acceptance`.

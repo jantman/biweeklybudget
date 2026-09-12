@@ -74,6 +74,13 @@ the text, mainly because as far as I know I'm the only person in the world using
 this software. If anyone else uses it, I'll be happy to work to accomodate users
 of other languages or localities.
 
+The fuel level choices on the Fuel Log's Add Fuel Fill form can also be
+configured, for vehicles whose fuel gauge isn't marked in tenths, via
+:py:attr:`biweeklybudget.settings.FUEL_LEVELS` (for example
+``FUEL_LEVELS="E:0,1/4:25,1/2:50,3/4:75,F:100"`` as an environment variable).
+Each choice is a label paired with the percentage of a full tank it stands for,
+and that percentage is what is stored for the fill.
+
 Right now, regarding localization and currency formatting, please keep in mind
 the following caveats (which I'd be happy to fix if anyone needs it):
 

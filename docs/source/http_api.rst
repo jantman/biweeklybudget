@@ -727,8 +727,8 @@ Log a fuel fill and optionally create a :py:class:`~.Transaction` for the cost. 
 - ``vehicle`` *(integer, required)* - :py:class:`~.Vehicle` ID.
 - ``odometer_miles`` *(integer, required)* - Current odometer reading.
 - ``reported_miles`` *(integer, required)* - Miles reported by trip computer since last fill.
-- ``level_before`` *(integer, required)* - Fuel level before fill (0-100).
-- ``level_after`` *(integer, required)* - Fuel level after fill (0-100).
+- ``level_before`` *(integer, required)* - Fuel level before fill, as a percentage of a full tank (0-100); the web form sends one of the :py:attr:`~biweeklybudget.settings.FUEL_LEVELS` percentages.
+- ``level_after`` *(integer, required)* - Fuel level after fill, as a percentage of a full tank (0-100); the web form sends one of the :py:attr:`~biweeklybudget.settings.FUEL_LEVELS` percentages.
 - ``fill_location`` *(string, required)* - Location of the fill. Cannot be empty.
 - ``cost_per_gallon`` *(decimal, required)* - Cost per gallon. Must be positive.
 - ``total_cost`` *(decimal, required)* - Total cost. Must be positive and non-zero.

@@ -55,24 +55,6 @@ function budgetModalDivHandleType() {
 }
 
 /**
- * Escape a string for interpolation into HTML text content.
- *
- * Account names are entered by the user, so they cannot be concatenated into
- * an HTML string as-is.
- *
- * @param {String} s - the string to escape
- * @return {String} the escaped string
- */
-function escapeHtml(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-/**
  * Generate the HTML for the "Held in accounts" checkboxes on the budget
  * modal, one per active budget-funding account.
  *

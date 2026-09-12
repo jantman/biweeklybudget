@@ -408,6 +408,11 @@ class TestModals(AcceptanceHelper):
 
     def test_11_fuel_populate_modal(self, base_url, selenium):
         self.get(selenium, base_url + '/fuel')
+        # the FUEL_LEVELS setting (the default, in the test settings) is
+        # rendered into the page for fuel.js to build the level selects from
+        assert selenium.execute_script('return FUEL_LEVELS;') == [
+            [label, int(value)] for value, label in LEVEL_OPTS
+        ]
         link = selenium.find_element(By.ID, 'btn-add-fuel')
         self.wait_until_clickable(selenium, 'btn-add-fuel')
         modal, title, body = self.try_click_and_get_modal(selenium, link)
@@ -708,3 +713,130 @@ class TestModals(AcceptanceHelper):
         assert len(trans.budget_transactions) == 1
         assert trans.budget_transactions[0].budget_id == 1
         assert trans.budget_transactions[0].amount == Decimal('14.82')
+
+
+#: A FUEL_LEVELS value for a gauge marked in quarters, as JavaScript source.
+QUARTERS_JS = "[['E', 0], ['1/4', 25], ['1/2', 50], ['3/4', 75], ['F', 100]]"
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestFuelLevelsConfigured(AcceptanceHelper):
+    """
+    The Add Fuel Fill form with a non-default ``FUEL_LEVELS`` setting.
+
+    The live server is shared by the whole session and uses the test settings
+    module's default list, so these tests replace the page's ``FUEL_LEVELS``
+    global (which the server renders from the setting; see
+    ``TestModals.test_11_fuel_populate_modal``) before opening the modal.
+    """
+
+    def open_modal_with_levels(self, base_url, selenium, levels_js):
+        self.get(selenium, base_url + '/fuel')
+        selenium.execute_script('FUEL_LEVELS = %s;' % levels_js)
+        link = selenium.find_element(By.ID, 'btn-add-fuel')
+        self.wait_until_clickable(selenium, 'btn-add-fuel')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add Fuel Fill'
+        return body
+
+    def test_1_custom_levels(self, base_url, selenium):
+        self.open_modal_with_levels(base_url, selenium, QUARTERS_JS)
+        expected = [
+            ['0', 'E'], ['25', '1/4'], ['50', '1/2'], ['75', '3/4'],
+            ['100', 'F']
+        ]
+        lvl_before = Select(
+            selenium.find_element(By.ID, 'fuel_frm_level_before')
+        )
+        opts = [[o.get_attribute('value'), o.text] for o in lvl_before.options]
+        assert opts == expected
+        assert lvl_before.first_selected_option.get_attribute('value') == '0'
+        lvl_after = Select(
+            selenium.find_element(By.ID, 'fuel_frm_level_after')
+        )
+        opts = [[o.get_attribute('value'), o.text] for o in lvl_after.options]
+        assert opts == expected
+        assert lvl_after.first_selected_option.get_attribute('value') == '100'
+
+    def test_2_add_fill(self, base_url, selenium):
+        self.open_modal_with_levels(base_url, selenium, QUARTERS_JS)
+        Select(
+            selenium.find_element(By.ID, 'fuel_frm_vehicle')
+        ).select_by_value('2')
+        date = selenium.find_element(By.ID, 'fuel_frm_date')
+        date.clear()
+        date.send_keys(
+            (dtnow() - timedelta(days=1)).date().strftime('%Y-%m-%d')
+        )
+        odo = selenium.find_element(By.ID, 'fuel_frm_odo_miles')
+        odo.clear()
+        odo.send_keys('1408')
+        rep_mi = selenium.find_element(By.ID, 'fuel_frm_reported_miles')
+        rep_mi.clear()
+        rep_mi.send_keys('105')
+        Select(
+            selenium.find_element(By.ID, 'fuel_frm_level_before')
+        ).select_by_visible_text('1/4')
+        Select(
+            selenium.find_element(By.ID, 'fuel_frm_level_after')
+        ).select_by_visible_text('F')
+        fill_loc = selenium.find_element(By.ID, 'fuel_frm_fill_loc')
+        fill_loc.clear()
+        fill_loc.send_keys('Quarters Station')
+        cpg = selenium.find_element(By.ID, 'fuel_frm_cost_per_gallon')
+        cpg.clear()
+        cpg.send_keys('3.009')
+        cost = selenium.find_element(By.ID, 'fuel_frm_total_cost')
+        cost.clear()
+        cost.send_keys('30.09')
+        gals = selenium.find_element(By.ID, 'fuel_frm_gallons')
+        gals.clear()
+        gals.send_keys('10.000')
+        rep_mpg = selenium.find_element(By.ID, 'fuel_frm_reported_mpg')
+        rep_mpg.clear()
+        rep_mpg.send_keys('30.1')
+        add_trans = selenium.find_element(By.ID, 'fuel_frm_add_trans')
+        add_trans.click()
+        assert add_trans.is_selected() is False
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip().startswith('Successfully saved FuelFill ')
+        assert x.text.strip().endswith(' in database.')
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+        self.wait_for_jquery_done(selenium)
+
+    def test_3_verify_db(self, testdb):
+        fills = testdb.query(FuelFill).filter(
+            FuelFill.fill_location == 'Quarters Station'
+        ).all()
+        assert len(fills) == 1
+        assert fills[0].vehicle_id == 2
+        assert fills[0].odometer_miles == 1408
+        assert fills[0].level_before == 25
+        assert fills[0].level_after == 100
+
+    def test_4_numeric_and_markup_labels(self, base_url, selenium):
+        # integer-like labels, out of numeric order, and a label containing
+        # markup that must be shown as literal text
+        self.open_modal_with_levels(
+            base_url, selenium,
+            "[['8', 100], ['4', 50], ['<b>0</b> & E', 0]]"
+        )
+        expected = [['100', '8'], ['50', '4'], ['0', '<b>0</b> & E']]
+        for sel_id, selected in [
+            ('fuel_frm_level_before', '0'),
+            ('fuel_frm_level_after', '100')
+        ]:
+            elem = selenium.find_element(By.ID, sel_id)
+            assert elem.find_elements(By.TAG_NAME, 'b') == []
+            sel = Select(elem)
+            opts = [[o.get_attribute('value'), o.text] for o in sel.options]
+            assert opts == expected
+            assert sel.first_selected_option.get_attribute(
+                'value') == selected
