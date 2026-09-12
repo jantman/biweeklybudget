@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-12
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#214](https://github.com/jantman/biweeklybudget/issues/214) — "Spending by budget - charts": "pie charts for spending by budget - current and prev pay period, monthly, yearly, with a way to exclude specific budgets"
 
