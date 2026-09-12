@@ -127,7 +127,7 @@ one milestone (M1). Commit prefix: `Configurable Fuel Levels - M1.x`.
   Raise the timeouts and re-run if a suite times out, rather than narrowing it. `migrations`, `docker`, and `plaid` are not engaged and run in CI.
 - [X] T016 Manually walk through `quickstart.md` steps 1–3 against `flask rundev`, or record why that wasn't possible.
 - [X] T017 Record results in the spec artifacts: set `spec.md` Status to Complete, mark the tasks here done, and add a "Test Gate Results" section to `plan.md`. Commit with the prefix `Configurable Fuel Levels - M1.x`.
-- [ ] T018 Push the branch to `origin` and open the pull request, following `.github/PULL_REQUEST_TEMPLATE.md` and surfacing the spec's Assumptions (global list, percentages stored) for the maintainer. Then monitor CI and answer reviews until Claude's review says "No issues found" and Copilot's, if present, recommends approval.
+- [X] T018 Push the branch to `origin` and open the pull request, following `.github/PULL_REQUEST_TEMPLATE.md` and surfacing the spec's Assumptions (global list, percentages stored) for the maintainer. Then monitor CI and answer reviews until Claude's review says "No issues found" and Copilot's, if present, recommends approval.
 
 ---
 
