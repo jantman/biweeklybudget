@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #214 <https://github.com/jantman/biweeklybudget/issues/214>`_ - Add a **Spending Charts** page (``/budgets/spending``), linked from the sidebar and the Budgets page, with pie charts of net spending by budget for the current and previous pay period, calendar month and calendar year.
+
+  * Checkboxes leave budgets out of all six charts; budgets marked "Omit from graphs" start unticked. The selection is not saved.
+  * Transfers, credit card payments, income budgets and transactions with no budget impact are not counted, so a budget with transfers can show a different amount here than the pay period page's "spent".
+
 * `Issue #208 <https://github.com/jantman/biweeklybudget/issues/208>`_ - The fuel level choices on the Add Fuel Fill form are now configurable with the new ``FUEL_LEVELS`` setting, for gauges not marked in tenths. The default, ``0/10`` through ``10/10``, is unchanged, and levels are still stored as percentages.
 
   * As an environment variable, give comma-separated ``label:percentage`` pairs, e.g. ``FUEL_LEVELS="E:0,1/4:25,1/2:50,3/4:75,F:100"``. An invalid value stops the application from starting.

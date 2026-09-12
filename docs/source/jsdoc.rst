@@ -10,6 +10,7 @@ Files
    jsdoc.accounts_modal
    jsdoc.bom_items
    jsdoc.bom_items_modal
+   jsdoc.budget_spending
    jsdoc.budget_transfer_modal
    jsdoc.budgets_modal
    jsdoc.creditPayoffErrorModal
