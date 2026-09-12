@@ -256,6 +256,10 @@ class PlaidUpdate(MethodView):
         text human-readable summary of the update operation.
       * Otherwise, return a templated view of the update operation results, as
         would be returned to a browser.
+
+      In all three forms, the HTTP status is 200 if every Plaid Item was
+      updated successfully (or there were none to update) and 500 if one or
+      more Items failed to update; the response body is the same either way.
     """
 
     def post(self):
@@ -304,6 +308,9 @@ class PlaidUpdate(MethodView):
         :type ids: str
         :param num_days: number of days to retrieve transactions for; default 30
         :type num_days: int
+        :return: the update results in the form requested by the
+          ``Accept`` header, with HTTP status 200 if every Item was
+          updated successfully or 500 if any Item failed to update
         """
         logger.info(
             'Handle Plaid Update request; item_ids=%s num_days=%d',
@@ -318,6 +325,8 @@ class PlaidUpdate(MethodView):
                 db_session.query(PlaidItem).get(x) for x in ids
             ]
         results = updater.update(items=items, days=num_days)
+        # any failed Item makes the whole update a failure (issue #261)
+        status = 200 if all(r.success for r in results) else 500
         if request.headers.get('accept') == 'text/plain':
             s = ''
             num_updated = 0
@@ -336,9 +345,9 @@ class PlaidUpdate(MethodView):
                      f'updated, {r.added} added (stmts: {r.stmt_ids})\n'
             s += f'TOTAL: {num_updated} updated, {num_added} added, ' \
                  f'{num_failed} account(s) failed'
-            return s
+            return s, status
         if request.headers.get('accept') == 'application/json':
-            return jsonify([x.as_dict for x in results])
+            return jsonify([x.as_dict for x in results]), status
         # have to do this here in python and iterate twice, because of
         # https://github.com/pallets/jinja/issues/641
         num_updated = 0
@@ -355,7 +364,7 @@ class PlaidUpdate(MethodView):
             num_added=num_added,
             num_updated=num_updated,
             num_failed=num_failed
-        )
+        ), status
 
     def _form(self):
         items: List[PlaidItem] = db_session.query(PlaidItem).all()

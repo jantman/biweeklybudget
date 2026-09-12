@@ -65,6 +65,8 @@ Transactions can be updated via a simple API at the same ``/plaid-update`` endpo
 
 In short, the endpoint takes a POST or GET request that specifies an ``item_ids`` parameter as a string comma-separated list of :py:class:`~.PlaidItem` IDs to update, or the special string ``ALL`` to update all Items. Optionally, you can specify a ``num_days`` parameter to retrieve transactions for something other than the last 30 days. The response is either JSON if the ``Accept`` header is set to ``application/json`` or human-readable plain text if set to ``text/plain`` (if set to any other value, it will return the full HTML that would be sent to the browser).
 
+The HTTP status code reports whether the update succeeded, in all three response formats: ``200`` if every requested Item was updated successfully, or ``500`` if one or more Items failed to update. In both cases the response body reports the result for every Item, including the error for any that failed. A POST request without ``item_ids`` returns ``400``. Scripts can therefore detect a failed update from the status code alone, such as with ``curl --fail``.
+
 The following examples assume that biweeklybudget is available at ``http://127.0.0.1:8080``
 
 To update transactions for all Plaid Items via a GET request and return human-readable text:

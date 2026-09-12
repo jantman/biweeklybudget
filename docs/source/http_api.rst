@@ -801,7 +801,7 @@ Create a new :py:class:`~.Vehicle` or update an existing one. Handled by :py:cla
 Plaid
 -----
 
-Plaid transaction updating is documented in detail at :ref:`plaid.update-api`. In summary, the ``/plaid-update`` endpoint accepts ``item_ids`` (a comma-separated list of :py:class:`~.PlaidItem` IDs or ``ALL``) and an optional ``num_days`` parameter, and can return JSON (``Accept: application/json``) or plain text (``Accept: text/plain``) responses.
+Plaid transaction updating is documented in detail at :ref:`plaid.update-api`. In summary, the ``/plaid-update`` endpoint accepts ``item_ids`` (a comma-separated list of :py:class:`~.PlaidItem` IDs or ``ALL``) and an optional ``num_days`` parameter, and can return JSON (``Accept: application/json``) or plain text (``Accept: text/plain``) responses. It returns HTTP 200 if every Item updated successfully, and HTTP 500 (with the same per-Item results in the body) if any Item failed.
 
 .. _http_api.utility:
 
