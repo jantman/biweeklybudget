@@ -90,7 +90,7 @@ repository-relative.
 
 - [X] T014 [P] [US3] Add a "Spending Charts" entry (`fa-pie-chart`) directly after "Budgets" in `biweeklybudget/flaskapp/templates/nav.html`.
 - [X] T015 [P] [US3] Add a link with id `link-budget-spending` to `/budgets/spending` beside the existing spending charts in `biweeklybudget/flaskapp/templates/budgets.html`. It goes in a panel heading, without changing the existing charts.
-- [X] T016 [US3] Add to `biweeklybudget/tests/acceptance/flaskapp/views/test_budget_spending.py`: the nav link exists on the index page and leads to the page, and `#link-budget-spending` on `/budgets` leads to the page. Check whether `test_base_template.py` or any test asserts the full nav link list, and update it if so.
+- [X] T016 [US3] Add to `biweeklybudget/tests/acceptance/flaskapp/views/test_budget_spending.py`: the nav link exists on the index page and leads to the page, and `#link-budget-spending` on `/budgets` leads to the page. Check whether `test_base_template.py` or any test asserts the full nav link list, and update it if so. *(That check was missed when this task was first ticked. The full acceptance run in T021 caught it: `TestBaseTemplateNavigation.test_nav_links` pins the whole sidebar list. It was fixed by adding `('/budgets/spending', 'Spending Charts')` after Budgets.)*
 
 ---
 
