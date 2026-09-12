@@ -33,13 +33,30 @@ File: ``biweeklybudget/flaskapp/static/js/budget_spending.js``
 .. js:function:: ....................l()
 
    Redraw every period's panel from the loaded data.
-.. js:function:: .......................d(period)
 
-   Draw one period's panel: dates, total, donut chart, table and net credits.
-   Budget names are always inserted as text, never as HTML.
+   All the tables are drawn before any chart. A Morris chart takes its width
+   from its container once, when it is created; the tables are what make the
+   page tall enough to need a scrollbar, which narrows every column. Charts
+   drawn before that would keep their wider width and overflow their panels.
+.. js:function:: ......................t(period, summary)
+
+   Draw one period's donut chart, if it has any slices. Called only once
+   every panel's table has been drawn; see ``budgetSpendingDrawAll()``.
 
    :param period: one element of the endpoint's ``periods`` list
+   :param summary: ``budgetSpendingSummarize(period)``
    :type period: **Object**
+   :type summary: **Object**
+.. js:function:: ......................l(period, summary)
+
+   Draw one period's panel, apart from its donut chart: dates, total, table
+   and net credits, and whether the chart or the "no spending" message is
+   shown. Budget names are always inserted as text, never as HTML.
+
+   :param period: one element of the endpoint's ``periods`` list
+   :param summary: ``budgetSpendingSummarize(period)``
+   :type period: **Object**
+   :type summary: **Object**
 .. js:function:: .....................s(cents)
 
    Format an integer number of cents as currency.

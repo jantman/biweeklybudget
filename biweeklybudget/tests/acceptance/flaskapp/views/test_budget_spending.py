@@ -363,6 +363,32 @@ class TestBudgetSpendingPage(AcceptanceHelper):
             assert table_rows(self, selenium, key) == [], key
             assert total(selenium, key) == Decimal('0.00'), key
 
+    def test_charts_fit_their_panels(self, selenium):
+        """
+        Each donut is drawn at its final width, after the tables that make
+        the page tall enough to need a scrollbar. Drawn first, the charts
+        kept a width from before the columns narrowed, overflowed them, and
+        scrolled the page sideways.
+        """
+
+        def assert_fit():
+            for key in PERIOD_KEYS:
+                if not DEFAULT_TABLES[key]:
+                    continue
+                chart = selenium.find_element(
+                    By.ID, 'spending-%s-chart' % key
+                )
+                svg = chart.find_element(By.TAG_NAME, 'svg')
+                assert svg.rect['width'] <= chart.rect['width'] + 1, key
+            assert selenium.execute_script(
+                'return document.documentElement.scrollWidth <= '
+                'document.documentElement.clientWidth;'
+            )
+
+        assert_fit()
+        toggle(selenium, STANDING1)
+        assert_fit()
+
     def test_colours_follow_the_budget(self, selenium):
         """FR-011: unticking one budget does not recolour the others."""
 

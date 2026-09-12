@@ -176,14 +176,15 @@ function budgetSpendingFmtCents(cents) {
 }
 
 /**
- * Draw one period's panel: dates, total, donut chart, table and net credits.
- * Budget names are always inserted as text, never as HTML.
+ * Draw one period's panel, apart from its donut chart: dates, total, table
+ * and net credits, and whether the chart or the "no spending" message is
+ * shown. Budget names are always inserted as text, never as HTML.
  *
  * @param {Object} period - one element of the endpoint's ``periods`` list
+ * @param {Object} summary - ``budgetSpendingSummarize(period)``
  */
-function budgetSpendingDrawPeriod(period) {
+function budgetSpendingDrawPanel(period, summary) {
     var prefix = '#spending-' + period.key;
-    var summary = budgetSpendingSummarize(period);
     $(prefix + '-dates').text(period.start_date + ' to ' + period.end_date);
     $(prefix + '-total')
         .text(budgetSpendingFmtCents(summary.totalCents))
@@ -196,18 +197,6 @@ function budgetSpendingDrawPeriod(period) {
     } else {
         $(prefix + '-nodata').hide();
         chart.show();
-        Morris.Donut({
-            element: 'spending-' + period.key + '-chart',
-            data: summary.slices.map(function(s) {
-                return { label: s.name, value: s.cents / 100, percent: s.percent };
-            }),
-            colors: summary.slices.map(function(s) {
-                return budgetSpendingColors[s.budget_id];
-            }),
-            formatter: function(y, row) {
-                return fmt_currency(y) + ' (' + row.percent.toFixed(1) + '%)';
-            }
-        });
     }
     var tbody = $(prefix + '-table tbody');
     tbody.empty();
@@ -239,11 +228,45 @@ function budgetSpendingDrawPeriod(period) {
 }
 
 /**
+ * Draw one period's donut chart, if it has any slices. Called only once
+ * every panel's table has been drawn; see ``budgetSpendingDrawAll()``.
+ *
+ * @param {Object} period - one element of the endpoint's ``periods`` list
+ * @param {Object} summary - ``budgetSpendingSummarize(period)``
+ */
+function budgetSpendingDrawChart(period, summary) {
+    if (summary.slices.length === 0) { return; }
+    Morris.Donut({
+        element: 'spending-' + period.key + '-chart',
+        data: summary.slices.map(function(s) {
+            return { label: s.name, value: s.cents / 100, percent: s.percent };
+        }),
+        colors: summary.slices.map(function(s) {
+            return budgetSpendingColors[s.budget_id];
+        }),
+        formatter: function(y, row) {
+            return fmt_currency(y) + ' (' + row.percent.toFixed(1) + '%)';
+        }
+    });
+}
+
+/**
  * Redraw every period's panel from the loaded data.
+ *
+ * All the tables are drawn before any chart. A Morris chart takes its width
+ * from its container once, when it is created; the tables are what make the
+ * page tall enough to need a scrollbar, which narrows every column. Charts
+ * drawn before that would keep their wider width and overflow their panels.
  */
 function budgetSpendingDrawAll() {
     if (budgetSpendingData === null) { return; }
-    budgetSpendingData.periods.forEach(budgetSpendingDrawPeriod);
+    var summaries = budgetSpendingData.periods.map(budgetSpendingSummarize);
+    budgetSpendingData.periods.forEach(function(p, idx) {
+        budgetSpendingDrawPanel(p, summaries[idx]);
+    });
+    budgetSpendingData.periods.forEach(function(p, idx) {
+        budgetSpendingDrawChart(p, summaries[idx]);
+    });
 }
 
 /**
