@@ -125,6 +125,31 @@ DISTANCE_UNIT_ABBREVIATION = 'Mi.'
 #: such as ``MPG`` or ``KM/L``.
 FUEL_ECO_ABBREVIATION = 'MPG'
 
+#: list - The fuel levels offered as the "Starting Fuel Level" and "Ending
+#: Fuel Level" choices on the Fuel Log's Add Fuel Fill form, so that they can
+#: match the markings on your vehicle's fuel gauge. This is an ordered list of
+#: ``(label, percentage)`` pairs: ``label`` is the text shown in the form, and
+#: ``percentage`` is the whole-number percentage of a full tank (0 to 100)
+#: that the label stands for, which is what is stored for the fill. The choices
+#: are shown in the order given; the starting level defaults to the one with
+#: the lowest percentage and the ending level to the one with the highest.
+#:
+#: Defaults to tenths of a tank, ``0/10`` (0) through ``10/10`` (100). For a
+#: gauge marked in quarters, set it to
+#: ``[('E', 0), ('1/4', 25), ('1/2', 50), ('3/4', 75), ('F', 100)]``.
+#: Fractions that are not a whole percentage must be rounded, e.g. ``1/8`` as
+#: ``13``.
+#:
+#: As an environment variable, give comma-separated ``label:percentage``
+#: entries, e.g. ``FUEL_LEVELS="E:0,1/4:25,1/2:50,3/4:75,F:100"``. Each entry is
+#: split at its last colon, and whitespace around labels and percentages is
+#: ignored; labels given this way cannot contain commas.
+#:
+#: The list must have at least two levels, with non-empty labels, integer
+#: percentages from 0 to 100, and no duplicated labels or percentages. If it
+#: doesn't, the application exits at startup with an error saying why.
+FUEL_LEVELS = [('%d/10' % i, i * 10) for i in range(11)]
+
 #: string - SQLAlchemy database connection string. See the
 #: :ref:`SQLAlchemy Database URLS docs <sqlalchemy:database_urls>`
 #: for further information.
@@ -232,6 +257,88 @@ PLAID_COUNTRY_CODES = None
 #: Since this is a single-user app, we just hard-code to "1"
 PLAID_USER_ID = '1'
 
+
+def parse_fuel_levels(value):
+    """
+    Parse the ``FUEL_LEVELS`` environment variable format into a list of
+    ``(label, percentage)`` tuples. See
+    :py:attr:`biweeklybudget.settings.FUEL_LEVELS` for the format. This only
+    parses; the result must still be checked with
+    :py:func:`~.validate_fuel_levels`.
+
+    :param value: comma-separated ``label:percentage`` entries
+    :type value: str
+    :return: list of (label, percentage) tuples, in the order given
+    :rtype: list
+    :raises ValueError: if an entry is not ``label:percentage`` with a
+      whole-number percentage
+    """
+    result = []
+    for entry in value.split(','):
+        label, sep, pct = entry.rpartition(':')
+        pct = pct.strip()
+        if sep == '':
+            raise ValueError(
+                'entry %r is not in label:percentage form' % entry
+            )
+        if not (pct.isascii() and pct.isdigit()):
+            raise ValueError(
+                'entry %r percentage %r is not a whole number' % (entry, pct)
+            )
+        result.append((label.strip(), int(pct)))
+    return result
+
+
+def validate_fuel_levels(levels):
+    """
+    Check a ``FUEL_LEVELS`` value, from the settings module or parsed from the
+    environment, and return it normalised to a new list of
+    ``(label, percentage)`` tuples with surrounding whitespace removed from the
+    labels. See :py:attr:`biweeklybudget.settings.FUEL_LEVELS`.
+
+    :param levels: sequence of (label, percentage) pairs
+    :type levels: list or tuple
+    :return: list of (label, percentage) tuples, in the order given
+    :rtype: list
+    :raises ValueError: if there are fewer than two levels, a level is not a
+      (label, percentage) pair, a label is empty or not a string, a
+      percentage is not an integer from 0 to 100, or a label or percentage
+      is duplicated
+    """
+    if not isinstance(levels, (list, tuple)):
+        raise ValueError(
+            'must be a list of (label, percentage) pairs, not %r' % (levels,)
+        )
+    if len(levels) < 2:
+        raise ValueError(
+            'must have at least two levels, but has %d' % len(levels)
+        )
+    result = []
+    for level in levels:
+        if not isinstance(level, (list, tuple)) or len(level) != 2:
+            raise ValueError(
+                'level %r is not a (label, percentage) pair' % (level,)
+            )
+        label, pct = level
+        if not isinstance(label, str) or label.strip() == '':
+            raise ValueError('level %r has an empty label' % (level,))
+        label = label.strip()
+        if isinstance(pct, bool) or not isinstance(pct, int):
+            raise ValueError(
+                'level %r percentage is not an integer' % (level,)
+            )
+        if pct < 0 or pct > 100:
+            raise ValueError(
+                'level %r percentage %d is not from 0 to 100' % (level, pct)
+            )
+        if label in [x[0] for x in result]:
+            raise ValueError('label %r is used more than once' % label)
+        if pct in [x[1] for x in result]:
+            raise ValueError('percentage %d is used more than once' % pct)
+        result.append((label, pct))
+    return result
+
+
 if 'SETTINGS_MODULE' in os.environ:
     logger.debug('Attempting to import settings module %s',
                  os.environ['SETTINGS_MODULE'])
@@ -286,6 +393,17 @@ for varname in _DATE_VARS:
         raise SystemExit('ERROR: env var %s cannot parse as %Y-%m-%d' % varname)
     logger.debug('Setting %S from env var: %s', varname, value)
     globals()[varname] = value
+
+# FUEL_LEVELS may come from the settings module or the environment; either way
+# it is validated, so a mistake stops startup rather than producing a form that
+# records the wrong levels.
+try:
+    if 'FUEL_LEVELS' in os.environ:
+        FUEL_LEVELS = parse_fuel_levels(os.environ['FUEL_LEVELS'])
+        logger.debug('Setting FUEL_LEVELS from env var: %s', FUEL_LEVELS)
+    FUEL_LEVELS = validate_fuel_levels(FUEL_LEVELS)
+except ValueError as ex:
+    raise SystemExit('ERROR: FUEL_LEVELS setting is invalid: %s' % ex)
 
 for varname in _REQUIRED_VARS:
     if globals().get(varname, None) is None:

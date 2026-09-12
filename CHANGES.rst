@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #208 <https://github.com/jantman/biweeklybudget/issues/208>`_ - The fuel level choices on the Add Fuel Fill form are now configurable with the new ``FUEL_LEVELS`` setting, for gauges not marked in tenths. The default, ``0/10`` through ``10/10``, is unchanged, and levels are still stored as percentages.
+
+  * As an environment variable, give comma-separated ``label:percentage`` pairs, e.g. ``FUEL_LEVELS="E:0,1/4:25,1/2:50,3/4:75,F:100"``. An invalid value stops the application from starting.
+
 * `Issue #261 <https://github.com/jantman/biweeklybudget/issues/261>`_ - ``/plaid-update`` now returns HTTP 500 instead of 200 when any Plaid Item fails to update, in all response formats. The response body is unchanged.
 
   * Scripts calling the endpoint (for example with ``curl --fail``) will now see partial failures as errors.

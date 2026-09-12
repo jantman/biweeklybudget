@@ -36,6 +36,25 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 */
 
 /**
+ * Build the options for a fuel level select from the ``FUEL_LEVELS`` setting,
+ * which ``fuel.html`` templates into the page as an Array of
+ * ``[label, percentage]`` pairs. Options keep the configured order, and labels
+ * are HTML-escaped because they are configured text.
+ *
+ * @param {number} selectedValue - the percentage to preselect
+ * @return {Array} options for :js:func:`FormBuilder.addSelect`
+ */
+function fuelLevelOptions(selectedValue) {
+    return FUEL_LEVELS.map(function (level) {
+        return {
+            value: level[1],
+            label: escapeHtml(level[0]),
+            selected: level[1] === selectedValue
+        };
+    });
+}
+
+/**
  * Generate the HTML for the form on the Modal
  */
 function fuelModalDivForm() {
@@ -45,6 +64,9 @@ function fuelModalDivForm() {
             vehicleOptions[vehicles[key].name] = key;
         }
     });
+    var levelPercentages = FUEL_LEVELS.map(function (level) { return level[1]; });
+    var emptiestLevel = Math.min.apply(null, levelPercentages);
+    var fullestLevel = Math.max.apply(null, levelPercentages);
     return new FormBuilder('fuelLogForm')
         .addLabelToValueSelect('fuel_frm_vehicle', 'vehicle', 'Vehicle', vehicleOptions, null, false)
         .addDatePicker('fuel_frm_date', 'date', 'Date')
@@ -62,15 +84,13 @@ function fuelModalDivForm() {
                 helpBlock: 'Distance since last fill, as reported by vehicle'
             }
         )
-        .addLabelToValueSelect(
+        .addSelect(
             'fuel_frm_level_before', 'level_before', 'Starting Fuel Level',
-            {'0/10': 0, '1/10': 10, '2/10': 20, '3/10': 30, '4/10': 40, '5/10': 50, '6/10': 60, '7/10': 70, '8/10': 80, '9/10': 90, '10/10': 100},
-            0, false
+            fuelLevelOptions(emptiestLevel)
         )
-        .addLabelToValueSelect(
+        .addSelect(
             'fuel_frm_level_after', 'level_after', 'Ending Fuel Level',
-            {'0/10': 0, '1/10': 10, '2/10': 20, '3/10': 30, '4/10': 40, '5/10': 50, '6/10': 60, '7/10': 70, '8/10': 80, '9/10': 90, '10/10': 100},
-            100, false
+            fuelLevelOptions(fullestLevel)
         )
         .addText('fuel_frm_fill_loc', 'fill_location', 'Fill Location')
         .addCurrency('fuel_frm_cost_per_gallon', 'cost_per_gallon', 'Cost Per ' + FUEL_VOLUME_UNIT)
