@@ -95,15 +95,25 @@ stack constraint and because issue #215 exists for that.
 
 ## R4: Consistent colours per budget
 
-**Decision**: Colours come from a fixed palette of 20 distinct colours, indexed by each
-budget's position in the endpoint's `budgets` list, which is sorted by name, modulo the
-palette length. Colour depends only on the budget, never on which budgets are ticked, so
-unticking one budget does not recolour the rest.
+**Decision** (revised during implementation): the eight-hue categorical palette validated
+by the data-visualisation guidance, in its fixed order (`#2a78d6`, `#eb6834`, `#1baf7a`,
+`#eda100`, `#e87ba4`, `#008300`, `#4a3aa7`, `#e34948`). The hues go to the budgets with
+the most positive spending summed across all six periods, largest first. Every budget
+beyond the eighth gets one muted gray (`#898781`) and remains its own slice, separated by
+Morris's white segment stroke and named in the hover label and the table. The ranking is
+computed once from the loaded data and never from which budgets are ticked. So a budget has
+one colour in every chart, and unticking a budget never repaints the others.
 
-**Rationale**: FR-011. Indexing over all budgets, not only the ticked ones, keeps colours
-stable across checkbox changes. Twenty colours cover the realistic number of spending
-budgets. If there are more, colours repeat, but the table next to each chart still names
-every slice unambiguously.
+**Rationale**: FR-011. The plan first called for 20 colours indexed by name, cycling if
+there were more budgets than colours. The guidance forbids both cycling and generating
+hues past a validated set, because extra hues cannot be told apart, and least of all with
+colour vision deficiencies. The eight were run through the palette validator: every hard
+gate passes (worst adjacent CVD ΔE 9.1, normal-vision ΔE 19.6). Aqua, yellow and magenta
+are below 3:1 contrast on white; the table under every chart is the required relief.
+Giving the hues to the biggest budgets puts distinct colours where the eye goes first.
+
+**Alternatives considered**: Folding the tail into one "Other" slice. Rejected, because a
+folded budget could not be told apart in the chart, and the checkboxes act per budget.
 
 ## R5: Where exclusion is applied
 

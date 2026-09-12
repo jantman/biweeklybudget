@@ -887,3 +887,52 @@ has a value on every returned date. Handled by
    In biweeklybudget 1.6.0 and earlier, this endpoint took no parameters and
    always returned all recorded history. A request with no ``days`` parameter now
    returns only the default window. Pass ``days=0`` for the previous behaviour.
+
+.. _http_api.charts.budget_spending_by_period:
+
+Spending By Budget Per Period Chart Data
+++++++++++++++++++++++++++++++++++++++++
+
+``GET /ajax/chart-data/budget-spending/by-period``
+
+Retrieve the data behind the :ref:`Spending Charts <app_usage.spending_charts>`
+page: net spending per budget for the current and previous pay period, calendar
+month and calendar year, counted as described in
+:ref:`What is counted <app_usage.spending_charts.counted>`. Handled by
+:py:class:`~.BudgetSpendingChartView`, using
+:py:func:`~biweeklybudget.budget_spending.budget_spending_by_period`. Takes no
+parameters.
+
+**Example Request:**
+
+.. code-block:: bash
+
+    $ curl 'http://127.0.0.1:8080/ajax/chart-data/budget-spending/by-period'
+
+**Response:**
+
+- ``budgets`` *(array)* - Every non-income budget with non-zero net spending in at least one period, sorted by name. Each has ``id``, ``name``, and ``omit_from_graphs`` *(boolean)*. Budgets marked "omit from graphs" are included.
+- ``periods`` *(array)* - Six objects, in the order ``current_pay_period``, ``previous_pay_period``, ``current_month``, ``previous_month``, ``current_year``, ``previous_year``. Each has ``key``, ``name``, ``start_date`` and ``end_date`` (``YYYY-MM-DD``, both inclusive), and ``spending``: an array of ``budget_id`` and ``amount`` objects, one per budget with non-zero net spending in the period. ``amount`` is rounded to cents; a negative amount is a net credit.
+
+.. code-block:: json
+
+    {
+      "budgets": [
+        {"id": 1, "name": "Groceries", "omit_from_graphs": false},
+        {"id": 4, "name": "Rent", "omit_from_graphs": true}
+      ],
+      "periods": [
+        {
+          "key": "current_pay_period",
+          "name": "Current Pay Period",
+          "start_date": "2017-07-21",
+          "end_date": "2017-08-03",
+          "spending": [
+            {"budget_id": 1, "amount": 111.13},
+            {"budget_id": 4, "amount": 1200.0}
+          ]
+        }
+      ]
+    }
+
+Only the first period is shown above; a real response always has all six.

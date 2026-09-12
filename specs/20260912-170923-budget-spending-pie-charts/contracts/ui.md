@@ -13,7 +13,8 @@ Panel "Budgets Included"                 #panel-budget-spending-selection
                                             data-budget-id="<budget id>"
                                             label text = budget name (literal text)
 Row of six panels (col-lg-4, col-md-6)   #panel-spending-<key>
-  heading: "<name>" + "<start> to <end>"  #spending-<key>-title
+  heading: "<name>"                       #spending-<key>-title
+           "<start> to <end>"             #spending-<key>-dates
   total                                   #spending-<key>-total   e.g. "$1,234.56"
   donut                                   #spending-<key>-chart
   "No spending in this period."           #spending-<key>-nodata  (hidden unless no slices)

@@ -212,6 +212,14 @@ class Screenshotter(object):
             'preshot_func': '_budgets_preshot'
         },
         {
+            'path': '/budgets/spending',
+            'filename': 'budget-spending',
+            'title': 'Spending Charts',
+            'description': 'Pie charts of net spending by budget for the '
+                           'current and previous pay period, month and year, '
+                           'with checkboxes to leave budgets out.'
+        },
+        {
             'path': '/budgets/2',
             'filename': 'budget2',
             'title': 'Single Budget View',
