@@ -130,6 +130,23 @@ CHANGES.rst                                # Unreleased entry
   `CHANGES.rst` entry. Run the Test Gate (unit, acceptance, docs), record the results
   here, then commit, push, and open the PR.
 
+## Test Gate Results (M1, 2026-09-13)
+
+Run locally against MariaDB 10.4.7 (the CI image), Python 3.14:
+
+| Suite | Result |
+|-------|--------|
+| `tox -e py314` (unit + pycodestyle + pyflakes, uncached) | 960 passed, 4 skipped, 0 failed. `plaid_updater.py` 100% line and branch coverage |
+| `tox -e acceptance` | 880 passed, 24 skipped, 0 failed (20m23s) |
+| `tox -e docs` | builds (`docs: OK`). No warnings from `plaid.rst`, `CHANGES.rst` or `plaid_updater.py`. A first run failed only because of a network timeout on a pre-existing `CHANGES.rst` link (`ofxclient/pull/41`) in the linkcheck builder. |
+
+The five new or changed tests were first run against the unchanged code and failed (the
+`negate_balance` keyword was missing), then passed after T004. The three `TestDoItem` tests
+fail when `test_plaid_updater.py` is run on its own, before or after this change: the
+`PlaidAccount.account` backref only exists once SQLAlchemy mappers are configured. They
+pass in the full suite. The documented history-correction SQL was verified against the test
+database (T007). `migrations`, `docker` and `plaid` are not engaged and run in CI.
+
 ## Risks
 
 | Risk | Mitigation |
