@@ -228,44 +228,64 @@ function budgetSpendingDrawPanel(period, summary) {
 }
 
 /**
- * Draw one period's donut chart, if it has any slices. Called only once
- * every panel's table has been drawn; see ``budgetSpendingDrawAll()``.
+ * Draw one period's donut chart with Chart.js, replacing any chart already
+ * drawn for it, so the container never holds more than one. A period with no
+ * slices is left with no chart; its panel shows the "no spending" message
+ * instead. The chart has no legend, as the table under it is the legend, and
+ * it follows its panel's width on its own when the window is resized.
  *
  * @param {Object} period - one element of the endpoint's ``periods`` list
  * @param {Object} summary - ``budgetSpendingSummarize(period)``
  */
 function budgetSpendingDrawChart(period, summary) {
+    var elementId = 'spending-' + period.key + '-chart';
+    var old = Chart.getChart(elementId + '-canvas');
+    if (old) { old.destroy(); }
+    var container = $('#' + elementId);
+    container.empty();
     if (summary.slices.length === 0) { return; }
-    Morris.Donut({
-        element: 'spending-' + period.key + '-chart',
-        data: summary.slices.map(function(s) {
-            return { label: s.name, value: s.cents / 100, percent: s.percent };
-        }),
-        colors: summary.slices.map(function(s) {
-            return budgetSpendingColors[s.budget_id];
-        }),
-        formatter: function(y, row) {
-            return fmt_currency(y) + ' (' + row.percent.toFixed(1) + '%)';
+    var canvas = $('<canvas></canvas>').attr('id', elementId + '-canvas');
+    container.append(canvas);
+    new Chart(canvas[0], {
+        type: 'doughnut',
+        data: {
+            labels: summary.slices.map(function(s) { return s.name; }),
+            datasets: [{
+                data: summary.slices.map(function(s) { return s.cents / 100; }),
+                backgroundColor: summary.slices.map(function(s) {
+                    return budgetSpendingColors[s.budget_id];
+                })
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            var s = summary.slices[ctx.dataIndex];
+                            return s.name + ': ' + fmt_currency(s.cents / 100) +
+                                ' (' + s.percent.toFixed(1) + '%)';
+                        }
+                    }
+                }
+            }
         }
     });
 }
 
 /**
- * Redraw every period's panel from the loaded data.
- *
- * All the tables are drawn before any chart. A Morris chart takes its width
- * from its container once, when it is created; the tables are what make the
- * page tall enough to need a scrollbar, which narrows every column. Charts
- * drawn before that would keep their wider width and overflow their panels.
+ * Redraw every period's panel, and its chart, from the loaded data.
  */
 function budgetSpendingDrawAll() {
     if (budgetSpendingData === null) { return; }
-    var summaries = budgetSpendingData.periods.map(budgetSpendingSummarize);
-    budgetSpendingData.periods.forEach(function(p, idx) {
-        budgetSpendingDrawPanel(p, summaries[idx]);
-    });
-    budgetSpendingData.periods.forEach(function(p, idx) {
-        budgetSpendingDrawChart(p, summaries[idx]);
+    budgetSpendingData.periods.forEach(function(p) {
+        var summary = budgetSpendingSummarize(p);
+        budgetSpendingDrawPanel(p, summary);
+        budgetSpendingDrawChart(p, summary);
     });
 }
 
@@ -322,12 +342,4 @@ function budgetSpendingLoad() {
 
 $(function() {
     budgetSpendingLoad();
-    // Morris charts do not follow their container's width on their own here:
-    // its "resize" option would leave a handler behind for every chart that a
-    // checkbox change replaces. Redraw everything instead, once resizing stops.
-    var resizeTimer = null;
-    $(window).on('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(budgetSpendingDrawAll, 250);
-    });
 });

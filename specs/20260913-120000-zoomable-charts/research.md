@@ -134,6 +134,11 @@ Date strings are parsed by the date-fns adapter's `parseISO`, which reads `2017-
 `2017-07` as local dates, so no point shifts a day in a time zone west of UTC. Built-in
 parsing through `Date` would read a bare date as UTC midnight.
 
+The time axis sets `minUnit` to `'day'`, or `'month'` for the monthly chart. No data is
+finer than a day. Without `minUnit`, Chart.js labels hours whenever the visible range is
+a day or two wide, which happens with a single day of data or when zoomed to `minRange`,
+and that suggests the data has times. This was found in the T030 walk-through.
+
 **Rationale**: data-model "Line series". A missing value is a gap, never a zero.
 
 ## R7 — Tooltips and currency
@@ -144,7 +149,17 @@ pointer. Every point on that date is at the same horizontal distance, so each ap
 series without a point on that date are further away and are left out. `'index'` mode is
 wrong here because series with gaps have different indices for the same date. `'x'` mode
 only matches points within their small hit radius, so the tooltip would flicker off
-between dates. The tooltip title is the date in
+between dates.
+
+*Revised during implementation:* `'nearest'` alone is not enough. It binary-searches each
+dataset for the pointer position and examines only the points either side of it. When a
+series has several points on the same date, as the sample data's fuel prices do (three
+fills on each of two days), it returns one or two of them depending on the exact pointer
+pixel. A flaky acceptance test found this. The charts therefore register a custom Chart.js
+interaction mode, `date` (`chartDateInteraction()` in `charts.js`). It uses `'nearest'`
+with `axis: 'x'` to find the date, then returns every visible point at exactly that x
+pixel. Points on one date always compute the same pixel, so hovering always lists every
+point on that date. The tooltip title is the date in
 `opts.dateFormat`. Label values go through the existing `fmt_currency()` when
 `opts.currency` is set (Account Balances, both Spending By Budget charts, Fuel Prices), and
 through `toFixed(2)` for Fuel Economy, matching Morris's two decimals. The value axis

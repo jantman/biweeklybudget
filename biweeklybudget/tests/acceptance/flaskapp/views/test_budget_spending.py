@@ -40,6 +40,7 @@ from decimal import Decimal
 
 import pytest
 import requests
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -70,6 +71,28 @@ def load_page(helper, selenium, base_url):
         lambda d: d.find_element(
             By.ID, 'budget-spending-charts'
         ).get_attribute('data-loaded') == 'true'
+    )
+
+
+def donut_state(selenium, key):
+    """
+    Return a period's donut: slice ``labels``, ``amounts`` and ``colors``
+    as drawn, and ``swatches``, the colour the page assigned each of those
+    budgets (the colour of its checkbox swatch).
+    """
+    return selenium.execute_script(
+        "var c = Chart.getChart(arguments[0]);"
+        "var ids = {};"
+        "Object.keys(budgetSpendingNames).forEach(function(id) {"
+        "  ids[budgetSpendingNames[id]] = id; });"
+        "return {"
+        "  labels: c.data.labels,"
+        "  amounts: c.data.datasets[0].data,"
+        "  colors: c.data.datasets[0].backgroundColor,"
+        "  swatches: c.data.labels.map(function(name) {"
+        "    return budgetSpendingColors[ids[name]]; })"
+        "};",
+        'spending-%s-chart-canvas' % key
     )
 
 
@@ -292,13 +315,71 @@ class TestBudgetSpendingPage(AcceptanceHelper):
             if DEFAULT_TABLES[key]:
                 assert not is_nodata(selenium, key), key
                 assert chart.is_displayed(), key
-                # one donut segment per table row
-                assert len(chart.find_elements(By.TAG_NAME, 'path')) >= len(
-                    DEFAULT_TABLES[key]
-                ), key
+                assert len(chart.find_elements(By.TAG_NAME, 'canvas')) == 1
+                # one slice per table row, same budgets, amounts and order,
+                # each in its budget's colour (the colour of its swatch)
+                donut = donut_state(selenium, key)
+                assert donut['labels'] == [
+                    r[0] for r in DEFAULT_TABLES[key]
+                ], key
+                assert [
+                    Decimal(str(x)).quantize(Decimal('0.01'))
+                    for x in donut['amounts']
+                ] == [
+                    Decimal(r[1].replace('$', '').replace(',', ''))
+                    for r in DEFAULT_TABLES[key]
+                ], key
+                assert donut['colors'] == donut['swatches'], key
             else:
                 assert is_nodata(selenium, key), key
                 assert not chart.is_displayed(), key
+                assert chart.find_elements(By.TAG_NAME, 'canvas') == []
+
+    def test_donut_hover_text(self, selenium):
+        """FR-017: hovering a slice names the budget, amount and share."""
+        cid = 'spending-current_pay_period-chart-canvas'
+        canvas = selenium.find_element(By.ID, cid)
+        # Chart.js draws a doughnut clockwise from 12 o'clock, so the middle
+        # of the ring at 3 o'clock is in the first (largest) slice
+        arc = selenium.execute_script(
+            "var c = Chart.getChart(arguments[0]);"
+            "var a = c.getDatasetMeta(0).data[0];"
+            "return {x: a.x, y: a.y, r: (a.innerRadius + a.outerRadius) / 2,"
+            " w: c.canvas.clientWidth, h: c.canvas.clientHeight};",
+            cid
+        )
+        ActionChains(selenium).move_to_element_with_offset(
+            canvas,
+            int(arc['x'] + arc['r'] - arc['w'] / 2),
+            int(arc['y'] - arc['h'] / 2)
+        ).perform()
+        lines = selenium.execute_script(
+            "var t = Chart.getChart(arguments[0]).tooltip;"
+            "return (t.body || []).map(function(b) {"
+            "  return b.lines.join(''); });",
+            cid
+        )
+        assert lines == ['Periodic2: $222.22 (66.7%)']
+
+    def test_toggle_redraws_one_chart_each(self, selenium):
+        toggle(selenium, PERIODIC2)
+        for key in PERIOD_KEYS:
+            chart = selenium.find_element(By.ID, 'spending-%s-chart' % key)
+            canvases = chart.find_elements(By.TAG_NAME, 'canvas')
+            if is_nodata(selenium, key):
+                assert canvases == [], key
+            else:
+                assert len(canvases) == 1, key
+                assert 'Periodic2' not in donut_state(selenium, key)['labels']
+        assert donut_state(selenium, 'current_pay_period')['labels'] == [
+            'Periodic1'
+        ]
+        toggle(selenium, PERIODIC2)
+        for key in PERIOD_KEYS:
+            if DEFAULT_TABLES[key]:
+                assert donut_state(selenium, key)['labels'] == [
+                    r[0] for r in DEFAULT_TABLES[key]
+                ], key
 
     def test_default_selection(self, selenium):
         boxes = selenium.find_elements(
@@ -365,10 +446,11 @@ class TestBudgetSpendingPage(AcceptanceHelper):
 
     def test_charts_fit_their_panels(self, selenium):
         """
-        Each donut is drawn at its final width, after the tables that make
-        the page tall enough to need a scrollbar. Drawn first, the charts
-        kept a width from before the columns narrowed, overflowed them, and
-        scrolled the page sideways.
+        Each donut stays inside its panel. Under Morris a chart drawn before
+        the tables kept a width from before the page grew a scrollbar and
+        the columns narrowed, overflowed, and scrolled the page sideways.
+        Chart.js follows its container's width, so this now guards against
+        that coming back.
         """
 
         def assert_fit():
@@ -378,8 +460,8 @@ class TestBudgetSpendingPage(AcceptanceHelper):
                 chart = selenium.find_element(
                     By.ID, 'spending-%s-chart' % key
                 )
-                svg = chart.find_element(By.TAG_NAME, 'svg')
-                assert svg.rect['width'] <= chart.rect['width'] + 1, key
+                canvas = chart.find_element(By.TAG_NAME, 'canvas')
+                assert canvas.rect['width'] <= chart.rect['width'] + 1, key
             assert selenium.execute_script(
                 'return document.documentElement.scrollWidth <= '
                 'document.documentElement.clientWidth;'

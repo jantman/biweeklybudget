@@ -60,7 +60,7 @@ Each container holds exactly one `<canvas>`, however often its data is reloaded.
 
 | Function | Contract |
 |----------|----------|
-| `lineChartCreate(elementId, ajaxdata, opts)` | Builds the markup above inside `#elementId` and returns the Chart.js instance. `ajaxdata` is an endpoint response (`{keys, data}`). `opts.currency` (bool) formats values with `fmt_currency`. `opts.dateFormat` is the tooltip date format. |
+| `lineChartCreate(elementId, ajaxdata, opts)` | Builds the markup above inside `#elementId` and returns the Chart.js instance. `ajaxdata` is an endpoint response (`{keys, data}`). `opts.currency` (bool) formats values with `fmt_currency`. `opts.dateFormat` is the tooltip date format. `opts.minUnit` (default `'day'`) is the smallest unit the date axis labels: `'month'` for the monthly chart. The axis never labels times of day. |
 | `lineChartSetData(chart, ajaxdata)` | Replaces the chart's datasets with those from `ajaxdata`, recalculates the zoom limits, returns to full view and refreshes the reset control. The canvas and instance are kept. |
 | `lineChartDatasets(ajaxdata)` | Pure: endpoint response → Chart.js datasets (labels, points, colours). |
 | `CHART_COLORS` | The shared categorical palette. |
@@ -75,7 +75,7 @@ Each container holds exactly one `<canvas>`, however often its data is reloaded.
 | wheel without Ctrl | page scrolls; the chart does not change |
 | click `#<id>-reset` | back to full view; hidden series stay hidden |
 | click a legend entry | hide or show that series |
-| hover | tooltip: date, then `name: value` for each visible series with a point on that date |
+| hover | tooltip: the date nearest the pointer, then `name: value` for every visible point on that date (a series with several points on one date lists each), via the custom `date` interaction mode |
 
 ## Spending Charts page (donuts)
 

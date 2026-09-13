@@ -354,10 +354,11 @@ class TestLineChartsCommon(AcceptanceHelper):
         tip = selenium.execute_script(TOOLTIP_JS, elem_id)
         assert tip['opacity'] > 0
         assert tip['title'] == [when]
-        # one line per visible series with a point on that date
+        # one line per point on that date, in every visible series; a series
+        # can have more than one (several fuel fills on the same day)
         expected = [
             state['labels'][i] for i, pts in enumerate(state['data'])
-            if when in [p[0] for p in pts]
+            for p in pts if p[0] == when
         ]
         assert [x.split(': ')[0] for x in tip['lines']] == expected
         if currency:
@@ -366,6 +367,62 @@ class TestLineChartsCommon(AcceptanceHelper):
             pattern = r'^.+: -?[0-9]+\.[0-9]{2}$'
         for line in tip['lines']:
             assert re.match(pattern, line), line
+
+    def test_tooltip_lists_every_point_on_a_date(self, selenium, base_url):
+        """
+        The sample fuel prices have three fills on each of two days. Chart.js's
+        own "nearest" mode showed one or two of a day's three prices, varying
+        with the exact pointer pixel; the charts' "date" mode shows all three
+        wherever the pointer is nearest that date.
+        """
+        elem_id = 'fuel-price-chart'
+        state = self.load(selenium, base_url, '/fuel', elem_id)
+        canvas = selenium.find_element(By.ID, elem_id + '-canvas')
+        y = (state['area']['top'] + state['area']['bottom']) / 2.0
+        dates = sorted(set(p[0] for p in state['data'][0]))
+        assert len(dates) == 2
+        for when, nudges in [(dates[0], [0, 1, 2]), (dates[-1], [0, -1, -2])]:
+            ms = state['ms'][0][[p[0] for p in state['data'][0]].index(when)]
+            x = selenium.execute_script(
+                "var c = Chart.getChart(arguments[0] + '-canvas');"
+                "return c.scales.x.getPixelForValue(arguments[1]);",
+                elem_id, ms
+            )
+            expected = sorted(
+                'price: $%.2f' % p[1] for p in state['data'][0]
+                if p[0] == when
+            )
+            assert len(expected) == 3
+            for nudge in nudges:
+                dx, dy = to_canvas_offset(state, x + nudge, y)
+                ActionChains(selenium).move_to_element_with_offset(
+                    canvas, dx, dy
+                ).perform()
+                tip = selenium.execute_script(TOOLTIP_JS, elem_id)
+                assert tip['title'] == [when], (when, nudge)
+                assert sorted(tip['lines']) == expected, (when, nudge)
+
+    @pytest.mark.parametrize('page,elem_id,url,currency', HOVERABLE)
+    def test_date_axis_labels_dates_only(
+        self, selenium, base_url, page, elem_id, url, currency
+    ):
+        """
+        The data is daily or monthly, so the date axis never labels a time
+        of day, even over a span of a single day as with the sample fuel
+        prices; and the monthly chart labels months.
+        """
+        self.load(selenium, base_url, page, elem_id)
+        labels = selenium.execute_script(
+            "return Chart.getChart(arguments[0] + '-canvas').scales.x.ticks"
+            ".map(function(t) { return t.label; });",
+            elem_id
+        )
+        assert labels
+        for label in labels:
+            assert not re.search(r'\d(AM|PM)\b|\d:\d\d', label), label
+        if elem_id == 'budget-per-month-chart':
+            for label in labels:
+                assert re.match(r'^[A-Z][a-z]{2} \d{4}$', label), label
 
     @pytest.mark.parametrize('page,elem_id,url,currency', CHARTS)
     def test_fits_panel_after_resize(

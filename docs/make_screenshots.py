@@ -637,8 +637,18 @@ class Screenshotter(object):
         self.get('/budgets')
         sleep(10)
         logger.info('budgets preshot - executing script')
+        # show the tooltip for the most recent date on the per-period chart
         self.browser.execute_script(
-            "$('#budget-per-period-chart').find('.morris-hover').show()"
+            "var c = Chart.getChart('budget-per-period-chart-canvas');"
+            "var active = [];"
+            "c.data.datasets.forEach(function(d, i) {"
+            "  if (d.data.length) {"
+            "    active.push({datasetIndex: i, index: d.data.length - 1}); }"
+            "});"
+            "var el = c.getDatasetMeta(active[0].datasetIndex)"
+            "  .data[active[0].index];"
+            "c.tooltip.setActiveElements(active, {x: el.x, y: el.y});"
+            "c.update();"
         )
         sleep(2)
         logger.info('budgets preshot done')

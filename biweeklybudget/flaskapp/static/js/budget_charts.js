@@ -48,7 +48,7 @@ $(function() {
   $.ajax('/ajax/chart-data/budget-spending/by-month').done(function(ajaxdata) {
     lineChartCreate(
       'budget-per-month-chart', ajaxdata,
-      { currency: true, dateFormat: 'yyyy-MM' }
+      { currency: true, dateFormat: 'yyyy-MM', minUnit: 'month' }
     );
   });
 });

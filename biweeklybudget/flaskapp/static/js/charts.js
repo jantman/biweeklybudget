@@ -147,6 +147,43 @@ function lineChartMinRange(ajaxdata) {
 }
 
 /**
+ * Chart.js interaction mode ``date``, used for every line chart's hover and
+ * tooltip: every point, in every visible series, on the date nearest the
+ * pointer. Chart.js's own ``nearest`` mode (along the x axis) finds that date,
+ * but where a series has several points on one date, such as several fuel
+ * fills on the same day, it returns only some of them, and which ones depends
+ * on the exact pointer position. Points on the same date always have exactly
+ * the same x pixel, so this collects them all.
+ *
+ * @param {Object} chart - the Chart.js instance
+ * @param {Object} e - the pointer event
+ * @param {Object} options - the chart's interaction options
+ * @param {boolean} useFinalPosition - passed through to ``nearest``
+ * @returns {Array} interaction items: ``{element, datasetIndex, index}``
+ */
+function chartDateInteraction(chart, e, options, useFinalPosition) {
+  var nearest = Chart.Interaction.modes.nearest(
+    chart, e, { axis: 'x', intersect: false }, useFinalPosition
+  );
+  if (nearest.length === 0) { return []; }
+  var x = nearest[0].element.x;
+  var items = [];
+  chart.data.datasets.forEach(function(ds, datasetIndex) {
+    if (!chart.isDatasetVisible(datasetIndex)) { return; }
+    chart.getDatasetMeta(datasetIndex).data.forEach(function(element, index) {
+      if (element.x === x) {
+        items.push(
+          { element: element, datasetIndex: datasetIndex, index: index }
+        );
+      }
+    });
+  });
+  return items;
+}
+
+Chart.Interaction.modes.date = chartDateInteraction;
+
+/**
  * Enable a chart's "Reset zoom" button exactly when the chart is zoomed or
  * panned away from its full view.
  *
@@ -177,7 +214,10 @@ function lineChartUpdateReset(chart) {
  * @param {Object} opts - options: ``currency`` (bool) formats values with
  *   :js:func:`fmt_currency` rather than to two decimal places;
  *   ``dateFormat`` (string) is the date-fns format for dates in tooltips,
- *   e.g. ``yyyy-MM-dd``
+ *   e.g. ``yyyy-MM-dd``; ``minUnit`` (string, default ``'day'``) is the
+ *   smallest unit the date axis labels, ``'month'`` for monthly data. No
+ *   chart's data is finer than a day, so the axis never labels times of day,
+ *   even when it spans only a day or two.
  * @returns {Object} the Chart.js instance
  */
 function lineChartCreate(elementId, ajaxdata, opts) {
@@ -206,12 +246,16 @@ function lineChartCreate(elementId, ajaxdata, opts) {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      // every visible series with a point on the date nearest the pointer
-      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      // every visible point on the date nearest the pointer; see
+      // chartDateInteraction()
+      interaction: { mode: 'date', intersect: false },
       scales: {
         x: {
           type: 'time',
-          time: { tooltipFormat: opts.dateFormat },
+          time: {
+            tooltipFormat: opts.dateFormat,
+            minUnit: opts.minUnit || 'day'
+          },
           ticks: { maxRotation: 0, autoSkipPadding: 12 }
         },
         y: {

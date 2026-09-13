@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-13
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#215](https://github.com/jantman/biweeklybudget/issues/215) — "Better charts": "Consider replacing the charts (or maybe just setting options on them, if they support it) with ones that support zooming, panning, etc. (Bokeh?)"
 
