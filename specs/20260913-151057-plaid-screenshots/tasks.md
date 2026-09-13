@@ -32,7 +32,8 @@ renders the real template (Constitution II). The whole feature is one milestone 
 
 ## Phase 1: Setup
 
-- [ ] T001 Start a MariaDB 10.4.7 test container on a port no other worktree uses, create the test databases (`dev/setup_test_db.py`), and write the DB and tox environment variables to a scratchpad `env.sh`. Create a scratchpad venv with `pycodestyle` and `pyflakes` for linting `docs/make_screenshots.py`.
+- [X] T001 Start a MariaDB 10.4.7 test container on a port no other worktree uses, create the test databases (`dev/setup_test_db.py`), and write the DB and tox environment variables to a scratchpad `env.sh`. Create a scratchpad venv with `pycodestyle` and `pyflakes` for linting `docs/make_screenshots.py`.
+  - *Done 2026-09-13.* Container `budgettest-issue264` on port 13364.
 
 ---
 
@@ -42,7 +43,7 @@ renders the real template (Constitution II). The whole feature is one milestone 
 
 **Independent Test**: A `screenshots` run produces `plaid-update.png` showing both sample Items in both tables.
 
-- [ ] T002 [US1] Add a `plaid-update` entry (path `/plaid-update`, title "Plaid Update", one-sentence description) to `Screenshotter.screenshots` in `docs/make_screenshots.py`, directly after the `ofx` entry.
+- [X] T002 [US1] Add a `plaid-update` entry (path `/plaid-update`, title "Plaid Update", one-sentence description) to `Screenshotter.screenshots` in `docs/make_screenshots.py`, directly after the `ofx` entry.
 
 ---
 
@@ -54,7 +55,7 @@ Listed before US2 because its entry comes second on the page (research R3); it h
 
 **Independent Test**: `account1-plaid.png` shows the selector set to `Inst1 / Acct1 (foo)`.
 
-- [ ] T003 [US3] In `docs/make_screenshots.py`, add an `account1-plaid` entry (path `/accounts/1`, title "Linking an Account to Plaid") after `plaid-update`, with a `_account_plaid_preshot` method that waits for the modal and scrolls `#modalDiv` to the bottom.
+- [X] T003 [US3] In `docs/make_screenshots.py`, add an `account1-plaid` entry (path `/accounts/1`, title "Linking an Account to Plaid") after `plaid-update`, with a `_account_plaid_preshot` method that waits for the modal and scrolls `#modalDiv` to the bottom.
 
 ---
 
@@ -64,20 +65,24 @@ Listed before US2 because its entry comes second on the page (research R3); it h
 
 **Independent Test**: `plaid-update-result.png` shows an Inst1 row with counts and statement IDs, an Inst2 row with the sample error, and "1 Failed" in the Total row, from a run with no Plaid credentials.
 
-- [ ] T004 [US2] Write a unit test in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` that renders the real `plaid_result.html` with a result that has statement IDs and asserts they appear in the "Statement IDs" cell. Run it and confirm it fails.
-- [ ] T005 [US2] Fix `biweeklybudget/flaskapp/templates/plaid_result.html` to render `pur.stmt_ids` instead of the nonexistent `pur.stmt_id`; confirm T004's test passes.
-- [ ] T006 [US2] In `docs/make_screenshots.py`, add a stub `PlaidUpdater` subclass (no Plaid client; `update()` returns fixed `PlaidUpdateResult`s per data-model.md, writes nothing) and install it on `biweeklybudget.flaskapp.views.plaid` in `Screenshotter.run` before `self.server.start()`. Add a `plaid-update-result` entry (path `/plaid-update?item_ids=ALL`, title "Plaid Update Result") after `account1-plaid`.
+- [X] T004 [US2] Write a unit test in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` that renders the real `plaid_result.html` with a result that has statement IDs and asserts they appear in the "Statement IDs" cell. Run it and confirm it fails.
+  - *Done 2026-09-13.* `TestPlaidResultTemplate::test_statement_ids_and_failure` failed before the fix, on the `<td>[21728, 21729]</td>` assertion only (the page rendered and the Item row matched).
+- [X] T005 [US2] Fix `biweeklybudget/flaskapp/templates/plaid_result.html` to render `pur.stmt_ids` instead of the nonexistent `pur.stmt_id`; confirm T004's test passes.
+- [X] T006 [US2] In `docs/make_screenshots.py`, add a stub `PlaidUpdater` subclass (no Plaid client; `update()` returns fixed `PlaidUpdateResult`s per data-model.md, writes nothing) and install it on `biweeklybudget.flaskapp.views.plaid` in `Screenshotter.run` before `self.server.start()`. Add a `plaid-update-result` entry (path `/plaid-update?item_ids=ALL`, title "Plaid Update Result") after `account1-plaid`.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T007 [P] Add a sentence to the Usage section of `docs/source/plaid.rst` linking to the Screenshots page (`:doc:`screenshots``) for the Plaid Update page, linking an Account, and update results (FR-007).
-- [ ] T008 [P] Add a concise `Unreleased` entry for issue #264 to `CHANGES.rst` (new Plaid screenshots; result page now shows statement IDs). Do not change `biweeklybudget/version.py`.
-- [ ] T009 Lint the changed parts of `docs/make_screenshots.py` with pycodestyle (repo `setup.cfg`) and pyflakes.
-- [ ] T010 Run `tox -e screenshots` with no `PLAID_*` variables set; review the three new images against `contracts/screenshots.md` and check that the existing entries are unchanged in the generated `screenshots.rst` (SC-002, SC-003). Then discard the regenerated files under `docs/source/` (research R5).
-- [ ] T011 Test gate: run `tox -e py314`, `tox -e acceptance` and `tox -e docs` to completion, sequentially for the two DB suites, with output redirected to scratchpad files. All must pass.
-- [ ] T012 Mark tasks complete in this file, record the test results, and commit.
+- [X] T007 [P] Add a sentence to the Usage section of `docs/source/plaid.rst` linking to the Screenshots page (`:doc:`screenshots``) for the Plaid Update page, linking an Account, and update results (FR-007).
+- [X] T008 [P] Add a concise `Unreleased` entry for issue #264 to `CHANGES.rst` (new Plaid screenshots; result page now shows statement IDs). Do not change `biweeklybudget/version.py`.
+- [X] T009 Lint the changed parts of `docs/make_screenshots.py` with pycodestyle (repo `setup.cfg`) and pyflakes.
+  - *Done 2026-09-13.* No new warnings. The remaining E402s (imports after the settings setup) and pyflakes warnings (`re`, `defaultdict`, duplicate `os`) are in lines this change does not touch.
+- [X] T010 Run `tox -e screenshots` with no `PLAID_*` variables set; review the three new images against `contracts/screenshots.md` and check that the existing entries are unchanged in the generated `screenshots.rst` (SC-002, SC-003). Then discard the regenerated files under `docs/source/` (research R5).
+  - *Done 2026-09-13.* `screenshots: OK` with no Plaid credentials. All three images match the contract; the result page shows `[21728]` under Statement IDs, the sample error for Inst2, and "1 Failed" (HTTP 500 from the view, as designed for a failed Item). The generated `screenshots.rst` only adds sections (the three Plaid ones, plus Cash Position and Spending Charts from earlier features); the one changed line is the Single Pay Period description, a mismatch that predates this change (the committed `.rst` was edited by hand, the generator was not). Regenerated files discarded.
+- [X] T011 Test gate: run `tox -e py314`, `tox -e acceptance` and `tox -e docs` to completion, sequentially for the two DB suites, with output redirected to scratchpad files. All must pass.
+  - *Done 2026-09-13.* `py314: OK`, 961 passed, 4 skipped (fresh env, no cached style checks). `acceptance: OK`, 880 passed, 24 skipped (20 min). `docs: OK`, with no broken links and the `plaid.rst` link resolving to the Screenshots page. A first `docs` run failed only because it overlapped the `screenshots` run, which deletes and rewrites the PNGs that linkcheck checks; re-run on its own, it passed.
+- [X] T012 Mark tasks complete in this file, record the test results, and commit.
 
 ---
 

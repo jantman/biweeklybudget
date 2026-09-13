@@ -95,6 +95,8 @@ biweeklybudget.settings.DB_CONNSTRING = connstr
 import biweeklybudget.db  # noqa
 import biweeklybudget.models.base  # noqa
 from biweeklybudget.flaskapp.app import app  # noqa
+import biweeklybudget.flaskapp.views.plaid as plaid_views  # noqa
+from biweeklybudget.plaid_updater import PlaidUpdater, PlaidUpdateResult  # noqa
 from biweeklybudget.models.fuel import FuelFill, Vehicle
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.transaction import Transaction
@@ -108,6 +110,36 @@ engine = create_engine(
     connect_args={'sql_mode': 'STRICT_ALL_TABLES'},
     pool_size=10, pool_timeout=120
 )
+
+
+class ScreenshotPlaidUpdater(PlaidUpdater):
+    """
+    Stand-in for :py:class:`~.PlaidUpdater` in the screenshot server, so the
+    Plaid Update Result page can be shown without Plaid credentials. The
+    first Item succeeds and every other Item fails. Nothing is written to the
+    database.
+    """
+
+    def __init__(self):
+        self.client = None
+
+    def update(self, items=None, days=30):
+        results = []
+        for idx, item in enumerate(items):
+            if idx == 0:
+                results.append(PlaidUpdateResult(
+                    item, True, 23, 4, None, [21728]
+                ))
+                continue
+            results.append(PlaidUpdateResult(
+                item, False, 0, 0,
+                Exception(
+                    'ITEM_LOGIN_REQUIRED: the login details of this item '
+                    'have changed'
+                ),
+                None
+            ))
+        return results
 
 
 class Screenshotter(object):
@@ -245,6 +277,31 @@ class Screenshotter(object):
             'description': 'Shows transactions imported from OFX statements.'
         },
         {
+            'path': '/plaid-update',
+            'filename': 'plaid-update',
+            'title': 'Plaid Update',
+            'description': 'Link financial institutions through Plaid, and '
+                           'choose which Plaid Items to retrieve transactions '
+                           'and balances for.'
+        },
+        {
+            'path': '/accounts/1',
+            'filename': 'account1-plaid',
+            'title': 'Linking an Account to Plaid',
+            'description': 'Each Account can be linked to an account at a '
+                           'Plaid Item, from the bottom of the Edit Account '
+                           'modal.',
+            'preshot_func': '_account_plaid_preshot'
+        },
+        {
+            'path': '/plaid-update?item_ids=ALL',
+            'filename': 'plaid-update-result',
+            'title': 'Plaid Update Result',
+            'description': 'The result of a Plaid update: the transactions '
+                           'updated and added for each Plaid Item, and the '
+                           'error for any Item that failed.'
+        },
+        {
             'path': '/scheduled',
             'filename': 'scheduled',
             'title': 'Scheduled Transactions',
@@ -313,6 +370,9 @@ class Screenshotter(object):
         for f in glob.glob('docs/source/*.png'):
             os.unlink(f)
         self._refreshdb()
+        # The server runs in a forked process, so it gets this stub; the Plaid
+        # Update Result screenshot then needs no Plaid credentials.
+        plaid_views.PlaidUpdater = ScreenshotPlaidUpdater
         logger.info('Starting server...')
         self.server.start()
         logger.info('LiveServer running at: %s', self.base_url)
@@ -413,6 +473,14 @@ class Screenshotter(object):
         # END DB update
         self.get('/fuel')
         sleep(10)
+
+    def _account_plaid_preshot(self):
+        logger.info('Account Plaid preshot')
+        # the Plaid Account selector is at the bottom of the modal
+        self.browser.execute_script(
+            "var m = document.getElementById('modalDiv');"
+            "m.scrollTop = m.scrollHeight;"
+        )
 
     def _reconcile_drag_preshot(self):
         ofxdiv = self.browser.find_element(By.ID, 'ofx-2-0')
