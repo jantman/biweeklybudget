@@ -69,6 +69,15 @@ in those features' not-yet-committed entries, unrelated to this change. The `pla
 link targets the Screenshots page, which exists now; the Plaid entries appear on it at
 the next regeneration.
 
+**Superseded 2026-09-13, at the maintainer's request after PR #344 was opened:** the
+screenshots must be in the PR so it can be reviewed in full. The three Plaid screenshots
+(full size and `_sm` thumbnails, from the verified T010 run of the final code) are
+committed, and their three sections are added to `screenshots.rst` exactly as the
+generator writes them. Only the Plaid images are committed: a full regeneration would
+also re-render every other image with new random sample data, add the Cash Position and
+Spending Charts entries, and revert the Single Pay Period description, none of which
+belongs to this change. The full regeneration still happens at release.
+
 ## R6. Linting the generator
 
 `docs/make_screenshots.py` is not under the `py314` env's pytest target

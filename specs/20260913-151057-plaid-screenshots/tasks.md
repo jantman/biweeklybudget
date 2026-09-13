@@ -83,6 +83,7 @@ Listed before US2 because its entry comes second on the page (research R3); it h
 - [X] T011 Test gate: run `tox -e py314`, `tox -e acceptance` and `tox -e docs` to completion, sequentially for the two DB suites, with output redirected to scratchpad files. All must pass.
   - *Done 2026-09-13.* `py314: OK`, 961 passed, 4 skipped (fresh env, no cached style checks). `acceptance: OK`, 880 passed, 24 skipped (20 min). `docs: OK`, with no broken links and the `plaid.rst` link resolving to the Screenshots page. A first `docs` run failed only because it overlapped the `screenshots` run, which deletes and rewrites the PNGs that linkcheck checks; re-run on its own, it passed.
 - [X] T012 Mark tasks complete in this file, record the test results, and commit.
+- [X] T013 At the maintainer's request (research R5, superseded), commit the three Plaid screenshots to `docs/source/` (`plaid-update`, `account1-plaid`, `plaid-update-result`, each with its `_sm.png` thumbnail) and add their sections to `docs/source/screenshots.rst` after "OFX Transactions", exactly as the generator writes them. Re-run `tox -e docs` so linkcheck confirms the image targets exist.
 
 ---
 

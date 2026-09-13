@@ -111,6 +111,30 @@ Shows transactions imported from OFX statements.
 .. image:: ofx_sm.png
    :target: ofx.png
 
+Plaid Update
+------------
+
+Link financial institutions through Plaid, and choose which Plaid Items to retrieve transactions and balances for.
+
+.. image:: plaid-update_sm.png
+   :target: plaid-update.png
+
+Linking an Account to Plaid
+---------------------------
+
+Each Account can be linked to an account at a Plaid Item, from the bottom of the Edit Account modal.
+
+.. image:: account1-plaid_sm.png
+   :target: account1-plaid.png
+
+Plaid Update Result
+-------------------
+
+The result of a Plaid update: the transactions updated and added for each Plaid Item, and the error for any Item that failed.
+
+.. image:: plaid-update-result_sm.png
+   :target: plaid-update-result.png
+
 Scheduled Transactions
 ----------------------
 
