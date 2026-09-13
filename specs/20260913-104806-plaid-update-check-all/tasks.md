@@ -89,8 +89,8 @@ None. No shared infrastructure, model, endpoint, or migration is needed.
 
 - [X] T005 [P] In `docs/source/plaid.rst`, "Updating Transactions via UI", extend step 2 to say the "Check All" and "Uncheck All" links above the table select or clear every Item.
 - [X] T006 [P] Add a concise `CHANGES.rst` bullet at the top of `Unreleased`, led by the `Issue #262 <https://github.com/jantman/biweeklybudget/issues/262>`_ link: the Plaid Update page has "Check All" and "Uncheck All" links for the Plaid Items to update. Do not touch `biweeklybudget/version.py`.
-- [ ] T007 Constitution II/IV gate: run the complete unit (`tox -e py314`) and acceptance (`tox -e acceptance`) suites to completion, plus `tox -e docs`, redirecting output to scratchpad files. All must pass, and a timeout means raise and re-run, never narrow. Run pycodestyle/pyflakes on the changed test file (max-line-length 100). Re-run known-flaky tests (reconcile drag, fuel log search) in isolation before blaming this change.
-- [ ] T008 Mark all tasks complete in this file, commit (`Plaid Update Check All - M1.N: ...`), push the branch to `origin`, and open a PR against `master` that follows `.github/PULL_REQUEST_TEMPLATE.md`, noting the research R1–R3 judgement calls for the maintainer.
+- [X] T007 Constitution II/IV gate: run the complete unit (`tox -e py314`) and acceptance (`tox -e acceptance`) suites to completion, plus `tox -e docs`, redirecting output to scratchpad files. All must pass, and a timeout means raise and re-run, never narrow. Run pycodestyle/pyflakes on the changed test file (max-line-length 100). Re-run known-flaky tests (reconcile drag, fuel log search) in isolation before blaming this change.
+- [X] T008 Mark all tasks complete in this file, commit (`Plaid Update Check All - M1.N: ...`), push the branch to `origin`, and open a PR against `master` that follows `.github/PULL_REQUEST_TEMPLATE.md`, noting the research R1–R3 judgement calls for the maintainer.
 
 ---
 
