@@ -18,10 +18,11 @@ File: ``biweeklybudget/flaskapp/static/js/index.js``
 
    Draw or redraw the Account Balances chart from an endpoint response.
 
-   On the first call this constructs the Morris.Line; on later calls it hands
-   the new data to the existing chart via setData(), which redraws in place
-   without a page reload. When the response holds no data at all, a plain
-   message is shown in place of the chart.
+   On the first call this draws the chart with :js:func:`lineChartCreate`; on
+   later calls it hands the new data to the existing chart with
+   :js:func:`lineChartSetData`, which redraws in place at full view, without a
+   page reload. When the response holds no data at all, a plain message is
+   shown in place of the chart.
 
    :param ajaxdata: response from /ajax/chart-data/account-balances, with "data" (one object per date) and "keys" (account names) properties.
    :type ajaxdata: **Object**

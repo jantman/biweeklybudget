@@ -32,16 +32,14 @@ File: ``biweeklybudget/flaskapp/static/js/budget_spending.js``
    :returns: **number** -- negative, zero or positive, as for ``Array.sort``
 .. js:function:: ....................l()
 
-   Redraw every period's panel from the loaded data.
-
-   All the tables are drawn before any chart. A Morris chart takes its width
-   from its container once, when it is created; the tables are what make the
-   page tall enough to need a scrollbar, which narrows every column. Charts
-   drawn before that would keep their wider width and overflow their panels.
+   Redraw every period's panel, and its chart, from the loaded data.
 .. js:function:: ......................t(period, summary)
 
-   Draw one period's donut chart, if it has any slices. Called only once
-   every panel's table has been drawn; see ``budgetSpendingDrawAll()``.
+   Draw one period's donut chart with Chart.js, replacing any chart already
+   drawn for it, so the container never holds more than one. A period with no
+   slices is left with no chart; its panel shows the "no spending" message
+   instead. The chart has no legend, as the table under it is the legend, and
+   it follows its panel's width on its own when the window is resized.
 
    :param period: one element of the endpoint's ``periods`` list
    :param summary: ``budgetSpendingSummarize(period)``

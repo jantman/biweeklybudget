@@ -41,7 +41,7 @@ from datetime import datetime, timedelta
 from pytz import UTC
 from decimal import Decimal
 
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.common.by import By
 from biweeklybudget.utils import dtnow
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
@@ -868,9 +868,45 @@ class TestAcctBalanceChartRanges(AcceptanceHelper):
         assert len(active) == 1
         assert active[0].text == '1y'
 
-    def test_chart_renders_an_svg(self, selenium):
+    def _chart_datasets(self, selenium):
+        """Series names and ``[date, value]`` points the chart is showing."""
+        WebDriverWait(selenium, 10).until(
+            lambda d: d.execute_script(
+                "return !!Chart.getChart('account-balance-chart-canvas');"
+            )
+        )
+        self.wait_for_jquery_done(selenium)
+        return selenium.execute_script(
+            "var c = Chart.getChart('account-balance-chart-canvas');"
+            "return c.data.datasets.map(function(d) {"
+            "  return [d.label, d.data.map(function(p) {"
+            "    return [p.x, p.y]; })]; });"
+        )
+
+    def _endpoint_datasets(self, days):
+        """What the chart should show for a given ``days`` parameter."""
+        j = requests.get(
+            self.baseurl + CHART_URL + '?days=%s' % days
+        ).json()
+        return [
+            [k, [[r['date'], r[k]] for r in j['data'] if r[k] is not None]]
+            for k in j['keys']
+        ]
+
+    def test_chart_renders_one_canvas(self, selenium):
         chart = selenium.find_element(By.ID, 'account-balance-chart')
-        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+        assert len(chart.find_elements(By.TAG_NAME, 'canvas')) == 1
+        assert selenium.execute_script(
+            "return !!Chart.getChart('account-balance-chart-canvas');"
+        )
+
+    def test_chart_shows_the_endpoint_data(self, selenium):
+        # every series, every recorded balance, and no zero-filled gaps
+        assert self._chart_datasets(selenium) == self._endpoint_datasets(365)
+        btns = {b.text: b for b in self._buttons(selenium)}
+        btns['1m'].click()
+        self.wait_for_jquery_done(selenium)
+        assert self._chart_datasets(selenium) == self._endpoint_datasets(30)
 
     def test_nodata_message_is_hidden_when_there_is_data(self, selenium):
         nodata = selenium.find_element(
@@ -894,7 +930,7 @@ class TestAcctBalanceChartRanges(AcceptanceHelper):
         assert selenium.current_url.rstrip('/') == base_url.rstrip('/')
         # and the chart is still one chart, not a second drawn over the first
         chart = selenium.find_element(By.ID, 'account-balance-chart')
-        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+        assert len(chart.find_elements(By.TAG_NAME, 'canvas')) == 1
 
     def test_narrowing_the_range_again(self, selenium):
         btns = {b.text: b for b in self._buttons(selenium)}
@@ -910,7 +946,7 @@ class TestAcctBalanceChartRanges(AcceptanceHelper):
         assert len(active) == 1
         assert active[0].text == '1m'
         chart = selenium.find_element(By.ID, 'account-balance-chart')
-        assert len(chart.find_elements(By.TAG_NAME, 'svg')) == 1
+        assert len(chart.find_elements(By.TAG_NAME, 'canvas')) == 1
 
 
 @pytest.mark.acceptance

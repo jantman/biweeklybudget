@@ -299,13 +299,45 @@ added up — including the scheduled transactions the period projects, and
 including the rows marked *(no budget impact)*. If you want to check a cell,
 add up the visible rows for that account.
 
+.. _app_usage.charts:
+
+Charts
+------
+
+The line charts — **Account Balances** on the index page, the two **Spending By
+Budget** charts on the Budgets page, and **Fuel Economy** and **Fuel Prices**
+on the Fuel Log page — all work the same way. Each opens on its full date
+range, and a hint above it lists the controls:
+
+* **Drag** across the chart to zoom into that range of dates.
+* **Ctrl + scroll** over the chart to zoom in or out around the pointer.
+  Scrolling without Ctrl scrolls the page as usual.
+* **Ctrl + drag** to pan along the dates. Panning stops at the first and last
+  dates of the data.
+* **Reset zoom**, above the chart, returns it to its full date range. It is
+  greyed out when there is nothing to reset.
+* **Click a name in the legend** below the chart to hide that line, and click
+  again to bring it back. This is useful when one large account or budget sets
+  the scale for all the others.
+
+Whenever the visible dates or lines change, the vertical axis rescales to fit
+just what is shown. A chart cannot be zoomed narrower than the widest gap
+between its dates, so there is always at least one point in view. Hovering over
+a chart shows the value of each visible line on the nearest date.
+
+Nothing about a chart's view is saved: reloading the page shows every chart at
+its full range with every line visible. The charts are drawn with
+`Chart.js <https://www.chartjs.org/>`_, which ships with the application, so
+they work with no internet access.
+
 .. _app_usage.account_balance_chart:
 
 Account Balances Chart
 ----------------------
 
 The **Account Balances** chart on the index page plots one line per account,
-using the balances recorded each time account data is downloaded.
+using the balances recorded each time account data is downloaded. It has the
+zoom, pan and legend controls described under :ref:`app_usage.charts`.
 
 By default it shows the last year of history, not everything ever recorded. The
 buttons in the panel heading — ``1m``, ``3m``, ``6m``, ``1y``, ``2y``, ``5y``

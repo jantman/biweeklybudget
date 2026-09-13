@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #215 <https://github.com/jantman/biweeklybudget/issues/215>`_ - Charts are now drawn with Chart.js instead of Morris.js, and the line charts (Account Balances, both Spending By Budget charts, Fuel Economy and Fuel Prices) can be zoomed and panned.
+
+  * Drag across a chart to zoom to those dates; Ctrl+scroll zooms in and out, Ctrl+drag pans, and **Reset zoom** returns to the full range. Click a legend entry to hide or show a line. Nothing is saved.
+  * Chart.js and its zoom plugin ship with the application, so charts still work offline. Morris.js and Raphael are removed.
+
 * `Issue #214 <https://github.com/jantman/biweeklybudget/issues/214>`_ - Add a **Spending Charts** page (``/budgets/spending``), linked from the sidebar and the Budgets page, with pie charts of net spending by budget for the current and previous pay period, calendar month and calendar year.
 
   * Checkboxes leave budgets out of all six charts; budgets marked "Omit from graphs" start unticked. The selection is not saved.

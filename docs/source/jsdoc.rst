@@ -13,6 +13,7 @@ Files
    jsdoc.budget_spending
    jsdoc.budget_transfer_modal
    jsdoc.budgets_modal
+   jsdoc.charts
    jsdoc.creditPayoffErrorModal
    jsdoc.credit_payoffs
    jsdoc.custom

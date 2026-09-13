@@ -10,8 +10,6 @@
     <!-- Bootstrap Datepicker CSS -->
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
 
-    <!-- Morris Charts CSS -->
-    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
 
     <script>
         var acct_names_to_id = {};
@@ -160,8 +158,11 @@ var FUEL_LEVELS = {{ settings.FUEL_LEVELS|tojson }};
 <script src="/static/js/forms.js"></script>
 <script src="/static/js/formBuilder.js"></script>
 <script src="/static/js/fuel.js"></script>
-<!-- Morris Charts JavaScript -->
-<script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
-<script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+<!-- Chart.js, its date adapter, Hammer.js and the zoom plugin; see static/chartjs/README.rst -->
+<script src="/static/chartjs/chart.umd.min.js"></script>
+<script src="/static/chartjs/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="/static/chartjs/hammer.min.js"></script>
+<script src="/static/chartjs/chartjs-plugin-zoom.min.js"></script>
+<script src="/static/js/charts.js"></script>
 <script src="/static/js/fuel_charts.js"></script>
 {% endblock %}

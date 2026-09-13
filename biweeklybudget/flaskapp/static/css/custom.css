@@ -80,3 +80,18 @@ this was based on bootstrap3's .pre-scrollable
   max-height: calc(100vh - 272px);
   overflow-y: scroll;
 }
+
+/* Line charts drawn by static/js/charts.js (GitHub issue #215). */
+div.chart-controls {
+  margin-bottom: 6px;
+  font-size: .85em;
+}
+
+div.chart-controls .chart-reset {
+  margin-left: 6px;
+}
+
+div.chart-canvas-wrap {
+  position: relative;
+  height: 300px;
+}

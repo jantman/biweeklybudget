@@ -36,8 +36,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 */
 
 /**
- * The Morris chart instance for the Account Balances chart, or null before it
- * has been drawn. Held so that a range change can call setData() on the
+ * The Chart.js instance for the Account Balances chart, or null before it
+ * has been drawn. Held so that a range change can hand the new data to the
  * existing chart rather than building a new one over the top of it.
  */
 var acctBalanceChart = null;
@@ -77,10 +77,11 @@ function acctBalanceChartData(days, cb) {
 /**
  * Draw or redraw the Account Balances chart from an endpoint response.
  *
- * On the first call this constructs the Morris.Line; on later calls it hands
- * the new data to the existing chart via setData(), which redraws in place
- * without a page reload. When the response holds no data at all, a plain
- * message is shown in place of the chart.
+ * On the first call this draws the chart with :js:func:`lineChartCreate`; on
+ * later calls it hands the new data to the existing chart with
+ * :js:func:`lineChartSetData`, which redraws in place at full view, without a
+ * page reload. When the response holds no data at all, a plain message is
+ * shown in place of the chart.
  *
  * @param {Object} ajaxdata - response from /ajax/chart-data/account-balances,
  *   with "data" (one object per date) and "keys" (account names) properties.
@@ -94,21 +95,13 @@ function drawAcctBalanceChart(ajaxdata) {
   $('#account-balance-chart-nodata').hide();
   $('#account-balance-chart').show();
   if (acctBalanceChart !== null) {
-    acctBalanceChart.setData(ajaxdata['data']);
+    lineChartSetData(acctBalanceChart, ajaxdata);
     return;
   }
-  acctBalanceChart = Morris.Line({
-    element: 'account-balance-chart',
-    data: ajaxdata['data'],
-    xkey: 'date',
-    ykeys: ajaxdata['keys'],
-    labels: ajaxdata['keys'],
-    pointSize: 2,
-    hideHover: 'auto',
-    resize: true,
-    preUnits: CURRENCY_SYMBOL,
-    continuousLine: true
-  });
+  acctBalanceChart = lineChartCreate(
+    'account-balance-chart', ajaxdata,
+    { currency: true, dateFormat: 'yyyy-MM-dd' }
+  );
 }
 
 /**
