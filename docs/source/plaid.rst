@@ -96,6 +96,31 @@ To update transactions for Plaid Item with IDs plaidItemId1 for the last 60 days
     $ curl -XPOST -H 'Accept: application/json' -d 'item_ids=plaidItemId1&num_days=60' http://127.0.0.1:8080/plaid-update
     [{"added":0,"exception":"None","item_id":"plaidItemId1","statement_ids":[21747],"success":true,"updated":35}]
 
+.. _plaid.loan_accounts:
+
+Loan Accounts
++++++++++++++
+
+Plaid reports the balance of a loan (mortgage, auto, student loan, etc.) as a positive number: the amount you owe. biweeklybudget records money owed as a *negative* balance, the same as for credit cards, so the balance recorded for an account linked to a Plaid loan is Plaid's balance with its sign reversed. A loan with $250,000 remaining is shown as -$250,000.00. If Plaid reports a negative loan balance (the lender owes you, e.g. after an overpayment), it is recorded as positive. Only the balance is retrieved for loans, not transactions.
+
+Link Plaid loans to an **Investment** account. It will then appear in the Investment Accounts tables and on the Account Balances chart, and will not be counted as funds available for budgets. Linking a loan to a Bank or Cash account would count it as a budget funding source.
+
+Before this behavior was added, loan balances were recorded as positive. Those earlier balances are not changed automatically, so an account's line on the Account Balances chart jumps from positive to negative at its first update after upgrading. To correct the earlier balances, run the following SQL **once**, after upgrading and *before* the next Plaid update. It reverses the sign of every balance recorded for accounts linked to Plaid loans, so running it a second time undoes it, and running it after an update would flip that update's (already correct) balance too. If some of an account's balances came from somewhere other than Plaid, add a condition on ``account_balances.overall_date`` / ``ofx_statements.as_of`` to limit it to the Plaid period.
+
+.. code-block:: sql
+
+    UPDATE account_balances ab
+      JOIN accounts a ON ab.account_id = a.id
+      JOIN plaid_accounts pa
+        ON a.plaid_item_id = pa.item_id AND a.plaid_account_id = pa.account_id
+      SET ab.ledger = -ab.ledger
+      WHERE pa.account_type = 'loan';
+    UPDATE ofx_statements s
+      JOIN accounts a ON s.account_id = a.id
+      JOIN plaid_accounts pa
+        ON a.plaid_item_id = pa.item_id AND a.plaid_account_id = pa.account_id
+      SET s.ledger_bal = -s.ledger_bal
+      WHERE pa.account_type = 'loan';
 
 .. _plaid.troubleshooting:
 

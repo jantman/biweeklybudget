@@ -797,7 +797,7 @@ class TestStmtForAcct(PlaidUpdaterTester):
         assert res == (123, 1, 2)
         assert mocks['_update_bank_or_credit'].mock_calls == []
         assert mocks['_update_investment'].mock_calls == [
-            call(end_dt, mock_acct, pai, mock_stmt)
+            call(end_dt, mock_acct, pai, mock_stmt, negate_balance=True)
         ]
         assert mocks['_new_updated_counts'].mock_calls == [call()]
         assert m_ofxstmt.mock_calls == [
@@ -1107,6 +1107,107 @@ class TestUpdateInvestment(PlaidUpdaterTester):
             call.set_balance(
                 overall_date=end_dt,
                 ledger=Decimal('1234.57'),
+                ledger_date=end_dt
+            )
+        ]
+
+    def test_negate_balance_false_explicit(self):
+        mock_stmt = Mock()
+        mock_acct = Mock()
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': '1234.5678',
+                'iso_currency_code': 'USD'
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            self.cls._update_investment(
+                end_dt, mock_acct, acct, mock_stmt, negate_balance=False
+            )
+        assert mock_stmt.ledger_bal == Decimal('1234.57')
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('1234.57'),
+                ledger_date=end_dt
+            )
+        ]
+
+    def test_negate_balance(self):
+        mock_stmt = Mock()
+        mock_acct = Mock()
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': '1234.5678',
+                'iso_currency_code': 'USD'
+            }
+        }
+        with patch(f'{pbm}.db_session') as mock_db:
+            self.cls._update_investment(
+                end_dt, mock_acct, acct, mock_stmt, negate_balance=True
+            )
+        assert mock_stmt.as_of == end_dt
+        assert mock_stmt.ledger_bal == Decimal('-1234.57')
+        assert mock_stmt.ledger_bal_as_of == end_dt
+        assert mock_stmt.currency == 'USD'
+        assert mock_db.mock_calls == [call.add(mock_stmt)]
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('-1234.57'),
+                ledger_date=end_dt
+            )
+        ]
+
+    def test_negate_balance_negative(self):
+        """A negative loan balance (lender owes holder) is stored positive."""
+        mock_stmt = Mock()
+        mock_acct = Mock()
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': -50.25,
+                'iso_currency_code': 'USD'
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            self.cls._update_investment(
+                end_dt, mock_acct, acct, mock_stmt, negate_balance=True
+            )
+        assert mock_stmt.ledger_bal == Decimal('50.25')
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('50.25'),
+                ledger_date=end_dt
+            )
+        ]
+
+    def test_negate_balance_zero(self):
+        """A zero loan balance is stored as 0.00, never -0.00."""
+        mock_stmt = Mock()
+        mock_acct = Mock()
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': 0,
+                'iso_currency_code': 'USD'
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            self.cls._update_investment(
+                end_dt, mock_acct, acct, mock_stmt, negate_balance=True
+            )
+        assert mock_stmt.ledger_bal == Decimal('0')
+        assert str(mock_stmt.ledger_bal) == '0.00'
+        ledger = mock_acct.mock_calls[0].kwargs['ledger']
+        assert str(ledger) == '0.00'
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('0.00'),
                 ledger_date=end_dt
             )
         ]

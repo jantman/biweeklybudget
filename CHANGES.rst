@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #263 <https://github.com/jantman/biweeklybudget/issues/263>`_ - The balance of an account linked to a Plaid loan is now recorded as negative (money owed), as for credit cards, instead of as the positive amount Plaid reports.
+
+  * Loan balances recorded before upgrading are not changed; see "Loan Accounts" in the Plaid documentation for SQL to correct them.
+
 * `Issue #262 <https://github.com/jantman/biweeklybudget/issues/262>`_ - The Plaid Update page has **Check All** and **Uncheck All** links above the list of Plaid Items to update, to select or clear every Item in one click.
 
 * `Issue #215 <https://github.com/jantman/biweeklybudget/issues/215>`_ - Charts are now drawn with Chart.js instead of Morris.js, and the line charts (Account Balances, both Spending By Budget charts, Fuel Economy and Fuel Prices) can be zoomed and panned.
