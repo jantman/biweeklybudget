@@ -138,9 +138,13 @@ parsing through `Date` would read a bare date as UTC midnight.
 
 ## R7 — Tooltips and currency
 
-**Decision**: `interaction: {mode: 'x', intersect: false}`, so hovering anywhere on a date
-shows every visible series with a point on that date. `'index'` mode is wrong here because
-series with gaps have different indices for the same date. The tooltip title is the date in
+**Decision**: `interaction: {mode: 'nearest', axis: 'x', intersect: false}`, so hovering
+anywhere on the plot shows every visible series with a point on the date nearest the
+pointer. Every point on that date is at the same horizontal distance, so each appears;
+series without a point on that date are further away and are left out. `'index'` mode is
+wrong here because series with gaps have different indices for the same date. `'x'` mode
+only matches points within their small hit radius, so the tooltip would flicker off
+between dates. The tooltip title is the date in
 `opts.dateFormat`. Label values go through the existing `fmt_currency()` when
 `opts.currency` is set (Account Balances, both Spending By Budget charts, Fuel Prices), and
 through `toFixed(2)` for Fuel Economy, matching Morris's two decimals. The value axis

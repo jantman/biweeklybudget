@@ -35,47 +35,52 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 */
 
+/** The Fuel Economy chart's Chart.js instance, once drawn. */
 var ecoChart;
+
+/** The Fuel Prices chart's Chart.js instance, once drawn. */
 var priceChart;
 
+/**
+ * Draw the Fuel Economy and Fuel Prices charts with :js:func:`lineChartCreate`.
+ */
 function initCharts() {
   $.ajax('/ajax/chart-data/fuel-economy').done(function(ajaxdata) {
-    ecoChart = Morris.Line({
-      element: 'mpg-chart',
-      data: ajaxdata['data'],
-      xkey: 'date',
-      ykeys: ajaxdata['keys'],
-      labels: ajaxdata['keys'],
-      pointSize: 2,
-      hideHover: 'auto',
-      resize: true,
-      continuousLine: true
-    });
+    ecoChart = lineChartCreate(
+      'mpg-chart', ajaxdata, { currency: false, dateFormat: 'yyyy-MM-dd' }
+    );
   });
 
   $.ajax('/ajax/chart-data/fuel-prices').done(function(ajaxdata) {
-    priceChart = Morris.Line({
-      element: 'fuel-price-chart',
-      data: ajaxdata['data'],
-      xkey: 'date',
-      ykeys: ['price'],
-      labels: ['price'],
-      pointSize: 2,
-      hideHover: 'auto',
-      resize: true,
-      preUnits: CURRENCY_SYMBOL,
-      continuousLine: true
-    });
+    priceChart = lineChartCreate(
+      'fuel-price-chart', fuelPriceChartData(ajaxdata),
+      { currency: true, dateFormat: 'yyyy-MM-dd' }
+    );
   });
 }
 
+/**
+ * The fuel prices endpoint returns only ``data``, one ``price`` per date, with
+ * no ``keys``; add the single series name that :js:func:`lineChartCreate`
+ * expects.
+ *
+ * @param {Object} ajaxdata - response from /ajax/chart-data/fuel-prices
+ * @returns {Object} the same data, with ``keys`` of ``['price']``
+ */
+function fuelPriceChartData(ajaxdata) {
+  return { keys: ['price'], data: ajaxdata['data'] };
+}
+
+/**
+ * Reload both fuel charts' data in place, after a fuel fill is added.
+ */
 function updateCharts() {
   $.ajax('/ajax/chart-data/fuel-economy').done(function(ajaxdata) {
-    ecoChart.setData(ajaxdata['data']);
+    lineChartSetData(ecoChart, ajaxdata);
   });
 
   $.ajax('/ajax/chart-data/fuel-prices').done(function(ajaxdata) {
-    priceChart.setData(ajaxdata['data']);
+    lineChartSetData(priceChart, fuelPriceChartData(ajaxdata));
   });
 }
 

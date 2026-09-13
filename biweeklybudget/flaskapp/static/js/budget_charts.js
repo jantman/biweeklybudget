@@ -37,34 +37,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 $(function() {
   $.ajax('/ajax/chart-data/budget-spending/by-pay-period').done(function(ajaxdata) {
-    Morris.Line({
-      element: 'budget-per-period-chart',
-      data: ajaxdata['data'],
-      xkey: 'date',
-      ykeys: ajaxdata['keys'],
-      labels: ajaxdata['keys'],
-      pointSize: 2,
-      hideHover: 'auto',
-      resize: true,
-      preUnits: CURRENCY_SYMBOL,
-      continuousLine: true
-    });
+    lineChartCreate(
+      'budget-per-period-chart', ajaxdata,
+      { currency: true, dateFormat: 'yyyy-MM-dd' }
+    );
   });
 });
 
 $(function() {
   $.ajax('/ajax/chart-data/budget-spending/by-month').done(function(ajaxdata) {
-    Morris.Line({
-      element: 'budget-per-month-chart',
-      data: ajaxdata['data'],
-      xkey: 'date',
-      ykeys: ajaxdata['keys'],
-      labels: ajaxdata['keys'],
-      pointSize: 2,
-      hideHover: 'auto',
-      resize: true,
-      preUnits: CURRENCY_SYMBOL,
-      continuousLine: true
-    });
+    lineChartCreate(
+      'budget-per-month-chart', ajaxdata,
+      { currency: true, dateFormat: 'yyyy-MM' }
+    );
   });
 });

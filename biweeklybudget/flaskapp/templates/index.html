@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block title %}BiweeklyBudget{% endblock %}
 {% block extra_head_css %}
-    <!-- Morris Charts CSS -->
-    <link href="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
     <script>
         var acct_names_to_id = {};
         {% for name in accts.keys()|sort %}
@@ -241,9 +239,12 @@
 {% include 'modal.html' %}
 {% endblock %}
 {% block extra_foot_script %}
-    <!-- Morris Charts JavaScript -->
-    <script src="/static/startbootstrap-sb-admin-2/vendor/raphael/raphael.min.js"></script>
-    <script src="/static/startbootstrap-sb-admin-2/vendor/morrisjs/morris.min.js"></script>
+    <!-- Chart.js, its date adapter, Hammer.js and the zoom plugin; see static/chartjs/README.rst -->
+    <script src="/static/chartjs/chart.umd.min.js"></script>
+    <script src="/static/chartjs/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="/static/chartjs/hammer.min.js"></script>
+    <script src="/static/chartjs/chartjs-plugin-zoom.min.js"></script>
+    <script src="/static/js/charts.js"></script>
     <script src="/static/js/index.js"></script>
     <!-- BootStrap DatePicker JS -->
     <script src="/utils/datetest.js"></script>

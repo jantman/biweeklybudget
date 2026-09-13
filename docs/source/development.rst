@@ -265,6 +265,13 @@ The UI is based on `StartBootstrap's startbootstrap-sb-admin-2 <https://github.c
 currently as of the 3.3.7-1 GitHub release. It is currently not modified at all, but should it need to be rebuilt,
 this can be done with: ``pushd biweeklybudget/flaskapp/static/startbootstrap-sb-admin-2 && gulp``
 
+Charts are drawn with `Chart.js <https://www.chartjs.org/>`_, its date-fns adapter,
+Hammer.js and `chartjs-plugin-zoom <https://www.chartjs.org/chartjs-plugin-zoom/>`_. These are
+vendored, unmodified and with their licences, in ``biweeklybudget/flaskapp/static/chartjs/``.
+The ``README.rst`` there lists each package's version and how to update it. Every line
+chart's options are set in one place, ``lineChartCreate()`` in
+``biweeklybudget/flaskapp/static/js/charts.js``, so that all the line charts behave the same.
+
 Sphinx also generates documentation for the custom javascript files. This must be done manually
 on a machine with `jsdoc <https://jsdoc.app/>`_ installed, via: ``tox -e jsdoc``.
 

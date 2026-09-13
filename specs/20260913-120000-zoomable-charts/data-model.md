@@ -24,7 +24,7 @@ Each of the five line charts is fed by an existing endpoint that returns:
 | `/ajax/chart-data/budget-spending/by-pay-period` | Budgets / Per Pay Period | `YYYY-MM-DD` (pay period start) | budget names |
 | `/ajax/chart-data/budget-spending/by-month` | Budgets / Per Calendar Month | `YYYY-MM` | budget names |
 | `/ajax/chart-data/fuel-economy` | Fuel Log / Fuel Economy | `YYYY-MM-DD` | vehicle names |
-| `/ajax/chart-data/fuel-prices` | Fuel Log / Fuel Prices | `YYYY-MM-DD` | fixed: `["price"]` |
+| `/ajax/chart-data/fuel-prices` | Fuel Log / Fuel Prices | `YYYY-MM-DD` | none returned; the page supplies `["price"]` |
 
 A row may lack a key: that series has no value on that date (a gap, not a zero).
 
