@@ -52,7 +52,7 @@ Updating Transactions via UI
 Updating through the UI will retrieve transactions for the last 30 days. If you want to retrieve more than that, you must do so :ref:`via the API <plaid.update-api>`.
 
 1. Click the "Plaid Update" link in the left navigation menu.
-2. In the "Plaid Update Transactions" table, select the Plaid Items that you want to update transactions for.
+2. In the "Plaid Update Transactions" table, select the Plaid Items that you want to update transactions for. All Items start out selected; the "Check All" and "Uncheck All" links above the table select or clear every Item at once.
 3. Click the "Update Transactions" button at the bottom of the table.
 4. When the update is complete, you will be redirected to a page showing results in a table.
 
