@@ -115,6 +115,19 @@ selector and its selected value are visible, not cut off.
 - **FR-008**: The new screenshots MUST be produced by the existing automated screenshot
   generation, with no manual steps, so they are regenerated with the others.
 
+### Deviation: result page "Statement IDs" column
+
+Recorded before the work begins (constitution, Principle V). While planning, it was found
+that the Plaid Update result page's "Statement IDs" column is always blank: the page asks
+for a value under a name the update result does not have. The new result screenshot
+would document that bug, so this feature also fixes it.
+
+- **FR-009**: The Plaid Update result page MUST show, in its "Statement IDs" column, the
+  statement IDs recorded for each Item by the update.
+
+Where the work departs: only this one field on the result page. To resume the original
+scope, nothing else is needed; the screenshots do not depend on the fix being in place.
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
