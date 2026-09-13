@@ -360,6 +360,74 @@ An account whose data begins part-way through the selected range is not treated
 this way — its line simply starts where its data starts, rather than being
 extended back over dates when the account had no recorded balance.
 
+.. _app_usage.spending_charts:
+
+Spending Charts
+---------------
+
+The **Spending Charts** page (``/budgets/spending``, in the sidebar and linked
+from the Budgets page) shows where money went, as six pie charts of spending by
+budget:
+
+* the current and previous **pay period**,
+* the current and previous **calendar month**, and
+* the current and previous **calendar year**.
+
+"Current" is the period containing today, and each chart's heading shows the
+exact dates it covers. Current periods run to the end of the period, so a
+transaction you have entered in advance is counted in its period, as the pay
+period page counts it. Under each chart a table lists every budget in it with its
+amount and share of the total, largest first. Hovering over a slice shows the
+same.
+
+.. _app_usage.spending_charts.counted:
+
+What is counted
++++++++++++++++
+
+Each budget's slice is its **net** spending: the sum of the amounts that actual
+transactions dated in the period allocate to it. A transaction split across
+budgets counts toward each budget by its share, and a refund reduces its
+budget's net. Budgets that have been made inactive are still shown, since the
+spending happened.
+
+These are not counted:
+
+* **Income budgets.** Money coming in is not spending.
+* **Transfers**, between budgets or between accounts. They move money; nothing
+  is spent.
+* **Credit card payments, and transactions marked as having no budget impact.**
+  The same rule applies on the pay period page; see
+  :ref:`Credit Card Payments <app_usage.credit_card_payments>`.
+* **Scheduled transactions** that have not yet happened. The charts show what
+  was spent, not what is planned.
+
+Because transfers are left out, a budget that had a budget transfer in a pay
+period can show a different amount here than the *spent* figure for it on that
+pay period's page, which does include transfers. For budgets without
+transfers the two agree.
+
+A pie cannot show a negative slice. When refunds against a budget exceed its
+spending in a period, the budget is left out of that chart and its total, and is
+listed under the chart as a net credit instead.
+
+.. _app_usage.spending_charts.excluding:
+
+Leaving budgets out
++++++++++++++++++++
+
+One large budget, such as rent, can take up most of every chart. The checkboxes
+at the top of the page leave budgets out: untick one and it disappears from all
+six charts at once, with totals and percentages recalculated over the rest. Each
+budget keeps the same colour in every chart, and unticking one does not recolour
+the others.
+
+The selection is not saved: reloading the page puts it back. To leave a budget
+out of charts permanently, edit it on the Budgets page and tick **Omit from
+graphs?**. Such budgets start unticked here, and can be ticked back in for a
+one-off look. The same setting also keeps a budget out of the line charts on the
+Budgets page.
+
 .. _app_usage.unallocated_funds:
 
 The Unallocated Funds Notification

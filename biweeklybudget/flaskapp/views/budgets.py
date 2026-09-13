@@ -50,6 +50,7 @@ from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
 from biweeklybudget.models.account import Account, AcctType
 from biweeklybudget.models.utils import do_budget_transfer
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
+from biweeklybudget.budget_spending import PERIODS, budget_spending_by_period
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.projects import Project, BoMItem
 from biweeklybudget.utils import dtnow
@@ -419,6 +420,17 @@ class BudgetTxfrFormHandler(FormHandlerView):
 class BudgetSpendingChartView(MethodView):
     """
     Handle GET /ajax/chart-data/budget-spending/<str:aggregation> endpoint.
+
+    Aggregations:
+
+    * ``by-pay-period`` - spending per budget in each pay period, for the
+      line chart on the Budgets page.
+    * ``by-month`` - spending per budget in each calendar month, for the line
+      chart on the Budgets page.
+    * ``by-period`` - net spending per budget in the current and previous pay
+      period, calendar month and calendar year, for the Spending By Budget
+      pie charts; see :py:func:`~.budget_spending_by_period` and GitHub issue
+      #214.
     """
 
     def get(self, aggregation):
@@ -426,6 +438,10 @@ class BudgetSpendingChartView(MethodView):
             return self._by_pay_period()
         elif aggregation == 'by-month':
             return self._by_month()
+        elif aggregation == 'by-period':
+            return jsonify(
+                budget_spending_by_period(db_session, dtnow().date())
+            )
         raise RuntimeError('Unknown aggregation type: %s' % aggregation)
 
     def _by_pay_period(self):
@@ -495,7 +511,24 @@ class BudgetSpendingChartView(MethodView):
         }
 
 
+class BudgetSpendingView(MethodView):
+    """
+    Render the GET /budgets/spending view using the ``budget-spending.html``
+    template: pie charts of net spending by budget for the current and
+    previous pay period, calendar month and calendar year, with checkboxes to
+    leave budgets out. The chart data is loaded from
+    ``/ajax/chart-data/budget-spending/by-period``. See GitHub issue #214.
+    """
+
+    def get(self):
+        return render_template('budget-spending.html', periods=PERIODS)
+
+
 app.add_url_rule('/budgets', view_func=BudgetsView.as_view('budgets_view'))
+app.add_url_rule(
+    '/budgets/spending',
+    view_func=BudgetSpendingView.as_view('budget_spending_view')
+)
 app.add_url_rule(
     '/budgets/<int:budget_id>',
     view_func=OneBudgetView.as_view('one_budget_view')

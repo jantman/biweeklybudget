@@ -96,6 +96,7 @@ class TestBaseTemplateNavigation(AcceptanceHelper):
             ('/transactions', 'Transactions'),
             ('/reconcile', 'Reconcile'),
             ('/budgets', 'Budgets'),
+            ('/budgets/spending', 'Spending Charts'),
             ('/scheduled', 'Scheduled'),
             ('/fuel', 'Fuel Log'),
             ('/projects', 'Projects / BoM'),

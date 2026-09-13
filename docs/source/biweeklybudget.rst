@@ -25,6 +25,7 @@ Submodules
    biweeklybudget.addtrans
    biweeklybudget.backfill_ofx
    biweeklybudget.biweeklypayperiod
+   biweeklybudget.budget_spending
    biweeklybudget.cashposition
    biweeklybudget.cliutils
    biweeklybudget.credit_payment
