@@ -280,9 +280,13 @@ class PlaidUpdater:
             stmt.type = 'Investment'
             self._update_investment(end_dt, account, plaid_acct_info, stmt)
         elif account.plaid_account.account_type == 'loan':
-            # For now, this should work...
+            # Plaid reports a loan's balance as the positive amount owed;
+            # biweeklybudget records money owed as a negative balance, as it
+            # does for credit cards. See GitHub issue #263.
             stmt.type = 'Investment'
-            self._update_investment(end_dt, account, plaid_acct_info, stmt)
+            self._update_investment(
+                end_dt, account, plaid_acct_info, stmt, negate_balance=True
+            )
         else:
             raise RuntimeError(
                 'ERROR: Unknown account type: ' +
@@ -368,13 +372,32 @@ class PlaidUpdater:
 
     def _update_investment(
         self, end_dt: datetime, account: Account, plaid_acct_info: dict,
-        stmt: OFXStatement
+        stmt: OFXStatement, negate_balance: bool = False
     ):
-        logger.debug('Generating statement for investment account')
-        stmt.as_of = end_dt
-        stmt.ledger_bal = Decimal(
+        """
+        Record a balance-only statement and account balance for an investment
+        or loan account. No transactions are recorded.
+
+        :param end_dt: current time, as of when data was retrieved
+        :param account: the account to update
+        :param plaid_acct_info: dict of account information from Plaid
+        :param stmt: the statement to populate and add to the session
+        :param negate_balance: if True, record the negation of Plaid's
+          current balance. Used for loan accounts, which Plaid reports as a
+          positive amount owed.
+        """
+        logger.debug(
+            'Generating statement for investment account (negate_balance=%s)',
+            negate_balance
+        )
+        bal = Decimal(
             plaid_acct_info['balances']['current']
         ).quantize(Decimal('.01'), rounding=ROUND_HALF_DOWN)
+        if negate_balance:
+            # Unary minus, not "* -1", so a zero balance stays 0.00, not -0.00
+            bal = -bal
+        stmt.as_of = end_dt
+        stmt.ledger_bal = bal
         stmt.ledger_bal_as_of = end_dt
         stmt.currency = plaid_acct_info['balances']['iso_currency_code']
         db_session.add(stmt)
