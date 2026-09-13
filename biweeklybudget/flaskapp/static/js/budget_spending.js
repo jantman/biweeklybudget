@@ -178,7 +178,9 @@ function budgetSpendingFmtCents(cents) {
 /**
  * Draw one period's panel, apart from its donut chart: dates, total, table
  * and net credits, and whether the chart or the "no spending" message is
- * shown. Budget names are always inserted as text, never as HTML.
+ * shown. Budget names are always inserted as text, never as HTML. The
+ * chart's container is left to ``budgetSpendingDrawChart()``, which has to
+ * destroy the previous chart while its canvas is still in the page.
  *
  * @param {Object} period - one element of the endpoint's ``periods`` list
  * @param {Object} summary - ``budgetSpendingSummarize(period)``
@@ -190,7 +192,6 @@ function budgetSpendingDrawPanel(period, summary) {
         .text(budgetSpendingFmtCents(summary.totalCents))
         .attr('data-amount', (summary.totalCents / 100).toFixed(2));
     var chart = $(prefix + '-chart');
-    chart.empty();
     if (summary.slices.length === 0) {
         chart.hide();
         $(prefix + '-nodata').show();

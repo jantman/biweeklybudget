@@ -362,7 +362,24 @@ class TestBudgetSpendingPage(AcceptanceHelper):
         assert lines == ['Periodic2: $222.22 (66.7%)']
 
     def test_toggle_redraws_one_chart_each(self, selenium):
+        def live_charts():
+            # Chart.js instances still alive, not just canvases on the page:
+            # a redraw that failed to destroy its predecessor leaves one
+            # behind, off the page but still holding its data and observers
+            return selenium.execute_script(
+                'return Object.keys(Chart.instances).length;'
+            )
+
+        def shown_charts():
+            return len(selenium.find_elements(
+                By.CSS_SELECTOR, '#budget-spending-charts canvas'
+            ))
+
+        assert live_charts() == shown_charts() == len(
+            [k for k in PERIOD_KEYS if DEFAULT_TABLES[k]]
+        )
         toggle(selenium, PERIODIC2)
+        assert live_charts() == shown_charts()
         for key in PERIOD_KEYS:
             chart = selenium.find_element(By.ID, 'spending-%s-chart' % key)
             canvases = chart.find_elements(By.TAG_NAME, 'canvas')
@@ -380,6 +397,10 @@ class TestBudgetSpendingPage(AcceptanceHelper):
                 assert donut_state(selenium, key)['labels'] == [
                     r[0] for r in DEFAULT_TABLES[key]
                 ], key
+        # after two full redraws, still exactly one live chart per shown chart
+        assert live_charts() == shown_charts() == len(
+            [k for k in PERIOD_KEYS if DEFAULT_TABLES[k]]
+        )
 
     def test_default_selection(self, selenium):
         boxes = selenium.find_elements(
