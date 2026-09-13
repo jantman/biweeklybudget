@@ -9,6 +9,7 @@
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <form method="post">
+                            <p><a href="javascript:plaidSetAllItems(true);" id="plaid_check_all">Check All</a> | <a href="javascript:plaidSetAllItems(false);" id="plaid_uncheck_all">Uncheck All</a></p>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover table-striped" id="table-update-plaid">
                                     <thead>
@@ -93,6 +94,19 @@
  */
 function addPlaidItem() {
     plaidLink();
+}
+
+/**
+ * Handle click of the "Check All" or "Uncheck All" link: check or uncheck
+ * every Plaid Item checkbox in the "Plaid Update Transactions" table.
+ *
+ * Must not return a value; it is called from a ``javascript:`` URL, and a
+ * returned value would replace the page.
+ *
+ * @param {boolean} checked - true to check every Item, false to uncheck them.
+ */
+function plaidSetAllItems(checked) {
+    $('#table-update-plaid input.account-checkbox').prop('checked', checked);
 }
 
 /**

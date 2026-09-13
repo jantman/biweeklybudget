@@ -34,7 +34,7 @@ feature is one milestone (M1).
 
 **Purpose**: A working acceptance-test environment, so the Phase 3 tests can be seen to fail and then pass.
 
-- [ ] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), then confirm the unmodified `TestPlaidUpdateView` class passes via `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, with output redirected to a scratchpad file. That gives a green baseline before any change.
+- [X] T001 Start the MariaDB test container and create the test databases per `CLAUDE.md` ("Test Database Setup for Development"), then confirm the unmodified `TestPlaidUpdateView` class passes via `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, with output redirected to a scratchpad file. That gives a green baseline before any change.
 
 ---
 
@@ -54,14 +54,14 @@ None. No shared infrastructure, model, endpoint, or migration is needed.
 
 > Write these first and confirm they FAIL against the current template (no `#plaid_uncheck_all` element).
 
-- [ ] T002 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, class `TestPlaidUpdateView`, add:
+- [X] T002 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, class `TestPlaidUpdateView`, add:
   - `test_5_check_uncheck_links`: `#plaid_check_all` and `#plaid_uncheck_all` exist inside `#panel-plaid-update` with texts `Check All` and `Uncheck All`, and every checkbox in `#table-update-plaid input.account-checkbox` starts checked.
   - `test_6_uncheck_all`: click `#plaid_uncheck_all`; assert both item checkboxes are unselected and `selenium.current_url` is still `<base_url>/plaid-update`.
   - `test_7_uncheck_all_then_select_one`: click `#plaid_uncheck_all`, click checkbox `#item_PlaidItem2`; assert the form's serialized data (via `selenium.execute_script` returning `$('#panel-plaid-update form').serialize()`) equals `item_PlaidItem2=1`. This checks what would be submitted without calling Plaid.
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] In `biweeklybudget/flaskapp/templates/plaid_form.html` (see plan "Design" and `contracts/plaid-update-ui.md`):
+- [X] T003 [US1] In `biweeklybudget/flaskapp/templates/plaid_form.html` (see plan "Design" and `contracts/plaid-update-ui.md`):
   - Inside the `<form>` of `#panel-plaid-update`, immediately before `<div class="table-responsive">`, add `<p><a href="javascript:plaidSetAllItems(true);" id="plaid_check_all">Check All</a> | <a href="javascript:plaidSetAllItems(false);" id="plaid_uncheck_all">Uncheck All</a></p>`.
   - In the `extra_foot_script` inline `<script>`, add a JSDoc-commented `function plaidSetAllItems(checked)` that runs `$('#table-update-plaid input.account-checkbox').prop('checked', checked);` and returns nothing. A returned value would replace the page via the `javascript:` URL.
   - Do not change the checkboxes, the Update Transactions button, or the Plaid Items panel.
@@ -79,7 +79,7 @@ None. No shared infrastructure, model, endpoint, or migration is needed.
 
 ### Tests for User Story 2
 
-- [ ] T004 [US2] In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, class `TestPlaidUpdateView`, add `test_8_check_all`: click checkbox `#item_PlaidItem1` to uncheck it, and assert it is unselected. Click `#plaid_check_all`, then assert both item checkboxes are selected and the URL is unchanged. Click `#plaid_check_all` again and assert they stay selected. The implementation is T003's; confirm this test passes.
+- [X] T004 [US2] In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, class `TestPlaidUpdateView`, add `test_8_check_all`: click checkbox `#item_PlaidItem1` to uncheck it, and assert it is unselected. Click `#plaid_check_all`, then assert both item checkboxes are selected and the URL is unchanged. Click `#plaid_check_all` again and assert they stay selected. The implementation is T003's; confirm this test passes.
 
 **Checkpoint**: US1 and US2 both work.
 
@@ -87,8 +87,8 @@ None. No shared infrastructure, model, endpoint, or migration is needed.
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T005 [P] In `docs/source/plaid.rst`, "Updating Transactions via UI", extend step 2 to say the "Check All" and "Uncheck All" links above the table select or clear every Item.
-- [ ] T006 [P] Add a concise `CHANGES.rst` bullet at the top of `Unreleased`, led by the `Issue #262 <https://github.com/jantman/biweeklybudget/issues/262>`_ link: the Plaid Update page has "Check All" and "Uncheck All" links for the Plaid Items to update. Do not touch `biweeklybudget/version.py`.
+- [X] T005 [P] In `docs/source/plaid.rst`, "Updating Transactions via UI", extend step 2 to say the "Check All" and "Uncheck All" links above the table select or clear every Item.
+- [X] T006 [P] Add a concise `CHANGES.rst` bullet at the top of `Unreleased`, led by the `Issue #262 <https://github.com/jantman/biweeklybudget/issues/262>`_ link: the Plaid Update page has "Check All" and "Uncheck All" links for the Plaid Items to update. Do not touch `biweeklybudget/version.py`.
 - [ ] T007 Constitution II/IV gate: run the complete unit (`tox -e py314`) and acceptance (`tox -e acceptance`) suites to completion, plus `tox -e docs`, redirecting output to scratchpad files. All must pass, and a timeout means raise and re-run, never narrow. Run pycodestyle/pyflakes on the changed test file (max-line-length 100). Re-run known-flaky tests (reconcile drag, fuel log search) in isolation before blaming this change.
 - [ ] T008 Mark all tasks complete in this file, commit (`Plaid Update Check All - M1.N: ...`), push the branch to `origin`, and open a PR against `master` that follows `.github/PULL_REQUEST_TEMPLATE.md`, noting the research R1–R3 judgement calls for the maintainer.
 

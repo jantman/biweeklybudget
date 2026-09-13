@@ -86,3 +86,52 @@ class TestPlaidUpdateView(AcceptanceHelper):
                 'Refresh'
             ],
         ]
+
+    def item_checkboxes(self, selenium):
+        return selenium.find_elements(
+            By.CSS_SELECTOR, '#table-update-plaid input.account-checkbox'
+        )
+
+    def assert_still_on_page(self, selenium):
+        assert selenium.current_url == self.baseurl + '/plaid-update'
+        assert selenium.find_element(By.ID, 'table-update-plaid') is not None
+
+    def test_5_check_uncheck_links(self, selenium):
+        panel = selenium.find_element(By.ID, 'panel-plaid-update')
+        check = panel.find_element(By.ID, 'plaid_check_all')
+        uncheck = panel.find_element(By.ID, 'plaid_uncheck_all')
+        assert check.text == 'Check All'
+        assert uncheck.text == 'Uncheck All'
+        boxes = self.item_checkboxes(selenium)
+        assert [b.get_attribute('id') for b in boxes] == [
+            'item_PlaidItem1', 'item_PlaidItem2'
+        ]
+        assert all(b.is_selected() for b in boxes)
+
+    def test_6_uncheck_all(self, selenium):
+        selenium.find_element(By.ID, 'plaid_uncheck_all').click()
+        self.assert_still_on_page(selenium)
+        boxes = self.item_checkboxes(selenium)
+        assert len(boxes) == 2
+        assert not any(b.is_selected() for b in boxes)
+
+    def test_7_uncheck_all_then_select_one(self, selenium):
+        selenium.find_element(By.ID, 'plaid_uncheck_all').click()
+        selenium.find_element(By.ID, 'item_PlaidItem2').click()
+        self.assert_still_on_page(selenium)
+        data = selenium.execute_script(
+            "return $('#panel-plaid-update form').serialize();"
+        )
+        assert data == 'item_PlaidItem2=1'
+
+    def test_8_check_all(self, selenium):
+        one = selenium.find_element(By.ID, 'item_PlaidItem1')
+        one.click()
+        assert not one.is_selected()
+        selenium.find_element(By.ID, 'plaid_check_all').click()
+        self.assert_still_on_page(selenium)
+        boxes = self.item_checkboxes(selenium)
+        assert len(boxes) == 2
+        assert all(b.is_selected() for b in boxes)
+        selenium.find_element(By.ID, 'plaid_check_all').click()
+        assert all(b.is_selected() for b in self.item_checkboxes(selenium))

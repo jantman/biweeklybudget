@@ -4,6 +4,8 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #262 <https://github.com/jantman/biweeklybudget/issues/262>`_ - The Plaid Update page has **Check All** and **Uncheck All** links above the list of Plaid Items to update, to select or clear every Item in one click.
+
 * `Issue #215 <https://github.com/jantman/biweeklybudget/issues/215>`_ - Charts are now drawn with Chart.js instead of Morris.js, and the line charts (Account Balances, both Spending By Budget charts, Fuel Economy and Fuel Prices) can be zoomed and panned.
 
   * Drag across a chart to zoom to those dates; Ctrl+scroll zooms in and out, Ctrl+drag pans, and **Reset zoom** returns to the full range. Click a legend entry to hide or show a line. Nothing is saved.
