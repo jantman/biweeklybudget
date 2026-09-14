@@ -1,6 +1,25 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.1 → 2.1.2
+Rationale: PATCH. OFX downloading, Hashicorp Vault and keyring support were removed
+(GitHub issue #265), so the Secrets constraint's statement that "OFX credentials live
+in Hashicorp Vault" no longer describes anything. The bullet now names only the
+credentials that still exist (Plaid and database). What is required is unchanged:
+credentials are still never committed.
+
+Modified sections:
+  - Technology & Security Constraints: Secrets (wording only)
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: none (CLAUDE.md and the docs drop their
+Vault references in the issue #265 feature change itself).
+
+Follow-up TODOs: none.
+
+Previous amendment 2.1.1 (2026-09-10):
 Version change: 2.1.0 → 2.1.1
 Rationale: PATCH. version.py was reset to 1.6.0 (the latest release) and the never-
 released 1.6.1-1.12.1 changelog entries were rewritten concisely under "Unreleased".
@@ -186,9 +205,9 @@ the source tree.
   trusted operator and holds account numbers and financial history. It MUST NOT be
   given features that presume safe public exposure, and no change may weaken that
   assumption without saying so explicitly.
-- **Secrets**: Credentials MUST NOT be committed. OFX credentials live in Hashicorp
-  Vault; Plaid and database credentials come from environment variables or the
-  settings module named by `SETTINGS_MODULE`.
+- **Secrets**: Credentials MUST NOT be committed. Plaid and database credentials
+  come from environment variables or the settings module named by
+  `SETTINGS_MODULE`.
 - **Financial correctness**: Changes to pay-period arithmetic, budget allocation,
   interest, or payoff calculations MUST be accompanied by tests that pin the expected
   numbers. These paths are the reason the project exists.
@@ -248,4 +267,4 @@ unjustified deviation is grounds to reject the change. Principles marked
 NON-NEGOTIABLE are not subject to case-by-case waiver — changing them requires
 amending this constitution first.
 
-**Version**: 2.1.1 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-10
+**Version**: 2.1.2 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-14
