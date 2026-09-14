@@ -248,9 +248,6 @@ class ReconcileHelper(AcceptanceHelper):
         a = Account(
             description='First Bank Account',
             name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank,
             re_interest_charge='^interest-charge',
             re_payment='^(payment|thank you)',
@@ -1656,9 +1653,6 @@ class TestOFXMakeTransAndIgnore(AcceptanceHelper):
         a = Account(
             description='First Bank Account',
             name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank
         )
         testdb.add(a)

@@ -6,7 +6,6 @@ PyMySQL==1.2.0
 SQLAlchemy-Utc==0.14.0
 # NOTE: docs are pinned at this version in conf.py
 SQLAlchemy==2.0.52
-SecretStorage==3.5.0
 alembic==1.19.2
 appdirs==1.4.4
 asn1crypto==1.5.1
@@ -18,15 +17,11 @@ cryptography
 datatables==0.4.9
 httplib2==0.32.0
 humanize==4.16.0
-hvac==2.4.0
 idna==3.19
 itsdangerous==2.2.0
-keyring==25.7.0
 lxml==6.1.3
 newrelic==13.5.0
 nulltype==2.3.1
-ofxhome==0.3.3
-ofxparse==0.21
 packaging
 plaid-python==44.0.0
 pycparser==3.0

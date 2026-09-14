@@ -315,7 +315,6 @@ linkcheck_ignore = [
     r'https?://localhost.*',
     r'https?://github\.com/jantman/biweeklybudget/issues/.*',
     r'https?://www\.lastpass\.com.*',
-    r'https?://www\.ofx\.net/',
     r'https?://en\.wikipedia\.org/.*',  # Wikipedia blocks automated requests
     r'https?://nvd\.nist\.gov/.*',  # NIST NVD blocks automated requests
     r'https?://.*\.flaticon\.com/.*',  # Flaticon blocks automated requests

@@ -4,6 +4,13 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #265 <https://github.com/jantman/biweeklybudget/issues/265>`_ - **Breaking:** OFX transaction downloading, deprecated since 1.1.0, is removed along with Hashicorp Vault and keyring (keychain) support. Plaid is now the only way to download transactions; the OFX Transactions page, reconciliation and existing downloaded data are unchanged.
+
+  * Removed the ``ofxgetter``, ``ofxbackfiller`` and ``ofxclient`` commands, the ``/api/ofx/accounts`` and ``/api/ofx/statement`` endpoints, and the ``biweeklybudget.screenscraper`` base class.
+  * Removed the ``VAULT_ADDR``, ``TOKEN_PATH`` and ``STATEMENTS_SAVE_PATH`` settings (ignored if still set), and the ``hvac``, ``keyring``, ``SecretStorage``, ``ofxhome`` and ``ofxparse`` dependencies.
+  * A database migration drops the Account "Vault Creds Path", "OFXGetter Config (JSON)" and "OFX Cat Memo to Name" fields, which are also gone from the account form and ``POST /forms/account``. "Negate OFX Amounts" stays.
+  * To keep downloading via OFX, stay on an earlier release.
+
 * `Issue #264 <https://github.com/jantman/biweeklybudget/issues/264>`_ - The documentation's Screenshots page gains the Plaid Update page, linking an Account to Plaid, and a Plaid update result.
 
   * The Plaid Update result page now shows each Item's statement IDs; its Statement IDs column was always empty.

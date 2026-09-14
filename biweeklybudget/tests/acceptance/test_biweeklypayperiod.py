@@ -509,9 +509,6 @@ class TestSums(AcceptanceHelper):
         a = Account(
             description='First Bank Account',
             name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank
         )
         testdb.add(a)

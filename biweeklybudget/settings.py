@@ -70,9 +70,6 @@ _INT_VARS = [
 ]
 _STRING_VARS = [
     'DB_CONNSTRING',
-    'STATEMENTS_SAVE_PATH',
-    'TOKEN_PATH',
-    'VAULT_ADDR',
     'LOCALE_NAME',
     'CURRENCY_CODE',
     'FUEL_VOLUME_UNIT',
@@ -216,17 +213,6 @@ CREDIT_PAYMENT_BEGIN_DATE = None
 #: accounts will be considered old/stale. This must be specified as a number
 #: (integer) that will be converted to a number of days.
 STALE_DATA_TIMEDELTA = timedelta(days=2)
-
-#: string - *(optional)* Filesystem path to download OFX statements to, and for
-#: backfill_ofx to read them from.
-STATEMENTS_SAVE_PATH = None
-
-#: string - *(optional)* Filesystem path to read Vault token from, for OFX
-#: credentials.
-TOKEN_PATH = None
-
-#: string - *(optional)* Address to connect to Vault at, for OFX credentials.
-VAULT_ADDR = None
 
 #: int - FOR ACCEPTANCE TESTS ONLY - This is used to "fudge" the current time
 #: to the specified integer timestamp. Used for acceptance tests only. Do NOT

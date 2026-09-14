@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-biweeklybudget is a responsive Flask/SQLAlchemy personal finance application designed for biweekly (fortnightly) budgeting. It supports automatic transaction downloading via OFX Direct Connect or Plaid, scheduled transactions, fuel logging, project cost tracking, and credit card payoff calculations.
+biweeklybudget is a responsive Flask/SQLAlchemy personal finance application designed for biweekly (fortnightly) budgeting. It supports automatic transaction downloading via Plaid, scheduled transactions, fuel logging, project cost tracking, and credit card payoff calculations.
 
 **License:** GNU Affero General Public License v3+
 
@@ -169,11 +169,8 @@ For production, use standard Flask commands or Docker.
 
 The package provides several entry points (defined in `setup.py`):
 - `loaddata` - Load data into database
-- `ofxgetter` - Download OFX statements (requires Vault)
-- `ofxbackfiller` - Backfill OFX statements
 - `initdb` - Initialize database
 - `wishlist2project` - Sync Amazon wishlists to projects
-- `ofxclient` - Vendored OFX client CLI
 
 ## Architecture
 
@@ -189,7 +186,7 @@ The package provides several entry points (defined in `setup.py`):
 Core database models:
 - `Account` - Financial accounts (bank, credit, investment)
 - `Transaction` - Manual or reconciled transactions
-- `OFXTransaction` - Downloaded transactions (OFX or Plaid)
+- `OFXTransaction` - Downloaded transactions (from Plaid; the "OFX" names are historical)
 - `ScheduledTransaction` - Recurring or scheduled transactions
 - `Budget` - Budget categories (periodic or standing)
 - `BudgetTransaction` - Links transactions to budgets (supports splits)
@@ -214,13 +211,12 @@ Core database models:
 - `jsonencoder.py` - Custom JSON encoder for SQLAlchemy models
 
 **Transaction Sources**
-- **OFX Direct Connect**: Uses `ofxgetter.py` with Hashicorp Vault for credentials
 - **Plaid**: Uses `plaid_updater.py` with Plaid API
 - **Manual Entry**: Through web interface
 
 **Settings (`biweeklybudget/settings.py`)**
 - Loads from `biweeklybudget/settings_example.py` or environment
-- Key settings: `DB_CONNSTRING`, `PAY_PERIOD_START_DATE`, `VAULT_ADDR`, Plaid credentials
+- Key settings: `DB_CONNSTRING`, `PAY_PERIOD_START_DATE`, Plaid credentials
 - Settings module specified via `SETTINGS_MODULE` environment variable
 
 ### Key Patterns
@@ -325,6 +321,5 @@ biweeklybudget/
 │   ├── unit/            # Unit tests
 │   ├── acceptance/      # Acceptance tests
 │   └── migrations/      # Migration tests
-├── vendored/             # Vendored dependencies (ofxclient)
 └── *.py                  # CLI scripts and utilities
 ```
