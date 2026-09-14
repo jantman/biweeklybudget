@@ -101,7 +101,7 @@ the application with the old settings still present.
    **When** the database is upgraded, **Then** those three fields no longer exist and
    every other account field and every other table's data is unchanged.
 2. **Given** an upgraded database, **When** it is downgraded one step, **Then** the
-   three fields exist again, with no value (the "OFX Cat Memo to Name" field false).
+   three fields exist again, with no value.
 3. **Given** a settings module or environment that still defines the Vault address,
    Vault token path or statement save path, **When** the application starts, **Then**
    it starts normally and ignores them.
