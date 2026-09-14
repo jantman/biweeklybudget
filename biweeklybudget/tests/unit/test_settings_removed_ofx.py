@@ -3,7 +3,7 @@ The latest version of this package is available at:
 <http://github.com/jantman/biweeklybudget>
 
 ################################################################################
-Copyright 2026 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
+Copyright 2016-2024 Jason Antman <http://www.jasonantman.com>
 
     This file is part of biweeklybudget, also known as biweeklybudget.
 
@@ -26,10 +26,10 @@ this work. (Additional Terms pursuant to Section 7b of the AGPL v3)
 ################################################################################
 While not legally required, I sincerely request that anyone who finds
 bugs please submit them at <https://github.com/jantman/biweeklybudget> or
-to me via email, and that you also submit a patch for them so that I can
-help others. If you are using this software in a way that you find
-useful, please consider informing me of it via email.
+to me via email, and that you send any contributions or improvements
+either as a pull request on GitHub, or to me via email.
 ################################################################################
+
 AUTHORS:
 Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
