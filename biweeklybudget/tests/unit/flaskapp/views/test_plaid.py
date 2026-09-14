@@ -43,6 +43,8 @@ from plaid.models import LinkTokenCreateResponse
 
 from biweeklybudget import settings
 from biweeklybudget.version import VERSION
+from biweeklybudget.flaskapp.app import app
+from biweeklybudget.plaid_updater import PlaidUpdateResult
 from biweeklybudget.flaskapp.views.plaid import (
     PlaidJs, PlaidHandleLink, set_url_rules, PlaidUpdate, PlaidRefreshAccounts,
     PlaidUpdateItemInfo, PlaidLinkToken
@@ -1325,6 +1327,35 @@ class TestPlaidUpdate:
         res, mocks = self._update_with_results('application/json', [])
         assert res == (mocks['jsonify'].return_value, 200)
         assert mocks['jsonify'].mock_calls == [call([])]
+
+
+class TestPlaidResultTemplate:
+    """Render the real ``plaid_result.html``; the view tests mock it out."""
+
+    def _render(self, results, **kwargs):
+        # jinja_env rendering skips the context processors, which need a DB
+        with app.test_request_context():
+            return app.jinja_env.get_template('plaid_result.html').render(
+                results=results, notifications=[], settings={},
+                CURRENCY_SYM='$', **kwargs
+            )
+
+    def test_statement_ids_and_failure(self):
+        items = [
+            Mock(spec_set=PlaidItem, item_id='Item1', institution_name='Inst1'),
+            Mock(spec_set=PlaidItem, item_id='Item2', institution_name='Inst2')
+        ]
+        results = [
+            PlaidUpdateResult(items[0], True, 3, 1, None, [21728, 21729]),
+            PlaidUpdateResult(
+                items[1], False, 0, 0, Exception('BadItem'), None
+            )
+        ]
+        html = self._render(results, num_added=1, num_updated=3, num_failed=1)
+        assert '<td>Inst1 (Item1)</a></td>' in html
+        assert '<td>[21728, 21729]</td>' in html
+        assert '<td>BadItem</td>' in html
+        assert '<td><strong>1 Failed</strong></td>' in html
 
 
 class TestPlaidLinkToken:

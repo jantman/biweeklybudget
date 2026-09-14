@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #264 <https://github.com/jantman/biweeklybudget/issues/264>`_ - The documentation's Screenshots page gains the Plaid Update page, linking an Account to Plaid, and a Plaid update result.
+
+  * The Plaid Update result page now shows each Item's statement IDs; its Statement IDs column was always empty.
+
 * `Issue #263 <https://github.com/jantman/biweeklybudget/issues/263>`_ - The balance of an account linked to a Plaid loan is now recorded as negative (money owed), as for credit cards, instead of as the positive amount Plaid reports.
 
   * Loan balances recorded before upgrading are not changed; see "Loan Accounts" in the Plaid documentation for SQL to correct them.

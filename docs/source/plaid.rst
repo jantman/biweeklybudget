@@ -31,6 +31,8 @@ biweeklybudget needs to be configured with your Plaid credentials. I highly reco
 Usage
 -----
 
+The :doc:`screenshots` page shows the Plaid Update page, linking an Account to Plaid, and the result of a Plaid update.
+
 .. _plaid.linking:
 
 Linking Accounts to Plaid
