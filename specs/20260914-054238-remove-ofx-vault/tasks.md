@@ -137,7 +137,7 @@ screen scraping; Plaid presented as the transaction source.
 - [X] T034 Lint: pycodestyle (max-line-length 100 per `setup.cfg`) and pyflakes over changed Python files in a scratch venv
 - [X] T035 Run `tox -e py314` to completion; all pass (output to scratchpad) — 955 passed, 4 skipped
 - [X] T036 Run `tox -e acceptance` to completion; all pass (re-run known flaky tests in isolation before blaming the change) — 882 passed, 18 skipped (23 min)
-- [ ] T037 Run `tox -e migrations` and `tox -e docker` to completion; all pass
+- [X] T037 Run `tox -e migrations` and `tox -e docker` to completion; all pass — migrations 9 passed; docker OK (image built, GET / and /payperiods 200, script checks passed, acceptance suite against the container passed; in a worktree it needs the main venv's tox first on PATH)
 - [X] T038 Run `tox -e docs` and `tox -e jsdoc`; then, not concurrently with docs, `tox -e screenshots`; commit only the changed `docs/source/account1*.png` (and any other screenshot the change touched), reverting unrelated PNG churn — docs OK, jsdoc OK (unrelated jsdoc.*.rst reverted), screenshots OK; committed account1*.png and account1-plaid*.png only
 - [X] T039 Run quickstart §1 grep and §2 clean-venv install check; mark tasks complete in this file and commit — grep clean; clean venv has none of the 5 packages or ofx* scripts
 
