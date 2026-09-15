@@ -40,7 +40,6 @@ from flask.views import MethodView
 from flask import render_template, jsonify
 from decimal import Decimal
 from datetime import datetime
-import json
 import re
 
 from biweeklybudget.flaskapp.app import app
@@ -194,11 +193,6 @@ class AccountFormHandler(FormHandlerView):
             errors = self._validate_decimal('credit_limit', data, errors)
         if data['apr'].strip() != '':
             errors = self._validate_decimal('apr', data, errors)
-        if data['ofxgetter_config_json'].strip() != '':
-            try:
-                json.loads(data['ofxgetter_config_json'])
-            except Exception:
-                errors['ofxgetter_config_json'].append('Invalid JSON!')
         if data['prime_rate_margin'].strip() != '':
             errors = self._validate_decimal('prime_rate_margin', data, errors)
         if data['interest_class_name'] not in INTEREST_CALCULATION_NAMES:
@@ -261,11 +255,6 @@ class AccountFormHandler(FormHandlerView):
         account.name = data['name'].strip()
         account.description = self.fix_string(data['description'])
         account.acct_type = getattr(AcctType, data['acct_type'])
-        account.ofx_cat_memo_to_name = data['ofx_cat_memo_to_name']
-        account.vault_creds_path = self.fix_string(data['vault_creds_path'])
-        account.ofxgetter_config_json = self.fix_string(
-            data['ofxgetter_config_json']
-        )
         account.negate_ofx_amounts = data['negate_ofx_amounts']
         account.reconcile_trans = data['reconcile_trans']
         if account.acct_type == AcctType.Credit:

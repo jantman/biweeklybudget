@@ -16,7 +16,6 @@ Contents
    Flask App <flask_app>
    HTTP API <http_api>
    Plaid Transaction Downloading <plaid>
-   OFX Transaction Downloading <ofx>
    Getting Help <getting_help>
    Development <development>
    Changelog <changes>

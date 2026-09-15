@@ -86,7 +86,7 @@ class OFXStatement(Base, ModelAsDict):
     #: Institution's account ID
     acctid = Column(String(30))
 
-    #: Account Type, string corresponding to ofxparser.ofxparser.AccountType
+    #: Account Type, as reported by the financial institution
     type = Column(String(20))
 
     #: Last OFX statement datetime

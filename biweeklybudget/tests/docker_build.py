@@ -483,24 +483,12 @@ class DockerImageBuilder(object):
                 'output': 'Create a Transaction via the'
             },
             {
-                'cmd': '/app/bin/ofxclient --help',
-                'output': '--ofx-version OFX_VERSION'
-            },
-            {
                 'cmd': '/app/bin/wishlist2project -h',
                 'output': 'Synchronize Amazon wishlists to projects'
             },
             {
                 'cmd': '/app/bin/initdb --help',
                 'output': 'Load initial data to DB'
-            },
-            {
-                'cmd': '/app/bin/ofxbackfiller --help',
-                'output': 'Backfill OFX from disk'
-            },
-            {
-                'cmd': '/app/bin/ofxgetter --help',
-                'output': 'Download OFX transactions'
             },
             {
                 'cmd': '/app/bin/loaddata --help',

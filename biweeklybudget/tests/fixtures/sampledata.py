@@ -372,9 +372,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='First Bank Account',
             name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank,
             re_interest_charge='^interest-charge',
             re_interest_paid='^interest-paid',
@@ -461,9 +458,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='Stale Bank Account',
             name='BankTwoStale',
-            ofx_cat_memo_to_name=False,
-            ofxgetter_config_json='{"foo": "baz"}',
-            vault_creds_path='secret/foo/bar/BankTwo',
             acct_type=AcctType.Bank,
             is_active=True,
             negate_ofx_amounts=True
@@ -513,7 +507,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='First Credit Card, limit 2000',
             name='CreditOne',
-            ofx_cat_memo_to_name=False,
             acct_type=AcctType.Credit,
             credit_limit=Decimal('2000.00'),
             is_active=True,
@@ -639,9 +632,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='Credit 2 limit 5500',
             name='CreditTwo',
-            ofx_cat_memo_to_name=False,
-            ofxgetter_config_json='',
-            vault_creds_path='/foo/bar',
             acct_type=AcctType.Credit,
             credit_limit=Decimal(5500),
             is_active=True,
@@ -694,9 +684,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='Investment One Stale',
             name='InvestmentOne',
-            ofx_cat_memo_to_name=False,
-            ofxgetter_config_json='',
-            vault_creds_path='',
             acct_type=AcctType.Investment,
             is_active=True,
             reconcile_trans=False,
@@ -724,9 +711,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='Disabled Bank Account',
             name='DisabledBank',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"bar": "baz"}',
-            vault_creds_path='',
             acct_type=AcctType.Bank,
             is_active=False
         )
@@ -780,9 +764,6 @@ class SampleDataLoader(object):
         acct = Account(
             description='',
             name='',
-            ofx_cat_memo_to_name=False,
-            ofxgetter_config_json='',
-            vault_creds_path='',
             acct_type=AcctType.Bank,
             # credit_limit=0,
             is_active=True

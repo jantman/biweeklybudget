@@ -37,7 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import logging
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Text, Enum, Numeric, inspect, or_,
+    Column, Integer, String, Boolean, Enum, Numeric, inspect, or_,
     ForeignKeyConstraint
 )
 from datetime import timedelta
@@ -53,7 +53,6 @@ from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.models.ofx_transaction import OFXTransaction
 from biweeklybudget.utils import dtnow
 from biweeklybudget.prime_rate import PrimeRateCalculator
-import json
 import enum
 from biweeklybudget.settings import STALE_DATA_TIMEDELTA, RECONCILE_BEGIN_DATE
 
@@ -111,16 +110,6 @@ class Account(Base, ModelAsDict):
 
     #: description
     description = Column(String(254))
-
-    #: whether or not to concatenate the OFX memo text onto the OFX name text;
-    #: for banks like Chase that use the memo for run-on from the name
-    ofx_cat_memo_to_name = Column(Boolean, default=False)
-
-    #: path in Vault to read the credentials from
-    vault_creds_path = Column(String(254))
-
-    #: JSON-encoded ofxgetter configuration
-    ofxgetter_config_json = Column(Text)
 
     #: For use in reconciling our :py:class:`~.Transaction` entries with
     #: the account's :py:class:`~.OFXTransaction` entries, whether or not to
@@ -196,16 +185,6 @@ class Account(Base, ModelAsDict):
         )
 
     @hybrid_property
-    def for_ofxgetter(self):
-        """
-        Return whether or not this account should be handled by ofxgetter.
-
-        :return: whether or not ofxgetter should run for this account
-        :rtype: bool
-        """
-        return self.ofxgetter_config_json.isnot(None)
-
-    @hybrid_property
     def plaid_configured(self):
         """
         Return whether or not this account is configured for Plaid.
@@ -248,28 +227,6 @@ class Account(Base, ModelAsDict):
         if self.ofx_statement is None:
             return False
         return (dtnow() - self.ofx_statement.as_of) > STALE_DATA_TIMEDELTA
-
-    @property
-    def ofxgetter_config(self):
-        """
-        Return the deserialized ofxgetter_config_json dict.
-
-        :return: ofxgetter config
-        :rtype: dict
-        """
-        try:
-            return json.loads(self.ofxgetter_config_json)
-        except Exception:
-            return {}
-
-    def set_ofxgetter_config(self, config):
-        """
-        Set ofxgetter configuration.
-
-        :param config: ofxgetter configuration
-        :type config: dict
-        """
-        self.ofxgetter_config_json = json.dumps(config)
 
     def set_balance(self, **kwargs):
         """

@@ -187,8 +187,7 @@ entered ``Transaction`` records to downloaded bank data
 (:py:class:`~biweeklybudget.models.ofx_transaction.OFXTransaction`). This
 one-to-one mapping verifies that manual entries match what the bank reports.
 
-Bank transactions can be downloaded automatically via OFX Direct Connect
-(:ref:`ofx`) or Plaid (:ref:`plaid`).
+Bank transactions can be downloaded automatically via Plaid (:ref:`plaid`).
 
 .. _concepts.projects:
 

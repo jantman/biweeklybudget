@@ -139,49 +139,6 @@ class OFXTransaction(Base, ModelAsDict):
             self.account_id, self.fitid
         )
 
-    @staticmethod
-    def params_from_ofxparser_transaction(t, acct_id, stmt, cat_memo=False):
-        """
-        Given an ofxparser.ofxparser.Transaction object, generate and return
-        a dict of kwargs to create a new OFXTransaction.
-
-        :param t: ofxparser transaction
-        :type t: ``ofxparser.ofxparser.Transaction``
-        :param acct_id: OFXAccount ID
-        :type acct_id: int
-        :param stmt: OFXStatement this transaction was on
-        :type stmt: biweeklybudget.models.ofx_statement.OFXStatement
-        :param cat_memo: whether or not to concatenate OFX Memo to Name
-        :type cat_memo: bool
-        :return: dict of kwargs to create an OFXTransaction
-        :rtype: dict
-        """
-        if t.id is None:
-            raise RuntimeError('Transaction has no ID: %s', vars(t))
-        kwargs = {
-            'account_id': acct_id,
-            'statement': stmt,
-            'memo': t.memo,
-            'name': t.payee,
-            'amount': t.amount,
-            'trans_type': t.type,
-            # Note that as of 0.16, OfxParser returns tz-naive UTC datetimes
-            'date_posted': t.date.replace(tzinfo=UTC),
-            'fitid': t.id,
-            'sic': t.sic,
-            'mcc': t.mcc
-        }
-        if cat_memo:
-            del kwargs['memo']
-            kwargs['name'] = t.payee + t.memo
-        for x in ['mcc', 'sic', 'checknum']:
-            if not hasattr(t, x):
-                continue
-            val = getattr(t, x)
-            if val is not None and val != '':
-                kwargs[x] = val
-        return kwargs
-
     @property
     def account_amount(self):
         """

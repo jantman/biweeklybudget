@@ -274,7 +274,7 @@ class Screenshotter(object):
             'path': '/ofx',
             'filename': 'ofx',
             'title': 'OFX Transactions',
-            'description': 'Shows transactions imported from OFX statements.'
+            'description': 'Shows downloaded transactions (retrieved via Plaid).'
         },
         {
             'path': '/plaid-update',

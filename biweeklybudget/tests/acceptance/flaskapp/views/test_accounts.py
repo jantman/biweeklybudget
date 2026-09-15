@@ -168,9 +168,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'BankOne'
         assert acct.description == 'First Bank Account'
-        assert acct.ofx_cat_memo_to_name is True
-        assert acct.vault_creds_path == 'secret/foo/bar/BankOne'
-        assert acct.ofxgetter_config_json == '{"foo": "bar"}'
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Bank
@@ -206,14 +203,6 @@ class TestAccountModal(AcceptanceHelper):
                                      'account_frm_type_credit').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected()
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == 'secret/foo/bar/BankOne'
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == '{"foo": "bar"}'
         assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
@@ -253,6 +242,12 @@ class TestAccountModal(AcceptanceHelper):
             'value'
         ) == 'PlaidItem1,PlaidAcct1'
         assert selenium.find_element(By.ID, 'account_frm_active').is_selected()
+        # fields for the OFX downloading removed in issue #265
+        for elem_id in [
+            'account_frm_ofx_cat_memo', 'account_frm_vault_creds_path',
+            'account_frm_ofxgetter_config_json'
+        ]:
+            assert selenium.find_elements(By.ID, elem_id) == []
 
     def test_12_edit_acct1(self, base_url, selenium):
         self.get(selenium, base_url + '/accounts/1')
@@ -280,9 +275,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'BankOneEdited'
         assert acct.description == 'First Bank Account'
-        assert acct.ofx_cat_memo_to_name is True
-        assert acct.vault_creds_path == 'secret/foo/bar/BankOne'
-        assert acct.ofxgetter_config_json == '{"foo": "bar"}'
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Bank
@@ -300,9 +292,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'BankTwoStale'
         assert acct.description == 'Stale Bank Account'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path == 'secret/foo/bar/BankTwo'
-        assert acct.ofxgetter_config_json == '{"foo": "baz"}'
         assert acct.negate_ofx_amounts is True
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Bank
@@ -339,14 +328,6 @@ class TestAccountModal(AcceptanceHelper):
                                      'account_frm_type_credit').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == 'secret/foo/bar/BankTwo'
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == '{"foo": "baz"}'
         assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is True
         assert selenium.find_element(By.ID,
@@ -398,16 +379,6 @@ class TestAccountModal(AcceptanceHelper):
         selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a2desc'
         )
-        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
-        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
-            '/baz'
-        )
-        selenium.find_element(By.ID,
-                              'account_frm_ofxgetter_config_json'
-                              ).clear()
-        selenium.find_element(By.ID,
-                              'account_frm_ofxgetter_config_json'
-                              ).send_keys('{"key": "value"}')
         selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
         selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
         selenium.find_element(By.ID, 'account_frm_active').click()
@@ -441,9 +412,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'BankTwoStaleEdited'
         assert acct.description == 'a2desc'
-        assert acct.ofx_cat_memo_to_name is True
-        assert acct.vault_creds_path == 'secret/foo/bar/BankTwo/baz'
-        assert acct.ofxgetter_config_json == '{"key": "value"}'
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is False
         assert acct.acct_type == AcctType.Bank
@@ -466,9 +434,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'CreditOne'
         assert acct.description == 'First Credit Card, limit 2000'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path is None
-        assert acct.ofxgetter_config_json is None
         assert acct.negate_ofx_amounts is True
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Credit
@@ -505,14 +470,6 @@ class TestAccountModal(AcceptanceHelper):
                                      'account_frm_type_credit').is_selected()
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
         assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected()
         assert selenium.find_element(By.ID,
@@ -573,9 +530,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'CreditOneEdited'
         assert acct.description == 'First Credit Card, limit 2000'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path is None
-        assert acct.ofxgetter_config_json is None
         assert acct.negate_ofx_amounts is True
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Credit
@@ -598,9 +552,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'CreditTwo'
         assert acct.description == 'Credit 2 limit 5500'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path == '/foo/bar'
-        assert acct.ofxgetter_config_json == ''
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Credit
@@ -634,14 +585,6 @@ class TestAccountModal(AcceptanceHelper):
                                      'account_frm_type_credit').is_selected()
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == '/foo/bar'
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
         assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
@@ -682,16 +625,6 @@ class TestAccountModal(AcceptanceHelper):
         selenium.find_element(By.ID, 'account_frm_description').send_keys(
             'a4desc'
         )
-        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
-        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
-            '/baz'
-        )
-        selenium.find_element(By.ID,
-                              'account_frm_ofxgetter_config_json'
-                              ).clear()
-        selenium.find_element(By.ID,
-                              'account_frm_ofxgetter_config_json'
-                              ).send_keys('{"key": "value"}')
         selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
         selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
         # BEGIN CREDIT
@@ -726,9 +659,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'CreditTwoEdited'
         assert acct.description == 'a4desc'
-        assert acct.ofx_cat_memo_to_name is True
-        assert acct.vault_creds_path == '/foo/bar/baz'
-        assert acct.ofxgetter_config_json == '{"key": "value"}'
         assert acct.negate_ofx_amounts is True
         assert acct.reconcile_trans is False
         assert acct.acct_type == AcctType.Credit
@@ -749,9 +679,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'InvestmentOne'
         assert acct.description == 'Investment One Stale'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path == ''
-        assert acct.ofxgetter_config_json == ''
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is False
         assert acct.acct_type == AcctType.Investment
@@ -786,14 +713,6 @@ class TestAccountModal(AcceptanceHelper):
                                      'account_frm_type_credit').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected()
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
         assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
@@ -835,9 +754,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'InvestmentOneEdited'
         assert acct.description == 'Investment One Stale'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path is None
-        assert acct.ofxgetter_config_json is None
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is False
         assert acct.acct_type == AcctType.Investment
@@ -879,14 +795,6 @@ class TestAccountModal(AcceptanceHelper):
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
         assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_reconcile_trans').is_selected()
@@ -925,9 +833,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'Acct7'
         assert acct.description == 'a7desc'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path is None
-        assert acct.ofxgetter_config_json is None
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Bank
@@ -969,14 +874,6 @@ class TestAccountModal(AcceptanceHelper):
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
         assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_reconcile_trans').is_selected()
@@ -1000,13 +897,6 @@ class TestAccountModal(AcceptanceHelper):
             'a8desc'
         )
         selenium.find_element(By.ID, 'account_frm_type_credit').click()
-        selenium.find_element(By.ID, 'account_frm_ofx_cat_memo').click()
-        selenium.find_element(By.ID, 'account_frm_vault_creds_path').send_keys(
-            '/path/to/creds'
-        )
-        selenium.find_element(By.ID,
-                              'account_frm_ofxgetter_config_json'
-                              ).send_keys('{"foo": "blam"}')
         selenium.find_element(By.ID, 'account_frm_negate_ofx').click()
         selenium.find_element(By.ID, 'account_frm_reconcile_trans').click()
         # BEGIN CREDIT
@@ -1041,9 +931,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'Acct8'
         assert acct.description == 'a8desc'
-        assert acct.ofx_cat_memo_to_name is True
-        assert acct.vault_creds_path == '/path/to/creds'
-        assert acct.ofxgetter_config_json == '{"foo": "blam"}'
         assert acct.negate_ofx_amounts is True
         assert acct.reconcile_trans is False
         assert acct.acct_type == AcctType.Credit
@@ -1085,14 +972,6 @@ class TestAccountModal(AcceptanceHelper):
         assert selenium.find_element(By.ID,
                                      'account_frm_type_investment').is_selected() is False
         assert selenium.find_element(By.ID,
-                                     'account_frm_ofx_cat_memo').is_selected() is False
-        assert selenium.find_element(By.ID,
-                                     'account_frm_vault_creds_path'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
-                                     'account_frm_ofxgetter_config_json'
-                                     ).get_attribute('value') == ''
-        assert selenium.find_element(By.ID,
                                      'account_frm_negate_ofx').is_selected() is False
         assert selenium.find_element(By.ID,
                                      'account_frm_reconcile_trans').is_selected()
@@ -1132,9 +1011,6 @@ class TestAccountModal(AcceptanceHelper):
         assert acct is not None
         assert acct.name == 'Acct9'
         assert acct.description == 'a9desc'
-        assert acct.ofx_cat_memo_to_name is False
-        assert acct.vault_creds_path is None
-        assert acct.ofxgetter_config_json is None
         assert acct.negate_ofx_amounts is False
         assert acct.reconcile_trans is True
         assert acct.acct_type == AcctType.Investment

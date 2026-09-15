@@ -71,17 +71,6 @@ function accountModalDivForm() {
                 { id: 'account_frm_type_investment', label: 'Investment', value: 'Investment', inputHtml: 'onchange="accountModalDivHandleType()"' }
             ]
         )
-        .addCheckbox(
-            'account_frm_ofx_cat_memo',
-            'ofx_cat_memo_to_name',
-            'OFX Cat Memo to Name'
-        )
-        .addText('account_frm_vault_creds_path', 'vault_creds_path', 'Vault Creds Path')
-        .addTextArea(
-            'account_frm_ofxgetter_config_json',
-            'ofxgetter_config_json',
-            'OFXGetter Config (JSON)'
-        )
         .addCheckbox('account_frm_negate_ofx', 'negate_ofx_amounts', 'Negate OFX Amounts', false)
         .addCheckbox('account_frm_reconcile_trans', 'reconcile_trans', 'Reconcile Transactions?', true)
         .addText('account_frm_re_interest_charge', 're_interest_charge', 'Interest Charge Regex', { helpBlock: 'If specified, OFX Transactions with name/memo matching this regex will be marked as interest charges (and not reconciled).'})
@@ -151,19 +140,12 @@ function accountModalDivFillAndShow(msg) {
     } else {
         $('#account_frm_negate_ofx').prop('checked', false);
     }
-    if(msg['ofx_cat_memo_to_name'] === true) {
-        $('#account_frm_ofx_cat_memo').prop('checked', true);
-    } else {
-        $('#account_frm_ofx_cat_memo').prop('checked', false);
-    }
-    $('#account_frm_ofxgetter_config_json').val(msg['ofxgetter_config_json']);
     $('#account_frm_margin').val(msg['prime_rate_margin']);
     if(msg['reconcile_trans'] === true) {
         $('#account_frm_reconcile_trans').prop('checked', true);
     } else {
         $('#account_frm_reconcile_trans').prop('checked', false);
     }
-    $('#account_frm_vault_creds_path').val(msg['vault_creds_path']);
     if(msg['re_interest_charge'] != null) { $('#account_frm_re_interest_charge').val(msg['re_interest_charge']); }
     if(msg['re_interest_paid'] != null) { $('#account_frm_re_interest_paid').val(msg['re_interest_paid']); }
     if(msg['re_payment'] != null) { $('#account_frm_re_payment').val(msg['re_payment']); }

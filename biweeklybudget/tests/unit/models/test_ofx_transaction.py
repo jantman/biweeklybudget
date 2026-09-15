@@ -38,13 +38,11 @@ import sys
 from datetime import datetime, date
 from decimal import Decimal
 
-from ofxparse.ofxparse import Transaction
 from pytz import UTC
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.expression import null
 
 from biweeklybudget.models.ofx_transaction import OFXTransaction
-from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.account import Account
 from biweeklybudget.tests.unit_helpers import binexp_to_dict
 
@@ -61,73 +59,7 @@ else:
 pbm = 'biweeklybudget.models.ofx_transaction'
 
 
-class TestParamsFromOfxparserTransaction(object):
-
-    def setup_method(self):
-        trans = Transaction()
-        trans.payee = 'PayeeName'
-        trans.type = 'TType'
-        trans.date = datetime(2017, 3, 10, 14, 15, 16)
-        trans.amount = Decimal('123.45')
-        trans.id = 'ABC123'
-        trans.memo = 'TMemo'
-        self.trans = trans
-        self.stmt = Mock(spec_set=OFXStatement)
-        self.acct_id = 2
-
-    def test_simple(self):
-        res = OFXTransaction.params_from_ofxparser_transaction(
-            self.trans, self.acct_id, self.stmt
-        )
-        assert res == {
-            'account_id': self.acct_id,
-            'statement': self.stmt,
-            'memo': 'TMemo',
-            'name': 'PayeeName',
-            'amount': Decimal('123.45'),
-            'trans_type': 'TType',
-            'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
-            'fitid': 'ABC123',
-            'sic': None,
-            'mcc': ''
-        }
-
-    def test_cat_memo(self):
-        res = OFXTransaction.params_from_ofxparser_transaction(
-            self.trans, self.acct_id, self.stmt, cat_memo=True
-        )
-        assert res == {
-            'account_id': self.acct_id,
-            'statement': self.stmt,
-            'name': 'PayeeNameTMemo',
-            'amount': Decimal('123.45'),
-            'trans_type': 'TType',
-            'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
-            'fitid': 'ABC123',
-            'sic': None,
-            'mcc': ''
-        }
-
-    def test_extra_attrs(self):
-        self.trans.mcc = 'TMCC'
-        self.trans.sic = 456
-        self.trans.checknum = 789
-        res = OFXTransaction.params_from_ofxparser_transaction(
-            self.trans, self.acct_id, self.stmt
-        )
-        assert res == {
-            'account_id': self.acct_id,
-            'statement': self.stmt,
-            'memo': 'TMemo',
-            'name': 'PayeeName',
-            'amount': Decimal('123.45'),
-            'trans_type': 'TType',
-            'date_posted': datetime(2017, 3, 10, 14, 15, 16, tzinfo=UTC),
-            'fitid': 'ABC123',
-            'sic': 456,
-            'mcc': 'TMCC',
-            'checknum': 789
-        }
+class TestOFXTransaction(object):
 
     def test_account_amount(self):
         ot = OFXTransaction(

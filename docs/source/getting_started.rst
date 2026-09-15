@@ -9,17 +9,12 @@ Requirements
 ------------
 
 **Note:** Alternatively, biweeklybudget is also distributed as a :ref:`Docker container <docker>`.
-Using the dockerized version will eliminate all of these dependencies aside from MySQL and
-Vault (the latter only if you choose to take advantage of the OFX downloading), both of which you can also run in containers.
+Using the dockerized version will eliminate all of these dependencies aside from MySQL, which you can also run in a container.
 
 * Python 3.10+ (currently developed and tested with 3.14).
 * Python `VirtualEnv <http://www.virtualenv.org/>`_ and ``pip`` (recommended installation method; your OS/distribution should have packages for these)
 * MySQL, or a compatible database (e.g. `MariaDB <https://mariadb.org/>`_ ). biweeklybudget uses `SQLAlchemy <https://www.sqlalchemy.org/>`_ for database abstraction, but currently specifies some MySQL-specific options, and is only tested with MySQL.
-* To use the new :ref:`Plaid <plaid>` automated transaction downloading functionality, a valid Plaid account.
-* To use the (old) automated OFX transaction downloading functionality:
-
-  * A running, reachable instance of `Hashicorp Vault <https://developer.hashicorp.com/vault>`_ with your financial institution web credentials stored in it.
-  * If your bank does not support OFX remote access ("Direct Connect"), you will need to write a custom screen-scraper class using Selenium and a browser.
+* To use the :ref:`Plaid <plaid>` automated transaction downloading functionality, a valid Plaid account.
 
 Installation
 ------------
@@ -80,8 +75,7 @@ with ``pip install -e <git URL>`` (if it is kept in a git repository) or
 ``pip install -e <local path>``.
 
 This customization package can also be used for
-:ref:`Loading Data <development.loading_data>` during development, or
-implementing :ref:`Custom OFX Downloading via Selenium <ofx.selenium>`. It is
+:ref:`Loading Data <development.loading_data>` during development. It is
 the recommended configuration method if you need to include more logic than
 simply defining static configuration settings.
 
@@ -138,9 +132,8 @@ that you run a specific version number, and that you make sure to perform a data
 The only dependencies for a Docker installation are:
 
 * MySQL, which can be run via Docker (`MariaDB official image <https://hub.docker.com/_/mariadb/>`_ recommended) or local on the host
-* Vault, if you wish to use the OFX downloading feature, which can also be run `via Docker <https://hub.docker.com/_/vault/>`_
 
-**Important Note:** If you run MySQL and/or Vault in containers, please make sure that their data
+**Important Note:** If you run MySQL in a container, please make sure that its data
 is backed up and will not be removed.
 
 The `image <https://hub.docker.com/r/jantman/biweeklybudget/>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
@@ -257,35 +250,6 @@ to format currency. This requires an appropriate locale installed on the system.
 distributed for this package only includes the ``en_US.UTF-8`` locale. If you need a different one,
 please cut a pull request against ``docker_build.py``.
 
-Running ofxgetter in Docker
-+++++++++++++++++++++++++++
-
-**Note:** ofxgetter support is tentatively being deprecated. Please see :ref:`Plaid <plaid>` for the tentative replacement.
-
-If you wish to use the :ref:`ofxgetter <ofx>` script inside the Docker container, some special
-settings are needed:
-
-1. You must mount the statement save path (:py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH`) into the container.
-2. You must mount the Vault token file path (:py:const:`~biweeklybudget.settings.TOKEN_PATH`) into the container.
-3. You must set either the ``VAULT_ADDR`` environment variable, or the :py:const:`~biweeklybudget.settings.VAULT_ADDR` setting.
-
-As an example, for using ofxgetter in Docker with your statements saved to ``/home/myuser/statements`` on your host computer and your Vault token stored in ``/home/myuser/.vault-token`` on your host computer, you would set :py:const:`~biweeklybudget.settings.STATEMENTS_SAVE_PATH` in your settings file to ``/statements`` and :py:const:`~biweeklybudget.settings.TOKEN_PATH` to ``/.token``, and add to your ``docker run`` command:
-
-.. code-block:: none
-
-    -v /home/myuser/statements:/statements \
-    -v /home/myuser/.vault-token:/.token
-
-Assuming your container was running with ``--name biweeklybudget``, you could run ofxgetter (e.g. via cron) as:
-
-.. code-block:: none
-
-    docker exec biweeklybudget /bin/sh -c 'cd /statements && /app/bin/ofxgetter'
-
-We run explicitly in the statements directory so that if ``ofxgetter`` encounters an error
-when using a :py:class:`~biweeklybudget.screenscraper.ScreenScraper` class, the screenshots
-and HTML output will be saved to the host filesystem.
-
 .. _getting_started.entrypoints:
 
 Command Line Entrypoints and Scripts
@@ -298,6 +262,4 @@ instructions above.
 * ``bin/db_tester.py`` - Skeleton of a script that connects to and inits the DB. Edit this to use for one-off DB work. To get an interactive session, use ``python -i bin/db_tester.py``.
 * ``addtrans`` - Create a Transaction through the :ref:`HTTP API <http_api.transactions.create_update>`, taking inputs similar to the Add Transaction form. Accounts and Budgets may be given by name or by ID. Unlike the other entrypoints it talks to a *running* application over HTTP rather than to the database, so it needs no settings module; point it at the application with ``--url``, the ``BIWEEKLYBUDGET_URL`` environment variable, or leave it to default to ``http://127.0.0.1:8080``. Run ``addtrans --help`` for the full argument list, and ``--dry-run`` to see the request it would send. See :py:mod:`biweeklybudget.addtrans`.
 * ``loaddata`` - Entrypoint for dropping **all** existing data and loading test fixture data, or your base data. This is an awful, manual hack right now.
-* ``ofxbackfiller`` - Entrypoint to backfill OFX Statements to DB from disk.
-* ``ofxgetter`` - Entrypoint to download OFX Statements for one or all accounts, save to disk, and load to DB. See :ref:`OFX <ofx>`.
 * ``wishlist2project`` - For any projects with "Notes" fields matching an Amazon wishlist URL of a public wishlist (``^https://www.amazon.com/gp/registry/wishlist/``), synchronize the wishlist items to the project. Requires ``wishlist==0.1.2``.

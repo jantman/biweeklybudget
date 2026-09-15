@@ -141,9 +141,6 @@ class TestBaseTmplUnreconciledNotification(AcceptanceHelper):
         a = Account(
             description='First Bank Account',
             name='BankOne',
-            ofx_cat_memo_to_name=True,
-            ofxgetter_config_json='{"foo": "bar"}',
-            vault_creds_path='secret/foo/bar/BankOne',
             acct_type=AcctType.Bank
         )
         testdb.add(a)
@@ -460,7 +457,6 @@ class TestCreditAccountSumAccountSelection(AcceptanceHelper):
         acct = Account(
             description='Closed Card',
             name='ClosedCard',
-            ofx_cat_memo_to_name=False,
             acct_type=AcctType.Credit,
             is_active=False
         )
@@ -504,7 +500,6 @@ class TestCreditAccountSumAccountSelection(AcceptanceHelper):
         acct = Account(
             description='Another Bank',
             name='AnotherBank',
-            ofx_cat_memo_to_name=False,
             acct_type=AcctType.Bank,
             is_active=True
         )
@@ -519,7 +514,6 @@ class TestCreditAccountSumAccountSelection(AcceptanceHelper):
         inv = Account(
             description='Another Investment',
             name='AnotherInvestment',
-            ofx_cat_memo_to_name=False,
             acct_type=AcctType.Investment,
             is_active=True
         )
@@ -545,7 +539,6 @@ class TestCreditAccountSumAccountSelection(AcceptanceHelper):
         acct = Account(
             description='Brand New Card',
             name='BrandNewCard',
-            ofx_cat_memo_to_name=False,
             acct_type=AcctType.Credit,
             is_active=True
         )

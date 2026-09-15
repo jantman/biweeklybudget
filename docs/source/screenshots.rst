@@ -106,7 +106,7 @@ Details of a single account.
 OFX Transactions
 ----------------
 
-Shows transactions imported from OFX statements.
+Shows downloaded transactions (retrieved via Plaid).
 
 .. image:: ofx_sm.png
    :target: ofx.png

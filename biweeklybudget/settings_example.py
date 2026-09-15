@@ -38,15 +38,6 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import os
 from datetime import timedelta, date
 
-#: Address to connect to Vault at, for OFX credentials
-VAULT_ADDR = 'http://127.0.0.1:8200'
-
-#: Path to read Vault token from, for OFX credentials
-TOKEN_PATH = 'vault_token.txt'
-
-#: Path to download OFX statements to, and for backfill_ofx to read them from
-STATEMENTS_SAVE_PATH = os.path.expanduser('~/ofx')
-
 #: SQLAlchemy database connection string. Note that the value given in
 #: generated documentation is the value used in CI builds, not the real default.
 DB_CONNSTRING = None
