@@ -39,6 +39,7 @@ import pytest
 
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 @pytest.mark.acceptance
@@ -92,6 +93,45 @@ class TestPlaidUpdateView(AcceptanceHelper):
             By.CSS_SELECTOR, '#table-update-plaid input.account-checkbox'
         )
 
+    def click_set_all(self, selenium, link_id, checked):
+        """
+        Click the Check All or Uncheck All link, then wait until the page has
+        run ``plaidSetAllItems(checked)`` for that click.
+
+        Both links are ``javascript:`` hrefs, which the browser runs as a
+        queued navigation after the click returns, not during it; reading the
+        checkboxes straight after the click races it. Waiting on the checkbox
+        state instead would pass at once for a click that changes nothing
+        (e.g. Check All when all are checked), so wrap the page's function
+        to record each call, and wait for this click's call. The wrapper
+        runs the original in the same JS task, so the checkboxes are already
+        updated when the wait returns.
+
+        :param selenium: Selenium driver instance
+        :type selenium: selenium.webdriver.remote.webdriver.WebDriver
+        :param link_id: ``plaid_check_all`` or ``plaid_uncheck_all``
+        :type link_id: str
+        :param checked: the argument the link should pass to
+          ``plaidSetAllItems``
+        :type checked: bool
+        """
+        selenium.execute_script(
+            'if (!window.plaidSetAllItemsOrig) {'
+            '  window.plaidSetAllItemsOrig = window.plaidSetAllItems;'
+            '  window.plaidSetAllItems = function(checked) {'
+            '    window.plaidSetAllCalls.push(checked);'
+            '    return window.plaidSetAllItemsOrig(checked);'
+            '  };'
+            '}'
+            'window.plaidSetAllCalls = [];'
+        )
+        selenium.find_element(By.ID, link_id).click()
+        WebDriverWait(selenium, 5).until(
+            lambda d: d.execute_script(
+                'return window.plaidSetAllCalls;'
+            ) == [checked]
+        )
+
     def assert_still_on_page(self, selenium):
         assert selenium.current_url == self.baseurl + '/plaid-update'
         assert selenium.find_element(By.ID, 'table-update-plaid') is not None
@@ -109,14 +149,14 @@ class TestPlaidUpdateView(AcceptanceHelper):
         assert all(b.is_selected() for b in boxes)
 
     def test_6_uncheck_all(self, selenium):
-        selenium.find_element(By.ID, 'plaid_uncheck_all').click()
+        self.click_set_all(selenium, 'plaid_uncheck_all', False)
         self.assert_still_on_page(selenium)
         boxes = self.item_checkboxes(selenium)
         assert len(boxes) == 2
         assert not any(b.is_selected() for b in boxes)
 
     def test_7_uncheck_all_then_select_one(self, selenium):
-        selenium.find_element(By.ID, 'plaid_uncheck_all').click()
+        self.click_set_all(selenium, 'plaid_uncheck_all', False)
         selenium.find_element(By.ID, 'item_PlaidItem2').click()
         self.assert_still_on_page(selenium)
         data = selenium.execute_script(
@@ -128,10 +168,10 @@ class TestPlaidUpdateView(AcceptanceHelper):
         one = selenium.find_element(By.ID, 'item_PlaidItem1')
         one.click()
         assert not one.is_selected()
-        selenium.find_element(By.ID, 'plaid_check_all').click()
+        self.click_set_all(selenium, 'plaid_check_all', True)
         self.assert_still_on_page(selenium)
         boxes = self.item_checkboxes(selenium)
         assert len(boxes) == 2
         assert all(b.is_selected() for b in boxes)
-        selenium.find_element(By.ID, 'plaid_check_all').click()
+        self.click_set_all(selenium, 'plaid_check_all', True)
         assert all(b.is_selected() for b in self.item_checkboxes(selenium))
