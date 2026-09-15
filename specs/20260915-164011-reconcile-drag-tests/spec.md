@@ -4,7 +4,9 @@
 
 **Created**: 2026-09-15
 
-**Status**: Draft
+**Status**: Implemented (2026-09-15). Both classes pass: 5/5 isolated runs, and the
+complete acceptance suite gives 900 passed, 0 skipped (master: 882 passed, 18 skipped).
+The side quest below is also done.
 
 **Input**: User description: "jantman/biweeklybudget issue #267 — "Fix reconcile acceptance tests that were removed (broken)": See commits 1936e64a90904e0cbe5ca43c58eb096a87e103d2 and 91d737dfb30a5784bd42d5bf293ff9ae055b9eba."
 

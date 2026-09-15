@@ -93,14 +93,14 @@ docstring and `research.md` R1 state the cause.
 
 - [X] T009 [P] Add a concise entry at the top of the `Unreleased` section of `CHANGES.rst`, led by the `Issue #267` link: the Reconcile page's multi-transaction drag-and-drop acceptance tests, skipped since 2022, run again. No sub-bullets are needed; users see no change.
 - [X] T010 Run the complete unit suite plus style checks, `tox -e py314`, to completion (constitution II; pyflakes confirms no unused imports are left in `test_reconcile.py`).
-- [ ] T011 Run the complete acceptance suite, `tox -e acceptance` (about 17 minutes; run in the background). Expect `acceptance: OK`, with 18 fewer skipped tests than `master`. Known flaky tests (e.g. `test_36_ignore_and_unignore_ofx`) get an isolated re-run before being blamed on this change, and any such re-run is reported.
+- [X] T011 Run the complete acceptance suite, `tox -e acceptance` (about 17 minutes; run in the background). Expect `acceptance: OK`, with 18 fewer skipped tests than `master`. Known flaky tests (e.g. `test_36_ignore_and_unignore_ofx`) get an isolated re-run before being blamed on this change, and any such re-run is reported.
 ### Side quest (recorded in spec.md "Side Quest" before starting; research R5)
 
 - [X] T014 Commit the side-quest record (spec.md, research.md, this section) before touching `test_plaid.py`.
 - [X] T015 In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, add a `TestPlaidUpdateView` helper that clicks a Check/Uncheck All link and waits until every Item checkbox has the expected state. Use it for every such click in `test_6_uncheck_all`, `test_7_uncheck_all_then_select_one` and `test_8_check_all`, and leave all assertions unchanged.
-- [ ] T016 Run `TestPlaidUpdateView` in isolation, then re-run T011 (the complete acceptance suite).
+- [X] T016 Run `TestPlaidUpdateView` in isolation, then re-run T011 (the complete acceptance suite).
 
-- [ ] T012 Update `specs/20260915-164011-reconcile-drag-tests/spec.md` Status and mark these tasks done. Commit all M1 changes with a `Reconcile Drag Tests - M1.<n>:` message.
+- [X] T012 Update `specs/20260915-164011-reconcile-drag-tests/spec.md` Status and mark these tasks done. Commit all M1 changes with a `Reconcile Drag Tests - M1.<n>:` message.
 - [ ] T013 Push the branch to `origin`, open a PR against `master` using `.github/PULL_REQUEST_TEMPLATE.md`, monitor CI (`acceptance` and `docker` both run these tests), and answer reviews with `/answer-reviews` until Claude reports "No issues found" and Copilot, if present, recommends approval.
 
 ---
