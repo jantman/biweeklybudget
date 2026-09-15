@@ -95,25 +95,41 @@ class TestPlaidUpdateView(AcceptanceHelper):
 
     def click_set_all(self, selenium, link_id, checked):
         """
-        Click the Check All or Uncheck All link, then wait until every Item
-        checkbox is ``checked``.
+        Click the Check All or Uncheck All link, then wait until the page has
+        run ``plaidSetAllItems(checked)`` for that click.
 
         Both links are ``javascript:`` hrefs, which the browser runs as a
         queued navigation after the click returns, not during it; reading the
-        checkboxes straight after the click races it.
+        checkboxes straight after the click races it. Waiting on the checkbox
+        state instead would pass at once for a click that changes nothing
+        (e.g. Check All when all are checked), so wrap the page's function
+        to record each call, and wait for this click's call. The wrapper
+        runs the original in the same JS task, so the checkboxes are already
+        updated when the wait returns.
 
         :param selenium: Selenium driver instance
         :type selenium: selenium.webdriver.remote.webdriver.WebDriver
         :param link_id: ``plaid_check_all`` or ``plaid_uncheck_all``
         :type link_id: str
-        :param checked: the state every Item checkbox should reach
+        :param checked: the argument the link should pass to
+          ``plaidSetAllItems``
         :type checked: bool
         """
+        selenium.execute_script(
+            'if (!window.plaidSetAllItemsOrig) {'
+            '  window.plaidSetAllItemsOrig = window.plaidSetAllItems;'
+            '  window.plaidSetAllItems = function(checked) {'
+            '    window.plaidSetAllCalls.push(checked);'
+            '    return window.plaidSetAllItemsOrig(checked);'
+            '  };'
+            '}'
+            'window.plaidSetAllCalls = [];'
+        )
         selenium.find_element(By.ID, link_id).click()
         WebDriverWait(selenium, 5).until(
-            lambda d: all(
-                b.is_selected() == checked for b in self.item_checkboxes(d)
-            )
+            lambda d: d.execute_script(
+                'return window.plaidSetAllCalls;'
+            ) == [checked]
         )
 
     def assert_still_on_page(self, selenium):

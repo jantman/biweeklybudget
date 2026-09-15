@@ -125,11 +125,24 @@ nothing to do with this feature.
   "normal", so `get()` waits for `load` and `plaidSetAllItems` is defined before any
   click.
 
-**Decision**: add a small test helper that clicks a link and then waits, for up to a
-few seconds, until every Item checkbox has the expected state. Use it for every
-Check/Uncheck All click in the class (tests 6, 7 and 8). `test_7` needs it too:
-otherwise a late Uncheck All could clear the box it checks next. The original
-assertions stay unchanged.
+**Decision**: add a test helper, `click_set_all()`. It wraps the page's global
+`plaidSetAllItems` so that every call's argument is recorded in
+`window.plaidSetAllCalls`, clicks the link, then waits (up to 5 s) until that list is
+exactly `[checked]`. Use it for every Check/Uncheck All click in the class (tests 6, 7
+and 8). `test_7` needs it too, or a late Uncheck All could clear the box it checks
+next. The original assertions stay unchanged.
+
+- **Why wait on the call, not the checkbox state** (from the PR #346 review): a
+  state-based wait passes immediately for a click that changes nothing. `test_8`'s
+  second Check All click happens with every box already checked, so its assertion
+  would pass even if the link were broken.
+- **Why the assertions then see final state**: the javascript: URL looks up
+  `plaidSetAllItems` on the page's global scope when it runs, so it calls the wrapper.
+  The wrapper records the call and runs the original in the same JS task, so when the
+  wait sees the call the checkboxes are already set, and the tests' assertions check
+  real state.
+- **Wrapped once**: the wrapper is installed only once per page, so calling the helper
+  twice (`test_8`) doesn't wrap the wrapper and record each click twice.
 
 **Alternatives considered**:
 

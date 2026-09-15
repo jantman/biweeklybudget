@@ -159,9 +159,13 @@ Recorded under constitution Principle V, before any work on it began.
 - **Cause** (see [research.md](research.md) R5): the Check All / Uncheck All links are
   `javascript:` hrefs. The browser runs a `javascript:` URL as a queued task, not
   inside the click, and the tests check the checkboxes straight after clicking.
-- **Change**: test-only. After clicking either link, wait until every Item checkbox
-  reaches the expected state, then make the original assertions unchanged. No
-  application change, no weakened assertion.
+- **Change**: test-only.
+  - After clicking either link, wait until the page has run `plaidSetAllItems` with
+    the expected argument for that click, then make the original assertions
+    unchanged.
+  - This replaced a wait on checkbox state after the PR #346 review: that wait passed
+    immediately for `test_8`'s second, no-op Check All click.
+  - No application change, no weakened assertion.
 - **To resume the main feature**: after the fix, re-run
   `TestPlaidUpdateView` in isolation, then the complete acceptance suite (T011), then
   continue at T012.
