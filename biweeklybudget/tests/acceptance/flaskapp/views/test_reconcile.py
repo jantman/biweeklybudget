@@ -240,6 +240,36 @@ class ReconcileHelper(AcceptanceHelper):
         r = json.loads(res)
         return {int(x): r[x] for x in r}
 
+    def drag_ofx_to_trans(self, selenium, ofx_id, trans_id):
+        """
+        Drag the OFXTransaction div with ID ``ofx_id`` onto the drop target
+        of the Transaction div for ``trans_id``.
+
+        Each drag uses a new ``ActionChains``. Selenium before 4.2 never
+        cleared a chain's actions after ``perform()``, so a chain reused for
+        a second drag replayed the first one, whose source OFX div the first
+        drop had hidden; that failed with "has no size and location", and is
+        why these tests were skipped from 2022 until issue #267.
+
+        Both columns are loaded by AJAX and :py:meth:`get` does not wait for
+        them, so wait for both elements first.
+
+        :param selenium: Selenium driver instance
+        :type selenium: selenium.webdriver.remote.webdriver.WebDriver
+        :param ofx_id: DOM ID of the OFXTransaction div, e.g. ``ofx-2-OFX3``
+        :type ofx_id: str
+        :param trans_id: ID of the Transaction to drop it on
+        :type trans_id: int
+        """
+        self.wait_for_id(selenium, ofx_id)
+        self.wait_for_id(selenium, 'trans-%s' % trans_id)
+        ActionChains(selenium).drag_and_drop(
+            selenium.find_element(By.ID, ofx_id),
+            selenium.find_element(By.ID, 'trans-%s' % trans_id).find_element(
+                By.CLASS_NAME, 'reconcile-drop-target'
+            )
+        ).perform()
+
     def test_00_clean_db(self, dump_file_path):
         # clean the database; empty schema
         restore_mysqldump(dump_file_path, get_db_engine(), with_data=False)
@@ -1275,7 +1305,6 @@ class TestDragLimitations(ReconcileHelper):
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 @pytest.mark.incremental
-@pytest.mark.skip  # See block comment in method below 2022-10-22
 class TestDragAndDropReconcile(ReconcileHelper):
 
     def test_06_verify_db(self, testdb):
@@ -1289,76 +1318,11 @@ class TestDragAndDropReconcile(ReconcileHelper):
     def test_07_drag_and_drop(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         # drag and drop
-        chain = ActionChains(selenium)
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-2-OFX3'),
-            selenium.find_element(By.ID,
-                                  'trans-3'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
-        """
-        IMPORTANT - 2022-10-22
-        These tests used to work fine. They haven't been run in a couple of
-        years. As of today, they're always failing with
-
-            ElementNotInteractableException: Message: element not interactable:
-            [object HTMLDivElement] has no size and location
-
-        on the second drag-and-drop operation. No matter which divs are
-        involved, or which order they're run in, the first drag-and-drop works
-        fine and the second raises that exception.
-
-        I'm currently using ChromeDriver 106 and Chrome 106. It's likely that
-        the last time these tests were working was sometime in the era of
-        ChromeDriver 79 or 81 and the coorresponding Chrome version.
-
-        I've dug around on Google for about an hour and tried a bunch of things
-        (like what's shown below) but just can't get this test to work. It's
-        possible (likely?) that maybe I need some updates to webdriver /
-        selenium or that I should try this test from a new standalone Python
-        file outside of this project, with all the latest dependencies, and see
-        if that works.
-
-        But, given all of the other things I need to get done at much higher
-        priority, I'm going to mark this class to be skipped and revisit it
-        later.
-        """
-        # DEBUG
-        WebDriverWait(selenium, 10).until(
-            EC.visibility_of_element_located((By.ID, 'trans-1'))
-        )
-        WebDriverWait(selenium, 10).until(
-            EC.element_to_be_clickable((By.ID, 'trans-1'))
-        )
-        sleep(2)
-        chain.move_to_element(
-            selenium.find_element(By.ID, 'trans-1')
-        ).perform()
-        # END DEBUG
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-1-OFX1'),
-            selenium.find_element(By.ID,
-                                  'trans-1'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-1-OFX2'),
-            selenium.find_element(By.ID,
-                                  'trans-2'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-2-OFXT6'),
-            selenium.find_element(By.ID,
-                                  'trans-5'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-2-OFXT7'),
-            selenium.find_element(By.ID,
-                                  'trans-6'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
+        self.drag_ofx_to_trans(selenium, 'ofx-2-OFX3', 3)
+        self.drag_ofx_to_trans(selenium, 'ofx-1-OFX1', 1)
+        self.drag_ofx_to_trans(selenium, 'ofx-1-OFX2', 2)
+        self.drag_ofx_to_trans(selenium, 'ofx-2-OFXT6', 5)
+        self.drag_ofx_to_trans(selenium, 'ofx-2-OFXT7', 6)
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3'],
@@ -1403,33 +1367,7 @@ class TestDragAndDropReconcile(ReconcileHelper):
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb')
 @pytest.mark.incremental
-@pytest.mark.skip  # See block comment in method below 2022-10-22
 class TestUIReconcileMulti(ReconcileHelper):
-    """
-    IMPORTANT - 2022-10-22
-    These tests used to work fine. They haven't been run in a couple of years.
-    As of today, they're always failing with
-
-        ElementNotInteractableException: Message: element not interactable:
-        [object HTMLDivElement] has no size and location
-
-    on the second drag-and-drop operation. No matter which divs are involved,
-    or which order they're run in, the first drag-and-drop works fine and
-    the second raises that exception.
-
-    I'm currently using ChromeDriver 106 and Chrome 106. It's likely that the
-    last time these tests were working was sometime in the era of
-    ChromeDriver 79 or 81 and the coorresponding Chrome version.
-
-    I've dug around on Google for about an hour and tried a bunch of things
-    (like what's shown below) but just can't get this test to work. It's
-    possible (likely?) that maybe I need some updates to webdriver / selenium
-    or that I should try this test from a new standalone Python file outside
-    of this project, with all the latest dependencies, and see if that works.
-
-    But, given all of the other things I need to get done at much higher
-    priority, I'm going to mark this class to be skipped and revisit it later.
-    """
 
     def test_06_verify_db(self, testdb):
         res = testdb.query(TxnReconcile).all()
@@ -1442,13 +1380,7 @@ class TestUIReconcileMulti(ReconcileHelper):
     def test_07_drag_and_drop(self, base_url, selenium):
         self.get(selenium, base_url + '/reconcile')
         # drag and drop
-        chain = ActionChains(selenium)
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-2-OFX3'),
-            selenium.find_element(By.ID,
-                                  'trans-3'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
+        self.drag_ofx_to_trans(selenium, 'ofx-2-OFX3', 3)
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             3: [2, 'OFX3']
@@ -1463,19 +1395,8 @@ class TestUIReconcileMulti(ReconcileHelper):
         assert 'alert-success' in msg.get_attribute('class')
         # reconcile 2 more
         self.wait_for_id(selenium, 'ofx-1-OFX2')
-        chain = ActionChains(selenium)
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-1-OFX1'),
-            selenium.find_element(By.ID,
-                                  'trans-1'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
-        chain.drag_and_drop(
-            selenium.find_element(By.ID, 'ofx-1-OFX2'),
-            selenium.find_element(By.ID,
-                                  'trans-2'
-                                  ).find_element(By.CLASS_NAME, 'reconcile-drop-target')
-        ).perform()
+        self.drag_ofx_to_trans(selenium, 'ofx-1-OFX1', 1)
+        self.drag_ofx_to_trans(selenium, 'ofx-1-OFX2', 2)
         # ensure the reconciled variable was updated
         assert self.get_reconciled(selenium) == {
             1: [1, 'OFX1'],
