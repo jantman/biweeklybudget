@@ -98,6 +98,48 @@ dragging.
   That is out of scope. It is noted for the PR, not fixed here.
 - Stability is checked by SC-002 (five consecutive isolated runs), not assumed.
 
+## R5. Why do the Plaid Update Check/Uncheck All tests fail in full local runs? (side quest)
+
+**Finding**: this is a timing race in `test_plaid.py::TestPlaidUpdateView`. It has
+nothing to do with this feature.
+
+- The failures:
+  - `test_6_uncheck_all` failed in both full local acceptance runs, at line 116:
+    `assert not any(b.is_selected() ...)` saw a box still checked.
+  - `test_8_check_all` also failed in run 2, at line 135: `all(...)` saw a box still
+    unchecked.
+  - They run at about 54%, before any reconcile test (about 62%). The modules before
+    them are the same as on `master`.
+  - The class passed 3/3 isolated runs. It has no failures in the last 24 CI
+    `acceptance`/`docker` jobs.
+- The links are `<a href="javascript:plaidSetAllItems(true|false);">` in
+  `plaid_form.html`. Navigating to a `javascript:` URL is queued as a task by the
+  browser. It does not run synchronously inside the WebDriver click, so the tests race
+  it by reading `is_selected()` immediately.
+- The test results fit that explanation:
+  - In `test_8`, the native checkbox click on `item_PlaidItem1` took effect at once
+    (`assert not one.is_selected()` passed). Only the `javascript:` link lagged.
+  - `test_7` makes a second WebDriver click after Uncheck All, which gives the queued
+    task time to run, and it passed both times.
+- The driver's defaults rule out the page not being loaded: the page-load strategy is
+  "normal", so `get()` waits for `load` and `plaidSetAllItems` is defined before any
+  click.
+
+**Decision**: add a small test helper that clicks a link and then waits, for up to a
+few seconds, until every Item checkbox has the expected state. Use it for every
+Check/Uncheck All click in the class (tests 6, 7 and 8). `test_7` needs it too:
+otherwise a late Uncheck All could clear the box it checks next. The original
+assertions stay unchanged.
+
+**Alternatives considered**:
+
+- *Change the links to `onclick` handlers.* That is an application change, which
+  FR-006 rules out. It would also be a UI change nobody asked for.
+- *Re-run until green / call it a flake.* Principle II rules that out, and it failed in
+  2 of 2 full runs.
+- *`sleep()` after the click.* Slower and still racy. An explicit wait for the state
+  is exact.
+
 ## R4. Does the same cause affect other tests?
 
 **Finding**: no. Every other `ActionChains` use in the acceptance tests

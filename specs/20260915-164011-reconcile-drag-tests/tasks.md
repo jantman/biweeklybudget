@@ -29,8 +29,8 @@ order and are not marked [P].
 **Purpose**: a disposable test database and acceptance environment (quickstart
 "Prerequisites")
 
-- [ ] T001 Start a throwaway MariaDB 10.4.7 container (`budgettest267`, port 13367), export the `CLAUDE.md` DB variables pointing at it, and run `dev/setup_test_db.py`. Never point acceptance tests at a real database.
-- [ ] T002 Build the `acceptance` tox env (`tox -e acceptance --notest`) and `touch .tox/acceptance/liveserver.log`.
+- [X] T001 Start a throwaway MariaDB 10.4.7 container (`budgettest267`, port 13367), export the `CLAUDE.md` DB variables pointing at it, and run `dev/setup_test_db.py`. Never point acceptance tests at a real database.
+- [X] T002 Build the `acceptance` tox env (`tox -e acceptance --notest`) and `touch .tox/acceptance/liveserver.log`.
 
 ---
 
@@ -38,7 +38,7 @@ order and are not marked [P].
 
 **Purpose**: the one helper both restored classes use (plan "Design", research R2/R3)
 
-- [ ] T003 Add `ReconcileHelper.drag_ofx_to_trans(self, selenium, ofx_id, trans_id)` in `biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`:
+- [X] T003 Add `ReconcileHelper.drag_ofx_to_trans(self, selenium, ofx_id, trans_id)` in `biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`:
   - call `self.wait_for_id()` for `ofx_id` and for `'trans-%s' % trans_id`;
   - drag `ofx_id` onto that Transaction's `.reconcile-drop-target` with a **new** `ActionChains(selenium)`, then `perform()`.
 
@@ -61,17 +61,17 @@ FR-002, FR-003).
 `-k "TestDragAndDropReconcile or TestUIReconcileMulti"` reports `18 passed`, none
 skipped.
 
-- [ ] T004 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`, `TestDragAndDropReconcile`:
+- [X] T004 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`, `TestDragAndDropReconcile`:
   - delete the `@pytest.mark.skip` line;
   - in `test_07_drag_and_drop`, replace the five inline `chain.drag_and_drop(...).perform()` blocks with helper calls in the same order and pairs: `('ofx-2-OFX3', 3)`, `('ofx-1-OFX1', 1)`, `('ofx-1-OFX2', 2)`, `('ofx-2-OFXT6', 5)`, `('ofx-2-OFXT7', 6)`;
   - delete the 2022 block comment and the `# DEBUG` … `# END DEBUG` scaffold, and the now-unused `chain` local;
   - leave every assertion unchanged.
-- [ ] T005 [US1] Same file, `TestUIReconcileMulti`:
+- [X] T005 [US1] Same file, `TestUIReconcileMulti`:
   - delete the `@pytest.mark.skip` line and the 2022 class docstring;
   - in `test_07_drag_and_drop`, replace the three inline drags with helper calls: `('ofx-2-OFX3', 3)`, then after the existing `self.wait_for_id(selenium, 'ofx-1-OFX2')`, `('ofx-1-OFX1', 1)` and `('ofx-1-OFX2', 2)`;
   - remove both `chain = ActionChains(selenium)` lines; keep all assertions and the existing wait.
-- [ ] T006 [US1] Run the two classes in isolation (quickstart step 1). Expect `18 passed`. If a test fails because of the page rather than the harness, stop and escalate (FR-006).
-- [ ] T007 [US1] Run the same selection 5 consecutive times (SC-002). All 5 must report `18 passed`. Save each run's output to the scratchpad.
+- [X] T006 [US1] Run the two classes in isolation (quickstart step 1). Expect `18 passed`. If a test fails because of the page rather than the harness, stop and escalate (FR-006).
+- [X] T007 [US1] Run the same selection 5 consecutive times (SC-002). All 5 must report `18 passed`. Save each run's output to the scratchpad.
 
 **Checkpoint**: US1 delivered. The reconcile workflow has acceptance coverage again.
 
@@ -85,15 +85,21 @@ skipped.
 **Independent Test**: quickstart step 3. The grep finds nothing, and the helper's
 docstring and `research.md` R1 state the cause.
 
-- [ ] T008 [US2] Run `grep -n "pytest.mark.skip\|2022-10-22\|# DEBUG" biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`. Expect no output. Confirm `ReconcileHelper.drag_ofx_to_trans`'s docstring states the cause, matching `specs/20260915-164011-reconcile-drag-tests/research.md` R1.
+- [X] T008 [US2] Run `grep -n "pytest.mark.skip\|2022-10-22\|# DEBUG" biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py`. Expect no output. Confirm `ReconcileHelper.drag_ofx_to_trans`'s docstring states the cause, matching `specs/20260915-164011-reconcile-drag-tests/research.md` R1.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T009 [P] Add a concise entry at the top of the `Unreleased` section of `CHANGES.rst`, led by the `Issue #267` link: the Reconcile page's multi-transaction drag-and-drop acceptance tests, skipped since 2022, run again. No sub-bullets are needed; users see no change.
-- [ ] T010 Run the complete unit suite plus style checks, `tox -e py314`, to completion (constitution II; pyflakes confirms no unused imports are left in `test_reconcile.py`).
+- [X] T009 [P] Add a concise entry at the top of the `Unreleased` section of `CHANGES.rst`, led by the `Issue #267` link: the Reconcile page's multi-transaction drag-and-drop acceptance tests, skipped since 2022, run again. No sub-bullets are needed; users see no change.
+- [X] T010 Run the complete unit suite plus style checks, `tox -e py314`, to completion (constitution II; pyflakes confirms no unused imports are left in `test_reconcile.py`).
 - [ ] T011 Run the complete acceptance suite, `tox -e acceptance` (about 17 minutes; run in the background). Expect `acceptance: OK`, with 18 fewer skipped tests than `master`. Known flaky tests (e.g. `test_36_ignore_and_unignore_ofx`) get an isolated re-run before being blamed on this change, and any such re-run is reported.
+### Side quest (recorded in spec.md "Side Quest" before starting; research R5)
+
+- [ ] T014 Commit the side-quest record (spec.md, research.md, this section) before touching `test_plaid.py`.
+- [ ] T015 In `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, add a `TestPlaidUpdateView` helper that clicks a Check/Uncheck All link and waits until every Item checkbox has the expected state. Use it for every such click in `test_6_uncheck_all`, `test_7_uncheck_all_then_select_one` and `test_8_check_all`, and leave all assertions unchanged.
+- [ ] T016 Run `TestPlaidUpdateView` in isolation, then re-run T011 (the complete acceptance suite).
+
 - [ ] T012 Update `specs/20260915-164011-reconcile-drag-tests/spec.md` Status and mark these tasks done. Commit all M1 changes with a `Reconcile Drag Tests - M1.<n>:` message.
 - [ ] T013 Push the branch to `origin`, open a PR against `master` using `.github/PULL_REQUEST_TEMPLATE.md`, monitor CI (`acceptance` and `docker` both run these tests), and answer reviews with `/answer-reviews` until Claude reports "No issues found" and Copilot, if present, recommends approval.
 

@@ -139,6 +139,31 @@ stated, and the old "skipped, revisit later" comments are gone.
 - **SC-003**: The complete unit and acceptance suites pass locally, and every CI check on
   the pull request passes.
 
+## Side Quest: Plaid Update Check/Uncheck All race (recorded 2026-09-15)
+
+Recorded under constitution Principle V, before any work on it began.
+
+- **Where the work departed**: at T011, the complete acceptance run (constitution
+  Principle II). Two full local runs on this branch failed only in
+  `test_plaid.py::TestPlaidUpdateView`:
+  - run 1: `test_6_uncheck_all`;
+  - run 2: `test_6_uncheck_all` and `test_8_check_all`.
+- **Not caused by this feature**: those tests run before any reconcile test in the
+  suite, and every module before them is unchanged from `master`. The class passes
+  3/3 when run on its own.
+- **Why it can't be left alone**: Principle II does not allow a feature to be declared
+  done while a suite fails, and it forbids narrowing the run or marking failures as
+  expected.
+- **Cause** (see [research.md](research.md) R5): the Check All / Uncheck All links are
+  `javascript:` hrefs. The browser runs a `javascript:` URL as a queued task, not
+  inside the click, and the tests check the checkboxes straight after clicking.
+- **Change**: test-only. After clicking either link, wait until every Item checkbox
+  reaches the expected state, then make the original assertions unchanged. No
+  application change, no weakened assertion.
+- **To resume the main feature**: after the fix, re-run
+  `TestPlaidUpdateView` in isolation, then the complete acceptance suite (T011), then
+  continue at T012.
+
 ## Assumptions
 
 - The Reconcile page's drag-and-drop works for real users. It is the maintainer's
