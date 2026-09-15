@@ -95,7 +95,14 @@ biweeklybudget/tests/acceptance/flaskapp/views/test_reconcile.py
     TestDragAndDropReconcile              # skip + 2022 comment + debug scaffold removed; uses helper
     TestUIReconcileMulti                  # skip + 2022 docstring removed; uses helper
 CHANGES.rst                               # Unreleased entry
+biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py
+    TestPlaidUpdateView.click_set_all()   # side quest: wait for Check/Uncheck All to apply
 ```
+
+The `test_plaid.py` change is a side quest, added after planning when the
+complete acceptance run (T011) failed twice there for reasons unrelated to this
+feature. It is recorded in [spec.md](spec.md) ("Side Quest"), with the cause in
+[research.md](research.md) R5.
 
 **Structure Decision**: the existing single-project layout; all changes are in the one
 acceptance test module plus the changelog.
