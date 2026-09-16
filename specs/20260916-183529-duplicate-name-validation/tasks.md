@@ -106,8 +106,8 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 - [X] T031 Run `tox -e docs` and confirm it builds without errors
 - [X] T032 Add one concise bullet to `CHANGES.rst` under the `Unreleased` heading, led by the issue #275 link, in the format of the existing entries. Do **not** touch `biweeklybudget/version.py` and do not create a tag (Principle VI)
 - [X] T033 Update [spec.md](./spec.md) and this file to record milestone completion, then commit M3 and M4 with the `Duplicate Name Validation - M.T` prefix
-- [ ] T034 Push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-275-silent-failure-on-duplicate-account-name` — a bare `git push` would target `master`, which this branch tracks
-- [ ] T035 Open a pull request describing the problem, the M1 observation, the design decision from [research.md](./research.md) R2, and the test coverage; then monitor CI to completion and address any review feedback until Claude reports "No issues found" and Copilot, if present, recommends approval
+- [X] T034 Push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-275-silent-failure-on-duplicate-account-name` — a bare `git push` would target `master`, which this branch tracks
+- [X] T035 Open a pull request describing the problem, the M1 observation, the design decision from [research.md](./research.md) R2, and the test coverage; then monitor CI to completion and address any review feedback until Claude reports "No issues found" and Copilot, if present, recommends approval
 
 **Test gate result (2026-09-16)**
 
@@ -120,6 +120,17 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 
 No test was narrowed, skipped or re-run to get this result, and no suite timed out.
 None of the repository's known-flaky tests failed on this run.
+
+**CI result on PR [#349](https://github.com/jantman/biweeklybudget/pull/349)**: all
+11 checks pass — `py314`, `acceptance`, `docs`, `docker`, `migrations`, `plaid`,
+`jsdoc`, `screenshots`, `coverage`, `security/snyk`, `claude-review`. The
+`migrations` check passing independently confirms the T028 finding that this change
+introduces no model/head drift. The coverage comment reports 57.0%, identical to the
+previously merged PR #348, so it is the repository's pre-existing baseline and not a
+regression from this change.
+
+**Review**: Claude's code review reported "No issues found" on the first pass. No
+Copilot review was requested on this repository.
 
 **Checkpoint**: Feature complete per Constitution Development Workflow step 6.
 
