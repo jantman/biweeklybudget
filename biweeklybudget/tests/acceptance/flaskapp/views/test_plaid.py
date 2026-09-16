@@ -40,6 +40,7 @@ import pytest
 from biweeklybudget.tests.acceptance_helpers import AcceptanceHelper
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 @pytest.mark.acceptance
@@ -78,7 +79,8 @@ class TestPlaidUpdateView(AcceptanceHelper):
                 # Plaid's own last successful update, older than our poll
                 '3 days ago',
                 'Update / Fix Item',
-                'Refresh'
+                'Refresh',
+                'Delete'
             ],
             [
                 'PlaidItem2',
@@ -88,7 +90,8 @@ class TestPlaidUpdateView(AcceptanceHelper):
                 # no time recorded for this Item
                 'unknown',
                 'Update / Fix Item',
-                'Refresh'
+                'Refresh',
+                'Delete'
             ],
         ]
 
@@ -168,6 +171,28 @@ class TestPlaidUpdateView(AcceptanceHelper):
         )
         assert data == 'item_PlaidItem2=1'
 
+    def record_plaid_delete_calls(self, selenium):
+        """
+        Wrap the page's ``plaidDelete`` so that a test can assert whether the
+        confirmation modal actually sent anything to the server. Returns
+        nothing; read ``window.plaidDeleteCalls`` afterwards.
+        """
+        selenium.execute_script(
+            'if (!window.plaidDeleteOrig) {'
+            '  window.plaidDeleteOrig = window.plaidDelete;'
+            '  window.plaidDelete = function(item_id) {'
+            '    window.plaidDeleteCalls.push(item_id);'
+            '  };'
+            '}'
+            'window.plaidDeleteCalls = [];'
+        )
+
+    def open_delete_modal(self, selenium, item_id):
+        selenium.find_element(By.ID, 'plaid_delete_' + item_id).click()
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located((By.ID, 'modalDiv'))
+        )
+
     def test_8_check_all(self, selenium):
         one = selenium.find_element(By.ID, 'item_PlaidItem1')
         one.click()
@@ -179,3 +204,68 @@ class TestPlaidUpdateView(AcceptanceHelper):
         assert all(b.is_selected() for b in boxes)
         self.click_set_all(selenium, 'plaid_check_all', True)
         assert all(b.is_selected() for b in self.item_checkboxes(selenium))
+
+    def test_9_delete_links(self, selenium):
+        panel = selenium.find_element(By.ID, 'panel-plaid-items')
+        links = panel.find_elements(
+            By.CSS_SELECTOR, '#table-items-plaid a[id^="plaid_delete_"]'
+        )
+        assert [x.get_attribute('id') for x in links] == [
+            'plaid_delete_PlaidItem1', 'plaid_delete_PlaidItem2'
+        ]
+        assert [x.text for x in links] == ['Delete', 'Delete']
+
+    def test_10_delete_confirm_modal(self, selenium):
+        self.open_delete_modal(selenium, 'PlaidItem2')
+        assert selenium.find_element(
+            By.ID, 'modalLabel'
+        ).text == 'Delete Plaid Item PlaidItem2'
+        body = selenium.find_element(By.ID, 'modalBody').text
+        assert 'Delete Plaid Item PlaidItem2 (Inst2)?' in body
+        # the Account that will be un-linked is named
+        assert 'InvestmentOne' in body
+        assert 'will keep all of their transactions, balances and history' \
+            in body
+        assert 'also be removed at Plaid' in body
+        assert 'cannot be undone' in body
+        btn = selenium.find_element(By.ID, 'modalSaveButton')
+        assert btn.text == 'Delete'
+        assert 'btn-danger' in btn.get_attribute('class')
+
+    def test_11_delete_confirm_lists_all_linked_accounts(self, selenium):
+        self.open_delete_modal(selenium, 'PlaidItem1')
+        body = selenium.find_element(By.ID, 'modalBody').text
+        assert 'Delete Plaid Item PlaidItem1 (Inst1)?' in body
+        for name in ['BankOne', 'CreditOne']:
+            assert name in body
+
+    def test_12_delete_confirm_cancel_does_nothing(self, selenium):
+        self.record_plaid_delete_calls(selenium)
+        self.open_delete_modal(selenium, 'PlaidItem2')
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+        WebDriverWait(selenium, 10).until(
+            EC.invisibility_of_element_located((By.ID, 'modalDiv'))
+        )
+        # nothing was sent to the server
+        assert selenium.execute_script(
+            'return window.plaidDeleteCalls;'
+        ) == []
+        self.assert_still_on_page(selenium)
+        table = selenium.find_element(By.ID, 'table-items-plaid')
+        assert [row[0] for row in self.tbody2textlist(table)] == [
+            'PlaidItem1', 'PlaidItem2'
+        ]
+
+    def test_13_delete_confirm_with_no_linked_accounts(self, selenium):
+        # neither fixture Item is unlinked, so drive the confirmation directly
+        # with the empty account list the template renders in that case
+        selenium.execute_script(
+            "plaidDeleteConfirm('PlaidItemX', 'InstX', '');"
+        )
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located((By.ID, 'modalDiv'))
+        )
+        body = selenium.find_element(By.ID, 'modalBody').text
+        assert 'No Accounts are linked to this Item, so none will be ' \
+            'un-linked.' in body
+        assert 'will keep all of their transactions' not in body

@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #269 <https://github.com/jantman/biweeklybudget/issues/269>`_ - The Plaid Items table on the Plaid Update page has a new **Delete** link for each Item, replacing the manual "delete the rows by hand and then call Plaid from a Python shell" procedure.
+
+  * Deleting asks Plaid to remove the Item first, then un-links any Accounts that were using it and removes the Item and its Plaid Accounts. If Plaid refuses, nothing is deleted and the error is shown. A confirmation naming the affected Accounts is required; this cannot be undone.
+  * Un-linked Accounts keep all of their transactions, statements, balances and reconciliations, and can be linked to another Plaid Item afterwards.
+  * An Item that Plaid reports as already removed, or whose access token Plaid no longer accepts, is deleted locally anyway, so Items stranded by a ``PLAID_ENV`` or ``PLAID_SECRET`` change can be cleared from the UI. The "Changing Plaid Environments" documentation no longer tells you to run ``DELETE`` statements.
+
 * `Issue #268 <https://github.com/jantman/biweeklybudget/issues/268>`_ - The Plaid Items table on the Plaid Update page has a new **Last Successful Update** column, showing when Plaid itself last successfully updated each Item's transactions, beside the existing "Last Polled" time for when we last asked Plaid.
 
   * A database migration adds the column. It is empty ("unknown") for every Item until that Item's next update or "Update Item Information from Plaid", and stays "unknown" for any Item Plaid reports no successful update for.

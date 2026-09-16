@@ -114,7 +114,7 @@ Shows downloaded transactions (retrieved via Plaid).
 Plaid Update
 ------------
 
-Link financial institutions through Plaid, and choose which Plaid Items to retrieve transactions and balances for. The Plaid Items table shows both when biweeklybudget last polled each Item ("Last Polled") and when Plaid itself last successfully updated that Item's transactions from the institution ("Last Successful Update"), which reads "unknown" if Plaid has reported no successful update.
+Link financial institutions through Plaid, and choose which Plaid Items to retrieve transactions and balances for. The Plaid Items table shows both when biweeklybudget last polled each Item ("Last Polled") and when Plaid itself last successfully updated that Item's transactions from the institution ("Last Successful Update"), which reads "unknown" if Plaid has reported no successful update. Each Item can also be deleted from here, which removes it at Plaid as well and un-links any Accounts that were using it, after a confirmation naming those Accounts.
 
 .. image:: plaid-update_sm.png
    :target: plaid-update.png

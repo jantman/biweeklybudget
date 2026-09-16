@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import os
+import json
 import logging
 from textwrap import dedent
 from flask.views import MethodView
@@ -57,10 +58,59 @@ from biweeklybudget.db import db_session
 from plaid.models import (
     LinkTokenCreateRequest, ItemPublicTokenExchangeRequest,
     LinkTokenCreateRequestUser, ItemGetRequest, InstitutionsGetByIdRequest,
-    AccountsGetRequest, LinkTokenCreateResponse, Products, CountryCode
+    AccountsGetRequest, LinkTokenCreateResponse, Products, CountryCode,
+    ItemRemoveRequest
 )
 
 logger = logging.getLogger(__name__)
+
+#: Plaid ``error_code`` values that mean an Item is already gone as far as
+#: Plaid is concerned, so that deleting it from our database should go ahead.
+#: ``ITEM_NOT_FOUND`` is an Item that has already been removed at Plaid.
+#: ``INVALID_ACCESS_TOKEN`` is a token that will never work again, which is the
+#: state of every Item left over after a ``PLAID_ENV`` or ``PLAID_SECRET``
+#: change. Without these, such an Item could never be removed through the UI.
+#:
+#: ``INVALID_API_KEYS`` is deliberately absent: that is a misconfigured
+#: installation rather than a property of the Item, and it must abort the
+#: deletion so that the credentials get fixed instead of Items being silently
+#: dropped.
+PLAID_ITEM_GONE_ERROR_CODES = ['ITEM_NOT_FOUND', 'INVALID_ACCESS_TOKEN']
+
+
+def plaid_item_already_gone(exc):
+    """
+    Given a Plaid :py:class:`~plaid.ApiException`, return whether it means that
+    the Item is already gone as far as Plaid is concerned, i.e. whether a
+    deletion should carry on and remove the Item from our database anyway.
+
+    Only the ``error_code`` values in :py:const:`~.PLAID_ITEM_GONE_ERROR_CODES`
+    count. Anything else - including a response we cannot make sense of -
+    returns False, so that the deletion aborts and leaves the database alone.
+
+    This never raises; an exception here would abort a deletion for a reason
+    unrelated to what Plaid actually said.
+
+    :param exc: the exception raised by the Plaid client
+    :type exc: plaid.ApiException
+    :return: whether Plaid considers this Item already removed
+    :rtype: bool
+    """
+    body = getattr(exc, 'body', None)
+    if body is None:
+        return False
+    if isinstance(body, (bytes, bytearray)):
+        try:
+            body = body.decode('utf-8')
+        except UnicodeDecodeError:
+            return False
+    try:
+        data = json.loads(body)
+    except (ValueError, TypeError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    return data.get('error_code') in PLAID_ITEM_GONE_ERROR_CODES
 
 
 class PlaidJs(MethodView):
@@ -189,6 +239,101 @@ class PlaidRefreshAccounts(MethodView):
             db_session.delete(a)
         db_session.commit()
         return jsonify({'success': True})
+
+
+class PlaidDeleteItem(MethodView):
+    """
+    Handle POST /ajax/plaid/delete_item endpoint.
+
+    Remove a Plaid Item at Plaid and then delete it, its
+    :py:class:`~.PlaidAccount` rows and the Plaid association of any
+    :py:class:`~.Account` linked to it.
+
+    Plaid is asked to remove the Item **first**, while we still have its access
+    token; deleting our rows first would destroy the only copy of that token
+    and leave a live Item at Plaid that we could no longer reach. If Plaid
+    refuses, nothing at all is changed and the error is returned, so a
+    deletion either completes or is a no-op.
+
+    The rows must then be removed in a fixed order, because neither foreign key
+    has an ``ON DELETE`` action and ``plaid_accounts.item_id`` is both NOT NULL
+    and half of that table's primary key: unlink Accounts, delete
+    PlaidAccounts, delete the PlaidItem, all in one commit.
+
+    Accounts are unlinked by walking the Item's PlaidAccounts and their
+    ``account`` backrefs. The composite foreign key from ``accounts`` into
+    ``plaid_accounts`` guarantees that every Account referring to this Item is
+    reached that way.
+    """
+
+    def post(self):
+        data = request.get_json()
+        item_id = (data or {}).get('item_id')
+        if not item_id:
+            resp = jsonify({
+                'success': False,
+                'message': 'Missing item_id parameter.'
+            })
+            resp.status_code = 400
+            return resp
+        item: PlaidItem = db_session.query(PlaidItem).get(item_id)
+        if item is None:
+            resp = jsonify({
+                'success': False,
+                'message': f'ERROR: No Plaid Item with item_id {item_id}'
+            })
+            resp.status_code = 404
+            return resp
+        client = plaid_client()
+        logger.info('Asking Plaid to remove Item %s', item_id)
+        try:
+            response = client.item_remove(
+                ItemRemoveRequest(access_token=item.access_token)
+            )
+            logger.info(
+                'Plaid removed Item %s; response: %s', item_id, response
+            )
+        except ApiException as e:
+            if not plaid_item_already_gone(e):
+                logger.error(
+                    'Plaid error removing Item %s: %s', item_id, e,
+                    exc_info=True
+                )
+                resp = jsonify({
+                    'success': False,
+                    'message': 'Exception: %s' % str(e)
+                })
+                resp.status_code = 400
+                return resp
+            logger.warning(
+                'Plaid reports Item %s as already removed; continuing with '
+                'deletion from the database. Plaid said: %s', item_id, e
+            )
+        plaid_accounts: List[PlaidAccount] = list(item.all_accounts)
+        accounts_unlinked: List[str] = []
+        a: PlaidAccount
+        for a in plaid_accounts:
+            acct = a.account
+            if acct is None:
+                continue
+            logger.info(
+                'Unlinking Account %s (%s) from Plaid', acct.name, acct.id
+            )
+            accounts_unlinked.append(f'{acct.name} ({acct.id})')
+            acct.plaid_item_id = None
+            acct.plaid_account_id = None
+            db_session.add(acct)
+        for a in plaid_accounts:
+            logger.info('Delete from DB: %s', a)
+            db_session.delete(a)
+        logger.info('Delete from DB: %s', item)
+        db_session.delete(item)
+        db_session.commit()
+        return jsonify({
+            'success': True,
+            'item_id': item_id,
+            'accounts_unlinked': accounts_unlinked
+        })
 
 
 class PlaidUpdateItemInfo(MethodView):
@@ -460,6 +605,10 @@ def set_url_rules(a):
     a.add_url_rule(
         '/ajax/plaid/refresh_item_accounts',
         view_func=PlaidRefreshAccounts.as_view('plaid_refresh_item_accounts')
+    )
+    a.add_url_rule(
+        '/ajax/plaid/delete_item',
+        view_func=PlaidDeleteItem.as_view('plaid_delete_item')
     )
     a.add_url_rule(
         '/ajax/plaid/update_item_info',
