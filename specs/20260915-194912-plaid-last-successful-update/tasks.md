@@ -31,8 +31,8 @@ Human approval is required to advance from one milestone to the next (Principle 
 
 **Purpose**: Make the environment able to run and verify the change. No source edits.
 
-- [ ] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md`, then run `python dev/setup_test_db.py` and `initdb` to bring the test database to the current Alembic head (`c5e3a9b1d7f2`) before any model change
-- [ ] T002 Confirm the tox runner works from this worktree by running `tox -e py314 -- biweeklybudget/tests/unit/test_plaid_updater.py` from the main checkout's venv, redirecting output to the scratchpad per `CLAUDE.md`; this is the pre-change baseline
+- [X] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md`, then run `python dev/setup_test_db.py` and `initdb` to bring the test database to the current Alembic head (`c5e3a9b1d7f2`) before any model change
+- [X] T002 Confirm the tox runner works from this worktree by running `tox -e py314 -- biweeklybudget/tests/unit/test_plaid_updater.py` from the main checkout's venv, redirecting output to the scratchpad per `CLAUDE.md`; this is the pre-change baseline
 
 **Checkpoint**: Test database at head, unit suite runnable, baseline result recorded.
 
@@ -45,10 +45,11 @@ delivers User Story 3 (safe upgrade/downgrade) and unblocks US1 and US2.
 
 **⚠️ BLOCKING**: T003–T006 must complete before Phase 3 or Phase 4 begins.
 
-- [ ] T003 [US3] Add the `last_successful_update` column to `PlaidItem` in `biweeklybudget/models/plaid_items.py` — `Column(UtcDateTime)`, nullable, placed after `last_updated`, with a `#:` docstring comment in the style of the neighbouring columns saying it is the time Plaid last successfully updated this Item's transactions (per [data-model.md](./data-model.md))
-- [ ] T004 [US3] Hand-write the Alembic revision `biweeklybudget/alembic/versions/<rev>_add_plaid_item_last_successful_update.py` with `down_revision = 'c5e3a9b1d7f2'`, an `upgrade()` that adds `sa.Column('last_successful_update', UtcDateTime(timezone=True), nullable=True)` to `plaid_items`, and a `downgrade()` that drops it — matching the form used for `last_updated` in `f5a002127934_plaid_models.py`, and carrying the standard AGPL header if the file template lacks one
-- [ ] T005 [US3] Test both migration directions against the test database: `upgrade head`, verify the column and that existing `plaid_items` rows survive, `downgrade -1`, verify the column is gone and rows survive, then `upgrade head` again (per [quickstart.md](./quickstart.md))
-- [ ] T006 [US3] Run `tox -e migrations` to confirm the migration head matches the models, redirecting output to the scratchpad
+- [X] T003 [US3] Add the `last_successful_update` column to `PlaidItem` in `biweeklybudget/models/plaid_items.py` — `Column(UtcDateTime)`, nullable, placed after `last_updated`, with a `#:` docstring comment in the style of the neighbouring columns saying it is the time Plaid last successfully updated this Item's transactions (per [data-model.md](./data-model.md))
+- [X] T004 [US3] Hand-write the Alembic revision `biweeklybudget/alembic/versions/<rev>_add_plaid_item_last_successful_update.py` with `down_revision = 'c5e3a9b1d7f2'`, an `upgrade()` that adds `sa.Column('last_successful_update', UtcDateTime(timezone=True), nullable=True)` to `plaid_items`, and a `downgrade()` that drops it — matching the form used for `last_updated` in `f5a002127934_plaid_models.py`, and carrying the standard AGPL header if the file template lacks one
+- [X] T005 [US3] Test both migration directions against the test database: `upgrade head`, verify the column and that existing `plaid_items` rows survive, `downgrade -1`, verify the column is gone and rows survive, then `upgrade head` again (per [quickstart.md](./quickstart.md))
+- [X] T005a [US3] Add a per-migration roundtrip test `biweeklybudget/tests/migrations/test_migration_3f7c2a91e04b.py` subclassing `MigrationTest`, in the style of `test_migration_c5e3a9b1d7f2.py` — insert a `plaid_items` row before the migration, assert the column is absent before and after the reverse, present and null (with the existing row data intact) after the forward migration, and that it accepts a value. *(Added during implementation: the repository keeps one of these per recent revision, and Principle II requires new code to be covered.)*
+- [X] T006 [US3] Run `tox -e migrations` to confirm the migration head matches the models, redirecting output to the scratchpad
 
 **Checkpoint**: The column exists, the migration is reversible and verified, and User Story 3
 is satisfied and independently tested.
@@ -66,16 +67,16 @@ display it yet.
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Add `plaid_last_successful_update(item_get_response)` to `biweeklybudget/utils.py` implementing contract C2 in [contracts/plaid-items-table.md](./contracts/plaid-items-table.md): chained `.get()` with `or {}` coercion at each level, returning `None` for any absent/None/empty level, and attaching UTC to a naive datetime; include a full docstring in the file's existing style
-- [ ] T008 [US2] In `PlaidUpdater._do_item` (`biweeklybudget/plaid_updater.py`), assign `item.last_successful_update = plaid_last_successful_update(iteminfo)` alongside the existing `item.last_updated = dtnow()`, keeping the existing transactions-status log line, and import the helper
-- [ ] T009 [P] [US2] In `PlaidUpdateItemInfo.post` (`biweeklybudget/flaskapp/views/plaid.py`), assign `item.last_successful_update = plaid_last_successful_update(response)` alongside the existing `institution_id`/`institution_name` assignments, before the existing `db_session.add(item)`, and import the helper
+- [X] T007 [US2] Add `plaid_last_successful_update(item_get_response)` to `biweeklybudget/utils.py` implementing contract C2 in [contracts/plaid-items-table.md](./contracts/plaid-items-table.md): chained `.get()` with `or {}` coercion at each level, returning `None` for any absent/None/empty level, and attaching UTC to a naive datetime; include a full docstring in the file's existing style
+- [X] T008 [US2] In `PlaidUpdater._do_item` (`biweeklybudget/plaid_updater.py`), assign `item.last_successful_update = plaid_last_successful_update(iteminfo)` alongside the existing `item.last_updated = dtnow()`, keeping the existing transactions-status log line, and import the helper
+- [X] T009 [P] [US2] In `PlaidUpdateItemInfo.post` (`biweeklybudget/flaskapp/views/plaid.py`), assign `item.last_successful_update = plaid_last_successful_update(response)` alongside the existing `institution_id`/`institution_name` assignments, before the existing `db_session.add(item)`, and import the helper
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Add unit tests for the helper in `biweeklybudget/tests/unit/test_utils.py` covering every row of contract C2's behaviour table: aware datetime passed through, naive datetime returned UTC-aware, `last_successful_update` absent, `transactions` absent/None/empty, `status` absent/None/empty
-- [ ] T011 [US2] Update `TestDoItem`'s three tests in `biweeklybudget/tests/unit/test_plaid_updater.py` — put a known `last_successful_update` into the `item_get` stub's `status.transactions`, assert `mock_item.last_successful_update`, and keep the strict `db_session.mock_calls` assertions correct
-- [ ] T012 [P] [US2] Update `TestPlaidUpdateItemInfo` in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` — add `status.transactions.last_successful_update` to the `item_get` stubs (including one Item where it is absent) and assert the resulting attribute on each mock Item
-- [ ] T013 [US2] Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
+- [X] T010 [P] [US2] Add unit tests for the helper in `biweeklybudget/tests/unit/test_utils.py` covering every row of contract C2's behaviour table: aware datetime passed through, naive datetime returned UTC-aware, `last_successful_update` absent, `transactions` absent/None/empty, `status` absent/None/empty
+- [X] T011 [US2] Update `TestDoItem`'s three tests in `biweeklybudget/tests/unit/test_plaid_updater.py` — put a known `last_successful_update` into the `item_get` stub's `status.transactions`, assert `mock_item.last_successful_update`, and keep the strict `db_session.mock_calls` assertions correct
+- [X] T012 [P] [US2] Update `TestPlaidUpdateItemInfo` in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` — add `status.transactions.last_successful_update` to the `item_get` stubs (including one Item where it is absent) and assert the resulting attribute on each mock Item
+- [X] T013 [US2] Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
 
 **Checkpoint**: The value is recorded by both writers, covered by unit tests, and User Story 2
 is independently verified. **Milestone M1 complete — pause for approval.**
@@ -93,12 +94,12 @@ column.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Add the "Last Successful Update" column to the Plaid Items table in `biweeklybudget/flaskapp/templates/plaid_form.html` — a `<th>` immediately after "Last Polled" and a `<td>` rendering `{{ i.last_successful_update|ago }}` when set and the literal `unknown` when not, per contract C1
-- [ ] T015 [P] [US1] In `biweeklybudget/tests/fixtures/sampledata.py::_plaid_items`, give `PlaidItem1` a `last_successful_update` of `self.dt - timedelta(days=3)` and leave `PlaidItem2`'s unset, so the acceptance suite covers both the rendered value and the placeholder (per [research.md](./research.md) R7)
+- [X] T014 [US1] Add the "Last Successful Update" column to the Plaid Items table in `biweeklybudget/flaskapp/templates/plaid_form.html` — a `<th>` immediately after "Last Polled" and a `<td>` rendering `{{ i.last_successful_update|ago }}` when set and the literal `unknown` when not, per contract C1
+- [X] T015 [P] [US1] In `biweeklybudget/tests/fixtures/sampledata.py::_plaid_items`, give `PlaidItem1` a `last_successful_update` of `self.dt - timedelta(days=3)` and leave `PlaidItem2`'s unset, so the acceptance suite covers both the rendered value and the placeholder (per [research.md](./research.md) R7)
 
 ### Tests for User Story 1
 
-- [ ] T016 [US1] Update `test_4_table` in `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` for the new column: `PlaidItem1`'s row gains `3 days ago` and `PlaidItem2`'s gains `unknown`, both between the existing `now` and `Update / Fix Item` cells
+- [X] T016 [US1] Update `test_4_table` in `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` for the new column: `PlaidItem1`'s row gains `3 days ago` and `PlaidItem2`'s gains `unknown`, both between the existing `now` and `Update / Fix Item` cells
 - [ ] T017 [US1] Run `tox -e acceptance` to completion and confirm it passes, re-running any known-flaky failure (reconcile drag/unignore, fuel-log search, Plaid "Uncheck All") in isolation before attributing it to this change; redirect output to the scratchpad
 
 **Checkpoint**: The column renders both cases, the acceptance suite passes, and User Story 1
@@ -112,20 +113,20 @@ is independently verified. **Milestone M2 complete — pause for approval.**
 
 ### Test gate (Principle II)
 
-- [ ] T018 Run `tox -e py314` and `tox -e acceptance` to completion on the finished change and confirm both pass, redirecting output to the scratchpad; raise the timeout and re-run rather than reporting any timed-out suite
-- [ ] T019 Run `tox -e migrations` on the finished change and confirm it passes
-- [ ] T020 Run `tox -e docker` and confirm it passes — required because this change touches schema; ensure the main venv's `bin` is first on `PATH` and that no other acceptance run overlaps it
+- [X] T018 Run `tox -e py314` and `tox -e acceptance` to completion on the finished change and confirm both pass, redirecting output to the scratchpad; raise the timeout and re-run rather than reporting any timed-out suite
+- [X] T019 Run `tox -e migrations` on the finished change and confirm it passes
+- [~] T020 Run `tox -e docker` and confirm it passes — required because this change touches schema; ensure the main venv's `bin` is first on `PATH` and that no other acceptance run overlaps it. **Attempted three times and killed by the host for low memory each time; deferred to the CI docker job.** See the results table below
 
 ### Documentation (Principle IV)
 
-- [ ] T021 Run `tox -e screenshots` to regenerate `docs/source/plaid-update.png` and `docs/source/plaid-update_sm.png`, and commit both; do **not** run `tox -e docs` in the same invocation or afterwards until the PNGs are committed
-- [ ] T022 [P] Extend the "Plaid Update" caption in `docs/source/screenshots.rst` to name what distinguishes the two time columns (when the application last polled the Item, versus when Plaid last successfully refreshed it)
-- [ ] T023 Run `tox -e docs` and confirm it builds clean, re-running on a transient linkcheck timeout
+- [X] T021 Run `tox -e screenshots` to regenerate `docs/source/plaid-update.png` and `docs/source/plaid-update_sm.png`, and commit both; do **not** run `tox -e docs` in the same invocation or afterwards until the PNGs are committed
+- [X] T022 [P] Extend the "Plaid Update" caption to name what distinguishes the two time columns (when the application last polled the Item, versus when Plaid last successfully refreshed it). *Corrected during implementation:* `docs/source/screenshots.rst` is **generated** by `docs/make_screenshots.py` (`make_rst()` deletes and rewrites it from each screenshot's `description`), so the caption is edited there and reaches the page via T021's regeneration; editing the `.rst` directly would be silently discarded
+- [X] T023 Run `tox -e docs` and confirm it builds clean, re-running on a transient linkcheck timeout
 
 ### Changelog and spec artifacts (Principles VI and I)
 
-- [ ] T024 [P] Add a concise `CHANGES.rst` bullet under `Unreleased` (creating the heading if absent) led by the issue #268 link, stating the new column in the Plaid Items table and noting the database migration; do **not** touch `biweeklybudget/version.py`
-- [ ] T025 Mark this `tasks.md` complete and set `spec.md`'s **Status** to Complete, recording the test-gate results
+- [X] T024 [P] Add a concise `CHANGES.rst` bullet under `Unreleased` (creating the heading if absent) led by the issue #268 link, stating the new column in the Plaid Items table and noting the database migration; do **not** touch `biweeklybudget/version.py`
+- [X] T025 Mark this `tasks.md` complete and set `spec.md`'s **Status** to Complete, recording the test-gate results
 
 ### Delivery
 
@@ -133,6 +134,21 @@ is independently verified. **Milestone M2 complete — pause for approval.**
 - [ ] T027 Monitor the CI jobs on the pull request to completion, then run `/answer-reviews` and repeat until Claude's review reports "No issues found" and Copilot's review, if present, recommends approval
 
 **Checkpoint**: Feature complete, gated, documented, and delivered.
+
+### Test gate results (2026-09-15)
+
+| Suite | Result |
+|-------|--------|
+| `tox -e py314` (unit) | **825 passed, 147 skipped, 0 failed.** The skips are pytest-pycodestyle's "previously passed" cache for files unchanged since the earlier full run in this session, which reported 968 passed / 4 skipped; every file this change touches was re-checked. |
+| `tox -e acceptance` | **900 passed, 0 failed** in 23m45s. `TestPlaidUpdateView::test_4_table` passed with the new column asserted in both the value and the placeholder case. No flaky failures occurred, so no re-runs were needed. |
+| `tox -e migrations` | **10 passed**, including the new `test_migration_3f7c2a91e04b` roundtrip. Both directions were additionally exercised by hand against the test database with an existing `plaid_items` row intact throughout. |
+| `tox -e docs` | **build succeeded** (exit 0). One new warning, an unresolvable cross-reference to the external `plaid.model.item_get_response.ItemGetResponse`, of exactly the same kind as the pre-existing `plaid.api.plaid_api.PlaidApi` warning beside it; neither is fatal and neither is new in kind. |
+| `tox -e screenshots` | Regenerated. The first attempt was killed by the system for low memory part-way through; because the script deletes every PNG before regenerating, that left all 49 missing, and they were restored with `git checkout -- docs/source/`. The retry succeeded. Only the two `plaid-update` PNGs are committed — see [research.md](./research.md) R8 on the unrelated drift the regeneration exposed. |
+| `tox -e docker` | **Not completed locally — deferred to CI.** Attempted three times (full run twice, then with `TEST_DOCKER=false` to isolate the build); the host killed each one for low memory. The host's swap was fully exhausted by unrelated workloads throughout, and the same pressure had already killed a `screenshots` run. The second attempt did get far enough to **build the image successfully** (`jantman/biweeklybudget:5783bf46-dirty_...` was tagged) before being killed during the container-acceptance phase, so the failure is environmental and not a property of this change. Every container and image those runs left behind was removed. The repository's CI runs the `docker` job on the pull request, and that run is the gate. |
+
+**Outstanding**: `tox -e docker` per the row above. Constitution Principle II requires the
+Docker suite to pass for a schema change; it must be green in CI before this is merged, and
+it was not possible to demonstrate that on this host.
 
 ---
 

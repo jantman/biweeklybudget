@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #268 <https://github.com/jantman/biweeklybudget/issues/268>`_ - The Plaid Items table on the Plaid Update page has a new **Last Successful Update** column, showing when Plaid itself last successfully updated each Item's transactions, beside the existing "Last Polled" time for when we last asked Plaid.
+
+  * A database migration adds the column. It is empty ("unknown") for every Item until that Item's next update or "Update Item Information from Plaid", and stays "unknown" for any Item Plaid reports no successful update for.
+
 * `Issue #267 <https://github.com/jantman/biweeklybudget/issues/267>`_ - The Reconcile page's acceptance tests for reconciling several transactions by drag-and-drop and submitting them, skipped since 2022, run again. No change to the application.
 
 * `Issue #265 <https://github.com/jantman/biweeklybudget/issues/265>`_ - **Breaking:** OFX transaction downloading, deprecated since 1.1.0, is removed along with Hashicorp Vault and keyring (keychain) support. Plaid is now the only way to download transactions; the OFX Transactions page, reconciliation and existing downloaded data are unchanged.

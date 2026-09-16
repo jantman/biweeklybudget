@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-15
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#268](https://github.com/jantman/biweeklybudget/issues/268) — "Plaid - show last_successful_update time"
 

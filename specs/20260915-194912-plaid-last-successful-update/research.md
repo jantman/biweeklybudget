@@ -215,7 +215,10 @@ environment must build clean. Relevant surfaces:
 - `docs/source/screenshots.rst` has a "Plaid Update" section pointing at
   `plaid-update.png` / `plaid-update_sm.png`. That screenshot shows the Plaid Items table, so
   the new column changes it. Screenshots are produced by `tox -e screenshots`
-  (`docs/make_screenshots.py`).
+  (`docs/make_screenshots.py`). **That page is generated, not hand-written**: the script's
+  `make_rst()` deletes `screenshots.rst` and rewrites it from each screenshot entry's `title`
+  and `description`, so a caption change belongs in `make_screenshots.py` — editing the `.rst`
+  is silently discarded on the next regeneration. *(Established while implementing T021/T022.)*
 - `docs/source/biweeklybudget.models.plaid_items.rst` and the other API pages are
   `automodule`-generated, so the new column's docstring comment flows through with no manual
   edit.
@@ -223,13 +226,27 @@ environment must build clean. Relevant surfaces:
   (a repository-wide search for "Last Polled" finds only the template), so no prose needs
   rewriting — though the screenshot caption can usefully say what the new column means.
 
-**Decision**: Regenerate the two `plaid-update` screenshots, commit them (the maintainer wants
-changed screenshots reviewed in the PR, not deferred to a release), and extend the "Plaid
-Update" caption in `screenshots.rst` to name the distinction between the two time columns.
+**Decision**: Extend the "Plaid Update" entry's `description` in `docs/make_screenshots.py` to
+name the distinction between the two time columns, then regenerate the two `plaid-update`
+screenshots — which also rewrites `screenshots.rst` with the new caption — and commit the PNGs
+and the regenerated page (the maintainer wants changed screenshots reviewed in the PR, not
+deferred to a release).
 
 **Known operational hazard**: `tox -e docs` deletes generated PNGs, so the `screenshots` and
 `docs` environments must not be run in the same chained invocation, and `docs` must not run
-after `screenshots` before the PNGs are committed.
+after `screenshots` before the PNGs are committed. `make_screenshots.py` itself also deletes
+every PNG before regenerating, so a run killed part-way leaves them all missing; `git checkout
+-- docs/source/` restores them.
+
+**Pre-existing drift found while running this (not fixed here)**: regenerating produces a
+`screenshots.rst` that differs from the committed one in three ways unrelated to this feature
+— it adds a "Cash Position" section and a "Spending Charts" section (whose PNGs,
+`cash-position*.png` and `budget-spending*.png`, have never been committed), and it shortens
+the "Single Pay Period View" caption. Earlier features changed `make_screenshots.py` without
+regenerating. Committing the whole regenerated page would therefore drag three other features'
+screenshots into this pull request unreviewed, so this change commits only the two
+`plaid-update` PNGs and applies only its own caption to `screenshots.rst`, leaving the drift
+as it was found. It is worth its own issue.
 
 ---
 

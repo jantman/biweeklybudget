@@ -96,8 +96,9 @@ the constitution warns about.
 ### IV. Documentation Is Part Of The Change
 
 **PASS.** The `plaid-update` screenshot shows the table this change alters, so it is
-regenerated and committed along with an extended caption in `docs/source/screenshots.rst`
-naming what distinguishes the two time columns. The model and module API pages are
+regenerated and committed. Its caption, which names what distinguishes the two time columns,
+is edited in `docs/make_screenshots.py` — `docs/source/screenshots.rst` is generated from that
+script and rewritten on every regeneration. The model and module API pages are
 `automodule`-generated and pick up the new column's docstring comment automatically. No prose
 in `README.rst`, `CLAUDE.md`, or `docs/source/` enumerates this table's columns
 ([research.md](./research.md) R8), so nothing else needs rewriting. `tox -e docs` must build
@@ -174,10 +175,13 @@ biweeklybudget/
     ├── unit/flaskapp/views/test_plaid.py   # TestPlaidUpdateItemInfo: same
     └── acceptance/flaskapp/views/test_plaid.py   # test_4_table: new column
 
-docs/source/
-├── screenshots.rst                  # extended Plaid Update caption
-├── plaid-update.png                 # regenerated
-└── plaid-update_sm.png              # regenerated
+docs/
+├── make_screenshots.py              # extended Plaid Update caption (source of
+│                                    #   the generated screenshots.rst)
+└── source/
+    ├── screenshots.rst              # regenerated from the above
+    ├── plaid-update.png             # regenerated
+    └── plaid-update_sm.png          # regenerated
 
 CHANGES.rst                          # + Unreleased entry
 ```
