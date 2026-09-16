@@ -575,14 +575,29 @@ class TestPlaidUpdateItemInfo:
                 return {
                     'item': {
                         'institution_id': 'inst1'
+                    },
+                    'status': {
+                        'transactions': {
+                            'last_successful_update': datetime(
+                                2026, 9, 14, 13, 45, 12, tzinfo=timezone.utc
+                            )
+                        }
                     }
                 }
             if igr.access_token == 'accToken2':
                 return {
                     'item': {
                         'institution_id': 'inst2'
+                    },
+                    'status': {
+                        'transactions': {
+                            'last_successful_update': datetime(
+                                2026, 9, 12, 2, 3, 4, tzinfo=timezone.utc
+                            )
+                        }
                     }
                 }
+            # Item 3: Plaid reports no status at all, which is normal
             if igr.access_token == 'accToken3':
                 return {
                     'item': {
@@ -639,6 +654,15 @@ class TestPlaidUpdateItemInfo:
         assert m_item2.institution_name == 'name2'
         assert m_item3.institution_id == 'inst1'
         assert m_item3.institution_name == 'name1'
+        # the time Plaid reported, stored against each Item (issue #268);
+        # Item 3 reported none, so none is recorded for it
+        assert m_item1.last_successful_update == datetime(
+            2026, 9, 14, 13, 45, 12, tzinfo=timezone.utc
+        )
+        assert m_item2.last_successful_update == datetime(
+            2026, 9, 12, 2, 3, 4, tzinfo=timezone.utc
+        )
+        assert m_item3.last_successful_update is None
         assert mocks['jsonify'].mock_calls == [
             call({'success': True})
         ]
@@ -693,6 +717,13 @@ class TestPlaidUpdateItemInfo:
                 return {
                     'item': {
                         'institution_id': 'inst1'
+                    },
+                    'status': {
+                        'transactions': {
+                            'last_successful_update': datetime(
+                                2026, 9, 14, 13, 45, 12, tzinfo=timezone.utc
+                            )
+                        }
                     }
                 }
             if igr.access_token == 'accToken2':
@@ -748,6 +779,9 @@ class TestPlaidUpdateItemInfo:
         ]
         assert m_item1.institution_id == 'inst1'
         assert m_item1.institution_name == 'name1'
+        assert m_item1.last_successful_update == datetime(
+            2026, 9, 14, 13, 45, 12, tzinfo=timezone.utc
+        )
         assert mocks['jsonify'].mock_calls == [
             call({
                 'success': False,

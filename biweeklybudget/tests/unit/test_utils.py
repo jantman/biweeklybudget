@@ -38,8 +38,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import pytest
 
 from biweeklybudget.utils import (
-    dtnow, plaid_client, parse_currency, CurrencyParseError
+    dtnow, plaid_client, parse_currency, CurrencyParseError,
+    plaid_last_successful_update
 )
+import pytz
 from pytz import utc
 from datetime import datetime
 from decimal import Decimal
@@ -264,3 +266,77 @@ class TestParseCurrencyLocale(object):
     def test_de_de_currency_symbol(self):
         assert parse_currency('\u20ac1.234,56') == Decimal('1234.56')
         assert parse_currency('1.234,56 \u20ac') == Decimal('1234.56')
+
+
+class TestPlaidLastSuccessfulUpdate(object):
+    """
+    The value is read out of a Plaid ``/item/get`` response, in which every
+    level of ``status.transactions.last_successful_update`` is optional. None
+    of the missing-data cases may raise: both callers assign the result inside
+    code that turns an exception into a failed Plaid update, and an absent time
+    is normal (a newly linked Item, or one Plaid has never refreshed).
+    """
+
+    def test_aware_datetime_returned_unchanged(self):
+        dt = datetime(2026, 9, 14, 13, 45, 12, tzinfo=utc)
+        assert plaid_last_successful_update({
+            'item': {},
+            'status': {'transactions': {'last_successful_update': dt}}
+        }) == dt
+
+    def test_non_utc_zone_preserved(self):
+        dt = pytz.timezone('US/Eastern').localize(
+            datetime(2026, 9, 14, 13, 45, 12)
+        )
+        res = plaid_last_successful_update({
+            'status': {'transactions': {'last_successful_update': dt}}
+        })
+        assert res == dt
+        assert res.tzinfo is not None
+
+    def test_naive_datetime_assumed_utc(self):
+        res = plaid_last_successful_update({
+            'status': {
+                'transactions': {
+                    'last_successful_update': datetime(2026, 9, 14, 13, 45, 12)
+                }
+            }
+        })
+        assert res == datetime(2026, 9, 14, 13, 45, 12, tzinfo=utc)
+        assert res.tzinfo is not None
+
+    def test_last_successful_update_absent(self):
+        assert plaid_last_successful_update({
+            'status': {'transactions': {'last_failed_update': None}}
+        }) is None
+
+    def test_last_successful_update_none(self):
+        assert plaid_last_successful_update({
+            'status': {'transactions': {'last_successful_update': None}}
+        }) is None
+
+    def test_transactions_absent(self):
+        assert plaid_last_successful_update({
+            'status': {'investments': {}}
+        }) is None
+
+    def test_transactions_none(self):
+        assert plaid_last_successful_update({
+            'status': {'transactions': None}
+        }) is None
+
+    def test_transactions_empty(self):
+        assert plaid_last_successful_update({'status': {'transactions': {}}}) \
+            is None
+
+    def test_status_absent(self):
+        assert plaid_last_successful_update({'item': {}}) is None
+
+    def test_status_none(self):
+        assert plaid_last_successful_update({'status': None}) is None
+
+    def test_status_empty(self):
+        assert plaid_last_successful_update({'status': {}}) is None
+
+    def test_empty_response(self):
+        assert plaid_last_successful_update({}) is None

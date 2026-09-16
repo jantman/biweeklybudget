@@ -106,11 +106,15 @@ class SampleDataLoader(object):
 
     def _plaid_items(self):
         res = {
+            # Item1 has a last_successful_update reported by Plaid, older than
+            # the time we last polled it; Item2 has none, which is the case for
+            # an Item Plaid has not (yet) successfully updated. See issue #268.
             'PlaidItem1': PlaidItem(
                 item_id='PlaidItem1',
                 access_token='AccessToken1',
                 institution_name='Inst1',
-                last_updated=self.dt
+                last_updated=self.dt,
+                last_successful_update=self.dt - timedelta(days=3)
             ),
             'PlaidItem2': PlaidItem(
                 item_id='PlaidItem2',

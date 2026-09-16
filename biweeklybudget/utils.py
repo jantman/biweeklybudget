@@ -43,6 +43,7 @@ import plaid
 
 from biweeklybudget import settings
 from datetime import datetime
+from typing import Optional
 import pytz
 from contextlib import contextmanager
 from decimal import Decimal
@@ -249,6 +250,38 @@ def dtnow():
             int(settings.BIWEEKLYBUDGET_TEST_TIMESTAMP), pytz.utc
         )
     return datetime.utcnow().replace(tzinfo=pytz.utc)
+
+
+def plaid_last_successful_update(item_get_response) -> Optional[datetime]:
+    """
+    Given a response from the Plaid ``/item/get`` endpoint, return the time at
+    which Plaid last successfully updated transactions for that Item, or None
+    if Plaid did not report one.
+
+    Plaid reports this at ``status.transactions.last_successful_update``. Every
+    level of that path is optional, and the generated Plaid models raise on
+    attribute access for a field the server did not send, so the value is read
+    with :py:meth:`dict.get` (which the Plaid models also implement) and each
+    level is coerced to an empty dict if it is absent, None or empty.
+
+    The value is returned timezone-aware. Plaid sends a zone, but a naive value
+    is assumed to be UTC rather than left to raise: the callers assign this to a
+    :py:class:`~sqlalchemy_utc.sqltypes.UtcDateTime` column, which rejects naive
+    datetimes, and that exception would surface at commit time and fail an
+    entire transaction download over a purely informational field.
+
+    :param item_get_response: response from the Plaid ``/item/get`` endpoint
+    :type item_get_response: plaid.model.item_get_response.ItemGetResponse
+    :return: time Plaid last successfully updated transactions for the Item,
+      or None
+    :rtype: datetime.datetime or None
+    """
+    status = item_get_response.get('status') or {}
+    txn_status = status.get('transactions') or {}
+    dt = txn_status.get('last_successful_update')
+    if dt is not None and dt.tzinfo is None:
+        dt = dt.replace(tzinfo=pytz.utc)
+    return dt
 
 
 def decode_json_datetime(d):

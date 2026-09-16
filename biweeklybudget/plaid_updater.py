@@ -48,7 +48,9 @@ from biweeklybudget.models.ofx_statement import OFXStatement
 from biweeklybudget.models.account import Account
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
-from biweeklybudget.utils import plaid_client, dtnow
+from biweeklybudget.utils import (
+    plaid_client, dtnow, plaid_last_successful_update
+)
 
 from plaid.models import (
     ItemGetRequest, TransactionsGetRequest, TransactionsGetRequestOptions
@@ -196,6 +198,7 @@ class PlaidUpdater:
                 updated += u
                 stmt_ids.append(sid)
             item.last_updated = dtnow()
+            item.last_successful_update = plaid_last_successful_update(iteminfo)
             db_session.add(item)
             db_session.commit()
             return PlaidUpdateResult(

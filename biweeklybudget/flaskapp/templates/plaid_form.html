@@ -54,6 +54,7 @@
                                             <th>Name</th>
                                             <th>Institution Accounts</th>
                                             <th>Last Polled</th>
+                                            <th>Last Successful Update</th>
                                             <th>Update</th>
                                             <th>Refresh Accounts</th>
                                         </tr>
@@ -65,6 +66,7 @@
                                             <td>{{ i.institution_name }} ({{ i.institution_id }})</td>
                                             <td>{{ plaid_accounts[i.item_id] }}</td>
                                             <td>{{ i.last_updated|ago }}</td>
+                                            <td>{% if i.last_successful_update %}{{ i.last_successful_update|ago }}{% else %}unknown{% endif %}</td>
                                             <td><a onclick="plaidUpdate('{{ i.item_id }}')">Update / Fix Item</a></td>
                                             <td><a onclick="plaidRefresh('{{ i.item_id }}')">Refresh</a></td>
                                         </tr>

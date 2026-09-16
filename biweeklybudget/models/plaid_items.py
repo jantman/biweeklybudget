@@ -67,6 +67,12 @@ class PlaidItem(Base, ModelAsDict):
     #: When this item was last updated
     last_updated = Column(UtcDateTime)
 
+    #: When Plaid last successfully updated transactions for this Item, as
+    #: reported by Plaid. This is distinct from :py:attr:`~.last_updated`,
+    #: which is when *we* last polled Plaid for this Item. Null if Plaid has
+    #: not reported a successful update for this Item.
+    last_successful_update = Column(UtcDateTime)
+
     #: Relationship to all :py:class:`~.PlaidAccount` for this Item
     all_accounts = relationship(
         'PlaidAccount', order_by='PlaidAccount.account_id'

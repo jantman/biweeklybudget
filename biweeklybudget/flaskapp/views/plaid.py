@@ -45,7 +45,9 @@ from typing import List, Dict
 
 from biweeklybudget import settings
 from biweeklybudget.flaskapp.app import app
-from biweeklybudget.utils import plaid_client, dtnow
+from biweeklybudget.utils import (
+    plaid_client, dtnow, plaid_last_successful_update
+)
 from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
 from biweeklybudget.plaid_updater import PlaidUpdater
@@ -219,6 +221,7 @@ class PlaidUpdateItemInfo(MethodView):
                 return resp
             logger.info('Plaid item info item %s: %s', item, response)
             item.institution_id = response['item']['institution_id']
+            item.last_successful_update = plaid_last_successful_update(response)
             inst = client.institutions_get_by_id(
                 InstitutionsGetByIdRequest(
                     institution_id=response['item']['institution_id'],
