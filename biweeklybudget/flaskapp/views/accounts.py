@@ -184,6 +184,7 @@ class AccountFormHandler(FormHandlerView):
         if data.get('name', '').strip() == '':
             errors['name'].append('Name cannot be empty')
             have_errors = True
+        errors = self._validate_unique_name(Account, data, errors, 'Account')
         try:
             hasattr(AcctType, data['acct_type'])
         except Exception:

@@ -231,8 +231,12 @@ class BudgetFormHandler(FormHandlerView):
                 'Current balance must be specified for standing budgets.'
             )
             have_errors = True
+        errors = self._validate_unique_name(Budget, data, errors, 'Budget')
         if have_errors:
             return errors
+        for k, v in errors.items():
+            if v:
+                return errors
         return None
 
     def submit(self, data):

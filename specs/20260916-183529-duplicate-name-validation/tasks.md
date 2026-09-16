@@ -48,20 +48,20 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 
 ### Implementation
 
-- [ ] T007 Add `_validate_unique_name(self, cls, data, errors, noun, key='name')` to `biweeklybudget/flaskapp/views/formhandlerview.py`: query `cls` for `func.lower(cls.name) == data[key].strip().lower()` and `cls.id != record_id`, where `record_id` is `int(data['id'])` when `data` has a non-blank `'id'` else `0`; on a hit append one message naming `noun`, the conflicting record's name and its ID to `errors[key]`; return `errors`. Import `func` from `sqlalchemy`. Return unchanged when `data[key].strip()` is empty, so a blank name keeps its single "Name cannot be empty" message (spec Edge Cases)
-- [ ] T008 Give T007 a docstring in the file's existing style, stating why the comparison is trimmed and case-insensitive and citing GitHub issue #275 — this feeds the `docs` API build (Constitution Principle IV)
-- [ ] T009 [P] Call `self._validate_unique_name(Account, data, errors, 'Account')` from `AccountFormHandler.validate()` in `biweeklybudget/flaskapp/views/accounts.py`, placed after the existing empty-name check and before the `have_errors` return, so a duplicate name is reported alongside any other field errors (FR-008)
-- [ ] T010 [P] Call `self._validate_unique_name(Budget, data, errors, 'Budget')` from `BudgetFormHandler.validate()` in `biweeklybudget/flaskapp/views/budgets.py`, in the equivalent position. Note `BudgetFormHandler.validate()` currently returns `None` unless `have_errors`; make it also return `errors` when any field list is non-empty, matching how `AccountFormHandler.validate()` already ends, or the new message will be silently dropped
+- [X] T007 Add `_validate_unique_name(self, cls, data, errors, noun, key='name')` to `biweeklybudget/flaskapp/views/formhandlerview.py`: query `cls` for `func.lower(cls.name) == data[key].strip().lower()` and `cls.id != record_id`, where `record_id` is `int(data['id'])` when `data` has a non-blank `'id'` else `0`; on a hit append one message naming `noun`, the conflicting record's name and its ID to `errors[key]`; return `errors`. Import `func` from `sqlalchemy`. Return unchanged when `data[key].strip()` is empty, so a blank name keeps its single "Name cannot be empty" message (spec Edge Cases)
+- [X] T008 Give T007 a docstring in the file's existing style, stating why the comparison is trimmed and case-insensitive and citing GitHub issue #275 — this feeds the `docs` API build (Constitution Principle IV)
+- [X] T009 [P] Call `self._validate_unique_name(Account, data, errors, 'Account')` from `AccountFormHandler.validate()` in `biweeklybudget/flaskapp/views/accounts.py`, placed after the existing empty-name check and before the `have_errors` return, so a duplicate name is reported alongside any other field errors (FR-008)
+- [X] T010 [P] Call `self._validate_unique_name(Budget, data, errors, 'Budget')` from `BudgetFormHandler.validate()` in `biweeklybudget/flaskapp/views/budgets.py`, in the equivalent position. Note `BudgetFormHandler.validate()` currently returns `None` unless `have_errors`; make it also return `errors` when any field list is non-empty, matching how `AccountFormHandler.validate()` already ends, or the new message will be silently dropped
 - [X] T011 Verify empirically that the check's verdict matches the database's: against the running test DB, confirm whether the `utf8mb4` collation in use treats `BankOne` and `bankone` as colliding, and record the answer in [research.md](./research.md) R2. The `func.lower()` design is correct either way (R2), but the note should state what was measured rather than what was expected
 
 ### Unit tests
 
-- [ ] T012 [P] In `biweeklybudget/tests/unit/flaskapp/views/test_formhandlerview.py`, test `_validate_unique_name` rejects a name held by a different record (US1)
-- [ ] T013 [P] In the same file, test it accepts a name held only by the record being edited, i.e. `data['id']` matches the conflicting row (US2, FR-002/FR-004)
-- [ ] T014 [P] In the same file, test the comparison is applied to the *trimmed* submitted name, so `"  BankOne  "` is rejected against a stored `"BankOne"` (FR-007)
-- [ ] T015 [P] In the same file, test the comparison is case-insensitive, so `"bankone"` is rejected against a stored `"BankOne"` (FR-007)
-- [ ] T016 [P] In the same file, test a blank name adds no duplicate-name message, leaving only the caller's existing "Name cannot be empty" (spec Edge Cases)
-- [ ] T017 Run `tox -e py314` to completion and confirm the unit suite passes and the diff is `pycodestyle`/`pyflakes` clean per `pytest.ini`
+- [X] T012 [P] In `biweeklybudget/tests/unit/flaskapp/views/test_formhandlerview.py`, test `_validate_unique_name` rejects a name held by a different record (US1)
+- [X] T013 [P] In the same file, test it accepts a name held only by the record being edited, i.e. `data['id']` matches the conflicting row (US2, FR-002/FR-004)
+- [X] T014 [P] In the same file, test the comparison is applied to the *trimmed* submitted name, so `"  BankOne  "` is rejected against a stored `"BankOne"` (FR-007)
+- [X] T015 [P] In the same file, test the comparison is case-insensitive, so `"bankone"` is rejected against a stored `"BankOne"` (FR-007)
+- [X] T016 [P] In the same file, test a blank name adds no duplicate-name message, leaving only the caller's existing "Name cannot be empty" (spec Edge Cases)
+- [X] T017 Run `tox -e py314` to completion and confirm the unit suite passes and the diff is `pycodestyle`/`pyflakes` clean per `pytest.ini`
 
 **Checkpoint**: The check exists and its semantics are pinned by tests. FR-001 through FR-008 implemented.
 

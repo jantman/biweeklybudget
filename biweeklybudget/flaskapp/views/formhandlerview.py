@@ -39,7 +39,9 @@ import logging
 from flask.views import MethodView
 from flask import jsonify, request
 from datetime import datetime
+from sqlalchemy import func
 
+from biweeklybudget.db import db_session
 from biweeklybudget.utils import parse_currency, CurrencyParseError
 
 logger = logging.getLogger(__name__)
@@ -271,6 +273,77 @@ class FormHandlerView(MethodView):
         """
         if data[key].strip() == '':
             errors[key].append('Cannot be empty')
+        return errors
+
+    def _validate_unique_name(self, cls, data, errors, noun, key='name'):
+        """
+        Validate that the submitted name in ``data[key]`` is not already used
+        by a different record of model class ``cls``.
+
+        ``Account.name`` and ``Budget.name`` are ``unique=True``. Without this
+        check the constraint is only discovered when the database rejects the
+        write, and the resulting ``IntegrityError`` - complete with the SQL
+        statement and every bound parameter - is handed to the user as a
+        generic "Server Error" banner that does not even say which field was
+        at fault. Checking here instead attaches the message to the offending
+        field and means nothing is written, so the record store is untouched
+        and no rollback is needed. See GitHub issue #275.
+
+        The comparison is deliberately made on the **stripped** name, because
+        that is what ``submit()`` stores; comparing the raw value would let
+        ``" Foo "`` pass this check and then be written as a duplicate of an
+        existing ``"Foo"``.
+
+        The comparison is also deliberately **case-insensitive**, via an
+        explicit :py:func:`sqlalchemy.func.lower` rather than by relying on
+        the database collation, for the same reason it is done that way in
+        :py:func:`biweeklybudget.models.utils._resolve_reference`: the
+        behavior is then a property of this code and is pinned by a test. Two
+        records whose names differ only in case must not coexist regardless of
+        what the unique index permits, because ``_resolve_reference`` matches
+        API names with ``func.lower()`` and ``one_or_none()`` and would raise
+        for either of them.
+
+        A blank name is left alone. Callers already report that with their own
+        "Name cannot be empty" message, and stacking a second message on top
+        of it would only confuse.
+
+        The message quotes the **stored** name rather than the submitted one,
+        so that a user who typed ``bankone`` is shown the ``BankOne`` they
+        actually collided with.
+
+        :param cls: the model class to check; must have ``id`` and a unique
+          ``name`` column
+        :type cls: type
+        :param data: submitted form data
+        :type data: dict
+        :param errors: hash of field name to list of error strings, as built
+          by the calling ``validate()``
+        :type errors: dict
+        :param noun: human-readable name of the model, used in the message
+          (i.e. ``Account`` or ``Budget``)
+        :type noun: str
+        :param key: the key in ``data`` and ``errors`` holding the name
+        :type key: str
+        :return: updated ``errors``
+        :rtype: dict
+        """
+        name = data.get(key, '').strip()
+        if name == '':
+            return errors
+        record_id = 0
+        if 'id' in data and str(data['id']).strip() != '':
+            record_id = int(data['id'])
+        existing = db_session.query(cls).filter(
+            func.lower(cls.name) == name.lower(),
+            cls.id != record_id
+        ).first()
+        if existing is not None:
+            article = 'An' if noun[0].upper() in 'AEIOU' else 'A'
+            errors[key].append(
+                f'{article} {noun} named "{existing.name}" already exists '
+                f'(ID {existing.id}); {noun} names must be unique.'
+            )
         return errors
 
     def fix_string(self, s):
