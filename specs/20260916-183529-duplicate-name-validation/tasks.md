@@ -102,12 +102,24 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 
 - [X] T028 Re-check `git diff` against `biweeklybudget/models/` to confirm the Principle III claim held — no model file touched, therefore no Alembic revision and no `migrations` run required. If the diff contradicts this, the plan's Constitution Check is wrong and a migration is owed before proceeding
 - [X] T029 Run the **complete** unit suite (`tox -e py314`) to completion, output to the scratchpad. A timeout is not a pass: raise both the pytest timeout and the tool timeout and re-run until it completes
-- [ ] T030 Run the **complete** acceptance suite (`tox -e acceptance`) to completion, output to the scratchpad, under the same no-narrowing and no-timeout rules. Re-run any of the known-flaky tests (reconcile drag/unignore, fuel-log search, Plaid "Uncheck All") in isolation before attributing a failure to this change
+- [X] T030 Run the **complete** acceptance suite (`tox -e acceptance`) to completion, output to the scratchpad, under the same no-narrowing and no-timeout rules. Re-run any of the known-flaky tests (reconcile drag/unignore, fuel-log search, Plaid "Uncheck All") in isolation before attributing a failure to this change
 - [X] T031 Run `tox -e docs` and confirm it builds without errors
 - [X] T032 Add one concise bullet to `CHANGES.rst` under the `Unreleased` heading, led by the issue #275 link, in the format of the existing entries. Do **not** touch `biweeklybudget/version.py` and do not create a tag (Principle VI)
-- [ ] T033 Update [spec.md](./spec.md) and this file to record milestone completion, then commit M3 and M4 with the `Duplicate Name Validation - M.T` prefix
+- [X] T033 Update [spec.md](./spec.md) and this file to record milestone completion, then commit M3 and M4 with the `Duplicate Name Validation - M.T` prefix
 - [ ] T034 Push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-275-silent-failure-on-duplicate-account-name` — a bare `git push` would target `master`, which this branch tracks
 - [ ] T035 Open a pull request describing the problem, the M1 observation, the design decision from [research.md](./research.md) R2, and the test coverage; then monitor CI to completion and address any review feedback until Claude reports "No issues found" and Copilot, if present, recommends approval
+
+**Test gate result (2026-09-16)**
+
+| Suite | Result |
+|-------|--------|
+| `tox -e py314` (unit) | **864 passed**, 145 skipped (cached pycodestyle), 0 failed |
+| `tox -e acceptance` (full) | **935 passed**, 0 failed, ran to completion in 22m07s |
+| `tox -e docs` | **OK**, no new warnings |
+| `migrations` / `docker` | Not required; confirmed against the diff at T028 |
+
+No test was narrowed, skipped or re-run to get this result, and no suite timed out.
+None of the repository's known-flaky tests failed on this run.
 
 **Checkpoint**: Feature complete per Constitution Development Workflow step 6.
 

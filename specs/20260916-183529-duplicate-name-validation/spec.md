@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft
+**Status**: Implemented (all milestones complete; see tasks.md)
 
 **Input**: GitHub issue [#275](https://github.com/jantman/biweeklybudget/issues/275) — "Silent failure on duplicate account name" (labels: bug, robot-army). Originally reported against 1.1.1 in a comment on issue #270 as "if you name an account with identical then fails silently"; re-checked against master at 1.6.0, where the failure is no longer silent but still surfaces a raw database error string to the user instead of a field-level validation message.
 
