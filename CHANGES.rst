@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #275 <https://github.com/jantman/biweeklybudget/issues/275>`_ - Saving an Account or Budget under a name another record already uses now shows a message on the **Name** field, instead of dumping a raw database ``IntegrityError`` (with the SQL statement and all its parameters) into the modal as a "Server Error".
+
+  * Names are compared ignoring surrounding whitespace and letter case, so ``bankone`` collides with ``BankOne``. Re-saving a record under its own unchanged name still works.
+  * Nothing is written by a rejected save, and the rest of the form is left as you typed it so only the name needs correcting.
+
 * `Issue #269 <https://github.com/jantman/biweeklybudget/issues/269>`_ - The Plaid Items table on the Plaid Update page has a new **Delete** link for each Item, replacing the manual "delete the rows by hand and then call Plaid from a Python shell" procedure.
 
   * Deleting asks Plaid to remove the Item first, then un-links any Accounts that were using it and removes the Item and its Plaid Accounts. If Plaid refuses, nothing is deleted and the error is shown. A confirmation naming the affected Accounts is required; this cannot be undone.
