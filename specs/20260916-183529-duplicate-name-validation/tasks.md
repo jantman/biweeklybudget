@@ -29,12 +29,12 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 
 **Independent Test**: Drive the running app in a browser, submit `BankOne` as a new account name, and record exactly what the user sees.
 
-- [ ] T001 Start the MariaDB test container and initialise the test database per the Prerequisites in [quickstart.md](./quickstart.md) (`docker run ... mariadb:10.4.7`, export the `MYSQL_*`/`DB_CONNSTRING`/`SETTINGS_MODULE` variables, `python dev/setup_test_db.py`, `initdb`)
-- [ ] T002 Load the acceptance fixture data so the accounts named in [quickstart.md](./quickstart.md) exist, then start the app with `FLASK_APP=biweeklybudget.flaskapp.app:app flask rundev`
-- [ ] T003 [US4] In a real browser, open `/accounts`, use **Add Account** to submit the name `BankOne` (already taken), and capture what is rendered: the exact banner or field text, which element it lands in, and whether the modal stays open
-- [ ] T004 [US4] Confirm against the database that no account was created by the rejected submission, and capture the server-side log line `FormHandlerView.post()` emits
-- [ ] T005 [US4] Add an "Observed behaviour before the fix" section to [spec.md](./spec.md) recording T003 and T004 verbatim — the message text, where it appears, and whether the original "silent" report reproduces
-- [ ] T006 [US4] **Decision gate**: if T003 showed *no* feedback at all, stop. Record the finding in [spec.md](./spec.md) as a Principle V departure, commit that record, and seek guidance before writing any fix. Otherwise, proceed to M2.
+- [X] T001 Start the MariaDB test container and initialise the test database per the Prerequisites in [quickstart.md](./quickstart.md) (`docker run ... mariadb:10.4.7`, export the `MYSQL_*`/`DB_CONNSTRING`/`SETTINGS_MODULE` variables, `python dev/setup_test_db.py`, `initdb`)
+- [X] T002 Load the acceptance fixture data so the accounts named in [quickstart.md](./quickstart.md) exist, then start the app with `FLASK_APP=biweeklybudget.flaskapp.app:app flask rundev`
+- [X] T003 [US4] In a real browser, open `/accounts`, use **Add Account** to submit the name `BankOne` (already taken), and capture what is rendered: the exact banner or field text, which element it lands in, and whether the modal stays open
+- [X] T004 [US4] Confirm against the database that no account was created by the rejected submission, and capture the server-side log line `FormHandlerView.post()` emits
+- [X] T005 [US4] Add an "Observed behaviour before the fix" section to [spec.md](./spec.md) recording T003 and T004 verbatim — the message text, where it appears, and whether the original "silent" report reproduces
+- [X] T006 [US4] **Decision gate**: if T003 showed *no* feedback at all, stop. Record the finding in [spec.md](./spec.md) as a Principle V departure, commit that record, and seek guidance before writing any fix. Otherwise, proceed to M2.
 
 **Checkpoint**: The pre-fix behaviour is written into the spec and committed. SC-005 satisfied.
 
@@ -52,7 +52,7 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 - [ ] T008 Give T007 a docstring in the file's existing style, stating why the comparison is trimmed and case-insensitive and citing GitHub issue #275 — this feeds the `docs` API build (Constitution Principle IV)
 - [ ] T009 [P] Call `self._validate_unique_name(Account, data, errors, 'Account')` from `AccountFormHandler.validate()` in `biweeklybudget/flaskapp/views/accounts.py`, placed after the existing empty-name check and before the `have_errors` return, so a duplicate name is reported alongside any other field errors (FR-008)
 - [ ] T010 [P] Call `self._validate_unique_name(Budget, data, errors, 'Budget')` from `BudgetFormHandler.validate()` in `biweeklybudget/flaskapp/views/budgets.py`, in the equivalent position. Note `BudgetFormHandler.validate()` currently returns `None` unless `have_errors`; make it also return `errors` when any field list is non-empty, matching how `AccountFormHandler.validate()` already ends, or the new message will be silently dropped
-- [ ] T011 Verify empirically that the check's verdict matches the database's: against the running test DB, confirm whether the `utf8mb4` collation in use treats `BankOne` and `bankone` as colliding, and record the answer in [research.md](./research.md) R2. The `func.lower()` design is correct either way (R2), but the note should state what was measured rather than what was expected
+- [X] T011 Verify empirically that the check's verdict matches the database's: against the running test DB, confirm whether the `utf8mb4` collation in use treats `BankOne` and `bankone` as colliding, and record the answer in [research.md](./research.md) R2. The `func.lower()` design is correct either way (R2), but the note should state what was measured rather than what was expected
 
 ### Unit tests
 

@@ -75,6 +75,16 @@ used explicitly rather than relying on the database's collation being
 case-insensitive, so that the behavior is a property of this code and is pinned by a
 test."* The same reasoning and the same mechanism apply here.
 
+**Measured, not assumed** (task T011, 2026-09-16): against MariaDB 10.4.7 with the
+schema `initdb` creates, `information_schema.COLUMNS` reports `accounts.name`,
+`budgets.name` and `reconcile_rules.name` as `utf8mb4` / **`utf8mb4_general_ci`**, and
+inserting `caseprobe` alongside an existing `CaseProbe` is rejected with
+`(1062, "Duplicate entry 'caseprobe' for key 'ix_accounts_name'")`. So the first bullet
+above is the case that actually applies: the index *is* case-insensitive, and a
+case-sensitive check would pass names the database then rejects. The second bullet
+stands as the reason the decision does not depend on that measurement holding on every
+deployment.
+
 **Alternatives considered**: exact `cls.name == name` equality. Rejected on both
 counts above — it is looser than the default collation's index and looser than the
 name resolution the API depends on.

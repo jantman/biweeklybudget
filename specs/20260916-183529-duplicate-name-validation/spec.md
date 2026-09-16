@@ -12,6 +12,56 @@
 
 Account names and Budget names are required by the database to be unique. Nothing in either form checks that before saving, so the uniqueness rule is only discovered when the database rejects the save. The user is then shown the database's own error text, which names internal tables, columns and constraints and does not tell them which field is at fault or what to do about it. The original report described the save failing with no feedback at all; whether that older behaviour still reproduces has not been confirmed and must be checked before it is assumed fixed.
 
+## Observed behaviour before the fix
+
+*Recorded at milestone M1 on 2026-09-16, satisfying FR-009 and User Story 4. Observed
+in Chrome against the application running at `flask run` on the acceptance fixture
+data, submitting the name `BankOne` — already held by account ID 1 — through the
+**Add Account** modal.*
+
+**The original "silent failure" does not reproduce.** The submission fails loudly. The
+issue's 2026-09-05 re-check was correct, and the 1.1.1 report is not the behaviour of
+current code. The gate in User Story 4 is therefore cleared and the scope in this
+spec stands.
+
+What the user actually sees is a single red `Server Error:` banner at the top of the
+still-open modal, containing — verbatim, and in full:
+
+- the driver exception and MySQL error code: `(pymysql.err.IntegrityError) (1062,
+  "Duplicate entry 'BankOne' for key 'ix_accounts_name'")`
+- the **entire `INSERT` statement**, naming the `accounts` table and all eighteen of
+  its columns
+- the **complete set of bound parameters**, including every value the user typed
+- a link to the SQLAlchemy error documentation
+
+That is roughly 1,100 characters of internal detail where a sentence belongs, and it
+is materially worse than the issue described: the issue anticipated "a raw
+SQLAlchemy/pymysql `IntegrityError` string", but the SQL statement and the parameter
+dump come with it.
+
+Three further details were recorded, each of which the fix should change or preserve
+deliberately:
+
+1. **Nothing marks the Name field.** The message renders through the `error_message`
+   branch, not the `errors` branch, so the Name input has no error styling and no
+   message beneath it. A user reading the banner has to find `'name': 'BankOne'`
+   inside the parameter dump to learn which field was at fault.
+2. **No account is created**, and the other values the user entered remain in the
+   open modal. FR-006 therefore describes behaviour that must be *preserved*, not
+   introduced.
+3. **The session is not left broken.** Correcting the name in the same modal and
+   re-submitting succeeds immediately, with no page reload. The issue's suggestion
+   that the change "avoids leaving the session in a broken post-`IntegrityError`
+   state" is not a defect that reproduces — the scoped session recovers on its own.
+   The one lasting trace is that the failed `INSERT` consumes an `AUTO_INCREMENT`
+   value: after the rejected `BankOne` attempt, the corrected save was assigned ID 8
+   rather than 7. Validating before the write avoids that, but it is a tidiness point,
+   not the reason for the change.
+
+Server side, `FormHandlerView.post()` logs the submission at `WARNING` with a full
+traceback — correct for a genuine failure, noisy for a user typo, and another small
+argument for catching this in `validate()`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Naming a new account the same as an existing one (Priority: P1)
