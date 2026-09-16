@@ -75,6 +75,8 @@ class TestPlaidUpdateView(AcceptanceHelper):
                 'Inst1 (None)',
                 'Acct1 (foo), Acct2 (foo), Acct4 (foo4)',
                 'now',
+                # Plaid's own last successful update, older than our poll
+                '3 days ago',
                 'Update / Fix Item',
                 'Refresh'
             ],
@@ -83,6 +85,8 @@ class TestPlaidUpdateView(AcceptanceHelper):
                 'Inst2 (None)',
                 'Acct3 (foo)',
                 'now',
+                # no time recorded for this Item
+                'unknown',
                 'Update / Fix Item',
                 'Refresh'
             ],
