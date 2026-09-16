@@ -115,7 +115,7 @@ is independently verified. **Milestone M2 complete — pause for approval.**
 
 - [X] T018 Run `tox -e py314` and `tox -e acceptance` to completion on the finished change and confirm both pass, redirecting output to the scratchpad; raise the timeout and re-run rather than reporting any timed-out suite
 - [X] T019 Run `tox -e migrations` on the finished change and confirm it passes
-- [~] T020 Run `tox -e docker` and confirm it passes — required because this change touches schema; ensure the main venv's `bin` is first on `PATH` and that no other acceptance run overlaps it. **Attempted three times and killed by the host for low memory each time; deferred to the CI docker job.** See the results table below
+- [X] T020 Run `tox -e docker` and confirm it passes — required because this change touches schema; ensure the main venv's `bin` is first on `PATH` and that no other acceptance run overlaps it. **Attempted three times and killed by the host for low memory each time; deferred to the CI docker job.** See the results table below
 
 ### Documentation (Principle IV)
 
@@ -130,8 +130,8 @@ is independently verified. **Milestone M2 complete — pause for approval.**
 
 ### Delivery
 
-- [ ] T026 Commit the whole of M3 together, push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-268-plaid-show-last-successful-update-time` (the branch's upstream is `origin/master`, so a bare `git push` would target master), and open a pull request describing the change
-- [ ] T027 Monitor the CI jobs on the pull request to completion, then run `/answer-reviews` and repeat until Claude's review reports "No issues found" and Copilot's review, if present, recommends approval
+- [X] T026 Commit the whole of M3 together, push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-268-plaid-show-last-successful-update-time` (the branch's upstream is `origin/master`, so a bare `git push` would target master), and open a pull request describing the change
+- [X] T027 Monitor the CI jobs on the pull request to completion, then run `/answer-reviews` and repeat until Claude's review reports "No issues found" and Copilot's review, if present, recommends approval
 
 **Checkpoint**: Feature complete, gated, documented, and delivered.
 
@@ -146,9 +146,13 @@ is independently verified. **Milestone M2 complete — pause for approval.**
 | `tox -e screenshots` | Regenerated. The first attempt was killed by the system for low memory part-way through; because the script deletes every PNG before regenerating, that left all 49 missing, and they were restored with `git checkout -- docs/source/`. The retry succeeded. Only the two `plaid-update` PNGs are committed — see [research.md](./research.md) R8 on the unrelated drift the regeneration exposed. |
 | `tox -e docker` | **Not completed locally — deferred to CI.** Attempted three times (full run twice, then with `TEST_DOCKER=false` to isolate the build); the host killed each one for low memory. The host's swap was fully exhausted by unrelated workloads throughout, and the same pressure had already killed a `screenshots` run. The second attempt did get far enough to **build the image successfully** (`jantman/biweeklybudget:5783bf46-dirty_...` was tagged) before being killed during the container-acceptance phase, so the failure is environmental and not a property of this change. Every container and image those runs left behind was removed. The repository's CI runs the `docker` job on the pull request, and that run is the gate. |
 
-**Outstanding**: `tox -e docker` per the row above. Constitution Principle II requires the
-Docker suite to pass for a schema change; it must be green in CI before this is merged, and
-it was not possible to demonstrate that on this host.
+**Resolved**: the CI `docker` job on [PR #347](https://github.com/jantman/biweeklybudget/pull/347)
+**passed**, closing the one gap the host's memory pressure left. Every check on that pull
+request is green: acceptance, claude-review, coverage, docker, docs, jsdoc, migrations, plaid,
+py314, screenshots and Snyk. The `plaid` job is worth noting on its own — it exercises
+"Update Item Information from Plaid" against the live Plaid sandbox, so the helper's reading
+of `status.transactions` is confirmed against real Plaid responses and not only against
+stubs.
 
 ---
 
