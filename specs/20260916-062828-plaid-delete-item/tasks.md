@@ -150,8 +150,8 @@ tells the maintainer to delete Plaid rows by hand.
 - [X] T038 Run `tox -e docker` with the main checkout's `venv/bin` first on `PATH` so its final acceptance step can find tox, and not while T035 is still running. If this host kills it for low memory, say so plainly and let the CI `docker` job be the gate
 - [X] T039 Add the `CHANGES.rst` entry under `Unreleased` — one concise bullet led by the issue #269 link, naming the new Delete action, that it also removes the Item at Plaid, and that linked Accounts are unlinked but keep their data. Do **not** touch `biweeklybudget/version.py`
 - [ ] T040 Update this file and `spec.md` to record completion, commit the whole of Milestones M1-M4, push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-269-plaid-add-ability-to-delete-an-item` (the branch's upstream is `origin/master`, so a bare `git push` would target master), and open the pull request
-- [ ] T041 Watch the PR's CI jobs to completion; investigate any failure, re-running known-flaky jobs before attributing them to this change
-- [ ] T042 Run `/answer-reviews` on the PR and repeat until Claude's review reports "No issues found" and Copilot's, if present, recommends approval
+- [X] T041 Watch the PR's CI jobs to completion; investigate any failure, re-running known-flaky jobs before attributing them to this change
+- [X] T042 Run `/answer-reviews` on the PR and repeat until Claude's review reports "No issues found" and Copilot's, if present, recommends approval
 
 **Checkpoint (Milestone M4)**: Green suites, documentation shipped, PR open and reviewed.
 
@@ -164,7 +164,7 @@ tells the maintainer to delete Plaid rows by hand.
 | `migrations` | 10 passed — head still matches the models, demonstrating that no revision is needed |
 | `docs` | builds clean; linkcheck clean; `sphinx-apidoc` regenerated no tracked file |
 | `docker` | `docker: OK` — image builds, `GET /` and the console-script checks pass, and the full acceptance suite run against the container exits 0 |
-| `plaid` | **not run** — needs Plaid sandbox credentials that are not available on this machine. The two new steps in `test_plaidlink.py` are therefore unexercised here; CI runs this job with the repository's secrets, though the class is `xfail`ed there for an unrelated reason. |
+| `plaid` | **not run locally** — needs Plaid sandbox credentials that are not available on this machine. The two new steps in `test_plaidlink.py` are therefore unexercised here; CI runs this job with the repository's secrets, though the class is `xfail`ed there for an unrelated reason. |
 
 ---
 
@@ -198,3 +198,29 @@ constitution's gate.
 **Not an MVP shortcut**: Phase 3 cannot be trimmed to "delete the rows and skip the Plaid
 call". A local-only delete is worse than no delete — it strands a live, billable Item at Plaid
 and destroys the only access token that could reach it. US2 ships with US1 or neither does.
+
+### CI results on PR #348
+
+All eleven checks pass: `py314`, `acceptance`, `docker`, `docs`, `jsdoc`, `screenshots`,
+`migrations`, `plaid`, `coverage`, `claude-review`, Snyk.
+
+Two things worth recording:
+
+- **`docker` failed on the first run and passed on a re-run**, with a single failure out of
+  905: `test_reconcile.py::TestOFXMakeTransAndIgnore::test_36_ignore_and_unignore_ofx`
+  (`assert {'2%OFX30': 'My Note'} == {}` — the unignore had not landed when the assertion
+  ran). That is the repository's most frequently flaky test, it is in reconcile, which this
+  change does not touch, and the **same test passed in the `acceptance` job on the same
+  commit** as well as in both local runs. Re-run in isolation via `gh run rerun --failed`,
+  per the Test Gate note in [plan.md](./plan.md); it passed.
+- **The `plaid` job passed in CI**, where the sandbox credentials exist. Its
+  `TestLinkAndUpdateSimple` class is `xfail`ed when `CI == 'true'`, so the two delete steps
+  added in M3.1 did not actually execute there — that coverage remains local-only in
+  practice, as recorded above.
+
+- **Review**: Claude's automated review reported "No issues found. Checked for bugs and
+  CLAUDE.md compliance." No Copilot review was requested on this repository, and no inline
+  review comments were left, so there was nothing for `/answer-reviews` to address.
+
+The `coverage` check passes; its 57% comment is a pre-existing project-wide figure against an
+aspirational 80% threshold, not a regression from this change.
