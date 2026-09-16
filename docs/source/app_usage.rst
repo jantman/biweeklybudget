@@ -102,6 +102,39 @@ the following caveats (which I'd be happy to fix if anyone needs it):
   larger numbers (or, at the rate I'm going, I'm still working and paying into
   my pension in about 300 years), the change shouldn't be terribly difficult.
 
+.. _app_usage.unique_names:
+
+Account and Budget Names Must Be Unique
+---------------------------------------
+
+No two Accounts may share a name, and no two Budgets may share a name. Names
+are compared ignoring surrounding whitespace and letter case, so ``BankOne``,
+``bankone`` and ``  BankOne  `` are all the same name as far as this rule is
+concerned.
+
+If you save an Account or Budget under a name another record already holds, the
+form does not save it. Instead the **Name** field is outlined in red and a
+message appears beneath it naming the existing record and its ID, for example:
+
+    An Account named "BankOne" already exists (ID 1); Account names must be
+    unique.
+
+The modal stays open with everything else you entered still in place, so you
+can correct just the name and save again. Nothing is written to the database by
+a rejected save.
+
+Re-saving a record without renaming it is always allowed — a record does not
+collide with itself. Renaming an Account from ``BankOne`` to ``BANKONE`` is
+therefore fine, since only that one record is involved; it is renaming it onto
+a *different* record's name that is refused.
+
+The case-insensitive comparison is deliberate, and slightly stricter than the
+database's unique index needs to be. Two records whose names differ only in
+case would break the HTTP API's ability to look either of them up by name, as
+:ref:`described under Identifying Accounts and Budgets
+<http_api.transactions.name_or_id>`, so the forms do not allow such a pair to
+be created.
+
 .. _app_usage.credit_card_payments:
 
 Credit Card Payments

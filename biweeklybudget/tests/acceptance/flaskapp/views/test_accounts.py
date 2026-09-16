@@ -1595,3 +1595,274 @@ class TestAccountTransfer(AcceptanceHelper):
         acct2 = testdb.query(Account).get(2)
         assert acct2.balance.ledger == Decimal('100.23')
         assert acct2.unreconciled_sum == Decimal('-456.78')
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestAccountDuplicateName(AcceptanceHelper):
+    """
+    Duplicate Account names are rejected with a message on the Name field,
+    rather than by the database with an IntegrityError rendered as a generic
+    "Server Error" banner. See GitHub issue #275.
+    """
+
+    #: The message the form is expected to produce for a name already held by
+    #: Account 1.
+    DUPE_MSG = (
+        'An Account named "BankOne" already exists (ID 1); '
+        'Account names must be unique.'
+    )
+
+    def _account_form_data(self, **kwargs):
+        """
+        A complete, otherwise-valid POST body for ``/forms/account``, so that
+        each test varies only the field it is actually about.
+        """
+        data = {
+            'id': '',
+            'name': 'BankOne',
+            'description': 'duplicate name test',
+            'acct_type': 'Bank',
+            'negate_ofx_amounts': False,
+            'reconcile_trans': True,
+            're_interest_charge': '',
+            're_interest_paid': '',
+            're_payment': '',
+            're_late_fee': '',
+            're_other_fee': '',
+            'credit_limit': '',
+            'apr': '',
+            'prime_rate_margin': '',
+            'is_active': True,
+            'interest_class_name': 'AdbCompoundedDaily',
+            'min_payment_class_name': 'MinPaymentAmEx',
+            'plaid_account': 'null,null'
+        }
+        data.update(kwargs)
+        return data
+
+    def test_01_verify_db(self, testdb):
+        assert testdb.query(Account).get(1).name == 'BankOne'
+        assert testdb.query(Account).get(2).name == 'BankTwoStale'
+        assert testdb.query(Account).get(7) is None
+
+    def test_02_duplicate_name_on_create(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element(By.ID, 'btn_add_acct_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Account'
+        name = selenium.find_element(By.ID, 'account_frm_name')
+        name.clear()
+        name.send_keys('BankOne')
+        desc = selenium.find_element(By.ID, 'account_frm_description')
+        desc.clear()
+        desc.send_keys('duplicate name test')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        # the message is attached to the Name field, not shown as a banner
+        feedback = body.find_elements(By.CLASS_NAME, 'formfeedback')
+        assert len(feedback) == 1
+        assert feedback[0].text.strip() == self.DUPE_MSG
+        name = selenium.find_element(By.ID, 'account_frm_name')
+        assert 'has-error' in name.find_element(
+            By.XPATH, '..'
+        ).get_attribute('class')
+        # no raw database error anywhere in the modal
+        assert body.find_elements(By.CLASS_NAME, 'alert-danger') == []
+        assert 'Server Error' not in body.text
+        assert 'IntegrityError' not in body.text
+        # what the user typed is still there to correct
+        assert name.get_attribute('value') == 'BankOne'
+        assert selenium.find_element(By.ID, 'account_frm_description'
+                                     ).get_attribute('value') == \
+            'duplicate name test'
+
+    def test_03_nothing_was_created(self, testdb):
+        assert testdb.query(Account).get(7) is None
+        assert testdb.query(Account).filter(
+            Account.name == 'BankOne'
+        ).count() == 1
+
+    def test_04_correcting_the_name_succeeds(self, base_url, selenium):
+        """
+        The whole point of the field-level message: fix the name in place and
+        save, without re-entering anything else.
+        """
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element(By.ID, 'btn_add_acct_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        name = selenium.find_element(By.ID, 'account_frm_name')
+        name.clear()
+        name.send_keys('BankOne')
+        desc = selenium.find_element(By.ID, 'account_frm_description')
+        desc.clear()
+        desc.send_keys('corrected after duplicate')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        assert body.find_elements(By.CLASS_NAME, 'formfeedback')[0].text.strip(
+        ) == self.DUPE_MSG
+        # correct only the name and resubmit
+        name = selenium.find_element(By.ID, 'account_frm_name')
+        name.clear()
+        name.send_keys('BankThree')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 7 in database.'
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_05_verify_db_after_correction(self, testdb):
+        acct = testdb.query(Account).get(7)
+        assert acct is not None
+        assert acct.name == 'BankThree'
+        # the description survived the rejected submission
+        assert acct.description == 'corrected after duplicate'
+
+    def test_06_rename_onto_another_account(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/2')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 2'
+        name = selenium.find_element(By.ID, 'account_frm_name')
+        name.clear()
+        name.send_keys('BankOne')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        feedback = body.find_elements(By.CLASS_NAME, 'formfeedback')
+        assert len(feedback) == 1
+        assert feedback[0].text.strip() == self.DUPE_MSG
+        assert body.find_elements(By.CLASS_NAME, 'alert-danger') == []
+
+    def test_07_verify_db_rename_rejected(self, testdb):
+        assert testdb.query(Account).get(1).name == 'BankOne'
+        assert testdb.query(Account).get(2).name == 'BankTwoStale'
+
+    def test_08_saving_under_its_own_name_succeeds(self, base_url, selenium):
+        """
+        The regression this check could most easily introduce: an account must
+        not collide with itself.
+        """
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(By.ID, 'account_frm_name').get_attribute(
+            'value') == 'BankOne'
+        desc = selenium.find_element(By.ID, 'account_frm_description')
+        desc.clear()
+        desc.send_keys('edited without renaming')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        assert body.find_elements(By.CLASS_NAME, 'formfeedback') == []
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 1 in database.'
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_09_verify_db_self_save(self, testdb):
+        acct = testdb.query(Account).get(1)
+        assert acct.name == 'BankOne'
+        assert acct.description == 'edited without renaming'
+
+    def test_10_duplicate_name_json(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account', json=self._account_form_data()
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            'success': False,
+            'errors': {
+                'id': [],
+                'name': [self.DUPE_MSG],
+                'description': [],
+                'acct_type': [],
+                'negate_ofx_amounts': [],
+                'reconcile_trans': [],
+                're_interest_charge': [],
+                're_interest_paid': [],
+                're_payment': [],
+                're_late_fee': [],
+                're_other_fee': [],
+                'credit_limit': [],
+                'apr': [],
+                'prime_rate_margin': [],
+                'is_active': [],
+                'interest_class_name': [],
+                'min_payment_class_name': [],
+                'plaid_account': []
+            }
+        }
+
+    def test_11_surrounding_whitespace_is_rejected(self, base_url):
+        """
+        ``submit()`` stores the stripped name, so "  BankOne  " would become a
+        duplicate if validation compared the raw value.
+        """
+        r = requests.post(
+            base_url + '/forms/account',
+            json=self._account_form_data(name='   BankOne   ')
+        )
+        assert r.json()['success'] is False
+        assert r.json()['errors']['name'] == [self.DUPE_MSG]
+
+    def test_12_differing_case_is_rejected(self, base_url):
+        """
+        The unique index is case-insensitive under utf8mb4_general_ci, and
+        ``_resolve_reference`` resolves API names case-insensitively, so two
+        such records must not coexist.
+        """
+        r = requests.post(
+            base_url + '/forms/account',
+            json=self._account_form_data(name='bankone')
+        )
+        assert r.json()['success'] is False
+        # the message names the record actually collided with, not what was
+        # typed
+        assert r.json()['errors']['name'] == [self.DUPE_MSG]
+
+    def test_13_empty_name_gets_only_the_empty_message(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account',
+            json=self._account_form_data(name='   ')
+        )
+        assert r.json()['errors']['name'] == ['Name cannot be empty']
+
+    def test_14_duplicate_name_reported_with_other_field_errors(
+        self, base_url
+    ):
+        r = requests.post(
+            base_url + '/forms/account',
+            json=self._account_form_data(re_payment='[unclosed')
+        )
+        errors = r.json()['errors']
+        assert errors['name'] == [self.DUPE_MSG]
+        assert errors['re_payment'] == ['Invalid regular expression.']
+
+    def test_15_own_name_accepted_on_edit_via_json(self, base_url):
+        r = requests.post(
+            base_url + '/forms/account',
+            json=self._account_form_data(
+                id='1', description='edited without renaming'
+            )
+        )
+        assert r.json() == {
+            'success': True,
+            'success_message': 'Successfully saved Account 1 in database.'
+        }
+
+    def test_99_verify_db_unchanged_by_errors(self, testdb):
+        names = [
+            a.name for a in testdb.query(Account).order_by(Account.id).all()
+        ]
+        assert names == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
+            'InvestmentOne', 'DisabledBank', 'BankThree'
+        ]

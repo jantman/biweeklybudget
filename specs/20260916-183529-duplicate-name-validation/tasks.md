@@ -75,22 +75,22 @@ description: "Task list for Duplicate Name Validation on Account and Budget Form
 
 ### User Story 1 + 2 — Accounts (P1)
 
-- [ ] T018 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_accounts.py`, add a browser test that opens the Add Account modal, submits an existing account name, and asserts a `formfeedback` element carries the duplicate-name message and that no `Server Error:` banner is present — following the assertion pattern already in `test_04_no_date_error`
-- [ ] T019 [US1] In the same file, add a `requests.post` test against `/forms/account` asserting the exact JSON `{"success": false, "errors": {"name": [...], ...}}` shape from [contracts/form-endpoints.md](./contracts/form-endpoints.md) — following `test_05_no_date_error_requests`
-- [ ] T020 [US1] In the same file, assert the rejected submission created no account, and that correcting the name and resubmitting succeeds (spec US1 scenario 3, SC-002)
-- [ ] T021 [US2] In the same file, add a test that renaming an existing account onto another account's name is rejected and changes neither account
-- [ ] T022 [US2] In the same file, add a test that saving an existing account with its name unchanged still succeeds (FR-002, SC-003) — the regression this check could most easily introduce
+- [X] T018 [US1] In `biweeklybudget/tests/acceptance/flaskapp/views/test_accounts.py`, add a browser test that opens the Add Account modal, submits an existing account name, and asserts a `formfeedback` element carries the duplicate-name message and that no `Server Error:` banner is present — following the assertion pattern already in `test_04_no_date_error`
+- [X] T019 [US1] In the same file, add a `requests.post` test against `/forms/account` asserting the exact JSON `{"success": false, "errors": {"name": [...], ...}}` shape from [contracts/form-endpoints.md](./contracts/form-endpoints.md) — following `test_05_no_date_error_requests`
+- [X] T020 [US1] In the same file, assert the rejected submission created no account, and that correcting the name and resubmitting succeeds (spec US1 scenario 3, SC-002)
+- [X] T021 [US2] In the same file, add a test that renaming an existing account onto another account's name is rejected and changes neither account
+- [X] T022 [US2] In the same file, add a test that saving an existing account with its name unchanged still succeeds (FR-002, SC-003) — the regression this check could most easily introduce
 
 ### User Story 3 — Budgets (P2)
 
-- [ ] T023 [P] [US3] In `biweeklybudget/tests/acceptance/flaskapp/views/test_budgets.py`, add a browser test for submitting an existing budget name through the Add Budget modal, asserting the field-level message
-- [ ] T024 [P] [US3] In the same file, add a `requests.post` test against `/forms/budget` asserting the JSON error shape
-- [ ] T025 [P] [US3] In the same file, add tests for renaming a budget onto another budget's name (rejected) and for saving a budget with its name unchanged (succeeds)
+- [X] T023 [P] [US3] In `biweeklybudget/tests/acceptance/flaskapp/views/test_budgets.py`, add a browser test for submitting an existing budget name through the Add Budget modal, asserting the field-level message
+- [X] T024 [P] [US3] In the same file, add a `requests.post` test against `/forms/budget` asserting the JSON error shape
+- [X] T025 [P] [US3] In the same file, add tests for renaming a budget onto another budget's name (rejected) and for saving a budget with its name unchanged (succeeds)
 
 ### Documentation
 
-- [ ] T026 [P] Document the uniqueness rule and its field-level message in the appropriate page under `docs/source/` — locate the page that describes the account and budget forms and add a sentence there rather than creating a new page
-- [ ] T027 Run the new acceptance tests (`tox -e acceptance -- -k 'accounts or budgets'`) and `tox -e docs`, redirecting output to the scratchpad per `CLAUDE.md` rather than piping to `tail`
+- [X] T026 [P] Document the uniqueness rule and its field-level message in the appropriate page under `docs/source/` — locate the page that describes the account and budget forms and add a sentence there rather than creating a new page
+- [X] T027 Run the new acceptance tests (`tox -e acceptance -- -k 'accounts or budgets'`) and `tox -e docs`, redirecting output to the scratchpad per `CLAUDE.md` rather than piping to `tail`
 
 **Checkpoint**: FR-010 satisfied on every named path. Documentation current (Principle IV).
 
