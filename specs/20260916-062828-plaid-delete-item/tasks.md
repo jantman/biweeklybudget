@@ -12,6 +12,8 @@ description: "Task list for Delete a Plaid Item (issue #269)"
 [contracts/plaid-delete-item.md](./contracts/plaid-delete-item.md),
 [quickstart.md](./quickstart.md)
 
+**Status**: Complete through M4.
+
 **Tests**: Included, and not optional here. Constitution Principle II requires new code to be
 covered by valid tests. This feature deletes rows from a financial database, so the tests that
 pin the *order* of those deletions and the "nothing was written" abort path are the substance
@@ -141,17 +143,28 @@ tells the maintainer to delete Plaid rows by hand.
 
 **Purpose**: Constitution Principle II — no feature is complete while any test fails.
 
-- [ ] T034 Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
-- [ ] T035 Run `tox -e acceptance` to completion and confirm it passes (~17 min; start it in the background). Re-run any known-flaky failure (reconcile drag/unignore, fuel-log search, Plaid `test_6_uncheck_all`) in isolation before attributing it to this change
-- [ ] T036 [P] Run `tox -e migrations` to confirm the migration head still matches the models — demonstrating rather than asserting that this change needs no migration
-- [ ] T037 [P] Run `tox -e docs` **after** T033's screenshots are committed, and confirm it builds clean. Re-run on a transient linkcheck timeout
-- [ ] T038 Run `tox -e docker` with the main checkout's `venv/bin` first on `PATH` so its final acceptance step can find tox, and not while T035 is still running. If this host kills it for low memory, say so plainly and let the CI `docker` job be the gate
-- [ ] T039 Add the `CHANGES.rst` entry under `Unreleased` — one concise bullet led by the issue #269 link, naming the new Delete action, that it also removes the Item at Plaid, and that linked Accounts are unlinked but keep their data. Do **not** touch `biweeklybudget/version.py`
+- [X] T034 Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
+- [X] T035 Run `tox -e acceptance` to completion and confirm it passes (~17 min; start it in the background). Re-run any known-flaky failure (reconcile drag/unignore, fuel-log search, Plaid `test_6_uncheck_all`) in isolation before attributing it to this change
+- [X] T036 [P] Run `tox -e migrations` to confirm the migration head still matches the models — demonstrating rather than asserting that this change needs no migration
+- [X] T037 [P] Run `tox -e docs` **after** T033's screenshots are committed, and confirm it builds clean. Re-run on a transient linkcheck timeout
+- [X] T038 Run `tox -e docker` with the main checkout's `venv/bin` first on `PATH` so its final acceptance step can find tox, and not while T035 is still running. If this host kills it for low memory, say so plainly and let the CI `docker` job be the gate
+- [X] T039 Add the `CHANGES.rst` entry under `Unreleased` — one concise bullet led by the issue #269 link, naming the new Delete action, that it also removes the Item at Plaid, and that linked Accounts are unlinked but keep their data. Do **not** touch `biweeklybudget/version.py`
 - [ ] T040 Update this file and `spec.md` to record completion, commit the whole of Milestones M1-M4, push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-269-plaid-add-ability-to-delete-an-item` (the branch's upstream is `origin/master`, so a bare `git push` would target master), and open the pull request
 - [ ] T041 Watch the PR's CI jobs to completion; investigate any failure, re-running known-flaky jobs before attributing them to this change
 - [ ] T042 Run `/answer-reviews` on the PR and repeat until Claude's review reports "No issues found" and Copilot's, if present, recommends approval
 
 **Checkpoint (Milestone M4)**: Green suites, documentation shipped, PR open and reviewed.
+
+### Gate results (2026-09-16)
+
+| Suite | Result |
+|---|---|
+| `py314` | 993 passed, 4 skipped; pycodestyle and pyflakes clean (cache cleared, so every style check ran) |
+| `acceptance` | 905 passed, 0 failed, 21m10s — first attempt, no known-flaky test needed a re-run |
+| `migrations` | 10 passed — head still matches the models, demonstrating that no revision is needed |
+| `docs` | builds clean; linkcheck clean; `sphinx-apidoc` regenerated no tracked file |
+| `docker` | `docker: OK` — image builds, `GET /` and the console-script checks pass, and the full acceptance suite run against the container exits 0 |
+| `plaid` | **not run** — needs Plaid sandbox credentials that are not available on this machine. The two new steps in `test_plaidlink.py` are therefore unexercised here; CI runs this job with the repository's secrets, though the class is `xfail`ed there for an unrelated reason. |
 
 ---
 

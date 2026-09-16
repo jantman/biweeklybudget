@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft
+**Status**: Complete
 
 **Input**: GitHub issue [#269](https://github.com/jantman/biweeklybudget/issues/269) — "Plaid - Add ability to delete an item"
 
