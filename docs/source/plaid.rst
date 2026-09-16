@@ -46,6 +46,22 @@ Linking Accounts to Plaid
 6. In the Edit Account modal, scroll to the bottom and select the appropriate Item and Account in the "Plaid Account" dropdown.
 7. Click "Save changes".
 
+.. _plaid.deleting:
+
+Deleting a Plaid Item
++++++++++++++++++++++
+
+1. Click the "Plaid Update" link in the left navigation menu.
+2. In the "Plaid Items" table, click the "Delete" link in the row for the Item you want to remove.
+3. A confirmation dialog names the Item and lists the Accounts that will no longer be linked to Plaid. Read it; this cannot be undone.
+4. Click "Delete" in the dialog to go ahead, or "Close" to change your mind. Nothing is sent to the server unless you click "Delete".
+
+Deleting an Item asks Plaid to remove it, which invalidates its access token and closes the institution connection, and then removes the Item and its Plaid Accounts from biweeklybudget. Any Account that was linked to one of those Plaid Accounts is simply un-linked from Plaid: the Account itself, along with all of its transactions, statements, balances and reconciliations, is left exactly as it was, and you can link it to a different Plaid Item afterwards. Transactions already downloaded through the deleted Item are **not** removed; only future downloads stop.
+
+Plaid is asked first, on purpose. If Plaid refuses - because it cannot be reached, or your credentials are wrong - nothing at all is deleted and the error is shown, so you can fix the problem and try again. The one case that does *not* stop the deletion is Plaid reporting that the Item no longer exists or that its access token is no longer valid; that Item is already gone as far as Plaid is concerned, so it is removed from biweeklybudget as well. This is what lets you clear out Items left behind by a change of Plaid environment (see :ref:`plaid.change-env`).
+
+To use the same financial institution again, link it from scratch as described in :ref:`plaid.linking`.
+
 .. _plaid.update-ui:
 
 Updating Transactions via UI
@@ -140,7 +156,7 @@ It may be necessary to change Plaid environments, such as if you started using t
 
 Also **note** that Plaid ``transaction_id`` (our ``fitid``) _will_ change between environments. As such, you should update transactions in the old environment immediately before switching environments, then update transactions in the new environment, and you will need to manually ignore any transactions that are duplicates.
 
-1. Un-associate all of your Accounts from Plaid Accounts. This can be done manually via the Account edit modal or by running the following SQL query directly against the database: ``UPDATE accounts SET plaid_item_id=NULL, plaid_account_id=NULL;``
-2. Delete all of your Plaid Accounts and Plaid Items from the database: ``DELETE FROM plaid_accounts; DELETE FROM plaid_items;``
+1. **Before** changing any settings, delete each of your Plaid Items as described in :ref:`plaid.deleting`. Do this first: once ``PLAID_ENV`` or ``PLAID_SECRET`` has changed, the old Items' access tokens are no longer valid for your new credentials, so they can no longer be removed at Plaid. Deleting an Item also un-links the Accounts that were using it, so there is nothing to un-associate by hand.
+2. If you have already changed environments and are left with Items you cannot remove at Plaid, delete them through the UI anyway: Plaid will report their access tokens as invalid, and biweeklybudget treats that as the Item already being gone and removes it from the database.
 3. Update your configuration / environment variables for the new ``PLAID_ENV`` that you want to use and your ``PLAID_SECRET`` for that environment.
 4. Re-link all of your Plaid items, and then re-associate them with your Accounts.

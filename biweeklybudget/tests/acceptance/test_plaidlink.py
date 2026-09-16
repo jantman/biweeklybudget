@@ -81,6 +81,9 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
 
     plaid_accts = {}
     plaid_acct_ids = []
+    # pytest builds a new instance per test method, so cross-test state
+    # must live in a mutable class attribute, as plaid_accts does
+    counts = {}
 
     def test_00_clean_transactions_and_setup(self, testdb):
         for stmt in [
@@ -596,3 +599,52 @@ class TestLinkAndUpdateSimple(AcceptanceHelper):
             self.plaid_accts['checking']['item_id']
         ).last_updated
         assert new_updated > orig_updated
+
+    def test_20_delete_item(self, base_url, selenium, testdb):
+        """
+        Delete the linked Item through the UI. This is the only test that
+        exercises the real Plaid ``item_remove`` call.
+        """
+        item_id = self.plaid_accts['checking']['item_id']
+        assert len(testdb.query(PlaidItem).all()) == 1
+        self.counts['ofx_statements'] = len(
+            testdb.query(OFXStatement).all()
+        )
+        self.counts['ofx_trans'] = len(testdb.query(OFXTransaction).all())
+        self.get(selenium, base_url + '/plaid-update')
+        self.wait_for_load_complete(selenium)
+        self.wait_for_jquery_done(selenium)
+        selenium.find_element(By.ID, 'plaid_delete_' + item_id).click()
+        WebDriverWait(selenium, 10).until(
+            EC.visibility_of_element_located((By.ID, 'modalDiv'))
+        )
+        body = selenium.find_element(By.ID, 'modalBody').text
+        assert 'First Platypus Bank' in body
+        assert 'cannot be undone' in body
+        # both Accounts linked in test_05 are named
+        for name in ['BankOne', 'CreditOne']:
+            assert name in body
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        # the page reloads on success; wait for the now-empty Items table
+        WebDriverWait(selenium, 30).until(
+            lambda d: d.find_elements(
+                By.CSS_SELECTOR, '#table-items-plaid tbody tr'
+            ) == []
+        )
+
+    def test_21_verify_item_deleted(self, testdb):
+        testdb.expire_all()
+        assert testdb.query(PlaidItem).all() == []
+        assert testdb.query(PlaidAccount).all() == []
+        # the Accounts survive, un-linked, with their history intact
+        for acct_id in [1, 3]:
+            acct: Account = testdb.query(Account).get(acct_id)
+            assert acct is not None
+            assert acct.plaid_item_id is None
+            assert acct.plaid_account_id is None
+        assert len(
+            testdb.query(OFXStatement).all()
+        ) == self.counts['ofx_statements']
+        assert len(
+            testdb.query(OFXTransaction).all()
+        ) == self.counts['ofx_trans']

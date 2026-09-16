@@ -288,7 +288,10 @@ class Screenshotter(object):
                            'updated that Item\'s transactions from the '
                            'institution ("Last Successful Update"), which '
                            'reads "unknown" if Plaid has reported no '
-                           'successful update.'
+                           'successful update. Each Item can also be deleted '
+                           'from here, which removes it at Plaid as well and '
+                           'un-links any Accounts that were using it, after '
+                           'a confirmation naming those Accounts.'
         },
         {
             'path': '/accounts/1',
