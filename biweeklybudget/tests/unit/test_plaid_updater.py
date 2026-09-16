@@ -180,11 +180,19 @@ class TestDoItem(PlaidUpdaterTester):
         ]
         mock_item = Mock(
             item_id='Item1', access_token='Token1',
-            last_updated=datetime(2019, 1, 1, 1, 1, 1)
+            last_updated=datetime(2019, 1, 1, 1, 1, 1),
+            last_successful_update=None
         )
         self.mock_client.item_get.return_value = {
             'item': {},
-            'status': {'transactions': {'foo': 'bar'}}
+            'status': {
+                'transactions': {
+                    'foo': 'bar',
+                    'last_successful_update': datetime(
+                        2020, 5, 24, 12, 0, 0, tzinfo=UTC
+                    )
+                }
+            }
         }
         txns = [
             [
@@ -248,6 +256,10 @@ class TestDoItem(PlaidUpdaterTester):
             )
         ]
         assert mock_item.last_updated == datetime(2020, 5, 25, 0, 0, 0)
+        # the time Plaid reported, stored against the Item (issue #268)
+        assert mock_item.last_successful_update == datetime(
+            2020, 5, 24, 12, 0, 0, tzinfo=UTC
+        )
         assert mocks['db_session'].mock_calls == [
             call.query(mocks['PlaidAccount']),
             call.query().filter(False),
@@ -280,8 +292,11 @@ class TestDoItem(PlaidUpdaterTester):
         ]
         mock_item = Mock(
             item_id='Item1', access_token='Token1',
-            last_updated=datetime(2019, 1, 1, 1, 1, 1)
+            last_updated=datetime(2019, 1, 1, 1, 1, 1),
+            last_successful_update=datetime(2019, 1, 1, 1, 1, 1, tzinfo=UTC)
         )
+        # Plaid reporting no successful update time is normal, not an error;
+        # the previously stored value is replaced by it (issue #268)
         self.mock_client.item_get.return_value = {
             'item': {},
             'status': {'transactions': {'foo': 'bar'}}
@@ -340,6 +355,7 @@ class TestDoItem(PlaidUpdaterTester):
             )
         ]
         assert mock_item.last_updated == datetime(2020, 5, 25, 0, 0, 0)
+        assert mock_item.last_successful_update is None
         assert mocks['db_session'].mock_calls == [
             call.query(mocks['PlaidAccount']),
             call.query().filter(False),
@@ -373,11 +389,19 @@ class TestDoItem(PlaidUpdaterTester):
         ]
         mock_item = Mock(
             item_id='Item1', access_token='Token1',
-            last_updated=datetime(2019, 1, 1, 1, 1, 1)
+            last_updated=datetime(2019, 1, 1, 1, 1, 1),
+            last_successful_update=datetime(2019, 1, 1, 1, 1, 1, tzinfo=UTC)
         )
         self.mock_client.item_get.return_value = {
             'item': {},
-            'status': {'transactions': {'foo': 'bar'}}
+            'status': {
+                'transactions': {
+                    'foo': 'bar',
+                    'last_successful_update': datetime(
+                        2020, 5, 24, 12, 0, 0, tzinfo=UTC
+                    )
+                }
+            }
         }
         txns = [
             [
@@ -423,6 +447,11 @@ class TestDoItem(PlaidUpdaterTester):
         assert res.exc == ex
         assert res.stmt_ids is None
         assert m_sfa.mock_calls == []
+        # a failed update says nothing about when Plaid last succeeded, so the
+        # previously stored value is left alone (issue #268)
+        assert mock_item.last_successful_update == datetime(
+            2019, 1, 1, 1, 1, 1, tzinfo=UTC
+        )
         assert mocks['db_session'].mock_calls == []
         assert mocks['ItemGetRequest'].mock_calls == [
             call(access_token='Token1')
