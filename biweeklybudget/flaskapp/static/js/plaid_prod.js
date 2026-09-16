@@ -124,3 +124,79 @@ function plaidRefresh(item_id) {
         }
     });
 }
+
+/**
+ * Show the confirmation modal for deleting a Plaid Item. Makes no request of
+ * its own; the deletion happens in :js:func:`plaidDelete`, called when the
+ * modal's Delete button is clicked.
+ *
+ * @param {string} item_id - the Plaid Item ID to delete.
+ * @param {string} institution_name - the Item's institution name, for display.
+ * @param {string} account_names - comma-separated "Name (id)" for each Account
+ *   linked to this Item, or an empty string if none are.
+ */
+function plaidDeleteConfirm(item_id, institution_name, account_names) {
+    console.log("called plaidDeleteConfirm(" + item_id + ")");
+    var accts = (account_names || '').trim();
+    var acctText = accts === '' ?
+        'No Accounts are linked to this Item, so none will be un-linked.' :
+        'These Accounts will no longer be linked to Plaid, but will keep all ' +
+        'of their transactions, balances and history: ' + accts + '.';
+    $('#modalBody').empty();
+    $('#modalBody').append(
+        $('<div id="plaidDeleteConfirmBody"/>')
+            .append($('<p/>').text(
+                'Delete Plaid Item ' + item_id + ' (' + institution_name +
+                ')?'
+            ))
+            .append($('<p/>').text(acctText))
+            .append($('<p/>').text(
+                'The Item will also be removed at Plaid, and its Plaid ' +
+                'Accounts will be removed from biweeklybudget. This cannot ' +
+                'be undone; to use this institution again you must link it ' +
+                'from scratch.'
+            ))
+    );
+    $('#modalSaveButton').off();
+    $('#modalSaveButton').click(function() {
+        plaidDelete(item_id);
+    });
+    $('#modalSaveButton').text('Delete')
+        .removeClass('btn-primary').addClass('btn-danger').show();
+    $('#modalLabel').text('Delete Plaid Item ' + item_id);
+    $("#modalDiv").modal('show');
+}
+
+/**
+ * Call the /ajax/plaid/delete_item endpoint and then reload this page. On
+ * failure, show the server's message and leave the page alone, since nothing
+ * was deleted.
+ *
+ * @param {string} item_id - the Plaid Item ID to delete.
+ */
+function plaidDelete(item_id) {
+    console.log("called plaidDelete(" + item_id + ")");
+    $.ajax({
+        url: '/ajax/plaid/delete_item',
+        type: 'POST',
+        data: JSON.stringify({
+            item_id: item_id
+        }),
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function(data) {
+            location.reload();
+        },
+        error: function(jqXHR) {
+            var msg = "see server log for details.";
+            if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                msg = jqXHR.responseJSON.message;
+            }
+            $("#modalDiv").modal('hide');
+            alert(
+                "ERROR deleting Plaid Item " + item_id + "; nothing was " +
+                "deleted: " + msg
+            );
+        }
+    });
+}

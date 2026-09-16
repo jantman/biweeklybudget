@@ -57,6 +57,7 @@
                                             <th>Last Successful Update</th>
                                             <th>Update</th>
                                             <th>Refresh Accounts</th>
+                                            <th>Delete</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -69,6 +70,7 @@
                                             <td>{% if i.last_successful_update %}{{ i.last_successful_update|ago }}{% else %}unknown{% endif %}</td>
                                             <td><a onclick="plaidUpdate('{{ i.item_id }}')">Update / Fix Item</a></td>
                                             <td><a onclick="plaidRefresh('{{ i.item_id }}')">Refresh</a></td>
+                                            <td><a id="plaid_delete_{{ i.item_id }}" onclick='plaidDeleteConfirm({{ i.item_id|tojson }}, {{ i.institution_name|tojson }}, {{ accounts[i.item_id]|tojson }})'>Delete</a></td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>

@@ -37,6 +37,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 from textwrap import dedent
 from datetime import datetime, timezone, timedelta
+import pytest
 from unittest.mock import Mock, MagicMock, patch, call, DEFAULT
 from plaid import ApiException
 from plaid.models import LinkTokenCreateResponse
@@ -47,7 +48,8 @@ from biweeklybudget.flaskapp.app import app
 from biweeklybudget.plaid_updater import PlaidUpdateResult
 from biweeklybudget.flaskapp.views.plaid import (
     PlaidJs, PlaidHandleLink, set_url_rules, PlaidUpdate, PlaidRefreshAccounts,
-    PlaidUpdateItemInfo, PlaidLinkToken
+    PlaidUpdateItemInfo, PlaidLinkToken, PlaidDeleteItem,
+    plaid_item_already_gone
 )
 from biweeklybudget.utils import dtnow
 from biweeklybudget.models.account import Account
@@ -64,6 +66,7 @@ class TestSetUrlRules:
         m_pjs_view = Mock()
         m_pu_view = Mock()
         m_pra_view = Mock()
+        m_pdi_view = Mock()
         m_puii_view = Mock()
         m_plt_view = Mock()
         m_app = Mock()
@@ -73,6 +76,7 @@ class TestSetUrlRules:
             PlaidJs=DEFAULT,
             PlaidUpdate=DEFAULT,
             PlaidRefreshAccounts=DEFAULT,
+            PlaidDeleteItem=DEFAULT,
             PlaidUpdateItemInfo=DEFAULT,
             PlaidLinkToken=DEFAULT,
             new_callable=MagicMock
@@ -81,6 +85,7 @@ class TestSetUrlRules:
             mocks['PlaidJs'].as_view.return_value = m_pjs_view
             mocks['PlaidUpdate'].as_view.return_value = m_pu_view
             mocks['PlaidRefreshAccounts'].return_value = m_pra_view
+            mocks['PlaidDeleteItem'].return_value = m_pdi_view
             mocks['PlaidUpdateItemInfo'].return_value = m_puii_view
             mocks['PlaidLinkToken'].return_value = m_plt_view
             set_url_rules(m_app)
@@ -101,6 +106,12 @@ class TestSetUrlRules:
                 '/ajax/plaid/refresh_item_accounts',
                 view_func=mocks['PlaidRefreshAccounts'].as_view(
                     'plaid_refresh_item_accounts'
+                )
+            ),
+            call.add_url_rule(
+                '/ajax/plaid/delete_item',
+                view_func=mocks['PlaidDeleteItem'].as_view(
+                    'plaid_delete_item'
                 )
             ),
             call.add_url_rule(
@@ -532,6 +543,400 @@ class TestPlaidRefreshAccounts:
         ]
         assert mocks['PlaidItem'].mock_calls == []
         assert mocks['PlaidAccount'].mock_calls == []
+
+
+def api_exception(body, status=400, reason='fooerror'):
+    """
+    Build an :py:class:`~plaid.ApiException` carrying ``body``.
+
+    ``ApiException.__init__`` only sets ``body`` when handed an HTTP response
+    object, so set it directly; ``body`` is the attribute the code under test
+    reads.
+    """
+    exc = ApiException(reason=reason, status=status)
+    exc.body = body
+    return exc
+
+
+class RecordingAccount:
+    """
+    Stand-in for an :py:class:`~.Account` that records every attribute
+    assignment, so a test can assert that unlinking writes the two Plaid
+    columns and nothing else.
+    """
+
+    def __init__(self, id, name):
+        object.__setattr__(self, 'assignments', [])
+        object.__setattr__(self, 'id', id)
+        object.__setattr__(self, 'name', name)
+
+    def __setattr__(self, key, value):
+        self.assignments.append((key, value))
+        object.__setattr__(self, key, value)
+
+
+class TestPlaidItemAlreadyGone:
+    """
+    Contract C2: which Plaid failures mean the Item is already gone.
+    """
+
+    def test_item_not_found(self):
+        assert plaid_item_already_gone(
+            api_exception('{"error_code": "ITEM_NOT_FOUND"}')
+        ) is True
+
+    def test_invalid_access_token(self):
+        assert plaid_item_already_gone(
+            api_exception('{"error_code": "INVALID_ACCESS_TOKEN"}')
+        ) is True
+
+    def test_bytes_body(self):
+        assert plaid_item_already_gone(
+            api_exception(b'{"error_code": "ITEM_NOT_FOUND"}')
+        ) is True
+
+    def test_realistic_plaid_body(self):
+        assert plaid_item_already_gone(api_exception(
+            '{"display_message": null, "documentation_url": "https://plaid'
+            '.com/docs/#item-errors", "error_code": "ITEM_NOT_FOUND", '
+            '"error_message": "The Item you requested cannot be found.", '
+            '"error_type": "ITEM_ERROR", "request_id": "RequestId1"}'
+        )) is True
+
+    def test_invalid_api_keys_is_not_gone(self):
+        # a misconfigured installation, not a property of the Item; this must
+        # abort the deletion rather than silently dropping Items
+        assert plaid_item_already_gone(
+            api_exception('{"error_code": "INVALID_API_KEYS"}')
+        ) is False
+
+    def test_other_error_code(self):
+        assert plaid_item_already_gone(
+            api_exception('{"error_code": "INTERNAL_SERVER_ERROR"}')
+        ) is False
+
+    def test_no_error_code_key(self):
+        assert plaid_item_already_gone(
+            api_exception('{"error_type": "ITEM_ERROR"}')
+        ) is False
+
+    def test_null_error_code(self):
+        assert plaid_item_already_gone(
+            api_exception('{"error_code": null}')
+        ) is False
+
+    def test_no_body(self):
+        assert plaid_item_already_gone(
+            ApiException(reason='fooerror', status=500)
+        ) is False
+
+    def test_body_not_json(self):
+        assert plaid_item_already_gone(
+            api_exception('<html>502 Bad Gateway</html>')
+        ) is False
+
+    def test_body_json_but_not_an_object(self):
+        assert plaid_item_already_gone(
+            api_exception('["ITEM_NOT_FOUND"]')
+        ) is False
+
+    def test_body_undecodable_bytes(self):
+        assert plaid_item_already_gone(api_exception(b'\xff\xfe')) is False
+
+
+class TestPlaidDeleteItem:
+
+    def _mocks(self, item, json_body=None):
+        """
+        Build the request, client, session and jsonify mocks these tests share.
+        """
+        mock_req = MagicMock()
+        mock_req.get_json.return_value = (
+            {'item_id': 'IID1'} if json_body is None else json_body
+        )
+        mock_client = MagicMock()
+        mock_sess = MagicMock()
+        mock_sess.query.return_value.get.return_value = item
+        return mock_req, mock_client, mock_sess
+
+    def _run(self, mock_req, mock_client, mock_sess, mock_json, m_irr):
+        with patch.multiple(
+                pbm,
+                jsonify=DEFAULT,
+                request=mock_req,
+                plaid_client=DEFAULT,
+                PlaidItem=DEFAULT,
+                ItemRemoveRequest=DEFAULT,
+                db_session=mock_sess
+        ) as mocks:
+            mocks['jsonify'].return_value = mock_json
+            mocks['plaid_client'].return_value = mock_client
+            mocks['ItemRemoveRequest'].return_value = m_irr
+            res = PlaidDeleteItem().post()
+        return res, mocks
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_normal(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        m_acct1 = Mock(id=1)
+        m_acct1.name = 'Acct1'
+        m_pa1 = Mock(account_id='PA1', account=m_acct1)
+        m_pa2 = Mock(account_id='PA2', account=None)
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken',
+            all_accounts=[m_pa1, m_pa2]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mocks['ItemRemoveRequest'].mock_calls == [
+            call(access_token='accToken')
+        ]
+        assert mock_client.method_calls == [call.item_remove(m_irr)]
+        # Plaid is asked first, then the rows are removed in the only order the
+        # foreign keys allow, in one commit
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1'),
+            call.add(m_acct1),
+            call.delete(m_pa1),
+            call.delete(m_pa2),
+            call.delete(mock_item),
+            call.commit()
+        ]
+        assert m_acct1.plaid_item_id is None
+        assert m_acct1.plaid_account_id is None
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': True,
+                'item_id': 'IID1',
+                'accounts_unlinked': ['Acct1 (1)']
+            })
+        ]
+        assert mock_json.mock_calls == []
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_no_linked_accounts(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        m_pa1 = Mock(account_id='PA1', account=None)
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[m_pa1]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1'),
+            call.delete(m_pa1),
+            call.delete(mock_item),
+            call.commit()
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': True,
+                'item_id': 'IID1',
+                'accounts_unlinked': []
+            })
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_item_with_no_plaid_accounts(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1'),
+            call.delete(mock_item),
+            call.commit()
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_unlink_touches_only_plaid_columns(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        acct = RecordingAccount(3, 'InvestmentOne')
+        m_pa1 = Mock(account_id='PA1', account=acct)
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[m_pa1]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert acct.assignments == [
+            ('plaid_item_id', None), ('plaid_account_id', None)
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': True,
+                'item_id': 'IID1',
+                'accounts_unlinked': ['InvestmentOne (3)']
+            })
+        ]
+
+    @pytest.mark.parametrize(
+        'error_code', ['ITEM_NOT_FOUND', 'INVALID_ACCESS_TOKEN']
+    )
+    @patch.dict('os.environ', {}, clear=True)
+    def test_already_gone_at_plaid_still_deletes(self, error_code):
+        mock_json = Mock()
+        m_irr = Mock()
+        m_pa1 = Mock(account_id='PA1', account=None)
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[m_pa1]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        mock_client.item_remove.side_effect = api_exception(
+            '{"error_code": "%s"}' % error_code
+        )
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1'),
+            call.delete(m_pa1),
+            call.delete(mock_item),
+            call.commit()
+        ]
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': True,
+                'item_id': 'IID1',
+                'accounts_unlinked': []
+            })
+        ]
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_plaid_exception_changes_nothing(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        m_acct1 = Mock(id=1)
+        m_acct1.name = 'Acct1'
+        m_pa1 = Mock(account_id='PA1', account=m_acct1)
+        mock_item = Mock(
+            item_id='IID1', access_token='accToken', all_accounts=[m_pa1]
+        )
+        mock_req, mock_client, mock_sess = self._mocks(mock_item)
+        mock_client.item_remove.side_effect = api_exception(
+            '{"error_code": "INVALID_API_KEYS"}', status=400,
+            reason='fooerror'
+        )
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'Exception: Status Code: 400\nReason: fooerror\n'
+                           'HTTP response body: {"error_code": '
+                           '"INVALID_API_KEYS"}\n'
+            })
+        ]
+        assert mock_json.status_code == 400
+        # nothing at all was written
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1')
+        ]
+        assert m_acct1.mock_calls == []
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_missing_item_id(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        mock_req, mock_client, mock_sess = self._mocks(None, json_body={})
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'Missing item_id parameter.'
+            })
+        ]
+        assert mock_json.status_code == 400
+        assert mock_sess.mock_calls == []
+        assert mocks['plaid_client'].mock_calls == []
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_no_json_body(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        mock_req, mock_client, mock_sess = self._mocks(None, json_body=None)
+        mock_req.get_json.return_value = None
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mock_json.status_code == 400
+        assert mock_sess.mock_calls == []
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_unknown_item_id(self):
+        mock_json = Mock()
+        m_irr = Mock()
+        mock_req, mock_client, mock_sess = self._mocks(None)
+        res, mocks = self._run(
+            mock_req, mock_client, mock_sess, mock_json, m_irr
+        )
+        assert res == mock_json
+        assert mocks['jsonify'].mock_calls == [
+            call({
+                'success': False,
+                'message': 'ERROR: No Plaid Item with item_id IID1'
+            })
+        ]
+        assert mock_json.status_code == 404
+        assert mock_sess.mock_calls == [
+            call.query(mocks['PlaidItem']),
+            call.query().get('IID1')
+        ]
+        assert mocks['plaid_client'].mock_calls == []
+
+    @patch.dict('os.environ', {}, clear=True)
+    def test_access_token_never_in_response(self):
+        m_irr = Mock()
+        m_pa1 = Mock(account_id='PA1', account=None)
+
+        def responses(side_effect):
+            mock_json = Mock()
+            mock_item = Mock(
+                item_id='IID1', access_token='SuperSecretAccessToken',
+                all_accounts=[m_pa1]
+            )
+            mock_req, mock_client, mock_sess = self._mocks(mock_item)
+            mock_client.item_remove.side_effect = side_effect
+            _, mocks = self._run(
+                mock_req, mock_client, mock_sess, mock_json, m_irr
+            )
+            return mocks['jsonify'].mock_calls
+
+        for calls in [
+            responses(None),
+            responses(api_exception('{"error_code": "INVALID_API_KEYS"}')),
+            responses(api_exception('{"error_code": "ITEM_NOT_FOUND"}')),
+        ]:
+            assert 'SuperSecretAccessToken' not in str(calls)
 
 
 class TestPlaidUpdateItemInfo:
@@ -1390,6 +1795,66 @@ class TestPlaidResultTemplate:
         assert '<td>[21728, 21729]</td>' in html
         assert '<td>BadItem</td>' in html
         assert '<td><strong>1 Failed</strong></td>' in html
+
+
+class TestPlaidFormTemplate:
+    """Render the real ``plaid_form.html``; the view tests mock it out."""
+
+    def _render(self, plaid_items, plaid_accounts, accounts):
+        # jinja_env rendering skips the context processors, which need a DB
+        with app.test_request_context():
+            return app.jinja_env.get_template('plaid_form.html').render(
+                plaid_items=plaid_items, plaid_accounts=plaid_accounts,
+                accounts=accounts, notifications=[], settings={},
+                CURRENCY_SYM='$'
+            )
+
+    def test_delete_link_per_item(self):
+        items = [
+            Mock(
+                spec_set=PlaidItem, item_id='Item1', institution_name='Inst1',
+                institution_id='InstId1', last_updated=dtnow(),
+                last_successful_update=None
+            ),
+            Mock(
+                spec_set=PlaidItem, item_id='Item2', institution_name='Inst2',
+                institution_id='InstId2', last_updated=dtnow(),
+                last_successful_update=None
+            )
+        ]
+        html = self._render(
+            items,
+            {'Item1': 'Acct1 (foo)', 'Item2': 'Acct3 (bar)'},
+            {'Item1': 'BankOne (1)', 'Item2': ''}
+        )
+        assert '<th>Delete</th>' in html
+        assert (
+            '<a id="plaid_delete_Item1" onclick=\'plaidDeleteConfirm('
+            '"Item1", "Inst1", "BankOne (1)")\'>Delete</a>'
+        ) in html
+        # an Item with no linked Accounts passes an empty string, not "None"
+        assert (
+            '<a id="plaid_delete_Item2" onclick=\'plaidDeleteConfirm('
+            '"Item2", "Inst2", "")\'>Delete</a>'
+        ) in html
+
+    def test_institution_name_is_escaped(self):
+        # institution names are free text from Plaid; an apostrophe must not
+        # break out of the single-quoted onclick attribute
+        items = [
+            Mock(
+                spec_set=PlaidItem, item_id='Item1',
+                institution_name="Bob's Bank & Trust",
+                institution_id='InstId1', last_updated=dtnow(),
+                last_successful_update=None
+            )
+        ]
+        html = self._render(
+            items, {'Item1': 'Acct1 (foo)'}, {'Item1': ''}
+        )
+        assert "Bob's Bank & Trust\"" not in html
+        assert '\\u0027' in html
+        assert '\\u0026' in html
 
 
 class TestPlaidLinkToken:

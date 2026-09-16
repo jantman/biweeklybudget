@@ -33,8 +33,8 @@ required to advance from one milestone to the next (Principle I).
 
 **Purpose**: Make the environment able to run and verify the change. No source edits.
 
-- [ ] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md`, then run `python dev/setup_test_db.py`; in a worktree use the main checkout's tox at `/home/jantman/GIT/biweeklybudget/venv/bin/tox` and `touch .tox/acceptance/liveserver.log` before the first acceptance run (per [quickstart.md](./quickstart.md))
-- [ ] T002 Record a pre-change baseline by running `tox -e py314 -- biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` and `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, redirecting output to the scratchpad per `CLAUDE.md`
+- [X] T001 Start the MariaDB test container and export the test-database environment described in `CLAUDE.md`, then run `python dev/setup_test_db.py`; in a worktree use the main checkout's tox at `/home/jantman/GIT/biweeklybudget/venv/bin/tox` and `touch .tox/acceptance/liveserver.log` before the first acceptance run (per [quickstart.md](./quickstart.md))
+- [X] T002 Record a pre-change baseline by running `tox -e py314 -- biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` and `tox -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py`, redirecting output to the scratchpad per `CLAUDE.md`
 
 **Checkpoint**: Test database up, both suites runnable from the worktree, baseline recorded.
 
@@ -47,8 +47,8 @@ mean "this Item is already gone" and which mean "abort". Everything in Phase 3 d
 
 **⚠️ BLOCKING**: T003–T004 must complete before Phase 3 begins.
 
-- [ ] T003 [US2] Add the module-private failure classifier to `biweeklybudget/flaskapp/views/plaid.py` implementing contract C2 in [contracts/plaid-delete-item.md](./contracts/plaid-delete-item.md): parse `ApiException.body` as JSON (decoding `bytes` first), return `True` only for `error_code` in `ITEM_NOT_FOUND` and `INVALID_ACCESS_TOKEN`, and return `False` — never raise — for every other code, a missing `error_code`, a `None` body, a non-object body, and unparseable JSON; docstring in the file's existing style naming why `INVALID_API_KEYS` is excluded
-- [ ] T004 [US2] Add `TestPlaidDeleteItemRecoverable` (or equivalent) to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` with one test per row of contract C2's table, including the three "must not raise" rows, constructing `ApiException` the way the existing Plaid tests do
+- [X] T003 [US2] Add the module-private failure classifier to `biweeklybudget/flaskapp/views/plaid.py` implementing contract C2 in [contracts/plaid-delete-item.md](./contracts/plaid-delete-item.md): parse `ApiException.body` as JSON (decoding `bytes` first), return `True` only for `error_code` in `ITEM_NOT_FOUND` and `INVALID_ACCESS_TOKEN`, and return `False` — never raise — for every other code, a missing `error_code`, a `None` body, a non-object body, and unparseable JSON; docstring in the file's existing style naming why `INVALID_API_KEYS` is excluded
+- [X] T004 [US2] Add `TestPlaidDeleteItemRecoverable` (or equivalent) to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` with one test per row of contract C2's table, including the three "must not raise" rows, constructing `ApiException` the way the existing Plaid tests do
 
 **Checkpoint**: The classifier exists and every branch of it is covered.
 
@@ -67,24 +67,24 @@ session untouched.
 
 ### Implementation for User Stories 2, 3 and 4
 
-- [ ] T005 [US2] Add `ItemRemoveRequest` to the `plaid.models` import block in `biweeklybudget/flaskapp/views/plaid.py`
-- [ ] T006 [US2] Add `PlaidDeleteItem(MethodView)` to `biweeklybudget/flaskapp/views/plaid.py` implementing contract C1, modelled on `PlaidRefreshAccounts`: read `item_id` from the JSON body (400 if absent), look the Item up with `db_session.query(PlaidItem).get(item_id)` (404 if `None`), then call `plaid_client().item_remove(ItemRemoveRequest(access_token=item.access_token))` inside `try`/`except ApiException`, aborting with 400 unless the T003 classifier says the Item is already gone — with a class docstring in the file's existing style
-- [ ] T007 [US3] In `PlaidDeleteItem.post`, after a successful Plaid removal, collect the `Account` rows with `plaid_item_id == item_id`, record their `"Name (id)"` strings for the response, and set **only** `plaid_item_id` and `plaid_account_id` to `None` on each — the same two assignments `biweeklybudget/flaskapp/views/accounts.py:286-288` makes for the "none" choice
-- [ ] T008 [US4] In `PlaidDeleteItem.post`, after the unlink, `db_session.delete()` each `PlaidAccount` with `item_id == item_id`, then `db_session.delete(item)`, then a single `db_session.commit()` covering all three — the order and the single commit are what give contract guarantee G2
-- [ ] T009 [US2] Return `{'success': True, 'item_id': ..., 'accounts_unlinked': [...]}` on success, and log the deletion at info level **without** the access token (contract guarantee G1)
-- [ ] T010 [US2] Register the route in `set_url_rules` in `biweeklybudget/flaskapp/views/plaid.py` as `a.add_url_rule('/ajax/plaid/delete_item', view_func=PlaidDeleteItem.as_view('plaid_delete_item'))`
+- [X] T005 [US2] Add `ItemRemoveRequest` to the `plaid.models` import block in `biweeklybudget/flaskapp/views/plaid.py`
+- [X] T006 [US2] Add `PlaidDeleteItem(MethodView)` to `biweeklybudget/flaskapp/views/plaid.py` implementing contract C1, modelled on `PlaidRefreshAccounts`: read `item_id` from the JSON body (400 if absent), look the Item up with `db_session.query(PlaidItem).get(item_id)` (404 if `None`), then call `plaid_client().item_remove(ItemRemoveRequest(access_token=item.access_token))` inside `try`/`except ApiException`, aborting with 400 unless the T003 classifier says the Item is already gone — with a class docstring in the file's existing style
+- [X] T007 [US3] In `PlaidDeleteItem.post`, after a successful Plaid removal, collect the `Account` rows with `plaid_item_id == item_id`, record their `"Name (id)"` strings for the response, and set **only** `plaid_item_id` and `plaid_account_id` to `None` on each — the same two assignments `biweeklybudget/flaskapp/views/accounts.py:286-288` makes for the "none" choice
+- [X] T008 [US4] In `PlaidDeleteItem.post`, after the unlink, `db_session.delete()` each `PlaidAccount` with `item_id == item_id`, then `db_session.delete(item)`, then a single `db_session.commit()` covering all three — the order and the single commit are what give contract guarantee G2
+- [X] T009 [US2] Return `{'success': True, 'item_id': ..., 'accounts_unlinked': [...]}` on success, and log the deletion at info level **without** the access token (contract guarantee G1)
+- [X] T010 [US2] Register the route in `set_url_rules` in `biweeklybudget/flaskapp/views/plaid.py` as `a.add_url_rule('/ajax/plaid/delete_item', view_func=PlaidDeleteItem.as_view('plaid_delete_item'))`
 
 ### Tests for User Stories 2, 3 and 4
 
-- [ ] T011 [US2] Update `TestSetUrlRules::test_rules` in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` — add `PlaidDeleteItem=DEFAULT` to the `patch.multiple` call and the new `add_url_rule` call to the exact ordered assertion list. This is a required edit; the test fails without it
-- [ ] T012 [US2] Add `TestPlaidDeleteItem::test_normal` to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` following the `TestPlaidRefreshAccounts::test_normal` mocking style (`patch.multiple(pbm, jsonify=DEFAULT, request=mock_req, plaid_client=DEFAULT, PlaidItem=DEFAULT, PlaidAccount=DEFAULT, Account=DEFAULT, ItemRemoveRequest=DEFAULT, db_session=mock_sess)`), asserting the Plaid client received `item_remove` with the Item's access token **and** the exact ordered `db_session.mock_calls` list: query, unlink, delete each PlaidAccount, delete the Item, one commit
-- [ ] T013 [P] [US3] Add `TestPlaidDeleteItem::test_no_linked_accounts` asserting the deletion succeeds, `accounts_unlinked` is `[]`, and no Account is written
-- [ ] T014 [P] [US3] Add `TestPlaidDeleteItem::test_unlink_touches_only_plaid_columns` asserting that exactly `plaid_item_id` and `plaid_account_id` are assigned `None` on each affected Account and that no other attribute is set
-- [ ] T015 [P] [US2] Add `TestPlaidDeleteItem::test_item_not_found_at_plaid` and `test_invalid_access_token`, each raising an `ApiException` whose body carries that `error_code`, asserting the local deletion still completes
-- [ ] T016 [P] [US4] Add `TestPlaidDeleteItem::test_plaid_exception` raising a non-recoverable `ApiException` (use `INVALID_API_KEYS`), asserting a 400 response whose message matches the existing `'Exception: Status Code: ...'` format **and** that `db_session.mock_calls` contains no write — the "changes nothing" guarantee
-- [ ] T017 [P] [US4] Add `TestPlaidDeleteItem::test_missing_item_id` (400) and `test_unknown_item_id` (404, no Plaid call, no DB write)
-- [ ] T018 [P] [US2] Add `TestPlaidDeleteItem::test_access_token_not_in_response` asserting the token string appears in no response body on either the success or the failure path
-- [ ] T019 Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
+- [X] T011 [US2] Update `TestSetUrlRules::test_rules` in `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` — add `PlaidDeleteItem=DEFAULT` to the `patch.multiple` call and the new `add_url_rule` call to the exact ordered assertion list. This is a required edit; the test fails without it
+- [X] T012 [US2] Add `TestPlaidDeleteItem::test_normal` to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` following the `TestPlaidRefreshAccounts::test_normal` mocking style (`patch.multiple(pbm, jsonify=DEFAULT, request=mock_req, plaid_client=DEFAULT, PlaidItem=DEFAULT, PlaidAccount=DEFAULT, Account=DEFAULT, ItemRemoveRequest=DEFAULT, db_session=mock_sess)`), asserting the Plaid client received `item_remove` with the Item's access token **and** the exact ordered `db_session.mock_calls` list: query, unlink, delete each PlaidAccount, delete the Item, one commit
+- [X] T013 [P] [US3] Add `TestPlaidDeleteItem::test_no_linked_accounts` asserting the deletion succeeds, `accounts_unlinked` is `[]`, and no Account is written
+- [X] T014 [P] [US3] Add `TestPlaidDeleteItem::test_unlink_touches_only_plaid_columns` asserting that exactly `plaid_item_id` and `plaid_account_id` are assigned `None` on each affected Account and that no other attribute is set
+- [X] T015 [P] [US2] Add `TestPlaidDeleteItem::test_item_not_found_at_plaid` and `test_invalid_access_token`, each raising an `ApiException` whose body carries that `error_code`, asserting the local deletion still completes
+- [X] T016 [P] [US4] Add `TestPlaidDeleteItem::test_plaid_exception` raising a non-recoverable `ApiException` (use `INVALID_API_KEYS`), asserting a 400 response whose message matches the existing `'Exception: Status Code: ...'` format **and** that `db_session.mock_calls` contains no write — the "changes nothing" guarantee
+- [X] T017 [P] [US4] Add `TestPlaidDeleteItem::test_missing_item_id` (400) and `test_unknown_item_id` (404, no Plaid call, no DB write)
+- [X] T018 [P] [US2] Add `TestPlaidDeleteItem::test_access_token_not_in_response` asserting the token string appears in no response body on either the success or the failure path
+- [X] T019 Run `tox -e py314` to completion and confirm it passes, redirecting output to the scratchpad
 
 **Checkpoint (Milestone M1)**: The endpoint is complete and fully covered. Deleting an Item is
 possible by POSTing it directly; nothing in the UI offers it yet.
@@ -103,17 +103,17 @@ and confirm nothing was requested and nothing changed.
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] Add the `Delete` column to `biweeklybudget/flaskapp/templates/plaid_form.html` per contract C3.1 — a `<th>Delete</th>` after `Refresh Accounts`, and a cell rendering `<a onclick="plaidDeleteConfirm(...)">Delete</a>` passing the item id, `i.institution_name` and `accounts[i.item_id]` through `|tojson` (institution names are free text from Plaid and can contain apostrophes)
-- [ ] T021 [US1] Add `plaidDeleteConfirm(item_id, institution_name, account_names)` to `biweeklybudget/flaskapp/static/js/plaid_prod.js` per contract C3.2/C3.3 — populate the shared `#modalDiv` following the `creditPayoffErrorModal.js` pattern, state the Accounts that will be unlinked or that there are none, state that the Item will also be removed at Plaid and that the action cannot be undone, show and relabel `#modalSaveButton` as a destructive `Delete`, and make **no** request
-- [ ] T022 [US1] Add `plaidDelete(item_id)` to `biweeklybudget/flaskapp/static/js/plaid_prod.js` — POST `/ajax/plaid/delete_item` in the style of `plaidRefresh`, `location.reload()` on success, and on failure surface the server's `message` **without** reloading so the unchanged page stays in front of the maintainer; JSDoc both functions in the file's existing style
+- [X] T020 [US1] Add the `Delete` column to `biweeklybudget/flaskapp/templates/plaid_form.html` per contract C3.1 — a `<th>Delete</th>` after `Refresh Accounts`, and a cell rendering `<a onclick="plaidDeleteConfirm(...)">Delete</a>` passing the item id, `i.institution_name` and `accounts[i.item_id]` through `|tojson` (institution names are free text from Plaid and can contain apostrophes)
+- [X] T021 [US1] Add `plaidDeleteConfirm(item_id, institution_name, account_names)` to `biweeklybudget/flaskapp/static/js/plaid_prod.js` per contract C3.2/C3.3 — populate the shared `#modalDiv` following the `creditPayoffErrorModal.js` pattern, state the Accounts that will be unlinked or that there are none, state that the Item will also be removed at Plaid and that the action cannot be undone, show and relabel `#modalSaveButton` as a destructive `Delete`, and make **no** request
+- [X] T022 [US1] Add `plaidDelete(item_id)` to `biweeklybudget/flaskapp/static/js/plaid_prod.js` — POST `/ajax/plaid/delete_item` in the style of `plaidRefresh`, `location.reload()` on success, and on failure surface the server's `message` **without** reloading so the unchanged page stays in front of the maintainer; JSDoc both functions in the file's existing style
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] Add a `plaid_form.html` render test to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` in the style of `TestPlaidResultTemplate`, asserting the Delete link and its arguments appear for each Item, including correct escaping for an institution name containing an apostrophe
-- [ ] T024 [US1] Update `test_4_table` in `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` for the new eighth cell, `'Delete'`
-- [ ] T025 [US1] Add acceptance tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` that click `Delete` on a fixture Item, assert the modal is shown and its body names the Item, the institution and the Account that would be unlinked, then dismiss it and assert the Plaid Items table is unchanged and no request was made
-- [ ] T026 [P] [US1] Add an acceptance test for an Item whose Plaid Accounts are linked to no Account, asserting the modal says so explicitly rather than showing an empty list
-- [ ] T027 Run `tox -e py314` and then `tox -e acceptance` to completion (they share the test database, so run them in sequence) and confirm both pass, redirecting output to the scratchpad
+- [X] T023 [P] [US1] Add a `plaid_form.html` render test to `biweeklybudget/tests/unit/flaskapp/views/test_plaid.py` in the style of `TestPlaidResultTemplate`, asserting the Delete link and its arguments appear for each Item, including correct escaping for an institution name containing an apostrophe
+- [X] T024 [US1] Update `test_4_table` in `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` for the new eighth cell, `'Delete'`
+- [X] T025 [US1] Add acceptance tests to `biweeklybudget/tests/acceptance/flaskapp/views/test_plaid.py` that click `Delete` on a fixture Item, assert the modal is shown and its body names the Item, the institution and the Account that would be unlinked, then dismiss it and assert the Plaid Items table is unchanged and no request was made
+- [X] T026 [P] [US1] Add an acceptance test for an Item whose Plaid Accounts are linked to no Account, asserting the modal says so explicitly rather than showing an empty list
+- [X] T027 Run `tox -e py314` and then `tox -e acceptance` to completion (they share the test database, so run them in sequence) and confirm both pass, redirecting output to the scratchpad
 
 **Checkpoint (Milestone M2)**: The feature is usable end to end in the UI, with the delete
 round trip proven by unit tests and the confirmation proven by acceptance tests.
