@@ -4,6 +4,11 @@ Changelog
 2.0.0 (2026-09-20)
 ------------------
 
+* **Breaking:** Docker images are now published to the GitHub Container Registry only, as ``ghcr.io/jantman/biweeklybudget``. Nothing is pushed to Docker Hub any more, so ``jantman/biweeklybudget`` on Docker Hub stops receiving updates at 1.6.0.
+
+  * Pull ``ghcr.io/jantman/biweeklybudget:latest`` or ``ghcr.io/jantman/biweeklybudget:X.Y.Z`` instead; the image itself is unchanged. Update any ``docker run``, Compose file or systemd unit that names the old image.
+  * A merge to master now also pushes its ``<sha>_<timestamp>`` image to the same registry, which it previously pushed to Docker Hub.
+
 * `Issue #276 <https://github.com/jantman/biweeklybudget/issues/276>`_ - Inactive Accounts are now listed on the Accounts page, greyed with an **Active?** column reading ``NO``, instead of disappearing from the UI entirely. Deactivating an Account used to leave no link to its Edit Account modal, so re-activating it meant running ``UPDATE accounts SET is_active=1`` against the database by hand.
 
   * All three account tables gain a leading **Active?** column, matching the Budgets page. An inactive Account's name still links to its modal, where **Active?** can be re-checked.
