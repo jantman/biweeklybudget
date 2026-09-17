@@ -92,6 +92,8 @@ Budget detail modal to view and edit a budget.
 Accounts View
 -------------
 
+All Accounts, by account type. Inactive Accounts are listed too, greyed and with "NO" in the "Active?" column; clicking one opens its Edit Account modal, where "Active?" can be re-checked to make it active again.
+
 .. image:: accounts_sm.png
    :target: accounts.png
 

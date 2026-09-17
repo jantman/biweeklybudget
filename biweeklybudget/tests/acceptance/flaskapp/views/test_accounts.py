@@ -86,20 +86,30 @@ class TestAccountsMainPage(AcceptanceHelper):
                                       "//div[@id='panel-bank-accounts']//table"
                                       )
         assert self.thead2list(table) == [
-            'Account', 'Balance', 'Unreconciled', 'Difference'
+            'Active?', 'Account', 'Balance', 'Unreconciled', 'Difference'
         ]
+        # DisabledBank is inactive; it is listed anyway, in its place by name.
+        # See GitHub issue #276.
         assert self.tbody2textlist(table) == [
-            ['BankOne', '$12,789.01 (14 hours ago)', '$0.00', '$12,789.01'],
-            ['BankTwoStale', '$100.23 (a month ago)', '-$333.33', '$433.56']
+            [
+                'yes', 'BankOne', '$12,789.01 (14 hours ago)', '$0.00',
+                '$12,789.01'
+            ],
+            [
+                'yes', 'BankTwoStale', '$100.23 (a month ago)', '-$333.33',
+                '$433.56'
+            ],
+            ['NO', 'DisabledBank', '$10.00 (a day ago)', '$0.00', '$10.00']
         ]
         links = []
         tbody = table.find_element(By.TAG_NAME, 'tbody')
         for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
-            td = tr.find_elements(By.TAG_NAME, 'td')[0]
+            td = tr.find_elements(By.TAG_NAME, 'td')[1]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(1, null)">BankOne</a>',
             '<a href="javascript:accountModal(2, null)">BankTwoStale</a>',
+            '<a href="javascript:accountModal(6, null)">DisabledBank</a>',
         ]
 
     def test_bank_stale_span(self, selenium):
@@ -107,7 +117,7 @@ class TestAccountsMainPage(AcceptanceHelper):
                                       "//div[@id='panel-bank-accounts']//table/tbody"
                                       )
         rows = tbody.find_elements(By.TAG_NAME, 'tr')
-        bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[1]
+        bankTwoStale_bal_td = rows[1].find_elements(By.TAG_NAME, 'td')[2]
         bal_span = bankTwoStale_bal_td.find_elements(By.TAG_NAME, 'span')[1]
         assert bal_span.text == '(a month ago)'
         assert bal_span.get_attribute('class') == 'data_age text-danger'
@@ -117,23 +127,23 @@ class TestAccountsMainPage(AcceptanceHelper):
                                       "//div[@id='panel-credit-cards']//table"
                                       )
         assert self.thead2list(table) == [
-            'Account', 'Balance', 'Credit Limit', 'Available', 'Unreconciled',
-            'Difference'
+            'Active?', 'Account', 'Balance', 'Credit Limit', 'Available',
+            'Unreconciled', 'Difference'
         ]
         assert self.tbody2textlist(table) == [
             [
-                'CreditOne', '-$952.06 (13 hours ago)', '$2,000.00',
+                'yes', 'CreditOne', '-$952.06 (13 hours ago)', '$2,000.00',
                 '$1,047.94', '$544.54', '$503.40'
             ],
             [
-                'CreditTwo', '-$5,498.65 (a day ago)', '$5,500.00', '$1.35',
-                '$0.00', '$1.35'
+                'yes', 'CreditTwo', '-$5,498.65 (a day ago)', '$5,500.00',
+                '$1.35', '$0.00', '$1.35'
             ]
         ]
         links = []
         tbody = table.find_element(By.TAG_NAME, 'tbody')
         for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
-            td = tr.find_elements(By.TAG_NAME, 'td')[0]
+            td = tr.find_elements(By.TAG_NAME, 'td')[1]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(3, null)">CreditOne</a>',
@@ -144,14 +154,14 @@ class TestAccountsMainPage(AcceptanceHelper):
         table = selenium.find_element(By.XPATH,
                                       "//div[@id='panel-investment']//table"
                                       )
-        assert self.thead2list(table) == ['Account', 'Value']
+        assert self.thead2list(table) == ['Active?', 'Account', 'Value']
         assert self.tbody2textlist(table) == [
-            ['InvestmentOne', '$10,362.91 (13 days ago)']
+            ['yes', 'InvestmentOne', '$10,362.91 (13 days ago)']
         ]
         links = []
         tbody = table.find_element(By.TAG_NAME, 'tbody')
         for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
-            td = tr.find_elements(By.TAG_NAME, 'td')[0]
+            td = tr.find_elements(By.TAG_NAME, 'td')[1]
             links.append(td.get_attribute('innerHTML'))
         assert links == [
             '<a href="javascript:accountModal(5, null)">InvestmentOne</a>'
@@ -1061,22 +1071,32 @@ class TestAccountTransfer(AcceptanceHelper):
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
+                'yes',
                 'BankOne',
                 '$12,789.01 (14 hours ago)',
                 '$0.00',
                 '$12,789.01'
             ],
             [
+                'yes',
                 'BankTwoStale',
                 '$100.23 (a month ago)',
                 '-$333.33',
                 '$433.56'
+            ],
+            [
+                'NO',
+                'DisabledBank',
+                '$10.00 (a day ago)',
+                '$0.00',
+                '$10.00'
             ]
         ]
         itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
+                'yes',
                 'InvestmentOne',
                 '$10,362.91 (13 days ago)'
             ]
@@ -1168,22 +1188,32 @@ class TestAccountTransfer(AcceptanceHelper):
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
+                'yes',
                 'BankOne',
                 '$12,789.01 (14 hours ago)',
                 '$123.45',
                 '$12,665.56'
             ],
             [
+                'yes',
                 'BankTwoStale',
                 '$100.23 (a month ago)',
                 '-$456.78',
                 '$557.01'
+            ],
+            [
+                'NO',
+                'DisabledBank',
+                '$10.00 (a day ago)',
+                '$0.00',
+                '$10.00'
             ]
         ]
         itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
+                'yes',
                 'InvestmentOne',
                 '$10,362.91 (13 days ago)'
             ]
@@ -1313,22 +1343,32 @@ class TestAccountTransfer(AcceptanceHelper):
         btexts = self.tbody2textlist(btable)
         assert btexts == [
             [
+                'yes',
                 'BankOne',
                 '$12,789.01 (14 hours ago)',
                 '$123.45',
                 '$12,665.56'
             ],
             [
+                'yes',
                 'BankTwoStale',
                 '$100.23 (a month ago)',
                 '-$456.78',
                 '$557.01'
+            ],
+            [
+                'NO',
+                'DisabledBank',
+                '$10.00 (a day ago)',
+                '$0.00',
+                '$10.00'
             ]
         ]
         itable = selenium.find_element(By.ID, 'table-accounts-investment')
         itexts = self.tbody2textlist(itable)
         assert itexts == [
             [
+                'yes',
                 'InvestmentOne',
                 '$10,362.91 (13 days ago)'
             ]
@@ -1866,3 +1906,229 @@ class TestAccountDuplicateName(AcceptanceHelper):
             'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
             'InvestmentOne', 'DisabledBank', 'BankThree'
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestInactiveAccounts(AcceptanceHelper):
+    """
+    Inactive Accounts stay listed on the Accounts page, greyed and marked "NO"
+    in the "Active?" column, with their names still linking to the Edit Account
+    modal so that "Active?" can be re-checked. Filtering them out of the page
+    left a deactivated Account with no link anywhere in the application, and
+    therefore no way to re-activate it short of an ``UPDATE`` against the
+    database by hand. See GitHub issue #276.
+    """
+
+    def _bank_rows(self, selenium, base_url):
+        """
+        Load /accounts and return the bank table's ``tr`` elements.
+        """
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        return self.tbody2trlist(table)
+
+    def _age_span_class(self, row):
+        """
+        Return the class of the balance-age span in the given bank table row.
+        """
+        balance_td = row.find_elements(By.TAG_NAME, 'td')[2]
+        return balance_td.find_elements(
+            By.TAG_NAME, 'span'
+        )[1].get_attribute('class')
+
+    def test_01_verify_db(self, testdb):
+        assert testdb.query(Account).get(6).name == 'DisabledBank'
+        assert testdb.query(Account).get(6).is_active is False
+        assert testdb.query(Account).get(2).name == 'BankTwoStale'
+        assert testdb.query(Account).get(2).is_active is True
+
+    def test_02_inactive_account_is_listed_and_greyed(self, base_url, selenium):
+        rows = self._bank_rows(selenium, base_url)
+        names = [
+            r.find_elements(By.TAG_NAME, 'td')[1].text.strip() for r in rows
+        ]
+        # inactive accounts are interleaved by name, not segregated
+        assert names == ['BankOne', 'BankTwoStale', 'DisabledBank']
+        assert [r.get_attribute('class') for r in rows] == [
+            '', '', 'inactive'
+        ]
+
+    def test_03_active_column(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        assert self.thead2list(table)[0] == 'Active?'
+        assert [
+            r[0] for r in self.tbody2textlist(table)
+        ] == ['yes', 'yes', 'NO']
+
+    def test_04_inactive_account_name_links_to_its_modal(
+        self, base_url, selenium
+    ):
+        rows = self._bank_rows(selenium, base_url)
+        name_td = rows[2].find_elements(By.TAG_NAME, 'td')[1]
+        assert name_td.get_attribute('innerHTML') == \
+            '<a href="javascript:accountModal(6, null)">DisabledBank</a>'
+
+    def test_05_stale_warning_still_shown_for_active_accounts(
+        self, base_url, selenium
+    ):
+        # the control for test_12: BankTwoStale is stale AND active, so its
+        # balance age is still reddened
+        rows = self._bank_rows(selenium, base_url)
+        assert self._age_span_class(rows[1]) == 'data_age text-danger'
+
+    def test_06_reactivate_from_the_modal(self, base_url, selenium):
+        rows = self._bank_rows(selenium, base_url)
+        link = rows[2].find_elements(
+            By.TAG_NAME, 'td'
+        )[1].find_element(By.TAG_NAME, 'a')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 6'
+        active = selenium.find_element(By.ID, 'account_frm_active')
+        assert active.is_selected() is False
+        active.click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 6 in database.'
+
+    def test_07_verify_db_reactivated(self, testdb):
+        acct = testdb.query(Account).get(6)
+        assert acct.name == 'DisabledBank'
+        assert acct.is_active is True
+
+    def test_08_reactivated_account_shown_as_active(self, base_url, selenium):
+        rows = self._bank_rows(selenium, base_url)
+        assert [r.get_attribute('class') for r in rows] == ['', '', '']
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        assert [
+            r[0] for r in self.tbody2textlist(table)
+        ] == ['yes', 'yes', 'yes']
+
+    def test_09_deactivate_an_active_account(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/2')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 2'
+        active = selenium.find_element(By.ID, 'account_frm_active')
+        assert active.is_selected() is True
+        active.click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 2 in database.'
+
+    def test_10_verify_db_deactivated(self, testdb):
+        acct = testdb.query(Account).get(2)
+        assert acct.name == 'BankTwoStale'
+        assert acct.is_active is False
+
+    def test_11_deactivated_account_is_still_listed(self, base_url, selenium):
+        # this is the bug in issue #276: before the fix, BankTwoStale would
+        # have vanished from the page here, taking the only link to its modal
+        # with it
+        rows = self._bank_rows(selenium, base_url)
+        names = [
+            r.find_elements(By.TAG_NAME, 'td')[1].text.strip() for r in rows
+        ]
+        assert names == ['BankOne', 'BankTwoStale', 'DisabledBank']
+        assert [r.get_attribute('class') for r in rows] == [
+            '', 'inactive', ''
+        ]
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        assert [
+            r[0] for r in self.tbody2textlist(table)
+        ] == ['yes', 'NO', 'yes']
+
+    def test_12_stale_warning_not_applied_to_inactive_accounts(
+        self, base_url, selenium
+    ):
+        # BankTwoStale is still stale, but is no longer active, so its balance
+        # age is shown plainly rather than in red -- see issue #276
+        rows = self._bank_rows(selenium, base_url)
+        assert self._age_span_class(rows[1]) == 'data_age'
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestAccountsMissingData(AcceptanceHelper):
+    """
+    An Account with no recorded balance, statement or credit limit renders as a
+    row with blank value cells rather than taking the whole Accounts page down
+    with a 500. Such an Account is reachable now that inactive Accounts are
+    listed -- and the Accounts page is the only place it can be edited. See
+    GitHub issue #276.
+    """
+
+    def test_01_add_accounts_with_no_data(self, testdb):
+        testdb.add(Account(
+            description='bank account with no balance',
+            name='BankNoData',
+            acct_type=AcctType.Bank,
+            is_active=False
+        ))
+        testdb.add(Account(
+            description='credit account with no balance or limit',
+            name='CreditNoData',
+            acct_type=AcctType.Credit,
+            is_active=False
+        ))
+        testdb.add(Account(
+            description='investment account with no balance',
+            name='InvestmentNoData',
+            acct_type=AcctType.Investment,
+            is_active=False
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_page_still_loads(self, base_url):
+        r = requests.get(base_url + '/accounts')
+        assert r.status_code == 200
+
+    def test_03_bank_row_has_blank_value_cells(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        rows = {r[1]: r for r in self.tbody2textlist(table)}
+        assert rows['BankNoData'] == ['NO', 'BankNoData', '', '$0.00', '']
+
+    def test_04_credit_row_has_blank_value_cells(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(
+            By.XPATH, "//div[@id='panel-credit-cards']//table"
+        )
+        rows = {r[1]: r for r in self.tbody2textlist(table)}
+        assert rows['CreditNoData'] == [
+            'NO', 'CreditNoData', '', '', '', '$0.00', ''
+        ]
+
+    def test_05_investment_row_has_blank_value_cells(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-investment')
+        rows = {r[1]: r for r in self.tbody2textlist(table)}
+        assert rows['InvestmentNoData'] == ['NO', 'InvestmentNoData', '']
+
+    def test_06_the_row_still_links_to_its_modal(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        row = [
+            r for r in self.tbody2trlist(table)
+            if r.find_elements(By.TAG_NAME, 'td')[1].text.strip() == 'BankNoData'
+        ][0]
+        assert row.get_attribute('class') == 'inactive'
+        link = row.find_elements(By.TAG_NAME, 'td')[1].find_element(
+            By.TAG_NAME, 'a'
+        )
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'account_frm_active'
+        ).is_selected() is False

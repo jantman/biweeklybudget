@@ -135,6 +135,40 @@ case would break the HTTP API's ability to look either of them up by name, as
 <http_api.transactions.name_or_id>`, so the forms do not allow such a pair to
 be created.
 
+.. _app_usage.inactive_accounts:
+
+Inactive Accounts
+-----------------
+
+Every Account has an **Active?** checkbox on its Edit Account modal. Unchecking
+it marks the Account as historical: it stops contributing to the dashboard's
+account panels, the Cash Position page, pay period calculations, the Account
+Balances chart and the credit payoff calculations, and it is rejected as the
+source or destination of an account transfer.
+
+An inactive Account is **still listed on the Accounts page**, in the table for
+its account type and in its usual place in the name ordering. Its row is greyed
+and its **Active?** column reads ``NO`` — the same treatment the Budgets page
+gives an inactive Budget. Its name is still a link, so clicking it opens the
+Edit Account modal, where re-checking **Active?** and saving makes the Account
+active again.
+
+Nothing about the Account is lost while it is inactive. Its transactions,
+statements, balances and reconciliations are left exactly as they were, and its
+last recorded balance is still shown, with the age of that balance beside it so
+it is clear how old the figure is. The "stale data" warning that normally
+reddens an old balance is not applied to inactive Accounts; an Account that is
+deliberately no longer being updated would otherwise be flagged permanently,
+which says nothing.
+
+.. note::
+
+   Deactivating an Account used to remove it from the Accounts page altogether.
+   That left no link anywhere in the application that would open its Edit
+   Account modal, so the only way to re-activate it was to connect to the
+   database and run ``UPDATE accounts SET is_active=1 WHERE id=<id>;`` by hand.
+   See `issue #276 <https://github.com/jantman/biweeklybudget/issues/276>`_.
+
 .. _app_usage.credit_card_payments:
 
 Credit Card Payments
