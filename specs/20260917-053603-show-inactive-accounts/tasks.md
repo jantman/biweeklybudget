@@ -98,12 +98,12 @@ reviewable as such rather than blurred into the visible change.
 
 ### Implementation for M2
 
-- [ ] T010 In `biweeklybudget/flaskapp/templates/accounts.html`, gate the stale-data `text-danger` class on `acct.is_active` as well as `acct.is_stale`, in all three tables. The age itself must still be shown, in plain `data_age` styling — spec FR-007; research R4
-- [ ] T011 In `biweeklybudget/flaskapp/templates/accounts.html`, guard every balance-derived cell so a missing value renders as an empty cell instead of raising: `Balance`/`Value` and `Difference` when `acct.balance` is `None`, and `Credit Limit`, `Available` and `Difference` when `acct.credit_limit` is `None`. Do **not** change `Account.balance` in `biweeklybudget/models/account.py` to fabricate a zero — spec FR-006; research R5; data-model.md "Nullability"
+- [X] T010 In `biweeklybudget/flaskapp/templates/accounts.html`, gate the stale-data `text-danger` class on `acct.is_active` as well as `acct.is_stale`, in all three tables. The age itself must still be shown, in plain `data_age` styling — spec FR-007; research R4
+- [X] T011 In `biweeklybudget/flaskapp/templates/accounts.html`, guard every balance-derived cell so a missing value renders as an empty cell instead of raising: `Balance`/`Value` and `Difference` when `acct.balance` is `None`, and `Credit Limit`, `Available` and `Difference` when `acct.credit_limit` is `None`. Do **not** change `Account.balance` in `biweeklybudget/models/account.py` to fabricate a zero — spec FR-006; research R5; data-model.md "Nullability"
 
 ### Verification for M2
 
-- [ ] T012 Milestone close: run `$TOX -e py314` and `$TOX -e acceptance` sequentially to completion. Same expectation as T009 — only the known `test_accounts.py` table assertions fail
+- [X] T012 Milestone close: run `$TOX -e py314` and `$TOX -e acceptance` sequentially to completion. Same expectation as T009 — only the known `test_accounts.py` table assertions fail
 
 **Checkpoint**: Edge cases handled. **Human approval required before M3.**
 
