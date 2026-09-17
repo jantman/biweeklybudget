@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #334 <https://github.com/jantman/biweeklybudget/issues/334>`_ - An active Account with no recorded balance no longer takes the dashboard (``/``) down with a "Server Error". Every Account is in that state between being added and its first balance arriving, so a newly added Account made the landing page unreachable.
+
+  * Such an Account is listed on the dashboard with blank value cells, as it already was on the Accounts page - blank, rather than ``$0.00``, so that "no balance has ever been recorded" stays distinguishable from a zero balance. A balance recorded with no ledger figure is treated the same way, and no balance age is shown for an Account that has no statement.
+
 * `Issue #276 <https://github.com/jantman/biweeklybudget/issues/276>`_ - Inactive Accounts are now listed on the Accounts page, greyed with an **Active?** column reading ``NO``, instead of disappearing from the UI entirely. Deactivating an Account used to leave no link to its Edit Account modal, so re-activating it meant running ``UPDATE accounts SET is_active=1`` against the database by hand.
 
   * All three account tables gain a leading **Active?** column, matching the Budgets page. An inactive Account's name still links to its modal, where **Active?** can be re-checked.
