@@ -47,6 +47,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.utils import dtnow
+import requests
 
 
 @pytest.mark.acceptance
@@ -1033,3 +1034,195 @@ class TestBudgetAccountLinks(AcceptanceHelper):
         b = testdb.query(Budget).get(4)
         names = sorted(a.name for a in b.accounts)
         assert names == ['BankOne', 'DisabledBank']
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestBudgetDuplicateName(AcceptanceHelper):
+    """
+    Duplicate Budget names get the same treatment as duplicate Account names:
+    a message on the Name field rather than an IntegrityError rendered as a
+    generic "Server Error" banner. See GitHub issue #275.
+    """
+
+    #: The message the form is expected to produce for a name already held by
+    #: Budget 1.
+    DUPE_MSG = (
+        'A Budget named "Periodic1" already exists (ID 1); '
+        'Budget names must be unique.'
+    )
+
+    def _budget_form_data(self, **kwargs):
+        """
+        A complete, otherwise-valid POST body for ``/forms/budget``.
+        """
+        data = {
+            'id': '',
+            'name': 'Periodic1',
+            'description': 'duplicate name test',
+            'is_periodic': True,
+            'starting_balance': '123.45',
+            'current_balance': '',
+            'is_active': True,
+            'is_income': False,
+            'omit_from_graphs': False
+        }
+        data.update(kwargs)
+        return data
+
+    def test_01_verify_db(self, testdb):
+        assert testdb.query(Budget).get(1).name == 'Periodic1'
+        assert testdb.query(Budget).get(2).name == 'Periodic2'
+        assert testdb.query(Budget).get(8) is None
+
+    def test_02_duplicate_name_on_create(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets')
+        link = selenium.find_element(By.ID, 'btn_add_budget')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        name = selenium.find_element(By.ID, 'budget_frm_name')
+        name.clear()
+        name.send_keys('Periodic1')
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
+        desc.clear()
+        desc.send_keys('duplicate name test')
+        sb = selenium.find_element(By.ID, 'budget_frm_starting_balance')
+        sb.clear()
+        sb.send_keys('123.45')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        feedback = body.find_elements(By.CLASS_NAME, 'formfeedback')
+        assert len(feedback) == 1
+        assert feedback[0].text.strip() == self.DUPE_MSG
+        name = selenium.find_element(By.ID, 'budget_frm_name')
+        assert 'has-error' in name.find_element(
+            By.XPATH, '..'
+        ).get_attribute('class')
+        assert body.find_elements(By.CLASS_NAME, 'alert-danger') == []
+        assert 'Server Error' not in body.text
+        assert 'IntegrityError' not in body.text
+        assert name.get_attribute('value') == 'Periodic1'
+
+    def test_03_nothing_was_created(self, testdb):
+        assert testdb.query(Budget).get(8) is None
+        assert testdb.query(Budget).filter(
+            Budget.name == 'Periodic1'
+        ).count() == 1
+
+    def test_04_rename_onto_another_budget(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets/2')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        name = selenium.find_element(By.ID, 'budget_frm_name')
+        name.clear()
+        name.send_keys('Periodic1')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        feedback = body.find_elements(By.CLASS_NAME, 'formfeedback')
+        assert len(feedback) == 1
+        assert feedback[0].text.strip() == self.DUPE_MSG
+        assert body.find_elements(By.CLASS_NAME, 'alert-danger') == []
+
+    def test_05_verify_db_rename_rejected(self, testdb):
+        assert testdb.query(Budget).get(1).name == 'Periodic1'
+        assert testdb.query(Budget).get(2).name == 'Periodic2'
+
+    def test_06_saving_under_its_own_name_succeeds(self, base_url, selenium):
+        self.get(selenium, base_url + '/budgets/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(By.ID, 'budget_frm_name').get_attribute(
+            'value') == 'Periodic1'
+        desc = selenium.find_element(By.ID, 'budget_frm_description')
+        desc.clear()
+        desc.send_keys('edited without renaming')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        assert body.find_elements(By.CLASS_NAME, 'formfeedback') == []
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Budget 1 in database.'
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_07_verify_db_self_save(self, testdb):
+        b = testdb.query(Budget).get(1)
+        assert b.name == 'Periodic1'
+        assert b.description == 'edited without renaming'
+
+    def test_10_duplicate_name_json(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget', json=self._budget_form_data()
+        )
+        assert r.status_code == 200
+        assert r.json() == {
+            'success': False,
+            'errors': {
+                'id': [],
+                'name': [self.DUPE_MSG],
+                'description': [],
+                'is_periodic': [],
+                'starting_balance': [],
+                'current_balance': [],
+                'is_active': [],
+                'is_income': [],
+                'omit_from_graphs': []
+            }
+        }
+
+    def test_11_surrounding_whitespace_is_rejected(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget',
+            json=self._budget_form_data(name='   Periodic1   ')
+        )
+        assert r.json()['success'] is False
+        assert r.json()['errors']['name'] == [self.DUPE_MSG]
+
+    def test_12_differing_case_is_rejected(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget',
+            json=self._budget_form_data(name='PERIODIC1')
+        )
+        assert r.json()['success'] is False
+        assert r.json()['errors']['name'] == [self.DUPE_MSG]
+
+    def test_13_empty_name_gets_only_the_empty_message(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget',
+            json=self._budget_form_data(name='  ')
+        )
+        assert r.json()['errors']['name'] == ['Name cannot be empty']
+
+    def test_14_own_name_accepted_on_edit_via_json(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget',
+            json=self._budget_form_data(
+                id='1', description='edited without renaming'
+            )
+        )
+        assert r.json() == {
+            'success': True,
+            'success_message': 'Successfully saved Budget 1 in database.'
+        }
+
+    def test_15_unique_name_is_accepted(self, base_url):
+        r = requests.post(
+            base_url + '/forms/budget',
+            json=self._budget_form_data(name='BrandNewBudget')
+        )
+        assert r.json() == {
+            'success': True,
+            'success_message': 'Successfully saved Budget 8 in database.'
+        }
+
+    def test_99_verify_db_unchanged_by_errors(self, testdb):
+        names = [
+            b.name for b in testdb.query(Budget).order_by(Budget.id).all()
+        ]
+        assert names == [
+            'Periodic1', 'Periodic2', 'Periodic3 Inactive', 'Standing1',
+            'Standing2', 'Standing3 Inactive', 'Income', 'BrandNewBudget'
+        ]

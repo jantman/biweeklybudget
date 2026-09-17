@@ -36,8 +36,18 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import pytest
+from unittest.mock import Mock, patch
+
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import declarative_base
 
 from biweeklybudget.flaskapp.views.formhandlerview import FormHandlerView
+
+pbm = 'biweeklybudget.flaskapp.views.formhandlerview'
+
+#: Throwaway declarative base, so ``FakeModel`` below is a real mapped class
+#: whose columns compile to SQL, without touching the application's metadata.
+FakeBase = declarative_base()
 
 
 class StubFormHandler(FormHandlerView):
@@ -165,3 +175,199 @@ class TestNormalizeCurrency(object):
         assert self.cls.normalize_currency(data) == {}
         assert Decimal(data['amount']) == Decimal('1234.56')
         assert float(data['gallons']) == 10.0
+
+
+class FakeModel(FakeBase):
+    """
+    Stand-in for a model class with a unique ``name``, for testing
+    :py:meth:`~.FormHandlerView._validate_unique_name` without a database.
+    """
+
+    __tablename__ = 'fakes'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+
+
+class TestValidateUniqueName(object):
+    """
+    Tests for :py:meth:`~.FormHandlerView._validate_unique_name`; see GitHub
+    issue #275.
+
+    The database is mocked out here, so these tests pin two things: the
+    message produced when a conflict is found, and the *criteria* the query is
+    built from - which is where the trimming and case-insensitivity that
+    FR-007 requires actually live. That a duplicate is really rejected end to
+    end, against a real MySQL collation, is covered by the acceptance tests in
+    ``tests/acceptance/flaskapp/views/test_accounts.py`` and
+    ``test_budgets.py``.
+    """
+
+    def setup_method(self):
+        self.cls = StubFormHandler()
+
+    def _record(self, id, name):
+        """
+        A stand-in for a conflicting record. ``name`` must be assigned after
+        construction: ``Mock(name=...)`` sets the mock's own name rather than
+        an attribute called ``name``.
+        """
+        rec = Mock(id=id)
+        rec.name = name
+        return rec
+
+    def _mock_session(self, found=None):
+        """
+        Return (mock db_session, query mock). ``found`` is what ``.first()``
+        yields - a conflicting record, or None for no conflict.
+        """
+        mock_sess = Mock()
+        mock_sess.query.return_value.filter.return_value.first.return_value = \
+            found
+        return mock_sess
+
+    def _criteria_sql(self, mock_sess):
+        """
+        Return the criteria passed to ``.filter()``, compiled to SQL strings
+        with literals inlined, so the comparison the query actually makes can
+        be asserted on.
+        """
+        args = mock_sess.query.return_value.filter.call_args[0]
+        return [
+            str(c.compile(compile_kwargs={'literal_binds': True}))
+            for c in args
+        ]
+
+    def test_duplicate_name_is_rejected(self):
+        existing = self._record(1, 'BankOne')
+        mock_sess = self._mock_session(found=existing)
+        data = {'id': '', 'name': 'BankOne'}
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, data, errors, 'Account'
+            )
+        assert res['name'] == [
+            'An Account named "BankOne" already exists (ID 1); '
+            'Account names must be unique.'
+        ]
+
+    def test_unique_name_is_accepted(self):
+        mock_sess = self._mock_session(found=None)
+        data = {'id': '', 'name': 'BrandNew'}
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, data, errors, 'Account'
+            )
+        assert res['name'] == []
+
+    def test_article_agrees_with_the_noun(self):
+        """
+        "An Account" but "A Budget" - the message is shown to a human.
+        """
+        existing = self._record(3, 'Periodic1')
+        mock_sess = self._mock_session(found=existing)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': 'Periodic1'}, errors, 'Budget'
+            )
+        assert res['name'][0].startswith('A Budget named "Periodic1"')
+
+    def test_message_quotes_the_stored_name_not_the_submitted_one(self):
+        """
+        A user who typed "bankone" should be shown the "BankOne" they hit.
+        """
+        existing = self._record(1, 'BankOne')
+        mock_sess = self._mock_session(found=existing)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': 'bankone'}, errors, 'Account'
+            )
+        assert '"BankOne"' in res['name'][0]
+        assert '"bankone"' not in res['name'][0]
+
+    def test_comparison_is_made_on_the_stripped_name(self):
+        """
+        ``submit()`` stores ``data['name'].strip()``, so validating the
+        unstripped value would let "  Foo  " through and then write it as a
+        duplicate of an existing "Foo".
+        """
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': '   BankOne   '}, errors,
+                'Account'
+            )
+        sql = self._criteria_sql(mock_sess)
+        assert "lower(fakes.name) = 'bankone'" in sql[0]
+
+    def test_comparison_is_case_insensitive(self):
+        """
+        Both sides are lower-cased explicitly rather than relying on the
+        collation, as ``models/utils.py::_resolve_reference`` does.
+        """
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': 'BANKONE'}, errors, 'Account'
+            )
+        sql = self._criteria_sql(mock_sess)
+        assert 'lower(fakes.name)' in sql[0]
+        assert "'bankone'" in sql[0]
+
+    def test_new_record_excludes_id_zero(self):
+        """
+        A create has no ID yet; 0 is a safe sentinel because these keys are
+        AUTO_INCREMENT and start at 1.
+        """
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': 'Foo'}, errors, 'Account'
+            )
+        sql = self._criteria_sql(mock_sess)
+        assert 'fakes.id != 0' in sql[1]
+
+    def test_edit_excludes_the_record_being_edited(self):
+        """
+        Re-saving a record without renaming it must not collide with itself.
+        """
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': [], 'name': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            self.cls._validate_unique_name(
+                FakeModel, {'id': '7', 'name': 'Foo'}, errors, 'Account'
+            )
+        sql = self._criteria_sql(mock_sess)
+        assert 'fakes.id != 7' in sql[1]
+
+    @pytest.mark.parametrize('name', ['', '   ', '\t\n'])
+    def test_blank_name_adds_no_message_and_makes_no_query(self, name):
+        """
+        Callers already report a blank name with their own "Name cannot be
+        empty"; a second message on the same field would only confuse.
+        """
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': [], 'name': ['Name cannot be empty']}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, {'id': '', 'name': name}, errors, 'Account'
+            )
+        assert res['name'] == ['Name cannot be empty']
+        assert mock_sess.query.mock_calls == []
+
+    def test_absent_name_key_is_tolerated(self):
+        mock_sess = self._mock_session(found=None)
+        errors = {'id': []}
+        with patch('%s.db_session' % pbm, mock_sess):
+            res = self.cls._validate_unique_name(
+                FakeModel, {'id': ''}, errors, 'Account'
+            )
+        assert res == {'id': []}
+        assert mock_sess.query.mock_calls == []
