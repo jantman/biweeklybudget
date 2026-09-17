@@ -78,43 +78,43 @@ request `/`, and get HTTP 200 with the three new rows present and blank-celled.
 
 ### Tests for User Story 1 ⚠️ Write first, and see them fail
 
-- [ ] T003 [US1] Add a `TestIndexMissingData` class to
+- [X] T003 [US1] Add a `TestIndexMissingData` class to
   `biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`, modelled on
   `TestAccountsMissingData` in `test_accounts.py:2060` — `class_refresh_db`, `refreshdb`,
   `testflask`, `incremental` — whose first test adds three **active** accounts with no
   balance (`BankNoData`/Bank, `CreditNoData`/Credit, `InvestmentNoData`/Investment) via the
   `testdb` fixture
-- [ ] T004 [US1] In that class, assert `requests.get(base_url + '/')` returns 200, in
+- [X] T004 [US1] In that class, assert `requests.get(base_url + '/')` returns 200, in
   `biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`
-- [ ] T005 [US1] In that class, assert the exact row text for each of the three index
+- [X] T005 [US1] In that class, assert the exact row text for each of the three index
   tables — `['BankNoData', '', '$0.00', '']` in `#table-accounts-bank`,
   `['CreditNoData', '', '', '']` in `#panel-credit-cards table`, and
   `['InvestmentNoData', '']` in `#table-accounts-investment` — in
   `biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`. Exact text, not just a
   status code, is what pins FR-003 (blank, never a fabricated `$0.00`) and FR-005 (no bare
   `()` where the balance age would go)
-- [ ] T006 [US1] Run the new class against the **unfixed** template and record the failure
+- [X] T006 [US1] Run the new class against the **unfixed** template and record the failure
   in the scratchpad: `tox -e acceptance -- -k "TestIndexMissingData"`, output redirected to
   a file per `CLAUDE.md`. It must fail with `UndefinedError: 'None' has no attribute
   'ledger'`. A pass here means the test is not testing anything
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Guard the bank table in
+- [X] T007 [US1] Guard the bank table in
   `biweeklybudget/flaskapp/templates/index.html` (rows near lines 136-148): add
   `{% set ledger = acct.balance.ledger if acct.balance else None %}` inside the row loop,
   print the balance as `{{ ledger|dollars }}`, wrap the balance-age span in
   `{% if acct.ofx_statement %}`, and guard the "Difference" cell with
   `{% if ledger is not none %}` — matching `accounts.html:56-68` cell for cell
-- [ ] T008 [US1] Guard the credit table in
+- [X] T008 [US1] Guard the credit table in
   `biweeklybudget/flaskapp/templates/index.html` (rows near lines 175-188) the same way,
   guarding both "Available" and "Avail - Unrec" with
   `{% if ledger is not none and acct.credit_limit is not none %}` — matching
   `accounts.html:100-113`
-- [ ] T009 [US1] Guard the investment table in
+- [X] T009 [US1] Guard the investment table in
   `biweeklybudget/flaskapp/templates/index.html` (rows near lines 214-221) the same way;
   it has only the balance cell and its age span — matching `accounts.html:143-155`
-- [ ] T010 [US1] Re-run `tox -e acceptance -- -k "TestIndexMissingData"` and confirm it now
+- [X] T010 [US1] Re-run `tox -e acceptance -- -k "TestIndexMissingData"` and confirm it now
   passes
 
 **Checkpoint**: The issue's headline defect is fixed and proven. This is the MVP; US2 and
@@ -134,11 +134,11 @@ shows them as active rows with blank value cells.
 **Note**: No production change is expected. If these tests fail, `accounts.html` is not as
 correct as research R3 found, and fixing it becomes part of this feature under FR-002.
 
-- [ ] T011 [US2] In `TestIndexMissingData` in
+- [X] T011 [US2] In `TestIndexMissingData` in
   `biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`, assert
   `requests.get(base_url + '/accounts')` returns 200 with the same three active
   balance-less accounts present
-- [ ] T012 [US2] Assert in the same class that the `BankNoData` row on `/accounts` renders
+- [X] T012 [US2] Assert in the same class that the `BankNoData` row on `/accounts` renders
   as an **active** row with blank value cells — `['yes', 'BankNoData', '', '$0.00', '']` —
   so the active path through the staleness markup is covered, not just the inactive one
   already covered by `TestAccountsMissingData`
@@ -155,7 +155,7 @@ rendered exactly like one with no balance row at all, on both pages.
 **Independent Test**: Give an active account `set_balance(ledger=None, avail=None)`, request
 both pages, and get 200 with that account's balance-derived cells blank.
 
-- [ ] T013 [US3] Add an incremental test to `TestIndexMissingData` in
+- [X] T013 [US3] Add an incremental test to `TestIndexMissingData` in
   `biweeklybudget/tests/acceptance/flaskapp/views/test_index.py` that calls
   `set_balance(ledger=None, avail=None)` on one of the balance-less accounts, then asserts
   both `/` and `/accounts` return 200 and that account's row is unchanged from the
@@ -169,20 +169,20 @@ both pages, and get 200 with that account's balance-derived cells blank.
 
 **Purpose**: Constitution Principles II, IV and VI, and the delivery the session owes.
 
-- [ ] T014 Confirm no existing expectation moved: run
+- [X] T014 Confirm no existing expectation moved: run
   `tox -e acceptance -- -k "TestIndexAccounts or TestAccountsMainPage or TestAccountsMissingData"`
   and confirm every previously asserted cell text still matches
-- [ ] T015 [P] Run the complete unit suite to completion: `tox -e py314`, output redirected
+- [X] T015 [P] Run the complete unit suite to completion: `tox -e py314`, output redirected
   to the scratchpad. All tests pass — a narrowed run is not the gate and a timed-out run
   has not passed (Principle II)
-- [ ] T016 Run the complete acceptance suite to completion: `tox -e acceptance`, output
+- [X] T016 Run the complete acceptance suite to completion: `tox -e acceptance`, output
   redirected to the scratchpad. All tests pass. Any failure among the known flaky tests
   (reconcile drag/unignore, fuel log search, Plaid "Uncheck All") is re-run in isolation
   before being attributed to this change, and never waved away without that re-run
-- [ ] T017 [P] Build the documentation: `tox -e docs`. No source documentation change is
+- [X] T017 [P] Build the documentation: `tox -e docs`. No source documentation change is
   expected — this feature adds no setting, command, or endpoint and changes nothing a user
   does — but the environment must build clean (Principle IV)
-- [ ] T018 [P] Add one concise bullet to `CHANGES.rst` under an `Unreleased` heading, led by
+- [X] T018 [P] Add one concise bullet to `CHANGES.rst` under an `Unreleased` heading, led by
   the issue link, in the format of the existing entries. Do not touch
   `biweeklybudget/version.py` and do not tag (Principle VI)
 - [ ] T019 Record the outcome in
@@ -195,6 +195,45 @@ both pages, and get 200 with that account's balance-derived cells blank.
   respond to review comments, repeating until Claude's review reports no issues found and
   Copilot's review, if present, recommends approval
 - [ ] T022 Tear down the throwaway database container: `docker rm -f budgettest334`
+
+---
+
+## Outcome
+
+Recorded 2026-09-17, against a `mariadb:10.4.7` container, from the worktree.
+
+**The fix.** Nine lines of `biweeklybudget/flaskapp/templates/index.html`, in three
+blocks. Each table gained one `{% set ledger = ... %}`, its balance-age span moved inside
+`{% if acct.ofx_statement %}`, and its derived cells gained an `is not none` test. The
+`{% if acct.is_stale %}…{% else %}…{% endif %}` pair around the age span collapsed into the
+class-attribute form `accounts.html` uses; it emits byte-identical markup, which the
+existing `test_bank_stale_span` assertion confirms. No Python changed.
+
+**T006 — the test was seen red.** Against the unfixed template the new class failed at
+`test_02_index_still_loads` with `assert 500 == 200`, the remaining tests cascading to
+xfail on the `incremental` marker. Recorded in `t006-unfixed.txt`.
+
+**T010 / T014 — green after the fix, nothing else moved.**
+`TestIndexMissingData or TestIndexAccounts or TestAccountsMainPage or TestAccountsMissingData`:
+26 passed. Every previously asserted cell text still matches, including the `$12,789.01
+(14 hours ago)` balance cells whose markup was rewritten.
+
+**The gate (Principle II).** Both suites run to completion, neither narrowed nor timed out:
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` | **1005 passed**, 4 skipped |
+| `tox -e acceptance` | **965 passed**, 0 failed (22:58) |
+| `tox -e docs` | build succeeded |
+
+The acceptance run was clean on the first attempt — none of the known flaky tests
+(reconcile drag/unignore, fuel log search, Plaid "Uncheck All") needed a re-run, so no
+failure was attributed to flakiness.
+
+**Unchanged, as planned**: no file under `biweeklybudget/models/`, so no migration
+(Principle III not engaged); no `docs/source/` change and no screenshot change, and
+`sphinx-apidoc` regenerated nothing that differs (Principle IV); no `version.py` change
+(Principle VI).
 
 ---
 

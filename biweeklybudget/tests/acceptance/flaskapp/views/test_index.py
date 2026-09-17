@@ -998,3 +998,145 @@ class TestAcctBalanceChartSettings(AcceptanceHelper):
             index_view.settings, 'ACCOUNT_BALANCE_CHART_DEFAULT_DAYS', 15
         )
         assert self._get('?days=garbage') == self._get()
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestIndexMissingData(AcceptanceHelper):
+    """
+    An **active** Account with no recorded balance took the index page down
+    with a 500; every Account is in that state between being created and its
+    first balance arriving, so this locked the operator out of the landing
+    page right after they added an account. Both that page and the Accounts
+    page must render such an Account as a row with blank value cells. See
+    GitHub issue #334.
+
+    The Accounts page half of this was already fixed for issue #276, but only
+    ever exercised with *inactive* Accounts (``TestAccountsMissingData`` in
+    ``test_accounts.py``); an active one takes a different path through the
+    staleness markup, so it is asserted here too.
+    """
+
+    def test_01_add_active_accounts_with_no_balance(self, testdb):
+        testdb.add(Account(
+            description='bank account with no balance',
+            name='BankNoData',
+            acct_type=AcctType.Bank,
+            is_active=True
+        ))
+        testdb.add(Account(
+            description='credit account with no balance or limit',
+            name='CreditNoData',
+            acct_type=AcctType.Credit,
+            is_active=True
+        ))
+        testdb.add(Account(
+            description='investment account with no balance',
+            name='InvestmentNoData',
+            acct_type=AcctType.Investment,
+            is_active=True
+        ))
+        testdb.flush()
+        testdb.commit()
+
+    def test_02_index_still_loads(self, base_url):
+        r = requests.get(base_url + '/')
+        assert r.status_code == 200
+
+    def test_03_accounts_page_still_loads(self, base_url):
+        r = requests.get(base_url + '/accounts')
+        assert r.status_code == 200
+
+    def test_04_index_bank_row_has_blank_value_cells(self, base_url, selenium):
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        rows = {r[0]: r for r in self.tbody2textlist(table)}
+        # the $0.00 is the unreconciled sum, which is a real zero -- this
+        # account has no transactions -- and not a stand-in for the balance
+        assert rows['BankNoData'] == ['BankNoData', '', '$0.00', '']
+        # the accounts that do have balances are untouched
+        assert rows['BankOne'] == [
+            'BankOne', '$12,789.01 (14 hours ago)', '$0.00', '$12,789.01'
+        ]
+
+    def test_05_index_credit_row_has_blank_value_cells(
+        self, base_url, selenium
+    ):
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(
+            By.XPATH, "//div[@id='panel-credit-cards']//table"
+        )
+        rows = {r[0]: r for r in self.tbody2textlist(table)}
+        assert rows['CreditNoData'] == ['CreditNoData', '', '', '']
+
+    def test_06_index_investment_row_has_blank_value_cells(
+        self, base_url, selenium
+    ):
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(By.ID, 'table-accounts-investment')
+        rows = {r[0]: r for r in self.tbody2textlist(table)}
+        assert rows['InvestmentNoData'] == ['InvestmentNoData', '']
+
+    def test_07_index_row_has_no_empty_balance_age(self, base_url, selenium):
+        """The balance age is dated from a statement; an Account with no
+        balance has none, so the cell must carry no parentheses at all."""
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        row = [
+            r for r in self.tbody2trlist(table)
+            if r.find_elements(By.TAG_NAME, 'td')[0].text.strip() == 'BankNoData'
+        ][0]
+        bal_td = row.find_elements(By.TAG_NAME, 'td')[1]
+        assert bal_td.text.strip() == ''
+        assert len(bal_td.find_elements(By.CLASS_NAME, 'data_age')) == 0
+
+    def test_08_index_row_still_links_to_the_account(
+        self, base_url, selenium, testdb
+    ):
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        row = [
+            r for r in self.tbody2trlist(table)
+            if r.find_elements(By.TAG_NAME, 'td')[0].text.strip() == 'BankNoData'
+        ][0]
+        acct_id = testdb.query(Account).filter(
+            Account.name == 'BankNoData'
+        ).one().id
+        assert row.find_elements(By.TAG_NAME, 'td')[0].get_attribute(
+            'innerHTML'
+        ) == '<a href="/accounts/%d">BankNoData</a>' % acct_id
+
+    def test_09_accounts_page_row_is_active_and_blank(
+        self, base_url, selenium
+    ):
+        self.get(selenium, base_url + '/accounts')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        rows = {r[1]: r for r in self.tbody2textlist(table)}
+        assert rows['BankNoData'] == ['yes', 'BankNoData', '', '$0.00', '']
+
+    def test_10_balance_row_with_null_ledger_renders_the_same(self, testdb):
+        """A balance row that exists but carries no ledger figure is a second,
+        independent route to the same failure."""
+        acct = testdb.query(Account).filter(
+            Account.name == 'BankNoData'
+        ).one()
+        acct.set_balance(
+            overall_date=(dtnow() - timedelta(hours=1)),
+            ledger=None,
+            ledger_date=(dtnow() - timedelta(hours=1))
+        )
+        testdb.flush()
+        testdb.commit()
+        assert acct.balance is not None
+        assert acct.balance.ledger is None
+
+    def test_11_pages_still_load_with_null_ledger(self, base_url):
+        assert requests.get(base_url + '/').status_code == 200
+        assert requests.get(base_url + '/accounts').status_code == 200
+
+    def test_12_null_ledger_row_is_still_blank(self, base_url, selenium):
+        self.get(selenium, base_url + '/')
+        table = selenium.find_element(By.ID, 'table-accounts-bank')
+        rows = {r[0]: r for r in self.tbody2textlist(table)}
+        assert rows['BankNoData'] == ['BankNoData', '', '$0.00', '']

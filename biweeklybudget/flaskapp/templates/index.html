@@ -135,16 +135,15 @@
                                     {% for acct in bank_accounts|sort(attribute='name') %}
                                         <tr>
                                             <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (acct.balance.ledger - acct.unreconciled_sum)|reddollars|safe }}</td>
+                                            <td>{% if ledger is not none %}{{ (ledger - acct.unreconciled_sum)|reddollars|safe }}{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -175,16 +174,15 @@
                                     {% for acct in credit_accounts|sort(attribute='name') %}
                                         <tr>
                                             <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars|safe }}</td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger - acct.unreconciled_sum)|reddollars|safe }}</td>
+                                            <td>{% if ledger is not none and acct.credit_limit is not none %}{{ (acct.credit_limit + ledger)|reddollars|safe }}{% endif %}</td>
+                                            <td>{% if ledger is not none and acct.credit_limit is not none %}{{ (acct.credit_limit + ledger - acct.unreconciled_sum)|reddollars|safe }}{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -214,12 +212,11 @@
                                     {% for acct in investment_accounts|sort(attribute='name') %}
                                         <tr>
                                             <td><a href="/accounts/{{ acct.id }}">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
                                         </tr>

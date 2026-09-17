@@ -125,8 +125,11 @@ to `accounts.html:60`, `:104` and `:147`:
    `and acct.credit_limit is not none` on the two credit-table cells that also need the
    limit. A guarded-out cell renders as an empty `<td>`.
 
-The staleness branch inside the age span keeps its current form; it is only ever reached
-when a statement exists, and `Account.is_stale` already returns `False` when there is none.
+The staleness branch inside the age span becomes the class-attribute form
+`accounts.html` uses — `class="data_age{% if acct.is_stale %} text-danger{% endif %}"` —
+in place of the current `{% if %}…{% else %}…{% endif %}` pair around two whole spans. It
+emits byte-identical markup, and is only ever reached when a statement exists;
+`Account.is_stale` already returns `False` when there is none.
 
 ### The tests
 
@@ -144,12 +147,12 @@ Each new test must be seen to fail against the unfixed template before the fix l
 
 Human approval is required to advance from one milestone to the next (Principle I).
 
-### M1 — Specification and plan
+### M1 — Specification and plan  ✅ complete
 
 1. Spec, quality checklist (**done**, commit `258c5fd`).
 2. Research by reproduction, plan, design artifacts (this milestone).
 
-### M2 — Failing tests, then the fix
+### M2 — Failing tests, then the fix  ✅ complete
 
 1. Add `TestIndexMissingData` to `test_index.py`; run it against the unfixed template and
    record that it fails with the expected `UndefinedError`.
@@ -157,7 +160,7 @@ Human approval is required to advance from one milestone to the next (Principle 
 3. Re-run the new class and the existing `TestIndexAccounts` / `TestAccountsMainPage` /
    `TestAccountsMissingData` classes; all pass, and no existing expected cell text changes.
 
-### M3 — Full suites and close-out
+### M3 — Full suites and close-out  ✅ complete through the pull request
 
 1. Run the complete unit suite and the complete acceptance suite to completion; all pass.
 2. Build the docs environment.
@@ -172,7 +175,7 @@ Human approval is required to advance from one milestone to the next (Principle 
   those rows' exact text, so a mistake shows up as a failure rather than as a wrong number
   in production. This is the reason the full acceptance suite, not just the new class, is
   the gate.
-- **The acceptance suite's known flakes.** Reconcile drag/unignore, fuel log search and the
+- **The acceptance suite's known flakes.** *(Did not materialise: the full run was clean on the first attempt.)* Reconcile drag/unignore, fuel log search and the
   Plaid "Uncheck All" tests have missing-wait races unrelated to this change. A failure in
   one of those is re-run in isolation before being attributed to this work — and never
   waved away without re-running.
