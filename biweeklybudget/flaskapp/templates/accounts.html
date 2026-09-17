@@ -45,6 +45,7 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-accounts-bank">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Balance</th>
                                             <th>Unreconciled</th>
@@ -53,7 +54,8 @@
                                     </thead>
                                     <tbody>
                                     {% for acct in bank_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>
@@ -86,6 +88,7 @@
                                 <table class="table table-bordered table-hover table-striped">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Balance</th>
                                             <th>Credit Limit</th>
@@ -96,7 +99,8 @@
                                     </thead>
                                     <tbody>
                                     {% for acct in credit_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>
@@ -132,13 +136,15 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-accounts-investment">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Value</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     {% for acct in investment_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
                                             <td>
                                                 <span>{{ acct.balance.ledger|dollars }}</span>

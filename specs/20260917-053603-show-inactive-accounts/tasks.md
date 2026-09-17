@@ -46,9 +46,9 @@ Single Python package at the repository root: `biweeklybudget/`, with tests unde
 **Purpose**: Get the test database and tox environments working in this worktree. Produces no
 commits.
 
-- [ ] T001 Start the MariaDB test container and export the test-database environment variables per `specs/20260917-053603-show-inactive-accounts/quickstart.md` ("Prerequisites"), then run `dev/setup_test_db.py` with `/home/jantman/GIT/biweeklybudget/venv/bin/python`
-- [ ] T002 Build the tox environments with `/home/jantman/GIT/biweeklybudget/venv/bin/tox` (this worktree has no `venv/`, and the `tox` on `PATH` is broken), then `touch .tox/acceptance/liveserver.log` — a fresh acceptance env has no log file and every `testflask` test errors in setup without it
-- [ ] T003 Capture the pre-change baseline: run `$TOX -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_accounts.py` redirected to a scratchpad file, confirming it is green before anything is edited
+- [X] T001 Start the MariaDB test container and export the test-database environment variables per `specs/20260917-053603-show-inactive-accounts/quickstart.md` ("Prerequisites"), then run `dev/setup_test_db.py` with `/home/jantman/GIT/biweeklybudget/venv/bin/python`
+- [X] T002 Build the tox environments with `/home/jantman/GIT/biweeklybudget/venv/bin/tox` (this worktree has no `venv/`, and the `tox` on `PATH` is broken), then `touch .tox/acceptance/liveserver.log` — a fresh acceptance env has no log file and every `testflask` test errors in setup without it
+- [X] T003 Capture the pre-change baseline: run `$TOX -e acceptance -- biweeklybudget/tests/acceptance/flaskapp/views/test_accounts.py` redirected to a scratchpad file, confirming it is green before anything is edited
 
 **Checkpoint**: Test database up, acceptance environment usable, baseline green.
 
@@ -69,15 +69,15 @@ delivered in one milestone rather than split across two that could not be shippe
 
 ### Implementation for M1
 
-- [ ] T004 [US1] In `biweeklybudget/flaskapp/views/accounts.py`, extract the body shared by `AccountsView.get()` and `OneAccountView.get()` into one module-level helper taking an optional `account_id`, and drop `Account.is_active == True` from the three account queries in it (removing all six filtered queries at lines 92-100 and 135-143) — research R2, R1; spec FR-001
-- [ ] T005 [P] [US2] In `biweeklybudget/flaskapp/templates/accounts.html`, add `Active?` as the first `<th>` of all three tables (bank, credit, investment) and, per row, a first `<td>` rendering `yes` or `<td style="color: #a94442;">NO</td>`, copying `biweeklybudget/flaskapp/templates/budgets.html:81,110` character-for-character — spec FR-002; contracts/accounts-page.md "Active? cell"
-- [ ] T006 [US2] In `biweeklybudget/flaskapp/templates/accounts.html`, render each account row as `<tr>` when active and `<tr class="inactive">` when not, in all three tables, following `budgets.html:80,109`. Do **not** add CSS — `tr.inactive` already exists at `biweeklybudget/flaskapp/static/css/custom.css:7` — spec FR-003
-- [ ] T007 [US1] Confirm no change is needed to `biweeklybudget/flaskapp/static/js/accounts_modal.js` or to `AccountFormHandler` in `biweeklybudget/flaskapp/views/accounts.py`: the modal already reads `is_active` into the checkbox (line 131) and `submit()` already writes it (line 281). Record the confirmation; make no edit — spec FR-004, FR-005; research R1
+- [X] T004 [US1] In `biweeklybudget/flaskapp/views/accounts.py`, extract the body shared by `AccountsView.get()` and `OneAccountView.get()` into one module-level helper taking an optional `account_id`, and drop `Account.is_active == True` from the three account queries in it (removing all six filtered queries at lines 92-100 and 135-143) — research R2, R1; spec FR-001
+- [X] T005 [P] [US2] In `biweeklybudget/flaskapp/templates/accounts.html`, add `Active?` as the first `<th>` of all three tables (bank, credit, investment) and, per row, a first `<td>` rendering `yes` or `<td style="color: #a94442;">NO</td>`, copying `biweeklybudget/flaskapp/templates/budgets.html:81,110` character-for-character — spec FR-002; contracts/accounts-page.md "Active? cell"
+- [X] T006 [US2] In `biweeklybudget/flaskapp/templates/accounts.html`, render each account row as `<tr>` when active and `<tr class="inactive">` when not, in all three tables, following `budgets.html:80,109`. Do **not** add CSS — `tr.inactive` already exists at `biweeklybudget/flaskapp/static/css/custom.css:7` — spec FR-003
+- [X] T007 [US1] Confirm no change is needed to `biweeklybudget/flaskapp/static/js/accounts_modal.js` or to `AccountFormHandler` in `biweeklybudget/flaskapp/views/accounts.py`: the modal already reads `is_active` into the checkbox (line 131) and `submit()` already writes it (line 281). Record the confirmation; make no edit — spec FR-004, FR-005; research R1
 
 ### Verification for M1
 
-- [ ] T008 [US1] Manually verify the round trip per `quickstart.md` ("Manual validation"): `DisabledBank` greyed and reading `NO` on `/accounts`, re-activate it from its modal, then deactivate an active account and confirm it stays listed. Remember that synthetic coordinate clicks do not fire this app's jQuery handlers — drive them with `$('#...').click()`
-- [ ] T009 Milestone close: run `$TOX -e py314` and `$TOX -e acceptance` sequentially to completion, redirecting each to a scratchpad file. Expect `test_accounts.py` table assertions to fail here — that is the deliberate change, fixed in M3 — and expect **nothing else** to fail. Any other failure is a defect in M1, not an assertion to update
+- [X] T008 [US1] Manually verify the round trip per `quickstart.md` ("Manual validation"): `DisabledBank` greyed and reading `NO` on `/accounts`, re-activate it from its modal, then deactivate an active account and confirm it stays listed. Remember that synthetic coordinate clicks do not fire this app's jQuery handlers — drive them with `$('#...').click()`
+- [X] T009 Milestone close: run `$TOX -e py314` and `$TOX -e acceptance` sequentially to completion, redirecting each to a scratchpad file. Expect `test_accounts.py` table assertions to fail here — that is the deliberate change, fixed in M3 — and expect **nothing else** to fail. Any other failure is a defect in M1, not an assertion to update
 
 **Checkpoint**: Issue #276 is functionally fixed. Accounts-page assertions are knowingly red
 pending M3; everything else is green. **Human approval required before M2.**

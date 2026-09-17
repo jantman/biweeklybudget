@@ -65,46 +65,66 @@ RE_FIELD_NAMES = [
 ]
 
 
+def _render_accounts_template(account_id=None):
+    """
+    Render the ``accounts.html`` template.
+
+    All Accounts are listed, active and inactive alike; the template greys the
+    inactive ones and marks them in their "Active?" column. Filtering them out
+    used to leave a deactivated Account with no link anywhere in the UI, and
+    therefore no way to re-activate it short of an ``UPDATE`` against the
+    database by hand. See GitHub issue #276.
+
+    :param account_id: if not None, the ID of the Account whose modal should be
+      opened when the page loads
+    :type account_id: int or None
+    :return: rendered ``accounts.html`` template
+    :rtype: str
+    """
+    accts = {a.name: a.id for a in db_session.query(Account).all()}
+    budgets = {}
+    active_budgets = {}
+    for b in db_session.query(Budget).all():
+        k = b.name
+        if b.is_income:
+            k = '%s (i)' % b.name
+        budgets[b.id] = k
+        if b.is_active:
+            active_budgets[b.id] = k
+    pa: PlaidAccount
+    plaid_accts = {
+        f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
+            f'{pa.item_id},{pa.account_id}'
+        for pa in db_session.query(PlaidAccount).all()
+    }
+    return render_template(
+        'accounts.html',
+        bank_accounts=db_session.query(Account).filter(
+            Account.acct_type == AcctType.Bank
+        ).all(),
+        credit_accounts=db_session.query(Account).filter(
+            Account.acct_type == AcctType.Credit
+        ).all(),
+        investment_accounts=db_session.query(Account).filter(
+            Account.acct_type == AcctType.Investment
+        ).all(),
+        account_id=account_id,
+        interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
+        min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
+        accts=accts,
+        budgets=budgets,
+        active_budgets=active_budgets,
+        plaid_accounts=plaid_accts
+    )
+
+
 class AccountsView(MethodView):
     """
     Render the GET /accounts view using the ``accounts.html`` template.
     """
 
     def get(self):
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
-        budgets = {}
-        active_budgets = {}
-        for b in db_session.query(Budget).all():
-            k = b.name
-            if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
-            if b.is_active:
-                active_budgets[b.id] = k
-        pa: PlaidAccount
-        plaid_accts = {
-            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
-                f'{pa.item_id},{pa.account_id}'
-            for pa in db_session.query(PlaidAccount).all()
-        }
-        return render_template(
-            'accounts.html',
-            bank_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Bank,
-                Account.is_active == True).all(),  # noqa
-            credit_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Credit,
-                Account.is_active == True).all(),  # noqa
-            investment_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Investment,
-                Account.is_active == True).all(),  # noqa
-            interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
-            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
-            accts=accts,
-            budgets=budgets,
-            active_budgets=active_budgets,
-            plaid_accounts=plaid_accts
-        )
+        return _render_accounts_template()
 
 
 class OneAccountView(MethodView):
@@ -114,41 +134,7 @@ class OneAccountView(MethodView):
     """
 
     def get(self, acct_id):
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
-        budgets = {}
-        active_budgets = {}
-        for b in db_session.query(Budget).all():
-            k = b.name
-            if b.is_income:
-                k = '%s (i)' % b.name
-            budgets[b.id] = k
-            if b.is_active:
-                active_budgets[b.id] = k
-        pa: PlaidAccount
-        plaid_accts = {
-            f'{pa.plaid_item.institution_name} / {pa.name} ({pa.mask})':
-                f'{pa.item_id},{pa.account_id}'
-            for pa in db_session.query(PlaidAccount).all()
-        }
-        return render_template(
-            'accounts.html',
-            bank_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Bank,
-                Account.is_active == True).all(),  # noqa
-            credit_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Credit,
-                Account.is_active == True).all(),  # noqa
-            investment_accounts=db_session.query(Account).filter(
-                Account.acct_type == AcctType.Investment,
-                Account.is_active == True).all(),  # noqa
-            account_id=acct_id,
-            interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
-            min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
-            accts=accts,
-            budgets=budgets,
-            active_budgets=active_budgets,
-            plaid_accounts=plaid_accts
-        )
+        return _render_accounts_template(account_id=acct_id)
 
 
 class AccountAjax(MethodView):
