@@ -12,6 +12,17 @@ File: ``biweeklybudget/flaskapp/static/js/custom.js``
    support another locale.
 
    :returns: **Array** -- 2-element Array of [group separator, decimal separator]
+.. js:function:: .........l(s)
+
+   Escape a string for interpolation into HTML text content or a quoted
+   attribute value.
+
+   Use this for any user-entered or configured text (such as account names or
+   fuel level labels) that is concatenated into an HTML string.
+
+   :param s: the string to escape
+   :type s: **String**
+   :returns: **String** -- the escaped string
 .. js:function:: ...........y(value)
 
    Format a float as currency. If ``value`` is null, return ``&nbsp;``.

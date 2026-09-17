@@ -1,8 +1,13 @@
 Changelog
 =========
 
-Unreleased
-----------
+2.0.0 (2026-09-20)
+------------------
+
+* **Breaking:** Docker images are now published to the GitHub Container Registry only, as ``ghcr.io/jantman/biweeklybudget``. Nothing is pushed to Docker Hub any more, so ``jantman/biweeklybudget`` on Docker Hub stops receiving updates at 1.6.0.
+
+  * Pull ``ghcr.io/jantman/biweeklybudget:latest`` or ``ghcr.io/jantman/biweeklybudget:X.Y.Z`` instead; the image itself is unchanged. Update any ``docker run``, Compose file or systemd unit that names the old image.
+  * A merge to master now also pushes its ``<sha>_<timestamp>`` image to the same registry, which it previously pushed to Docker Hub.
 
 * `Issue #334 <https://github.com/jantman/biweeklybudget/issues/334>`_ - An active Account with no recorded balance no longer takes the dashboard (``/``) down with a "Server Error". Every Account is in that state between being added and its first balance arriving, so a newly added Account made the landing page unreachable.
 
@@ -111,6 +116,8 @@ Unreleased
 * `Issue #324 <https://github.com/jantman/biweeklybudget/issues/324>`_ - Update all dependencies to their latest versions, resolving all open Dependabot security alerts. The Docker image is now based on ``python:3.14-alpine3.24`` with gunicorn 26.2.0.
 
 * `Issue #325 <https://github.com/jantman/biweeklybudget/issues/325>`_ - Fix the tox test suite so that all environments pass locally and in CI, and update moved or redirected documentation links.
+
+* Development process only, with no change to the application: feature work now uses `Spec Kit <https://github.com/github/spec-kit>`_, replacing the ``docs/features/`` pattern, and the rules it follows are kept in ``.specify/memory/constitution.md``. Add GitHub Actions workflows for Claude Code pull request review and ``@claude`` mentions.
 
 1.6.0 (2026-02-14)
 ------------------

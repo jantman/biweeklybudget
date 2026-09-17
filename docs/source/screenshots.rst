@@ -9,6 +9,14 @@ Main landing page.
 .. image:: index_sm.png
    :target: index.png
 
+Cash Position
+-------------
+
+The full available-funds waterfall: what you have, what is already spoken for, and what is left over, itemized and with every line linked to the view it comes from.
+
+.. image:: cash-position_sm.png
+   :target: cash-position.png
+
 Transactions View
 -----------------
 
@@ -80,6 +88,14 @@ List all budgets, along with graphs of spending per budget, per payperiod and pe
 
 .. image:: budgets_sm.png
    :target: budgets.png
+
+Spending Charts
+---------------
+
+Pie charts of net spending by budget for the current and previous pay period, month and year, with checkboxes to leave budgets out.
+
+.. image:: budget-spending_sm.png
+   :target: budget-spending.png
 
 Single Budget View
 ------------------

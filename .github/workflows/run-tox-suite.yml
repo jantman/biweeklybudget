@@ -208,6 +208,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+    permissions:
+      contents: read
+      packages: write
     env:
       DB_CONNSTRING: 'mysql+pymysql://root:dbroot@127.0.0.1:13306/budgettest?charset=utf8mb4'
       MYSQL_HOST: 127.0.0.1
@@ -236,12 +239,13 @@ jobs:
         run: python dev/setup_test_db.py
       - name: Create results directory
         run: mkdir -p results
-      - name: Login to Docker Hub if master branch
+      - name: Login to GitHub Container Registry if master branch
         if: github.ref_type == 'branch' && github.ref_name == 'master'
         uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tests
         id: run-tests
         run: tox -e ${{ github.job }}
@@ -258,7 +262,7 @@ jobs:
       - name: Docker Push if master
         if: github.ref_type == 'branch' && github.ref_name == 'master'
         run: |
-          docker push jantman/biweeklybudget:${{ steps.run-tests.outputs.DOCKER_IMG_TAG }}
+          docker push ghcr.io/${{ github.repository }}:${{ steps.run-tests.outputs.DOCKER_IMG_TAG }}
   migrations:
     runs-on: ubuntu-latest
     strategy:

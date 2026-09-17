@@ -134,7 +134,14 @@ CMD ["/app/bin/entrypoint.sh"]
 
 class DockerImageBuilder(object):
 
-    image_name = 'jantman/biweeklybudget'
+    #: The container registry images are published to.
+    registry = 'ghcr.io'
+
+    #: The repository within :py:attr:`~.registry`.
+    repo_name = 'jantman/biweeklybudget'
+
+    #: Fully-qualified image name, used for both local and pushed images.
+    image_name = '%s/%s' % (registry, repo_name)
 
     def __init__(self, toxinidir):
         """
@@ -227,7 +234,7 @@ class DockerImageBuilder(object):
                 fh.write(f'DOCKER_IMG_TAG={img_tag}\n')
             return img_tag
         if self.build_ver is not None:
-            print("To push release image to Docker Hub:")
+            print("To push release image to the GitHub Container Registry:")
             print('docker tag %s:%s %s:%s' % (
                 self.image_name, img_tag, self.image_name, self.build_ver
             ))
@@ -588,27 +595,67 @@ class DockerImageBuilder(object):
 
     def _check_tag(self, tag):
         """
-        Confirm that the specified tag is not already present on Docker Hub or
-        locally.
+        Confirm that the specified tag is not already present on the registry
+        or locally.
 
         :param tag: tag to check
         :type tag: str
         """
         self._check_tag_local(tag)
-        logger.debug('Checking for tag on hub.docker.com')
-        url = 'https://hub.docker.com/' \
-              'v2/repositories/%s/tags/' % self.image_name
-        res = requests.get(url)
-        logger.debug('GET %s: %d', url, res.status_code)
-        if res.status_code == 404:
+        tags = self._registry_tags()
+        if tags is None:
             return
-        tags = [r['name'] for r in res.json()['results']]
-        logger.debug('hub.docker.com tags for %s: %s', self.image_name, tags)
         if tag in tags:
             raise RuntimeError(
-                "ERROR: Tag '%s' already exists on hub.docker.com for "
-                "image '%s'" % (tag, self.image_name)
+                "ERROR: Tag '%s' already exists on %s for "
+                "image '%s'" % (tag, self.registry, self.image_name)
             )
+
+    def _registry_tags(self):
+        """
+        Return the list of tags present on the registry for
+        :py:attr:`~.repo_name`, or None if that could not be determined (the
+        image does not exist yet, or the registry could not be queried).
+
+        The GitHub Container Registry implements the Docker Registry HTTP API
+        V2, which requires a bearer token even for anonymous pulls of a public
+        image.
+
+        :return: tags present on the registry, or None
+        :rtype: list or None
+        """
+        logger.debug('Checking for tag on %s', self.registry)
+        try:
+            res = requests.get(
+                'https://%s/token' % self.registry,
+                params={
+                    'scope': 'repository:%s:pull' % self.repo_name,
+                    'service': self.registry,
+                },
+                timeout=30
+            )
+            res.raise_for_status()
+            token = res.json()['token']
+            url = 'https://%s/v2/%s/tags/list' % (
+                self.registry, self.repo_name
+            )
+            res = requests.get(
+                url, headers={'Authorization': 'Bearer %s' % token},
+                timeout=30
+            )
+            logger.debug('GET %s: %d', url, res.status_code)
+            if res.status_code == 404:
+                return None
+            res.raise_for_status()
+            tags = res.json().get('tags') or []
+        except Exception as ex:
+            logger.warning(
+                'Unable to list tags on %s for %s; skipping remote tag '
+                'check: %s', self.registry, self.repo_name, ex
+            )
+            return None
+        logger.debug('%s tags for %s: %s', self.registry, self.repo_name, tags)
+        return tags
 
     def _check_tag_local(self, tag):
         """

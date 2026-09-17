@@ -122,11 +122,13 @@ server, see :ref:`Flask App <flask_app>`.
 Running In Docker
 -----------------
 
-Biweeklybudget is also distributed as a `docker image <https://hub.docker.com/r/jantman/biweeklybudget/>`_,
+Biweeklybudget is also distributed as a `docker image
+<https://github.com/jantman/biweeklybudget/pkgs/container/biweeklybudget>`_,
 to make it easier to run without installing as many :ref:`Requirements <getting_started.requirements>`.
 
-You can pull the latest version of the image with ``docker pull jantman/biweeklybudget:latest``, or
-a specific release version ``X.Y.Z`` with ``docker pull jantman/biweeklybudget:X.Y.Z``. It is recommended
+You can pull the latest version of the image with
+``docker pull ghcr.io/jantman/biweeklybudget:latest``, or a specific release version ``X.Y.Z``
+with ``docker pull ghcr.io/jantman/biweeklybudget:X.Y.Z``. It is recommended
 that you run a specific version number, and that you make sure to perform a database backup before upgrading.
 
 The only dependencies for a Docker installation are:
@@ -136,7 +138,7 @@ The only dependencies for a Docker installation are:
 **Important Note:** If you run MySQL in a container, please make sure that its data
 is backed up and will not be removed.
 
-The `image <https://hub.docker.com/r/jantman/biweeklybudget/>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
+The `image <https://github.com/jantman/biweeklybudget/pkgs/container/biweeklybudget>`_ runs with the `tini <https://github.com/krallin/tini>`_ init
 wrapper and uses `gunicorn <https://gunicorn.org/>`_ under Python 3.14 to serve the web UI, exposed on port 80. Note that,
 while it runs with 4 worker threads, there is no HTTP proxy in front of Gunicorn and this image is intended for local network
 use by a single user/client. The image also automatically runs database migrations in a safe manner at start, before starting
@@ -185,7 +187,7 @@ And then run biweeklybudget:
 .. code-block:: none
 
     docker run --name biweeklybudget --env-file biweeklybudget.env \
-    -p 8080:80 --link mysql jantman/biweeklybudget:latest
+    -p 8080:80 --link mysql ghcr.io/jantman/biweeklybudget:latest
 
 Host-Local MySQL Example
 ++++++++++++++++++++++++
@@ -213,7 +215,7 @@ So using that, we could run biweeklybudget listening on port 8080 and using our 
         --env-file biweeklybudget.env \
         --add-host="host.docker.internal:host-gateway" \
         -p 8080:80 \
-        jantman/biweeklybudget:latest
+        ghcr.io/jantman/biweeklybudget:latest
 
 You may need to adjust those commands depending on your operating system, Docker networking mode, and MySQL server.
 
@@ -240,7 +242,7 @@ MySQL running on the Docker host:
 
     docker run --name biweeklybudget -e SETTINGS_MODULE=biweeklybudget.mysettings \
     -v /opt/biweeklybudget-settings.py:/app/lib/python3.14/site-packages/biweeklybudget/mysettings.py \
-    -p 8080:80 --link mysql jantman/biweeklybudget:latest
+    -p 8080:80 --link mysql ghcr.io/jantman/biweeklybudget:latest
 
 Note on Locales
 +++++++++++++++
