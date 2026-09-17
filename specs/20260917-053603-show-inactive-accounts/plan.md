@@ -149,23 +149,27 @@ as an empty cell instead of raising (FR-006, research R5).
 Kept separate from M1 because it is defensive work on paths M1 exposes, and is worth reviewing
 as such rather than blurred into the visible change.
 
-### M3 — Tests
+### M3 — Acceptance coverage and documentation
 
 Update the Accounts-page assertions listed in research R7 for the deliberate change, and add a
 `TestInactiveAccounts` acceptance class covering: the greyed row and its class, the `Active?`
 cells, the inactive account's name still linking to its modal, the modal showing `Active?`
 unchecked, and the full round trip — deactivate an active account, find it still listed as
 inactive, re-activate it from its modal, confirm it is active again in the page and in the
-database. Run the unit and acceptance suites to completion.
-
-### M4 — Documentation, changelog, screenshots
+database.
 
 `docs/source/app_usage.rst` gains an "Inactive Accounts" section (FR-010): what deactivating
 an account does and does not do, that inactive accounts stay listed and greyed on the Accounts
 page, and how to re-activate one. `docs/make_screenshots.py` gains a description for the
-`/accounts` entry. Regenerate and commit the `/accounts` screenshots. Add the `CHANGES.rst`
-bullet under `Unreleased`. Build `tox -e docs` clean — in a separate invocation from
-`screenshots`, which it would otherwise delete.
+`/accounts` entry, and the `/accounts` screenshots are regenerated and committed. Build
+`tox -e docs` clean — in a separate invocation from `screenshots`, which it would otherwise
+delete.
+
+### M4 — Changelog, test gate, pull request
+
+Add the concise `CHANGES.rst` bullet under `Unreleased`, led by the issue link; leave
+`version.py` untouched. Run the unit and acceptance suites to completion with everything
+passing (Principle II), push the branch, open the pull request, and see CI green.
 
 ### Out of scope
 
