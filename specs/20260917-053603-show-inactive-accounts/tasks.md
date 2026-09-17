@@ -149,7 +149,7 @@ passes, and `$TOX -e docs` builds clean.
 - [X] T024 Verify Principle III compliance by diff: confirm `git diff master... --stat` shows no change under `biweeklybudget/models/`, and therefore that no Alembic migration is required — research R9; data-model.md
 - [X] T025 Close the test gate: run `$TOX -e py314` and `$TOX -e acceptance` to completion one final time on the finished tree, with everything passing. A suite that times out has not passed — raise both the pytest timeout and the tool timeout and re-run rather than narrowing the run
 - [X] T026 Commit the work with `Show Inactive Accounts - M{n}.{t}` prefixes, push the branch with `git push -u origin HEAD:refs/heads/robot-army/issue-276-inability-to-re-activate-an-account` (a bare `git push` would target `master`, which this worktree's branch tracks), and open a pull request describing the change, linking issue #276, and stating Constitution compliance
-- [ ] T027 Monitor the CI jobs on the pull request to completion, then run `/answer-reviews` to address every review comment. Repeat until Claude's review reports "No issues found" and Copilot's review, if present, recommends approval. Known-flaky tests (reconcile drag/unignore, fuel log search, Plaid "Uncheck All", and the docs linkcheck) are re-run before being treated as regressions
+- [X] T027 Monitor the CI jobs on the pull request to completion, then run `/answer-reviews` to address every review comment. Repeat until Claude's review reports "No issues found" and Copilot's review, if present, recommends approval. Known-flaky tests (reconcile drag/unignore, fuel log search, Plaid "Uncheck All", and the docs linkcheck) are re-run before being treated as regressions
 
 **Checkpoint**: Feature complete, pull request green and reviewed.
 
