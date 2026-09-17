@@ -185,16 +185,16 @@ both pages, and get 200 with that account's balance-derived cells blank.
 - [X] T018 [P] Add one concise bullet to `CHANGES.rst` under an `Unreleased` heading, led by
   the issue link, in the format of the existing entries. Do not touch
   `biweeklybudget/version.py` and do not tag (Principle VI)
-- [ ] T019 Record the outcome in
+- [X] T019 Record the outcome in
   `specs/20260917-075406-balanceless-account-pages/tasks.md` and `plan.md`, and commit the
   whole milestone together with a `Balance-less Account Pages - M.T` prefixed message
-- [ ] T020 Push the branch to `origin` and open a pull request describing the defect, the
+- [X] T020 Push the branch to `origin` and open a pull request describing the defect, the
   fix, the decision to render blank rather than `$0.00`, and what was verified by
   reproduction
-- [ ] T021 Monitor the pull request's CI to completion, then use `/answer-reviews` to
+- [X] T021 Monitor the pull request's CI to completion, then use `/answer-reviews` to
   respond to review comments, repeating until Claude's review reports no issues found and
   Copilot's review, if present, recommends approval
-- [ ] T022 Tear down the throwaway database container: `docker rm -f budgettest334`
+- [X] T022 Tear down the throwaway database container: `docker rm -f budgettest334`
 
 ---
 
@@ -229,6 +229,26 @@ xfail on the `incremental` marker. Recorded in `t006-unfixed.txt`.
 The acceptance run was clean on the first attempt — none of the known flaky tests
 (reconcile drag/unignore, fuel log search, Plaid "Uncheck All") needed a re-run, so no
 failure was attributed to flakiness.
+
+**CI on [pull request #351](https://github.com/jantman/biweeklybudget/pull/351)** — all
+eleven checks passed on the first run, with no re-run needed for any known flaky test:
+
+| Check | Result | Check | Result |
+|---|---|---|---|
+| `py314` | pass | `acceptance` | pass (13:49) |
+| `docker` | pass (17:18) | `migrations` | pass |
+| `docs` | pass | `jsdoc` | pass |
+| `screenshots` | pass | `plaid` | pass |
+| `coverage` | pass | `security/snyk` | pass |
+| `claude-review` | pass | | |
+
+`screenshots` passing confirms the plan's expectation that sample data — and therefore the
+documented screenshots — is untouched. `docs` passing on the first attempt means the
+linkcheck did not hit its usual transient timeouts.
+
+**Review**: Claude's review reported **"No issues found. Checked for bugs and CLAUDE.md
+compliance."** No Copilot review was requested on this repository, and there were zero
+inline review comments, so there was nothing for `/answer-reviews` to address.
 
 **Unchanged, as planned**: no file under `biweeklybudget/models/`, so no migration
 (Principle III not engaged); no `docs/source/` change and no screenshot change, and
