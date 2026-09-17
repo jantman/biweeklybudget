@@ -262,7 +262,12 @@ class Screenshotter(object):
         {
             'path': '/accounts',
             'filename': 'accounts',
-            'title': 'Accounts View'
+            'title': 'Accounts View',
+            'description': 'All Accounts, by account type. Inactive Accounts '
+                           'are listed too, greyed and with "NO" in the '
+                           '"Active?" column; clicking one opens its Edit '
+                           'Account modal, where "Active?" can be re-checked '
+                           'to make it active again.'
         },
         {
             'path': '/accounts/1',

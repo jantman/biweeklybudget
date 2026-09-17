@@ -45,6 +45,7 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-accounts-bank">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Balance</th>
                                             <th>Unreconciled</th>
@@ -53,18 +54,18 @@
                                     </thead>
                                     <tbody>
                                     {% for acct in bank_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_active and acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (acct.balance.ledger - acct.unreconciled_sum)|reddollars|safe }}</td>
+                                            <td>{% if ledger is not none %}{{ (ledger - acct.unreconciled_sum)|reddollars|safe }}{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -86,6 +87,7 @@
                                 <table class="table table-bordered table-hover table-striped">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Balance</th>
                                             <th>Credit Limit</th>
@@ -96,20 +98,20 @@
                                     </thead>
                                     <tbody>
                                     {% for acct in credit_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_active and acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ acct.credit_limit|dollars }}</td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger)|reddollars|safe }}</td>
+                                            <td>{% if ledger is not none and acct.credit_limit is not none %}{{ (acct.credit_limit + ledger)|reddollars|safe }}{% endif %}</td>
                                             <td>{{ acct.unreconciled_sum|dollars }}</td>
-                                            <td>{{ (acct.credit_limit + acct.balance.ledger - acct.unreconciled_sum)|reddollars|safe }}</td>
+                                            <td>{% if ledger is not none and acct.credit_limit is not none %}{{ (acct.credit_limit + ledger - acct.unreconciled_sum)|reddollars|safe }}{% endif %}</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -132,20 +134,21 @@
                                 <table class="table table-bordered table-hover table-striped" id="table-accounts-investment">
                                     <thead>
                                         <tr>
+                                            <th>Active?</th>
                                             <th>Account</th>
                                             <th>Value</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     {% for acct in investment_accounts|sort(attribute='name') %}
-                                        <tr>
+                                        {% if acct.is_active %}<tr>{% else %}<tr class="inactive">{% endif %}
+                                            {% if acct.is_active %}<td>yes</td>{% else %}<td style="color: #a94442;">NO</td>{% endif %}
                                             <td><a href="javascript:accountModal({{ acct.id }}, null)">{{ acct.name }}</a></td>
+                                            {% set ledger = acct.balance.ledger if acct.balance else None %}
                                             <td>
-                                                <span>{{ acct.balance.ledger|dollars }}</span>
-                                                {% if acct.is_stale %}
-                                                <span class="data_age text-danger">({{ acct.ofx_statement.as_of|ago }})</span>
-                                                {% else %}
-                                                <span class="data_age">({{ acct.ofx_statement.as_of|ago }})</span>
+                                                <span>{{ ledger|dollars }}</span>
+                                                {% if acct.ofx_statement %}
+                                                <span class="data_age{% if acct.is_active and acct.is_stale %} text-danger{% endif %}">({{ acct.ofx_statement.as_of|ago }})</span>
                                                 {% endif %}
                                             </td>
                                         </tr>

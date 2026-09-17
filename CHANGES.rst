@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #276 <https://github.com/jantman/biweeklybudget/issues/276>`_ - Inactive Accounts are now listed on the Accounts page, greyed with an **Active?** column reading ``NO``, instead of disappearing from the UI entirely. Deactivating an Account used to leave no link to its Edit Account modal, so re-activating it meant running ``UPDATE accounts SET is_active=1`` against the database by hand.
+
+  * All three account tables gain a leading **Active?** column, matching the Budgets page. An inactive Account's name still links to its modal, where **Active?** can be re-checked.
+  * Inactive Accounts are still excluded everywhere else - the dashboard, Cash Position, pay period calculations, the Account Balances chart - and are still rejected as the source or destination of an account transfer. The "stale data" warning is no longer applied to them.
+  * An Account with no recorded balance, statement or credit limit now renders with blank value cells rather than returning a "Server Error" for the whole page.
+
 * `Issue #275 <https://github.com/jantman/biweeklybudget/issues/275>`_ - Saving an Account or Budget under a name another record already uses now shows a message on the **Name** field, instead of dumping a raw database ``IntegrityError`` (with the SQL statement and all its parameters) into the modal as a "Server Error".
 
   * Names are compared ignoring surrounding whitespace and letter case, so ``bankone`` collides with ``BankOne``. Re-saving a record under its own unchanged name still works.
