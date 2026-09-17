@@ -199,11 +199,12 @@ request both pages; both render with blank cells for that account.
 
 ## Out of Scope
 
-- **The credit payoff page.** An active credit account with no balance breaks it too, by the
-  same root cause but through a different, calculation-side code path that would need its
-  own decision about what a payoff projection means for an account with no balance. Issue
-  #334 is scoped to the landing and Accounts pages, and this change stays there. The defect
-  is real and is reported in the pull request so it can be tracked separately.
+- **The credit payoff page.** It reads the same balance from a calculation-side code path
+  that would need its own decision about what a payoff projection means for an account with
+  no balance. Issue #334 is scoped to the landing and Accounts pages, and this change stays
+  there. No claim is made that a balance-less account breaks it: as recorded in research
+  R6, that page could not be observed in a working state in the reproduction harness, so
+  nothing was demonstrated either way.
 - **Recording a balance automatically when an account is created.** That would hide this
   class of failure rather than fix it, and would put a fabricated zero balance into the
   operator's financial history.
