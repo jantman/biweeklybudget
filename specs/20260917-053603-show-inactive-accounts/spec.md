@@ -127,11 +127,12 @@ rows are visually greyed, matching the treatment on the Budgets page.
 - **FR-007**: The "stale data" warning MUST NOT be applied to inactive accounts.
 - **FR-008**: Accounts MUST remain ordered by name within each account-type table, with
   inactive accounts placed by name among the active ones.
-- **FR-009**: Financial summaries and totals elsewhere in the application — the dashboard,
-  the cash position page, pay period calculations, and the account choices offered when
-  entering transactions or transfers — MUST continue to exclude inactive accounts. This
-  change makes inactive accounts *visible and editable on the Accounts page*; it does not
-  make them *usable*.
+- **FR-009**: The treatment of inactive accounts everywhere outside the Accounts page
+  MUST be unchanged. The dashboard, the cash position page, pay period calculations, and
+  the account balance chart MUST continue to leave inactive accounts out, and the account
+  transfer and transaction forms MUST continue to reject an inactive account with the
+  error they already give. This change makes inactive accounts *visible and editable on
+  the Accounts page*; it does not make them *usable*.
 - **FR-010**: Documentation describing the Accounts page MUST be updated to state that
   inactive accounts are listed there, greyed, and can be re-activated from their edit
   modal.
