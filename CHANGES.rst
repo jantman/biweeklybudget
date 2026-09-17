@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+2.0.0 (2026-09-20)
+------------------
 
 * `Issue #276 <https://github.com/jantman/biweeklybudget/issues/276>`_ - Inactive Accounts are now listed on the Accounts page, greyed with an **Active?** column reading ``NO``, instead of disappearing from the UI entirely. Deactivating an Account used to leave no link to its Edit Account modal, so re-activating it meant running ``UPDATE accounts SET is_active=1`` against the database by hand.
 
@@ -107,6 +107,8 @@ Unreleased
 * `Issue #324 <https://github.com/jantman/biweeklybudget/issues/324>`_ - Update all dependencies to their latest versions, resolving all open Dependabot security alerts. The Docker image is now based on ``python:3.14-alpine3.24`` with gunicorn 26.2.0.
 
 * `Issue #325 <https://github.com/jantman/biweeklybudget/issues/325>`_ - Fix the tox test suite so that all environments pass locally and in CI, and update moved or redirected documentation links.
+
+* Development process only, with no change to the application: feature work now uses `Spec Kit <https://github.com/github/spec-kit>`_, replacing the ``docs/features/`` pattern, and the rules it follows are kept in ``.specify/memory/constitution.md``. Add GitHub Actions workflows for Claude Code pull request review and ``@claude`` mentions.
 
 1.6.0 (2026-02-14)
 ------------------
