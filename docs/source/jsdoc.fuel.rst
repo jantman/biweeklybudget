@@ -3,6 +3,16 @@ jsdoc.fuel
 
 File: ``biweeklybudget/flaskapp/static/js/fuel.js``
 
+.. js:function:: ...............s(selectedValue)
+
+   Build the options for a fuel level select from the ``FUEL_LEVELS`` setting,
+   which ``fuel.html`` templates into the page as an Array of
+   ``[label, percentage]`` pairs. Options keep the configured order, and labels
+   are HTML-escaped because they are configured text.
+
+   :param selectedValue: the percentage to preselect
+   :type selectedValue: **number**
+   :returns: **Array** -- options for :js:func:`FormBuilder.addSelect`
 .. js:function:: ...........l(dataTableObj)
 
    Show the modal to add a fuel log entry. This function calls

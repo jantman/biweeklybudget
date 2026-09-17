@@ -49,7 +49,9 @@ File: ``biweeklybudget/flaskapp/static/js/budget_spending.js``
 
    Draw one period's panel, apart from its donut chart: dates, total, table
    and net credits, and whether the chart or the "no spending" message is
-   shown. Budget names are always inserted as text, never as HTML.
+   shown. Budget names are always inserted as text, never as HTML. The
+   chart's container is left to ``budgetSpendingDrawChart()``, which has to
+   destroy the previous chart while its canvas is still in the page.
 
    :param period: one element of the endpoint's ``periods`` list
    :param summary: ``budgetSpendingSummarize(period)``
