@@ -104,17 +104,36 @@ err_normal   = abs(available - (limit - current))
 err_reversed = abs(available - (limit + current))
 ```
 
-and log when `err_reversed < err_normal` **and** `err_normal > abs(current)`. Record the
+and log when `err_reversed < err_normal` **and** `err_reversed < abs(current)`. Record the
 balance per the documented rule regardless; never raise.
+
+> **Corrected during implementation (commit `cb1310a`).** The second condition was
+> originally written as `err_normal > abs(current)`, and the rationale below described it
+> as what keeps the check quiet. That was wrong: the condition is algebraically implied by
+> the first, so it could never filter anything. Writing `d` for `avail - limit`, the
+> residuals are `|d + current|` and `|d - current|`, so the reversed hypothesis wins
+> exactly when `d` and `current` share a sign — and whenever they do,
+> `|d + current| = |d| + |current| > |current|` already. Caught in review on pull request
+> #360 and confirmed over 300k random `Decimal` triples, where the clause changed the
+> outcome in zero cases. The condition above is the corrected one, which requires the
+> reversed hypothesis to *fit* rather than merely to fit better.
 
 **Rationale**: Plaid documents, for credit accounts, that "the `available` balance
 typically equals the `limit` less the `current` balance, less any pending outflows plus any
 pending inflows". So under the documented convention the residual `err_normal` is exactly
-the net pending activity. A residual *larger than the balance itself*, which is also better
-explained by the reversed hypothesis, is the signal worth reporting. The second condition
-is what keeps the check quiet: without it, a card with a small balance and a large pending
-inflow flags spuriously, because the two hypotheses are only `2 × current` apart and noise
-dominates when `current` is small.
+the net pending activity, and under a reversed one `err_reversed` is.
+
+Fitting better cannot be the whole test, because the reversed hypothesis fits better for a
+mismatch of any size at all, down to a single cent (see the correction above). The second
+condition requires it to *fit*: a genuinely reversed institution leaves a residual of only
+its pending activity, which does not ordinarily exceed the whole balance owed. That is what
+keeps the check quiet for a card with a small balance and a large pending inflow, where the
+two hypotheses are only `2 × current` apart and noise dominates.
+
+It remains a heuristic on a relation Plaid itself calls approximate. A `credit_limit`
+recorded well below the real one still satisfies both conditions, and so does a correctly
+signed account whose net pending inflow falls between one and three times the balance.
+Both are reasons this warns and does nothing else.
 
 The relation is approximate by Plaid's own wording, which is why this is a log line and
 not a validation. It must not alter a recorded value and must not make an update fail or

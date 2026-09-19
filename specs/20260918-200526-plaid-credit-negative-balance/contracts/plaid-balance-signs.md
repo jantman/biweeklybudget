@@ -78,8 +78,16 @@ err_normal   = abs(available - (credit_limit - C))
 err_reversed = abs(available - (credit_limit + C))
 ```
 
-If `err_reversed < err_normal` **and** `err_normal > abs(C)`, log a warning naming the
+If `err_reversed < err_normal` **and** `err_reversed < abs(C)`, log a warning naming the
 account and the three figures.
+
+The second condition requires the reversed hypothesis to *fit*, not merely to fit better.
+Fitting better is not a filter at all: writing `d` for `available - credit_limit`, the two
+residuals are `|d + C|` and `|d - C|`, so the reversed hypothesis wins exactly when `d` and
+`C` share a sign — true for a mismatch of any size, down to a single cent. (This contract
+originally specified `err_normal > abs(C)`, which is algebraically implied by the first
+condition and therefore filtered nothing; corrected in commit `cb1310a` after review on
+pull request #360.)
 
 Binding constraints on the check:
 
