@@ -1301,6 +1301,22 @@ class TestCreditBalanceSignCheck(PlaidUpdaterTester):
         assert self._warnings(caplog) == []
         assert stmt.ledger_bal == Decimal('-1000.00')
 
+    def test_small_balance_big_pending_inflow_does_not_warn(self, caplog):
+        """
+        The reversed hypothesis winning is not on its own worth reporting.
+
+        With a $10 balance and a $30 pending credit, ``avail - limit`` and
+        ``current`` share a sign, so the reversed hypothesis fits better -- as
+        it does for a mismatch of any size, down to a single cent. It does not
+        fit *well* (its residual is the whole balance over), and this is
+        ordinary noise rather than an institution reporting the opposite sign.
+        """
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # limit 5000, owed 10, a 30 pending credit: available is 5020
+            stmt = self._call(10.00, 5020.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-10.00')
+
     def test_no_credit_limit_does_not_warn(self, caplog):
         with caplog.at_level(logging.WARNING, logger=pbm):
             stmt = self._call(-1000.00, 4000.00, None)

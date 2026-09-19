@@ -419,10 +419,22 @@ class PlaidUpdater:
         This is advisory only. Pending activity makes the relation
         approximate, so a mismatch is reported and nothing else: the balance is
         still recorded per the documented convention, and an update is never
-        failed over it. The warning is withheld unless the reversed hypothesis
-        both fits better and the residual under the documented one exceeds the
-        balance itself, since with a small balance the two hypotheses are too
-        close together for pending activity not to swamp them.
+        failed over it.
+
+        Fitting better is not enough on its own to be worth reporting. Writing
+        ``d`` for ``avail - limit``, the two residuals are ``|d + current|``
+        and ``|d - current|``, so the reversed hypothesis wins exactly when
+        ``d`` and ``current`` share a sign -- which happens for a mismatch of
+        any size at all, down to a single cent. The reversed hypothesis must
+        therefore also *fit*, which is required here by its residual coming in
+        under the balance itself: a genuinely reversed institution leaves a
+        residual of only its pending activity, which does not ordinarily
+        exceed the whole balance owed. That is what keeps a pending credit on
+        a card with very little owed from being reported.
+
+        It is still only a heuristic on an approximate relation. A recorded
+        ``credit_limit`` well below the real one, for instance, can satisfy
+        both conditions -- which is why this warns and does nothing else.
 
         :param account: the account being updated
         :param current: Plaid's current balance, quantized, before negation
@@ -434,7 +446,7 @@ class PlaidUpdater:
         limit = Decimal(account.credit_limit)
         err_normal = abs(avail - (limit - current))
         err_reversed = abs(avail - (limit + current))
-        if err_reversed < err_normal and err_normal > abs(current):
+        if err_reversed < err_normal and err_reversed < abs(current):
             logger.warning(
                 'Account "%s" reports a credit balance of %s against a limit '
                 'of %s and an available balance of %s. Plaid documents a '
