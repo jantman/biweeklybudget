@@ -179,3 +179,47 @@ One correction was needed along the way: the first draft of the `CHANGES.rst` en
 the new documentation section on readthedocs, which `linkcheck` rejected because the anchor
 only exists once the change is published. It now names the section in prose, exactly as the
 issue #263 entry does for "Loan Accounts".
+
+## Delivery Record
+
+Pull request [#360](https://github.com/jantman/biweeklybudget/pull/360), opened 2026-09-18
+from `robot-army/issue-354-cash-position-adds-plaid-sourced-credit`.
+
+**CI**: all checks pass on `cb1310a` — `py314`, `acceptance`, `docker`, `docs`, `jsdoc`,
+`migrations`, `plaid`, `screenshots`, `coverage`, `claude-review`, Snyk. The `docker` job
+is the gate for packaging, which is not run locally on this host.
+
+**Review**: one finding, and it was a real bug in this feature's own work.
+
+The automated review showed that the second condition on the diagnostic warning,
+`err_normal > abs(current)`, was algebraically implied by the first and so could never
+filter anything. Writing `d` for `avail - limit`, the residuals are `|d + current|` and
+`|d - current|`, so the reversed hypothesis wins exactly when `d` and `current` share a
+sign — and whenever they do, `|d + current| = |d| + |current| > |current|` already. The
+claim in Decision 4 of `research.md` that the second condition "is what keeps the check
+quiet" was therefore wrong as implemented: the check warned on any same-sign mismatch down
+to a single cent.
+
+Reproduced independently before changing anything (symbolically, and over 300k random
+`Decimal` triples where the clause changed the outcome in zero cases), then fixed in
+`cb1310a`: the condition is now `err_reversed < abs(current)`, which requires the reversed
+hypothesis to *fit* rather than merely to fit better, and which is not vacuous (it changes
+the outcome in roughly an eighth of random triples). A regression test covers the case the
+old condition was meant to catch and did not — $10 owed with a $30 pending credit —
+verified to fail against the old condition and pass against the new one.
+
+One claim was retracted rather than defended in the course of that fix. A test asserting
+that a stale `credit_limit` is also suppressed was drafted, checked, found false (a limit
+recorded far enough below the real one still satisfies both conditions), and deleted; the
+docstring now states plainly that this remains a heuristic on a relation Plaid itself
+calls approximate. The same residual — a false positive when net pending inflow falls
+between one and three times the balance — was independently identified by the second
+review pass and deliberately not flagged, on the grounds that it is inherent to the
+heuristic, documented, and advisory only.
+
+The second review reported "No issues found. Checked for bugs and CLAUDE.md compliance."
+No Copilot review is configured on this repository.
+
+**Open for the maintainer**: the WARNING-vs-DEBUG log level for the diagnostic check,
+recorded in `research.md` Decision 5 and raised in the pull request description. A
+one-word change either way.
