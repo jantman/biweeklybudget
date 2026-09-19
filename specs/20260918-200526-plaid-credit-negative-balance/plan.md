@@ -155,3 +155,27 @@ milestones.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|--------------------------------------|
 | Historical rows are corrected by operator-run SQL documented in `docs/source/plaid.rst`, not by an Alembic migration — so a data-affecting change ships without a migration. | The wrong sign is already written into years of `account_balances.ledger` and `ofx_statements.ledger_bal` rows, and the Account Balances chart plots them. The operator needs *some* way to correct them, and they need to be told what happens if they do nothing. | An Alembic migration was rejected. (a) It could not be made safely reversible in the sense Principle III requires: `downgrade()` would have to re-break the data, and a user who had already corrected some rows by hand would be corrupted in both directions. (b) It cannot distinguish balances that came from Plaid from balances an account had before it was linked, so it would flip rows that were always correct. (c) Principle III governs changes to `biweeklybudget/models/`; nothing under `models/` changes here. (d) Issue #263 faced this exact situation for loan accounts and resolved it with documented SQL; doing the same thing keeps one documented procedure rather than two mechanisms for one problem. |
+
+## Test Gate Record
+
+Run 2026-09-18 on the feature branch, from the main checkout's virtualenv against a
+MariaDB 10.4.7 test container (Constitution Principle II, step 5a).
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` (full unit) | **OK** — 1015 passed, 4 skipped, 0 failed. The `.tox/py314/.pytest_cache` was cleared first, so all 143 pycodestyle/pyflakes checks actually ran rather than being skipped as "previously passed". |
+| `tox -e acceptance` (full) | **OK** — 965 passed, 0 failed, 22m13s. First run, no flakes; none of the known-flaky tests needed a re-run. |
+| `tox -e docs` | **OK** — no broken links. |
+| `tox -e migrations` | **Not run, not applicable.** No change under `biweeklybudget/models/` and no migration; Principle III's trigger is not met. |
+| `tox -e docker` | **Left to CI**, which runs the `docker` job on the pull request. This host has repeatedly killed local `docker` runs for low memory; CI is the real gate. |
+| pycodestyle / pyflakes on the changed files | **Clean.** The two pyflakes findings in `test_plaid_updater.py` (an unused `PlaidApi` import at line 43, an unused `txns` local at line 406) are pre-existing at unchanged lines and are covered by the exceptions in `pytest.ini`. |
+
+During implementation the three `TestDoItem` tests failed whenever
+`test_plaid_updater.py` was run on its own (`AttributeError: Mock object has no attribute
+'account'` — a backref not yet configured). They pass in the full suite, as recorded
+above, and are unrelated to this change.
+
+One correction was needed along the way: the first draft of the `CHANGES.rst` entry linked
+the new documentation section on readthedocs, which `linkcheck` rejected because the anchor
+only exists once the change is published. It now names the section in prose, exactly as the
+issue #263 entry does for "Loan Accounts".
