@@ -136,7 +136,7 @@ every suite passes in full.
 - [X] T030 [P] Run `tox -e docs` to completion and confirm it builds without errors, after any screenshot regeneration has finished (Constitution principle IV) *(M3.3)*
 - [X] T031 [P] Run `tox -e migrations` as a regression check; this feature changes no models and adds no migration, so it must pass untouched *(M3.3)*
 - [X] T032 Walk the manual validation table in `specs/20260919-174820-current-period-account-totals/quickstart.md` against a running app, including the narrow-window horizontal scroll check and a period other than the current one *(M3.3)*
-- [ ] T033 Record progress in the feature's spec artifacts, commit the whole milestone, push the branch to `origin`, and open a detailed pull request *(M3.4)*
+- [X] T033 Record progress in the feature's spec artifacts, commit the whole milestone, push the branch to `origin`, and open a detailed pull request *(M3.4)*
 
 **Suite results** (2026-09-19, MariaDB 10.4.7 test container):
 
@@ -146,6 +146,11 @@ every suite passes in full.
 | `tox -e acceptance` | 1014 passed, 0 failed (28:51) |
 | `tox -e docs` | `docs: OK`, build succeeded, linkcheck clean |
 | `tox -e migrations` | 10 passed — head still matches the models, as expected for a change that touches none |
+
+**Pull request**: [#365](https://github.com/jantman/biweeklybudget/pull/365). All eleven CI
+checks pass — `py314`, `acceptance`, `docker`, `docs`, `jsdoc`, `migrations`, `plaid`,
+`screenshots`, `coverage`, `claude-review` and Snyk. The Claude PR review reports
+"No issues found. Checked for bugs and CLAUDE.md compliance."
 
 **Checkpoint**: Feature complete under Constitution Development Workflow steps 5 and 6.
 
