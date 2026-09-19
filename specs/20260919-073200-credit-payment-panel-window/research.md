@@ -46,9 +46,10 @@ q = self._db.query(func.min(Transaction.date)).filter(
 )
 ```
 
-`exclude_txn_id` is deliberately **not** applied (FR-005). If the result is `None`, the
-configured begin date stands (FR-004). Otherwise the effective begin date is
-`max(configured, BiweeklyPayPeriod.period_for_date(first, db).next.start_date)`.
+`exclude_txn_id` **is** applied (FR-005; corrected after review — see D-8). If the result
+is `None`, the configured begin date stands (FR-004). Otherwise the effective begin date
+is `max(configured, BiweeklyPayPeriod.period_for_date(first, db).next.start_date)`, both
+operands coerced to `date` (FR-005c; see D-9).
 
 **Rationale**:
 
@@ -57,9 +58,9 @@ configured begin date stands (FR-004). Otherwise the effective begin date is
 - Bounding by `payment_date` mirrors how every other query in the class is bounded, and
   is what makes the back-dating edge case (FR-003, Example E) fall out for free rather
   than needing a special case.
-- Not applying `exclude_txn_id` keeps the panel identical between entering a payment and
-  reopening it (FR-005). The excluded transaction is still excluded from
-  `_prior_payments()`, which is the only place double-counting could occur.
+- Applying `exclude_txn_id` keeps the panel identical between entering a payment and
+  reopening it (FR-005). A payment being entered is not in the database and anchors
+  nothing; the same payment reopened must therefore anchor nothing either.
 - `BiweeklyPayPeriod.period_for_date(...).next.start_date` is the existing API for
   "the period after this one"; `.next` is an existing property, so no pay-period
   arithmetic is reimplemented.
@@ -206,3 +207,67 @@ machinery, and the summary already states everything the rows would).
 **Note**: per the project memory, a `CHANGES.rst` link to a docs anchor added in the same
 change breaks `tox -e docs` linkcheck. The changelog entry names the documentation
 section in prose rather than linking to it.
+
+## D-8: `exclude_txn_id` applies to the derivation (corrected after review)
+
+**Decision**: the derivation query filters out `exclude_txn_id`, exactly as
+`_prior_payments()` does.
+
+**Rationale**: D-2 originally decided the opposite, reasoning that excluding the
+transaction being edited would "push the window back to `CREDIT_PAYMENT_BEGIN_DATE`,
+making the panel change wildly". That compared the wrong two things. The panel being
+edited should match **the panel that payment showed when it was entered** — and when it
+was entered it was not yet in the database, so nothing anchored the window and the
+configured begin date stood. Excluding it on reopen reproduces that; including it does
+not.
+
+Worse, including it is actively broken for the anchoring payment. Reopening the payment
+that anchors a card's window sets `payment_date` to that payment's own date, so the
+derived bound — the period *after* its period — falls after `payment_date`. The window is
+empty, `total_unpaid` is zero, and the panel warns that the payment exceeds $0.00 of
+unpaid charges. That is the precise opposite of FR-005's intent.
+
+Editing any payment that is *not* the earliest is unaffected either way: the earliest
+still anchors.
+
+**How it was missed**: `test_09_excluded_transaction_still_anchors` passed
+`exclude_txn_id=anchor.id` but left `pmt_date` at the class default rather than the
+anchor's own date, so the failing combination was never exercised. It is now
+`test_09_editing_the_anchor_shows_what_entering_it_showed`, which pins the panel at the
+anchor's own date, plus `test_09a` for the later-date case.
+
+**Found by**: the `claude-review` job on PR #361.
+
+---
+
+## D-9: date/datetime coercion (found after review)
+
+**Decision**: a module-level `_as_date()` coerces `CREDIT_PAYMENT_BEGIN_DATE` to a
+`date` when `configured_begin_date` is assigned, and coerces the date the derivation
+query returns.
+
+**Rationale**: `biweeklybudget/settings.py` assigns date settings as `date(...)` literals
+in a settings module, but its `_DATE_VARS` environment-variable loop stores
+`datetime.strptime(value, '%Y-%m-%d')` **without** calling `.date()`. The same setting is
+therefore a `datetime` for any install that configures it — or `RECONCILE_BEGIN_DATE`,
+which it defaults to — through the environment, which `docs/source/getting_started.rst`
+documents as a normal way to do it.
+
+`max(datetime, date)` raises `TypeError`. Before this change the setting was only ever
+assigned or passed to SQLAlchemy filters, where the mismatch is harmless;
+`_effective_begin_date()` is the first place in the codebase that compares the two at the
+Python level, and it is on the routine path — every account with at least one designated
+payment. An affected install would have got a 500 from `/ajax/credit-payment-info`.
+
+No existing test caught it because both `tests/fixtures/test_settings.py` and
+`settings_example.py` use `date(...)` literals, never exercising the env-var path.
+
+**Alternatives considered**: fixing the root cause in `settings.py` by calling `.date()`
+in the `_DATE_VARS` loop. That is the better long-term fix — the settings' own docstrings
+say `datetime.date` — but it changes the type of every date setting for every consumer,
+which is a separate change deserving its own issue and its own test pass. Coercing at the
+point of comparison keeps this feature's blast radius to this feature. **Side quest
+recorded** per Constitution Principle V: the underlying inconsistency in
+`settings.py`'s `_DATE_VARS` handling remains, and is worth an issue of its own.
+
+**Found by**: the `claude-review` job on PR #361.

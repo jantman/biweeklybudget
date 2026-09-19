@@ -104,9 +104,9 @@ configured begin date.
    the panel does not present an empty window in which every cent of the payment is
    excess.
 6. **Given** the earliest designated payment for an account is itself the transaction
-   being edited, **When** that transaction is opened for editing, **Then** the window is
-   still derived from it, so the panel shown while editing matches the panel shown when
-   it was entered.
+   being edited, **When** that transaction is opened for editing, **Then** it does not
+   anchor the window; with nothing else to derive a bound from, the configured begin date
+   stands — the same window the panel showed when that payment was entered.
 
 ---
 
@@ -180,6 +180,14 @@ account's earliest designated payment.
 - **Charges made after the first payment but inside its period.** These fall outside the
   window and are not counted as unpaid. This is the accepted cost of D-1a; the
   alternative double-counts the payment itself, which is worse.
+- **Editing the payment that anchors a card's window.** It is excluded from the
+  derivation, so the configured begin date stands. Were it left to anchor, the derived
+  bound would fall after its own date, the window would be empty, and the panel would
+  warn that the payment exceeds $0.00 of unpaid charges — the opposite of showing what
+  entering it showed.
+- **A date setting supplied by environment variable.** Such a setting is stored as a
+  `datetime` rather than a `date`, and the two cannot be compared. The derived bound and
+  the configured floor MUST be comparable whichever way the floor was configured.
 - **A second payment inside the first payment's own period.** The derived bound then
   falls after the payment being entered, so the window is empty: the panel reports no
   unpaid charges and the whole amount is excess. This is the honest reading of the rule —
@@ -217,14 +225,20 @@ account's earliest designated payment.
   date.
 - **FR-004**: If no such transaction exists, the effective begin date MUST be the
   configured begin date, preserving today's behaviour exactly.
-- **FR-005**: The transaction being edited MUST take part in deriving the effective
-  begin date even though it is excluded from the prior-payments sum.
+- **FR-005**: The transaction being edited MUST be excluded from deriving the effective
+  begin date, as well as from the prior-payments sum, so that the panel shown while
+  editing a payment matches the one shown when it was entered. A payment being entered is
+  not yet in the database and cannot anchor a window; the same payment reopened therefore
+  must not anchor one either.
 - **FR-005a**: The transaction that anchors the effective begin date MUST fall outside
   the resulting window, so that it is never also counted in the prior-payments sum. No
   payment may reduce a card's unpaid charges twice.
 - **FR-005b**: When the derived begin date falls after the payment date, the window MUST
   simply be empty; the configured begin date MUST NOT be reinstated as a fallback, which
   would swing the panel back to the whole of recorded history.
+- **FR-005c**: The effective begin date MUST be computed correctly whether the configured
+  floor was written as a date in a settings module or supplied by environment variable,
+  which yields a different type for the same setting.
 - **FR-006**: The upper bound of the window (the payment date) MUST be unchanged.
 - **FR-007**: The configured begin date MUST keep its present meaning and remain the
   operator's manual floor; no setting is renamed, removed, or given a new default.

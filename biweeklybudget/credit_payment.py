@@ -36,6 +36,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 """
 
 import logging
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import func
@@ -53,6 +54,28 @@ logger = logging.getLogger(__name__)
 #: collapsed into a single summary row. This is a display cap, not a setting:
 #: it never changes an amount. See GitHub issue #358.
 CREDIT_PAYMENT_MAX_PERIODS = 6
+
+
+def _as_date(value):
+    """
+    Return ``value`` as a :py:class:`datetime.date`.
+
+    Date settings are not consistently typed: a settings module assigns them as
+    ``date(...)`` literals, but
+    :py:mod:`biweeklybudget.settings`'s environment-variable handling stores
+    ``datetime.strptime(...)`` without calling ``.date()``, so the same setting
+    is a :py:class:`datetime.datetime` when it comes from the environment.
+    Comparing the two raises ``TypeError``, and
+    :py:meth:`~.CreditPaymentAttribution._effective_begin_date` compares them.
+
+    :param value: a date or datetime
+    :type value: datetime.date or datetime.datetime
+    :return: the equivalent date
+    :rtype: datetime.date
+    """
+    if isinstance(value, datetime):
+        return value.date()
+    return value
 
 
 class CreditPaymentAttribution(object):
@@ -92,7 +115,9 @@ class CreditPaymentAttribution(object):
     3. **Prior payments.** Every transaction inside the window designated as a
        payment toward this account, excluding the one being edited, summed. The
        payment that anchors the window falls outside it by construction, so no
-       payment is ever subtracted twice.
+       payment is ever subtracted twice. The transaction being edited is
+       excluded from deriving the window as well as from this sum, so that
+       editing a payment shows the same panel as entering it did.
     4. **Consume** those prior payments against the per-period charge totals,
        oldest first, leaving each period's outstanding charges.
     5. **Attribute** this payment against those remainders, oldest first, until
@@ -134,7 +159,9 @@ class CreditPaymentAttribution(object):
         self.payment_date = payment_date
         self.exclude_txn_id = exclude_txn_id
         self.payer_account_id = payer_account_id
-        self.configured_begin_date = settings.CREDIT_PAYMENT_BEGIN_DATE
+        self.configured_begin_date = _as_date(
+            settings.CREDIT_PAYMENT_BEGIN_DATE
+        )
         self.begin_date = self._effective_begin_date()
         self.periods = []
         self.rollup = None
@@ -175,10 +202,14 @@ class CreditPaymentAttribution(object):
 
         Only payments dated on or before :py:attr:`~.payment_date` are
         considered, so a payment recorded later cannot narrow the window for one
-        entered earlier. :py:attr:`~.exclude_txn_id` is deliberately *not*
-        applied: the transaction being edited still anchors the window, so the
-        panel shown while editing a payment matches the one shown when it was
-        entered.
+        entered earlier. :py:attr:`~.exclude_txn_id` is applied here as well as
+        to :py:meth:`~._prior_payments`, so that the panel shown while editing a
+        payment matches the one shown when it was entered: a payment being
+        entered is not yet in the database and cannot anchor anything, so
+        neither may the same payment once saved and reopened. Without this,
+        reopening the payment that anchors a card's window would derive a bound
+        after its own date, empty the window, and warn that the payment exceeds
+        $0.00 of unpaid charges.
 
         An account with no designated payment at all gets
         :py:attr:`~.configured_begin_date` unchanged, which is the behaviour
@@ -190,15 +221,20 @@ class CreditPaymentAttribution(object):
         :return: the effective start of this account's charge window
         :rtype: datetime.date
         """
-        first = self._db.query(func.min(Transaction.date)).filter(
+        q = self._db.query(func.min(Transaction.date)).filter(
             Transaction.credit_payment_acct_id.__eq__(self.account.id),
             Transaction.date.__le__(self.payment_date)
-        ).scalar()
+        )
+        if self.exclude_txn_id is not None:
+            q = q.filter(Transaction.id.__ne__(self.exclude_txn_id))
+        first = q.scalar()
         if first is None:
             return self.configured_begin_date
         return max(
             self.configured_begin_date,
-            BiweeklyPayPeriod.period_for_date(first, self._db).next.start_date
+            BiweeklyPayPeriod.period_for_date(
+                _as_date(first), self._db
+            ).next.start_date
         )
 
     def _charges_by_period(self):

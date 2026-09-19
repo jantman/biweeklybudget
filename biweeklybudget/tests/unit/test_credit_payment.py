@@ -35,12 +35,12 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
 from biweeklybudget.credit_payment import (
-    CreditPaymentAttribution, CREDIT_PAYMENT_MAX_PERIODS
+    CreditPaymentAttribution, CREDIT_PAYMENT_MAX_PERIODS, _as_date
 )
 
 pbm = 'biweeklybudget.credit_payment'
@@ -156,7 +156,8 @@ class TestEffectiveBeginDate(object):
     toward the account.
     """
 
-    def _attr(self, first_payment_date, configured, next_period_start=None):
+    def _attr(self, first_payment_date, configured, next_period_start=None,
+              exclude_txn_id=None):
         """
         Build a CreditPaymentAttribution far enough to call
         ``_effective_begin_date()`` without touching a database, and return a
@@ -169,7 +170,7 @@ class TestEffectiveBeginDate(object):
         a._db = db
         a.account = Mock(id=2)
         a.payment_date = date(2017, 6, 21)
-        a.exclude_txn_id = None
+        a.exclude_txn_id = exclude_txn_id
         a.configured_begin_date = configured
         period = Mock()
         period.next.start_date = next_period_start
@@ -215,25 +216,99 @@ class TestEffectiveBeginDate(object):
         )
         assert result == date(2017, 4, 28)
 
-    def test_exclude_txn_id_is_not_applied(self):
-        """FR-005: the transaction being edited still anchors the window, so
-        the derivation query must not filter it out. Only two filter terms are
-        passed -- the account and the payment date -- and the query is never
-        narrowed further."""
+    def test_exclude_txn_id_is_applied(self):
+        """FR-005: the transaction being edited is excluded from deriving the
+        window, as well as from the prior-payments sum. A payment being entered
+        is not in the database and cannot anchor anything, so the same payment
+        reopened for editing must not anchor anything either -- otherwise
+        editing a card's anchor payment derives a bound after its own date,
+        empties the window, and warns that it exceeds $0.00 of unpaid
+        charges."""
         db = Mock()
-        db.query.return_value.filter.return_value.scalar.return_value = None
+        db.query.return_value.filter.return_value.filter.return_value\
+            .scalar.return_value = None
         a = CreditPaymentAttribution.__new__(CreditPaymentAttribution)
         a._db = db
         a.account = Mock(id=2)
         a.payment_date = date(2017, 6, 21)
         a.exclude_txn_id = 17
         a.configured_begin_date = date(2017, 1, 1)
-        a._effective_begin_date()
-        # one filter() call carrying exactly the account and date bounds
-        assert db.query.return_value.filter.call_count == 1
+        assert a._effective_begin_date() == date(2017, 1, 1)
+        # the account and date bounds, then the exclusion chained onto them
         assert len(db.query.return_value.filter.call_args[0]) == 2
-        # and no second filter chained off the first
+        assert db.query.return_value.filter.return_value.filter.call_count == 1
+
+    def test_no_exclusion_filter_when_not_editing(self):
+        """Entering a new payment excludes nothing; the query carries only the
+        account and date bounds."""
+        db = Mock()
+        db.query.return_value.filter.return_value.scalar.return_value = None
+        a = CreditPaymentAttribution.__new__(CreditPaymentAttribution)
+        a._db = db
+        a.account = Mock(id=2)
+        a.payment_date = date(2017, 6, 21)
+        a.exclude_txn_id = None
+        a.configured_begin_date = date(2017, 1, 1)
+        a._effective_begin_date()
         assert db.query.return_value.filter.return_value.filter.called is False
+
+    def test_datetime_first_payment_is_coerced(self):
+        """A date coming back from the database as a ``datetime`` must not
+        break the pay-period lookup or the comparison."""
+        result, _, calls = self._attr(
+            datetime(2017, 4, 20), date(2017, 1, 1),
+            next_period_start=date(2017, 4, 28)
+        )
+        assert result == date(2017, 4, 28)
+        assert calls[0][0][0] == date(2017, 4, 20)
+
+
+class TestAsDate(object):
+    """
+    Tests for the date/datetime coercion; GitHub issue #358.
+
+    Date settings are not consistently typed. A settings module assigns them
+    as ``date(...)`` literals, but :py:mod:`biweeklybudget.settings` stores a
+    setting given by environment variable as
+    ``datetime.strptime(value, '%Y-%m-%d')`` without calling ``.date()``. So
+    ``CREDIT_PAYMENT_BEGIN_DATE`` is a ``datetime`` for any install that
+    configures it -- or ``RECONCILE_BEGIN_DATE``, which it defaults to -- that
+    way. Comparing a ``date`` with a ``datetime`` raises ``TypeError``, and
+    :py:meth:`~.CreditPaymentAttribution._effective_begin_date` is the first
+    place in the codebase that compares them.
+    """
+
+    def test_datetime_becomes_date(self):
+        result = _as_date(datetime(2017, 1, 1, 13, 45, 30))
+        assert result == date(2017, 1, 1)
+        assert type(result) is date
+
+    def test_date_is_returned_unchanged(self):
+        given = date(2017, 1, 1)
+        assert _as_date(given) is given
+
+    def test_settings_datetime_is_coerced_at_construction(self):
+        """The coercion happens once, when the attribute is set, so everything
+        downstream can rely on a plain ``date``."""
+        with patch('%s.settings' % pbm) as m_settings, \
+                patch.object(CreditPaymentAttribution, '_calculate'), \
+                patch.object(CreditPaymentAttribution,
+                             '_effective_begin_date'):
+            m_settings.CREDIT_PAYMENT_BEGIN_DATE = datetime(2017, 1, 1)
+            a = CreditPaymentAttribution(
+                Mock(), Mock(id=2), Decimal('100.00'), date(2017, 6, 21)
+            )
+        assert a.configured_begin_date == date(2017, 1, 1)
+        assert type(a.configured_begin_date) is date
+
+    def test_comparison_that_used_to_raise(self):
+        """The regression itself: before the coercion, this comparison raised
+        ``TypeError: '>' not supported between instances of 'datetime.date'
+        and 'datetime.datetime'`` on the routine path -- any account with at
+        least one designated prior payment."""
+        assert max(
+            _as_date(datetime(2017, 1, 1)), date(2017, 4, 28)
+        ) == date(2017, 4, 28)
 
 
 class TestSplitForDisplay(object):

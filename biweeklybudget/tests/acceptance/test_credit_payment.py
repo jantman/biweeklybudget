@@ -540,18 +540,51 @@ class TestCreditPaymentWindow(AcceptanceHelper):
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % ppm, date(2017, 1, 6))
     @patch('%s.dtnow' % pbm)
-    def test_09_excluded_transaction_still_anchors(self, m_dtnow, testdb):
-        """FR-005: reopening the anchoring payment for editing must not move
-        the window. It is excluded from the prior-payments sum, but it still
-        anchors the bound, so the panel shown while editing a payment matches
-        the one shown when it was entered."""
+    def test_09_editing_the_anchor_shows_what_entering_it_showed(
+        self, m_dtnow, testdb
+    ):
+        """FR-005: reopening a payment for editing must show the panel that
+        entering it showed. A payment being entered is not yet in the database
+        and cannot anchor anything, so the same payment reopened must not
+        anchor anything either -- it is excluded from deriving the window as
+        well as from the prior-payments sum.
+
+        Reopening the anchor at its own date is the case that matters: were it
+        left to anchor, the derived bound would be 2017-04-28, *after* its own
+        2017-04-20 date, so the window would be empty and the panel would warn
+        that the payment exceeds $0.00 of unpaid charges -- the exact opposite
+        of showing what entering it showed."""
+        m_dtnow.return_value.date.return_value = date(2017, 6, 21)
+        anchor = testdb.query(Transaction).filter(
+            Transaction.description.__eq__('First recorded payment')
+        ).one()
+        a = self._attr(
+            testdb, '750.00', pmt_date=date(2017, 4, 20),
+            exclude_txn_id=anchor.id
+        )
+        assert a.begin_date == date(2017, 1, 1)
+        # P0 .. P6, the seven periods whose charges are dated on or before
+        # 2017-04-20. Under the bug this was 0.00.
+        assert a.total_unpaid == Decimal('700.00')
+        assert a.total_attributed == Decimal('700.00')
+        assert a.excess == Decimal('50.00')
+        assert len(a.warnings) == 1
+        assert '$700.00 of unpaid charges' in a.warnings[0]
+
+    @patch('%s.settings.PAY_PERIOD_START_DATE' % ppm, date(2017, 1, 6))
+    @patch('%s.dtnow' % pbm)
+    def test_09a_editing_the_anchor_from_a_later_date(self, m_dtnow, testdb):
+        """The same rule seen from the other side: excluding the anchor leaves
+        nothing to derive a bound from, so the configured floor stands. A
+        *different* payment being edited would leave the anchor in place and
+        the window unchanged -- see test_06."""
         m_dtnow.return_value.date.return_value = date(2017, 6, 21)
         anchor = testdb.query(Transaction).filter(
             Transaction.description.__eq__('First recorded payment')
         ).one()
         a = self._attr(testdb, '100.00', exclude_txn_id=anchor.id)
-        assert a.begin_date == date(2017, 4, 28)
-        assert a.total_unpaid == Decimal('400.00')
+        assert a.begin_date == date(2017, 1, 1)
+        assert a.total_unpaid == Decimal('1200.00')
 
     @patch('%s.settings.PAY_PERIOD_START_DATE' % ppm, date(2017, 1, 6))
     @patch('%s.dtnow' % pbm)
