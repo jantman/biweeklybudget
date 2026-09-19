@@ -645,7 +645,10 @@ class TestStmtForAcct(PlaidUpdaterTester):
                     res = self.cls._stmt_for_acct(mock_acct, pai, txns, end_dt)
         assert res == (123, 1, 2)
         assert mocks['_update_bank_or_credit'].mock_calls == [
-            call(end_dt, mock_acct, pai, txns, mock_stmt)
+            call(
+                end_dt, mock_acct, pai, txns, mock_stmt,
+                negate_balance=True
+            )
         ]
         assert mocks['_update_investment'].mock_calls == []
         assert mocks['_new_updated_counts'].mock_calls == [call()]
@@ -1111,6 +1114,123 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             )
         ]
         assert mock_upsert.mock_calls == []
+
+    def test_negate_balance(self):
+        """A credit card's balance owed is recorded as negative."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': '1234.5678',
+                'iso_currency_code': 'USD',
+                'available': 854.2903
+            }
+        }
+        txns = [
+            {
+                'pending': False,
+                'amount': 123.4567,
+                'date': date(2020, 2, 23),
+                'payment_meta': {
+                    'reference_number': None
+                },
+                'name': 'Some Txn',
+                'transaction_id': 'TXN001'
+            }
+        ]
+        with patch(f'{pbm}.db_session') as mock_db:
+            with patch(f'{pbm}.upsert_record') as mock_upsert:
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, txns, mock_stmt,
+                    negate_balance=True
+                )
+        assert mock_stmt.as_of == end_dt
+        assert mock_stmt.ledger_bal == Decimal('-1234.57')
+        assert mock_stmt.ledger_bal_as_of == end_dt
+        # the available balance is recorded as Plaid reports it
+        assert mock_stmt.avail_bal == Decimal('854.29')
+        assert mock_stmt.avail_bal_as_of == end_dt
+        assert mock_stmt.currency == 'USD'
+        assert mock_db.mock_calls == [call.add(mock_stmt)]
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('-1234.57'),
+                ledger_date=end_dt,
+                avail=Decimal('854.29'),
+                avail_date=end_dt
+            )
+        ]
+        # transaction amounts are unaffected by the balance negation
+        assert mock_upsert.mock_calls == [
+            call(
+                OFXTransaction,
+                ['account_id', 'fitid'],
+                amount=Decimal('123.46'),
+                date_posted=datetime(2020, 2, 23, 0, 0, 0, tzinfo=UTC),
+                fitid='TXN001',
+                name='Some Txn',
+                account_id=4,
+                statement=mock_stmt
+            )
+        ]
+
+    def test_negate_balance_negative(self):
+        """An overpaid card (negative Plaid balance) is stored positive."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': -50.25,
+                'iso_currency_code': 'USD',
+                'available': None
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=True
+                )
+        assert mock_stmt.ledger_bal == Decimal('50.25')
+        assert mock_stmt.ledger_bal > Decimal('0')
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('50.25'),
+                ledger_date=end_dt,
+                avail=None,
+                avail_date=None
+            )
+        ]
+
+    def test_negate_balance_zero(self):
+        """A zero credit balance is stored as 0.00, never -0.00."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': 0,
+                'iso_currency_code': 'USD',
+                'available': None
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=True
+                )
+        # Decimal('-0.00') == Decimal('0.00') is True, so equality alone
+        # would pass even with a negated zero; assert on the sign itself.
+        assert str(mock_stmt.ledger_bal) == '0.00'
+        assert not mock_stmt.ledger_bal.is_signed()
+        ledger = mock_acct.mock_calls[0].kwargs['ledger']
+        assert str(ledger) == '0.00'
+        assert not ledger.is_signed()
 
 
 class TestUpdateInvestment(PlaidUpdaterTester):

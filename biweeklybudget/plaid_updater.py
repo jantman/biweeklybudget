@@ -270,9 +270,13 @@ class PlaidUpdater:
         )
         stmt.bankid = account.plaid_account.plaid_item.institution_id
         if account.plaid_account.account_type == 'credit':
+            # Plaid reports a credit card's balance as the positive amount
+            # owed; biweeklybudget records money owed as a negative balance, as
+            # it does for loans. See GitHub issue #354.
             stmt.type = 'CreditCard'
             self._update_bank_or_credit(
-                end_dt, account, plaid_acct_info, plaid_txns, stmt
+                end_dt, account, plaid_acct_info, plaid_txns, stmt,
+                negate_balance=True
             )
         elif account.plaid_account.account_type == 'depository':
             stmt.type = 'Bank'
@@ -323,16 +327,40 @@ class PlaidUpdater:
 
     def _update_bank_or_credit(
         self, end_dt: datetime, account: Account, plaid_acct_info: dict,
-        plaid_txns: List[dict], stmt: OFXStatement
+        plaid_txns: List[dict], stmt: OFXStatement,
+        negate_balance: bool = False
     ):
-        logger.debug('Generating statement for credit account')
+        """
+        Record a statement, account balance and transactions for a bank
+        (depository) or credit account.
+
+        :param end_dt: current time, as of when data was retrieved
+        :param account: the account to update
+        :param plaid_acct_info: dict of account information from Plaid
+        :param plaid_txns: list of transactions from Plaid
+        :param stmt: the statement to populate and add to the session
+        :param negate_balance: if True, record the negation of Plaid's current
+          balance. Used for credit accounts, which Plaid reports as a positive
+          amount owed. This applies to the statement's ledger balance only;
+          transaction amounts are governed by
+          :py:attr:`~.Account.negate_ofx_amounts` and the available balance is
+          recorded as Plaid reports it.
+        """
+        logger.debug(
+            'Generating statement for bank or credit account '
+            '(negate_balance=%s)', negate_balance
+        )
         stmt.as_of = end_dt
         stmt.ledger_bal_as_of = end_dt
-        stmt.ledger_bal = Decimal(
+        bal = Decimal(
             plaid_acct_info['balances']['current']
         ).quantize(
             Decimal('.01'), rounding=ROUND_HALF_DOWN
         )
+        if negate_balance:
+            # Unary minus, not "* -1", so a zero balance stays 0.00, not -0.00
+            bal = -bal
+        stmt.ledger_bal = bal
         if plaid_acct_info['balances'].get('available', None) is not None:
             stmt.avail_bal = Decimal(
                 plaid_acct_info['balances']['available']
