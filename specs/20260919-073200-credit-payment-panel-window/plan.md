@@ -250,3 +250,33 @@ Coverage added: 12 unit tests (`TestEffectiveBeginDate`, `TestSplitForDisplay`),
 attribution-level acceptance tests (`TestCreditPaymentWindow`), 2 endpoint tests and 5
 Selenium tests across `TestTransModalCreditPaymentPanel` and
 `TestTransModalCreditPaymentRollup`.
+
+### Review outcome
+
+Pull request [#361](https://github.com/jantman/biweeklybudget/pull/361).
+
+**Round 1** — the `claude-review` job raised two defects, both valid, both fixed in
+`d8eed51` and recorded as research.md D-8 and D-9:
+
+1. *Editing a card's anchor payment emptied its window.* Not merely a code bug: FR-005
+   stated the defective behaviour **as a requirement**, so the implementation was
+   faithfully wrong. The requirement's stated purpose — that editing a payment shows what
+   entering it showed — is satisfied by *excluding* the edited transaction from the
+   derivation, not including it, because a payment being entered is not yet in the
+   database and anchors nothing. FR-005 is reversed; the test that should have caught it
+   passed `exclude_txn_id` while leaving the payment date at the class default, never
+   exercising the failing combination.
+2. *`TypeError` for environment-configured date settings.* `settings.py`'s `_DATE_VARS`
+   loop stores `datetime.strptime(...)` without `.date()`, and `_effective_begin_date()`
+   is the first place in the codebase comparing a `date` with a `datetime` at the Python
+   level — on the routine path. Fixed with `_as_date()`, scoped to this module; the
+   underlying settings inconsistency is recorded as a side quest.
+
+**Round 2** — "No issues found", confirming both fixes correct and complete, that
+`_as_date()` is applied at every point a mismatched comparison could occur, and that the
+new tests "are not tautological".
+
+No Copilot review is configured on this repository.
+
+**Final CI on `d8eed51`**: acceptance, claude-review, coverage, docker, docs, jsdoc,
+migrations, plaid, py314, screenshots and snyk all pass.
