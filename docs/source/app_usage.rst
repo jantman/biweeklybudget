@@ -286,14 +286,67 @@ yourself.
 The warning is advisory. You can always save the transaction: you know things
 the application does not, including charges it has not downloaded yet.
 
-Unpaid charges are counted from
-:py:attr:`~biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE`, which defaults to
-:py:attr:`~biweeklybudget.settings.RECONCILE_BEGIN_DATE`. Payments recorded
-before this feature existed carry no card designation, so they are not
-subtracted from a card's charge total; without a lower bound, a card's apparent
-unpaid charges would drift upward without limit and the warning would stop
-meaning anything. Move the date forward once historical payments have been
-designated or written off.
+The panel says, beneath the figures, which date it is counting charges from.
+That date is worked out for each card separately, and the next two sections
+explain why and what it means for an existing install.
+
+.. _app_usage.credit_card_payments.window:
+
+Where the panel starts counting
++++++++++++++++++++++++++++++++
+
+A payment is only recognised as a payment toward a card if the transaction
+carries a card designation, and that field did not exist before version 2.0.0.
+Every payment you made before upgrading is therefore invisible: nothing
+subtracts it from the charges it paid, and left alone the application would
+count every charge you ever recorded as still unpaid.
+
+So each card's charges are counted from the pay period *after* the one holding
+the first payment you recorded toward that card. Everything up to and including
+that period is treated as settled — by that payment together with the untracked
+ones before it — which is almost always true, and is the only assumption
+available. The consequence is that the panel heals itself: you need do nothing
+beyond recording payments as usual.
+
+What this means in practice, upgrading from before 2.0.0:
+
+* The **first** payment you enter for a card, before any has been recorded for
+  it, still counts from
+  :py:attr:`~biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE` — by default
+  :py:attr:`~biweeklybudget.settings.RECONCILE_BEGIN_DATE`, which for a
+  long-running install means your whole history. Expect a long table and an
+  unpaid total nothing like the card's balance, and expect the over-payment
+  warning. Save the payment anyway; the panel is advisory.
+* Every payment you enter for that card **afterwards** is scoped to the periods
+  since that first one, and the figures start meaning something.
+* Repeat once per card.
+
+:py:attr:`~biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE` remains as a
+floor: charges before it are never counted, whatever the derived date says. Most
+installs no longer need to touch it.
+
+One rough edge is worth knowing about: charges made in the same pay period as
+that first recorded payment, but after it, fall outside the window and are not
+counted as unpaid. Starting at the following period is what keeps the payment
+itself from being subtracted twice — once by excluding the charges it settled,
+and again as a recorded payment — which would understate your unpaid charges on
+every payment after it.
+
+.. _app_usage.credit_card_payments.cap:
+
+Long histories in a short table
++++++++++++++++++++++++++++++++
+
+The table lists at most six pay periods individually. Anything older is
+collapsed into a single row at the top saying how many periods it stands for,
+the dates they span, their combined unpaid charges, and how much of your payment
+they absorbed. The totals beneath the table always describe the whole window, so
+the rows and the totals agree whether or not anything was collapsed.
+
+The collapsed row matters because a payment settles the *oldest* unpaid charges
+first — so if your card has a long unpaid history, that row is where your
+payment actually went, and it says so rather than leaving the listed periods
+looking untouched.
 
 .. _app_usage.no_budget_impact:
 

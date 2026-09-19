@@ -50,7 +50,9 @@ from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.models.txn_reconcile import TxnReconcile
 from biweeklybudget.models.budget_model import Budget
 from biweeklybudget.models.account import Account, AcctType
-from biweeklybudget.settings import PAY_PERIOD_START_DATE
+from biweeklybudget.settings import (
+    PAY_PERIOD_START_DATE, CREDIT_PAYMENT_BEGIN_DATE
+)
 
 
 @pytest.mark.acceptance
@@ -2633,6 +2635,18 @@ class TestCreditPaymentInfoAjax(AcceptanceHelper):
     def open_charge_date(self):
         return PAY_PERIOD_START_DATE + timedelta(days=1)
 
+    @property
+    def anchor_payment_date(self):
+        """
+        Two pay periods before the open one. The earliest payment designated
+        toward a card anchors its charge window: charges are counted from the
+        pay period *after* the one holding it (GitHub issue #358). Putting the
+        anchor here starts the window at the closed period, so both of this
+        class's charges lie inside it and the numbers below are the ones the
+        spec states.
+        """
+        return PAY_PERIOD_START_DATE - timedelta(days=25)
+
     def test_00_add_card_and_charges(self, testdb):
         card = Account(
             description='Payment info test card',
@@ -2654,6 +2668,13 @@ class TestCreditPaymentInfoAjax(AcceptanceHelper):
             budget_amounts={budget: Decimal('150.00')},
             description='InfoCard open period charges',
             account=card
+        ))
+        testdb.add(Transaction(
+            date=self.anchor_payment_date,
+            budget_amounts={budget: Decimal('1000.00')},
+            description='InfoCard pre-feature payment',
+            account_id=1,
+            credit_payment_acct=card
         ))
         testdb.flush()
         testdb.commit()
@@ -2799,6 +2820,31 @@ class TestCreditPaymentInfoAjax(AcceptanceHelper):
         j = self._get(base_url, '1,234.56').json()
         assert j['amount'] == 1234.56
 
+    def test_12_window_keys(self, base_url):
+        """GitHub issue #358: the response carries the effective window start
+        and the configured floor separately, so the panel can say which window
+        its figures describe. The effective start is derived from the card's
+        earliest designated payment -- the pay period after the one holding
+        it -- and is never earlier than the configured floor."""
+        j = self._get(base_url, '100.00').json()
+        assert j['begin_date']['str'] == (
+            PAY_PERIOD_START_DATE - timedelta(days=14)
+        ).strftime('%Y-%m-%d')
+        assert j['configured_begin_date']['str'] == \
+            CREDIT_PAYMENT_BEGIN_DATE.strftime('%Y-%m-%d')
+        assert j['begin_date']['str'] >= j['configured_begin_date']['str']
+
+    def test_13_rollup_absent_for_a_short_window(self, base_url):
+        """GitHub issue #358: the display cap collapses everything older than
+        the six most recent periods into a summary row. This card's window
+        holds two periods, of which test_05's earlier payment has already
+        settled the closed one, so a single period remains -- far short of the
+        cap, and the key is null."""
+        j = self._get(base_url, '100.00').json()
+        assert len(j['periods']) == 1
+        assert j['periods'][0]['is_closed'] is False
+        assert j['rollup'] is None
+
 
 @pytest.mark.acceptance
 @pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
@@ -2883,6 +2929,115 @@ class TestTransModalCreditPaymentPanel(AcceptanceHelper):
         assert selenium.find_element(
             By.ID, 'modalSaveButton'
         ).is_enabled() is True
+
+    def test_04_panel_states_the_window(self, base_url, selenium):
+        """GitHub issue #358 / FR-016: the panel says which window its figures
+        describe. PanelCard has never had a payment designated toward it, so
+        the window is the configured floor."""
+        self._open_modal_with(selenium, base_url, '400.00')
+        self.wait_for_id(selenium, 'credit_payment_window')
+        assert selenium.find_element(
+            By.ID, 'credit_payment_window'
+        ).text == 'Unpaid charges are counted from %s.' % (
+            CREDIT_PAYMENT_BEGIN_DATE.strftime('%Y-%m-%d')
+        )
+
+    def test_05_no_rollup_for_a_short_window(self, base_url, selenium):
+        """GitHub issue #358 / FR-013: two periods is well under the display
+        cap, so the table is exactly what it was before the cap existed."""
+        self._open_modal_with(selenium, base_url, '400.00')
+        self.wait_for_id(selenium, 'credit_payment_periods')
+        tbl = selenium.find_element(By.ID, 'credit_payment_periods')
+        assert len(tbl.find_elements(By.ID, 'credit_payment_rollup')) == 0
+        assert len(tbl.find_elements(By.XPATH, './/tbody/tr')) == 2
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestTransModalCreditPaymentRollup(AcceptanceHelper):
+    """
+    The display cap on the payment information panel; GitHub issue #358.
+
+    Before the cap, a card with years of history put a row in the modal for
+    every pay period that ever held a charge -- over 200 of them against the
+    maintainer's database. This card carries $100.00 of charges in each of
+    twelve consecutive closed pay periods, so the panel must show the six most
+    recent individually and collapse the other six into one summary row.
+
+    Attribution is oldest-first, so a payment lands on the collapsed periods.
+    The summary row therefore has to state what it absorbed rather than leave
+    the payment looking as though it went nowhere.
+    """
+
+    def test_00_add_card_and_charges(self, testdb):
+        card = Account(
+            description='Rollup test card',
+            name='RollupCard',
+            acct_type=AcctType.Credit,
+            credit_limit=Decimal('5000.00')
+        )
+        testdb.add(card)
+        testdb.flush()
+        budget = testdb.query(Budget).get(1)
+        # one charge in the middle of each of the twelve pay periods before
+        # the currently-open one
+        for n in range(0, 12):
+            testdb.add(Transaction(
+                date=PAY_PERIOD_START_DATE - timedelta(days=(14 * n) + 7),
+                budget_amounts={budget: Decimal('100.00')},
+                description='RollupCard charges %d' % n,
+                account=card
+            ))
+        testdb.flush()
+        testdb.commit()
+
+    def _open_modal_with(self, selenium, base_url, amount):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        selenium.find_element(By.ID, 'btn_add_trans').click()
+        self.wait_for_modal_shown(selenium)
+        amt = selenium.find_element(By.ID, 'trans_frm_amount')
+        amt.clear()
+        amt.send_keys(amount)
+        Select(
+            selenium.find_element(By.ID, 'trans_frm_credit_payment_acct')
+        ).select_by_visible_text('RollupCard')
+
+    def test_01_table_is_capped(self, base_url, selenium):
+        """FR-010, FR-011: six period rows and one summary row, whatever the
+        window holds."""
+        self._open_modal_with(selenium, base_url, '250.00')
+        self.wait_for_id(selenium, 'credit_payment_rollup')
+        tbl = selenium.find_element(By.ID, 'credit_payment_periods')
+        rows = tbl.find_elements(By.XPATH, './/tbody/tr')
+        assert len(rows) == 7
+        # the summary stands for the oldest periods, so it heads the table
+        assert rows[0].get_attribute('id') == 'credit_payment_rollup'
+
+    def test_02_rollup_states_what_it_stands_for(self, base_url, selenium):
+        """FR-012, FR-015: the summary names its count, its date range, its
+        unpaid charges and -- because oldest-first attribution put the whole
+        payment on these periods -- what it absorbed."""
+        self._open_modal_with(selenium, base_url, '250.00')
+        self.wait_for_id(selenium, 'credit_payment_rollup')
+        row = selenium.find_element(By.ID, 'credit_payment_rollup')
+        assert '6 older periods' in row.text
+        assert 'rolled up' in row.text
+        # the six collapsed periods hold $600.00 of charges, and the whole
+        # $250.00 payment settles the oldest of them
+        assert '$600.00' in row.text
+        assert '$250.00' in row.text
+        assert row.value_of_css_property('font-weight') == '700'
+
+    def test_03_totals_still_reconcile(self, base_url, selenium):
+        """FR-014: the cap is a display concern. The totals line still
+        describes the whole window, and the rendered rows still add up to
+        it."""
+        self._open_modal_with(selenium, base_url, '250.00')
+        self.wait_for_id(selenium, 'credit_payment_rollup')
+        totals = selenium.find_element(By.ID, 'credit_payment_totals')
+        assert '$250.00 of $250.00 settles recorded charges' in totals.text
+        assert '$1,200.00 of unpaid charges' in totals.text
 
 
 @pytest.mark.acceptance

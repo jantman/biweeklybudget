@@ -320,7 +320,62 @@ function transModalUpdateCreditPaymentInfo() {
 }
 
 /**
+ * Render the "counted from" line naming the start of the charge window.
+ *
+ * The window is derived per account - it begins after the first payment
+ * recorded toward the card - so the panel says which window its figures
+ * describe rather than leaving it to be inferred. See GitHub issue #358.
+ *
+ * @param {Object} data - the ``/ajax/credit-payment-info`` response
+ * @return {Object} jQuery paragraph element
+ */
+function transModalCreditPaymentWindowHtml(data) {
+    return $('<p/>').addClass('text-muted')
+        .attr('id', 'credit_payment_window')
+        .css('margin-top', '5px')
+        .text(
+            'Unpaid charges are counted from ' + data['begin_date']['str'] +
+            '.'
+        );
+}
+
+/**
+ * Render the summary row standing for the pay periods older than the display
+ * cap, or null when nothing was collapsed.
+ *
+ * Attribution is oldest-first, so the periods a payment actually settles are
+ * the oldest ones - exactly those this row collapses. It therefore carries the
+ * collapsed periods' covered amount as well as their unpaid charges, and is
+ * emphasised when that amount is non-zero, so a payment landing on old charges
+ * is stated rather than hidden. See GitHub issue #358.
+ *
+ * @param {Object} rollup - the ``rollup`` key of the response, or null
+ * @return {Object} jQuery row element, or null
+ */
+function transModalCreditPaymentRollupHtml(rollup) {
+    if(rollup === null || rollup === undefined) { return null; }
+    var row = $('<tr/>').addClass('text-muted')
+        .attr('id', 'credit_payment_rollup');
+    row.append($('<td/>').text(
+        rollup['count'] + ' older periods (' + rollup['start_date']['str'] +
+        ' - ' + rollup['end_date']['str'] + ')'
+    ));
+    row.append($('<td/>').text('rolled up'));
+    row.append($('<td/>').text(fmt_currency(rollup['outstanding'])));
+    row.append($('<td/>').text(fmt_currency(rollup['attributed'])));
+    if(parseFloat(rollup['attributed']) !== 0) {
+        row.css('font-weight', '700');
+    }
+    return row;
+}
+
+/**
  * Render the HTML for the credit payment information panel.
+ *
+ * At most ``CREDIT_PAYMENT_MAX_PERIODS`` pay periods are listed individually;
+ * anything older arrives in the response's ``rollup`` key and is rendered as a
+ * single summary row at the head of the table, where those periods would have
+ * been. See GitHub issue #358.
  *
  * @param {Object} data - the ``/ajax/credit-payment-info`` response
  * @return {String} HTML for the panel
@@ -342,6 +397,7 @@ function transModalCreditPaymentInfoHtml(data) {
                 '.'
             )
         );
+        div.append(transModalCreditPaymentWindowHtml(data));
         return div.html();
     }
     div.append(
@@ -357,6 +413,8 @@ function transModalCreditPaymentInfoHtml(data) {
     thead.append($('<th/>').text('Covered By This Payment'));
     tbl.append($('<thead/>').append(thead));
     var tbody = $('<tbody/>');
+    var rollup = transModalCreditPaymentRollupHtml(data['rollup']);
+    if(rollup !== null) { tbody.append(rollup); }
     for(i = 0; i < data['periods'].length; i++) {
         var p = data['periods'][i];
         var row = $('<tr/>');
@@ -376,6 +434,7 @@ function transModalCreditPaymentInfoHtml(data) {
             'recorded for ' + data['account_name'] + '.'
         )
     );
+    div.append(transModalCreditPaymentWindowHtml(data));
     return div.html();
 }
 
