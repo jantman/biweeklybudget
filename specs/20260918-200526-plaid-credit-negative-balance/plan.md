@@ -136,14 +136,19 @@ the narrowest possible surface for the fix and matches how #263 was structured.
 
 Milestones are deliberately few; this is a small, well-understood correction.
 
-* **M1 — Correct the recorded sign.** The `negate_balance` argument, the credit branch
-  passing it, and unit tests pinning every sign case. At the end of M1 the reported defect
-  is fixed and the test gate for it is in place.
-* **M2 — Diagnostic consistency check.** The non-fatal `available` vs `limit ± current`
-  comparison and its tests. Independent of M1 and droppable without affecting the fix.
-* **M3 — Documentation, changelog, and the full test gate.** The Plaid docs section with
-  corrective SQL, the Cash Position cross-reference, the `CHANGES.rst` entry under a new
-  `Unreleased` heading, and complete unit + acceptance + docs runs.
+* **M1 — Correct the recorded sign** (spec User Story 1, P1). The `negate_balance`
+  argument, the credit branch passing it, and unit tests pinning every sign case. At the
+  end of M1 the reported defect is fixed and the test gate for it is in place.
+* **M2 — Documentation and changelog** (spec User Story 2, P1). The Plaid "Credit Card
+  Accounts" section with the convention and corrective SQL, the Cash Position
+  cross-reference, and the `CHANGES.rst` entry under a new `Unreleased` heading.
+* **M3 — Diagnostic consistency check, then the full test gate and delivery** (spec User
+  Story 3, P3). The non-fatal `available` vs `limit ± current` comparison and its tests —
+  droppable without affecting the fix — followed by complete unit, acceptance and docs
+  runs, the push and the pull request.
+
+Task-level breakdown is in [tasks.md](./tasks.md), whose phases map one-to-one onto these
+milestones.
 
 ## Complexity Tracking
 
