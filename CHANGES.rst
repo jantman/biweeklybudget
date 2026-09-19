@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* `Issue #354 <https://github.com/jantman/biweeklybudget/issues/354>`_ - Balances for credit cards linked through Plaid are now recorded as negative, the same as every other account where money is owed. Cash Position and the unallocated-funds notification therefore subtract what is owed on them, instead of adding it.
+
+  * Plaid reports a credit card's balance as the positive amount owed, and that number was recorded as-is, so both figures were overstated by twice the balance owed - a card carrying $1,000 made $2,000 more look available than there was. Only the balance's sign was wrong; transaction amounts were not affected.
+  * Balances recorded before this change keep their old sign and are not corrected automatically, so a card's line on the Account Balances chart jumps from positive to negative at its first update after upgrading. SQL to correct them, and the conditions for running it safely, are in "Credit Card Accounts" in the Plaid documentation.
+
 2.0.0 (2026-09-20)
 ------------------
 
