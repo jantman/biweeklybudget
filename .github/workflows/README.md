@@ -83,10 +83,26 @@ otherwise discards these with the runner, and the job log alone shows only `init
 public, so these artifacts and the `show_full_output` job logs are world-readable — they
 carry full tool output, so don't put anything into CI you wouldn't publish.
 
+**What a run posts:** `claude-pr-review.yml` deliberately does *not* pass `--comment` to the
+review plugin. In that mode the plugin posts each finding as a standalone inline comment and
+gives the run no top-level body to hang a summary or a cost figure off. Instead the agent
+writes its findings to a JSON file and a later step turns them into exactly **one** GitHub
+review (`POST /pulls/N/reviews`): the findings as batched inline comments, and the summary plus
+the run's cost footer in the body. Every run posts one review, including a run that decided to
+skip. The review is authored by `github-actions[bot]`, not `claude[bot]` — the action revokes
+its own App token before that step runs — so the body opens with an explicit attribution line
+and carries a hidden `<!-- claude-code-review -->` marker that later runs use to find it.
+
+**A denied tool call now fails the check.** Both workflows parse the run's result block and put
+duration, turn count, cost and `permission_denials_count` in the job summary; the review also
+puts them in its footer. A non-zero denial count, or `is_error`, fails the job. A denied
+`Skill` or `Task` is exactly how these runs used to finish green having done nothing, and it
+was visible nowhere a human looks.
+
 **Re-review on new commits:** the upstream `/code-review` plugin stops without posting if
 Claude has already commented on the PR, which would make every push after the first review a
 silent no-op. `claude-pr-review.yml` overrides that in its `prompt` and scopes re-reviews to
-the commits since Claude's last comment.
+the commits since Claude's last review.
 
 ### Setup
 
