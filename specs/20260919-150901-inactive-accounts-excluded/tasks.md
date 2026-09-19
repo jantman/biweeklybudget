@@ -36,8 +36,8 @@ Flask web application, existing layout. Backend: `biweeklybudget/models/`,
 
 **Purpose**: Working test database, so any task can be verified as it is written.
 
-- [ ] T001 Start the test database container and export the test environment per `CLAUDE.md` ("Test Database Setup for Development"): `docker run -d --name budgettest -p 13306:3306 ... mariadb:10.4.7`, then `DB_CONNSTRING`, `SETTINGS_MODULE` and the `MYSQL_*` variables
-- [ ] T002 Confirm the suites run green before any change, redirecting output to the scratchpad per `CLAUDE.md`: `tox -e py314 > <scratchpad>/unit-baseline.txt 2>&1`. A pre-existing failure must be identified as pre-existing now, not discovered later and mistaken for a regression
+- [X] T001 Start the test database container and export the test environment per `CLAUDE.md` ("Test Database Setup for Development"): `docker run -d --name budgettest -p 13306:3306 ... mariadb:10.4.7`, then `DB_CONNSTRING`, `SETTINGS_MODULE` and the `MYSQL_*` variables
+- [X] T002 Confirm the suites run green before any change, redirecting output to the scratchpad per `CLAUDE.md`: `tox -e py314 > <scratchpad>/unit-baseline.txt 2>&1`. A pre-existing failure must be identified as pre-existing now, not discovered later and mistaken for a regression
 
 **Checkpoint**: A known-good baseline exists.
 
@@ -50,8 +50,8 @@ reads it, so nothing else can start until it exists.
 
 **⚠️ CRITICAL**: T003 blocks US1, US2 and US3.
 
-- [ ] T003 Add the static method `Account.active_accounts(db)` to `biweeklybudget/models/account.py`, returning `db.query(Account).filter(Account.is_active.__eq__(True)).order_by(Account.name)`. Mirror `Account.active_credit_accounts(db)` (same file, ~line 264) exactly in placement, signature, docstring style and `:rtype: sqlalchemy.orm.query.Query` — per research.md R3
-- [ ] T004 [P] Add unit tests for `Account.active_accounts()` in `biweeklybudget/tests/unit/models/test_account.py` (new file; include the standard AGPL header used by the other files in that directory): returns only active Accounts, excludes inactive ones, is ordered by name, and returns a `Query` rather than a list
+- [X] T003 Add the static method `Account.active_accounts(db)` to `biweeklybudget/models/account.py`, returning `db.query(Account).filter(Account.is_active.__eq__(True)).order_by(Account.name)`. Mirror `Account.active_credit_accounts(db)` (same file, ~line 264) exactly in placement, signature, docstring style and `:rtype: sqlalchemy.orm.query.Query` — per research.md R3
+- [X] T004 [P] Add unit tests for `Account.active_accounts()` in `biweeklybudget/tests/unit/models/test_account.py` (new file; include the standard AGPL header used by the other files in that directory): returns only active Accounts, excludes inactive ones, is ordered by name, and returns a `Query` rather than a list
 
 **Checkpoint**: Foundation ready. US1 and US2/US3 can now proceed in parallel.
 
@@ -69,15 +69,15 @@ account's data, and the returned date set, byte-identical to today's.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] In `AcctBalanaceChartView.get()` (`biweeklybudget/flaskapp/views/index.py`, ~line 267), build `accounts` from `Account.active_accounts(db_session).all()` instead of `db_session.query(Account).all()`
-- [ ] T006 [US1] In the same method's balance loop (~line 292), replace `name = accounts[bal.account_id]` with a `accounts.get(...)` lookup that `continue`s when the account is absent, so a balance row belonging to an inactive Account is skipped rather than raising `KeyError`. **Leave the `AccountBalance` query unfiltered** — research.md R4 and contract C-5: narrowing it would drop any date whose only balance row belongs to an inactive Account
-- [ ] T007 [US1] Update the docstring of `AcctBalanaceChartView` (`views/index.py`, ~lines 230-264) to state that only active Accounts are returned and that balance records for inactive Accounts are retained but skipped. Verify `_balances_before()` needs no change — it already guards with `accounts.get(...)` / `continue` (~line 357)
+- [X] T005 [US1] In `AcctBalanaceChartView.get()` (`biweeklybudget/flaskapp/views/index.py`, ~line 267), build `accounts` from `Account.active_accounts(db_session).all()` instead of `db_session.query(Account).all()`
+- [X] T006 [US1] In the same method's balance loop (~line 292), replace `name = accounts[bal.account_id]` with a `accounts.get(...)` lookup that `continue`s when the account is absent, so a balance row belonging to an inactive Account is skipped rather than raising `KeyError`. **Leave the `AccountBalance` query unfiltered** — research.md R4 and contract C-5: narrowing it would drop any date whose only balance row belongs to an inactive Account
+- [X] T007 [US1] Update the docstring of `AcctBalanaceChartView` (`views/index.py`, ~lines 230-264) to state that only active Accounts are returned and that balance records for inactive Accounts are retained but skipped. Verify `_balances_before()` needs no change — it already guards with `accounts.get(...)` / `continue` (~line 357)
 
 ### Tests for User Story 1
 
-- [ ] T008 [US1] In `TestAcctBalanceChartData` (`biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`, ~line 655), remove `'DisabledBank'` from the expected `keys` in `test_response_shape_is_unchanged`
-- [ ] T009 [US1] Add tests to that same class covering contract C-1/C-2/C-4/C-5: the inactive Account appears in no `data` row for any `days` value including `days=0`; the returned dates are unchanged from the documented `['2017-06-27', '2017-07-10', '2017-07-15', '2017-07-26', '2017-07-27']`; and every remaining account's values are unchanged
-- [ ] T010 [US1] Check `biweeklybudget/tests/acceptance/flaskapp/views/test_charts.py` for assertions that depend on the number or identity of chart series (e.g. around line 640) and update any that break
+- [X] T008 [US1] In `TestAcctBalanceChartData` (`biweeklybudget/tests/acceptance/flaskapp/views/test_index.py`, ~line 655), remove `'DisabledBank'` from the expected `keys` in `test_response_shape_is_unchanged`
+- [X] T009 [US1] Add tests to that same class covering contract C-1/C-2/C-4/C-5: the inactive Account appears in no `data` row for any `days` value including `days=0`; the returned dates are unchanged from the documented `['2017-06-27', '2017-07-10', '2017-07-15', '2017-07-26', '2017-07-27']`; and every remaining account's values are unchanged
+- [X] T010 [US1] Check `biweeklybudget/tests/acceptance/flaskapp/views/test_charts.py` for assertions that depend on the number or identity of chart series (e.g. around line 640) and update any that break
 
 **Checkpoint**: US1 is independently complete and verifiable via the endpoint alone.
 

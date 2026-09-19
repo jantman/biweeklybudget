@@ -245,6 +245,12 @@ class AcctBalanaceChartView(MethodView):
     reading this endpoint keep working. ``days=0`` reproduces the previous
     full-history response, subject to the point cap below.
 
+    Only active Accounts are returned. An Account that has been deactivated
+    is plotted nowhere -- not in ``keys``, not in any row of ``data``, and not
+    as a carried-forward value -- while its stored balance records are kept
+    untouched, so making it active again restores its line in full. See GitHub
+    issue #356.
+
     It guarantees that:
 
     * at most
@@ -254,6 +260,9 @@ class AcctBalanaceChartView(MethodView):
     * when the window holds no more dates than that cap, every one of them is
       returned and nothing is sampled away;
     * the most recent date in the window is always the last element;
+    * the set of dates is unaffected by which accounts are active: a date whose
+      only balance record belongs to an inactive account is still returned,
+      carrying the other accounts' forward-filled values;
     * every account keeps a continuous line: an account with no balance
       recorded inside the window carries forward its most recent value from
       *before* the window rather than being reported as absent or zero;
@@ -264,7 +273,8 @@ class AcctBalanaceChartView(MethodView):
 
     def get(self):
         accounts = {
-            x.id: x.name for x in db_session.query(Account).all()
+            x.id: x.name
+            for x in Account.active_accounts(db_session).all()
         }
         acct_names = accounts.values()
         days = parse_chart_days(
@@ -289,7 +299,16 @@ class AcctBalanaceChartView(MethodView):
             # for a name this method already loaded into `accounts` above. At
             # five years of daily balances across ten accounts that was ~18,000
             # round trips, and it was the dominant cost of this endpoint.
-            name = accounts[bal.account_id]
+            name = accounts.get(bal.account_id)
+            if name is None:
+                # An inactive Account. Its balance records are kept -- nothing
+                # here deletes them, and reactivating the account restores its
+                # line in full -- but it is not plotted (GitHub issue #356).
+                # The row is skipped rather than the query being narrowed to
+                # active accounts, so that a date whose only balance record
+                # belongs to an inactive account still appears; narrowing the
+                # query would drop it from the chart's x axis.
+                continue
             if bal.ledger is None:
                 data[ds][name] = 0.0
             else:

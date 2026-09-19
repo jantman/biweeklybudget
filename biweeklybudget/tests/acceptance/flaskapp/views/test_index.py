@@ -653,7 +653,7 @@ class TestAcctBalanceChartData(AcceptanceHelper):
         assert sorted(data.keys()) == ['data', 'keys']
         assert data['keys'] == [
             'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
-            'DisabledBank', 'InvestmentOne'
+            'InvestmentOne'
         ]
         for row in data['data']:
             assert 'date' in row
@@ -745,6 +745,125 @@ class TestAcctBalanceChartData(AcceptanceHelper):
         assert data[0]['BankOne'] is None
         assert data[3]['date'] == '2017-07-26'
         assert data[3]['BankOne'] == 12345.67
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('refreshdb', 'testflask')
+class TestAcctBalanceChartExcludesInactiveAccounts(AcceptanceHelper):
+    """
+    GitHub issue #356: an Account that has been deactivated must not be
+    plotted. The sample data's DisabledBank (id 6) is inactive and has one
+    recorded balance, so it is exactly this case; before this was fixed its
+    flat line stayed on the chart forever.
+
+    The point of these tests is as much what must *not* change as what must:
+    the dates, and every remaining account's values, are the same as they were
+    when DisabledBank was plotted.
+    """
+
+    def test_inactive_account_is_not_a_series(self, base_url):
+        keys = requests.get(base_url + CHART_URL).json()['keys']
+        assert 'DisabledBank' not in keys
+        assert keys == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
+            'InvestmentOne'
+        ]
+
+    @pytest.mark.parametrize('param', ['', '?days=0', '?days=15', '?days=365'])
+    def test_inactive_account_is_in_no_data_point(self, base_url, param):
+        """
+        Not merely absent from ``keys``: absent from every row, for every
+        window. A key present in ``data`` but missing from ``keys`` would
+        still be read by anything iterating the rows.
+        """
+        data = requests.get(base_url + CHART_URL + param).json()['data']
+        assert data != []
+        for row in data:
+            assert 'DisabledBank' not in row, row['date']
+
+    def test_the_inactive_account_is_the_only_difference(self, base_url):
+        """
+        Every active account's line is untouched. DisabledBank was active in
+        neither response; what this pins is that removing it did not disturb
+        anything else -- these are the values the chart returned before the
+        fix, with only DisabledBank's key dropped.
+        """
+        data = requests.get(base_url + CHART_URL).json()['data']
+        assert [x['date'] for x in data] == [
+            '2017-06-27', '2017-07-10', '2017-07-15', '2017-07-26',
+            '2017-07-27'
+        ]
+        assert data[-1] == {
+            'date': '2017-07-27',
+            'BankOne': 12789.01,
+            'BankTwoStale': 100.23,
+            'CreditOne': -952.06,
+            'CreditTwo': -5498.65,
+            'InvestmentOne': 10362.91
+        }
+
+    def test_dates_are_unchanged_for_every_window(self, base_url):
+        """
+        Contract C-5. DisabledBank's balance is recorded on 2017-07-26, a date
+        several active accounts also have. This pins the date list so that a
+        later change narrowing the AccountBalance query to active accounts --
+        which would drop any date whose only record belonged to an inactive
+        account -- is caught here.
+        """
+        assert [
+            x['date'] for x in requests.get(base_url + CHART_URL).json()['data']
+        ] == [
+            '2017-06-27', '2017-07-10', '2017-07-15', '2017-07-26',
+            '2017-07-27'
+        ]
+        assert [
+            x['date'] for x in
+            requests.get(base_url + CHART_URL + '?days=15').json()['data']
+        ] == ['2017-07-15', '2017-07-26', '2017-07-27']
+
+    def test_inactive_account_is_not_seeded_from_before_the_window(
+        self, base_url
+    ):
+        """
+        The pre-window seed is the other path an account can reach a data row
+        by (``_balances_before``). An inactive account must not arrive through
+        it either, on a window that starts after its last recorded balance.
+        """
+        data = requests.get(base_url + CHART_URL + '?days=1').json()['data']
+        for row in data:
+            assert 'DisabledBank' not in row, row['date']
+
+    def test_balance_records_are_retained(self, base_url, testdb):
+        """
+        FR-004: the account is not plotted, but nothing is deleted. This is
+        what makes reactivating an account restore its history.
+        """
+        acct = testdb.query(Account).get(6)
+        assert acct.name == 'DisabledBank'
+        assert acct.is_active is False
+        assert testdb.query(AccountBalance).filter(
+            AccountBalance.account_id == 6
+        ).count() > 0
+
+    def test_reactivating_the_account_puts_it_back(self, base_url, testdb):
+        """
+        The exclusion is by active state at request time, with no cache and
+        nothing stored. Reactivating the account restores its series and its
+        history on the next request.
+        """
+        acct = testdb.query(Account).get(6)
+        acct.is_active = True
+        testdb.add(acct)
+        testdb.commit()
+        try:
+            data = requests.get(base_url + CHART_URL).json()
+            assert 'DisabledBank' in data['keys']
+            assert data['data'][-1]['DisabledBank'] == 10.0
+        finally:
+            acct = testdb.query(Account).get(6)
+            acct.is_active = False
+            testdb.add(acct)
+            testdb.commit()
 
 
 @pytest.mark.acceptance
