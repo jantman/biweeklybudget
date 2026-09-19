@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #355 <https://github.com/jantman/biweeklybudget/issues/355>`_ - The pay period view's Per-Account Transaction Totals table now covers only the pay period being viewed, and is transposed so that accounts are columns and their totals a single row ending in a Total column. It was five columns of pay periods by one row per account, four of those periods showing totals that were of little use and taking a lot of vertical space on an already long page.
+
+  * An account with no transactions in the period being viewed no longer appears at all, including one that was active in an adjacent period; view that period to see it. With many accounts the table scrolls sideways within its panel.
+  * The totals still include credit card payments and transactions marked No Budget Impact, and so still differ deliberately from the budget totals above them, as the Per-Account Transaction Totals documentation explains.
+
 * `Issue #356 <https://github.com/jantman/biweeklybudget/issues/356>`_ - Inactive Accounts are no longer offered in the account dropdowns used to add or edit records, and are no longer plotted on the dashboard's Account Balances chart. 2.0.0 said both of these were already the case; they were not, so a closed account stayed in every picker and kept a flat line on the chart forever.
 
   * The Account Transfer (from and to), Add/Edit Transaction, Budget Transfer, Add/Edit Scheduled Transaction, Add Fuel Fill and "skip scheduled transaction" dropdowns now list active Accounts only.

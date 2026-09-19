@@ -384,16 +384,23 @@ the income/allocated/spent/remaining summary and above the budget and
 transaction tables. It answers a question the rest of the page does not: how
 much money moved through each of your accounts.
 
-There is one row per account with any activity, and one column per pay period —
-the same five periods, in the same order, as the *Remaining Balances* table at
-the top of the page: the previous period, the one being viewed, and the three
-that follow. The column headers link to those periods, and the account names
-link to the accounts, so an unexpected number is one click from its detail.
+It covers the pay period you are looking at, and no other. There is one column
+per account with activity in that period, a final **Total** column summing them,
+and a single row of amounts — two rows in all, however many accounts you have.
+The account names link to the accounts, so an unexpected number is one click
+from its detail.
 
-An account with no transactions in any of the five periods gets no row at all;
-one with no transactions in a particular period shows ``$0.00`` in that column.
-Amounts keep their usual sign, so spending is positive, income is negative and
-shown in red, and the bottom row totals each column.
+An account with no transactions in the period gets no column at all, including
+one that was busy in the period before or after; to see those, view that period.
+An account whose transactions happen to cancel out keeps its column and shows
+``$0.00``. Amounts keep their usual sign, so spending is positive and income is
+negative and shown in red.
+
+With many accounts the table grows wider than the page. It scrolls sideways
+within its panel rather than stretching the rest of the page to fit.
+
+If a pay period has no transactions at all, the table still appears, showing the
+**Total** column over ``$0.00``.
 
 .. _app_usage.per_account_totals.not_budget_totals:
 
