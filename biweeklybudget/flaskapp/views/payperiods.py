@@ -228,7 +228,9 @@ class PayPeriodView(MethodView):
             if budg_id not in periodic:
                 b = db_session.query(Budget).get(budg_id)
                 periodic[b.id] = b.current_balance
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         txfr_date_str = dtnow().strftime('%Y-%m-%d')
         if dtnow().date() < pp.start_date or dtnow().date() > pp.end_date:
             # If we're looking at a non-current pay period, default the
@@ -262,7 +264,7 @@ class PayPeriodView(MethodView):
             standing=standing,
             periodic=periodic,
             transactions=pp.transactions_list,
-            accts=accts,
+            active_accts=active_accts,
             credit_accts={
                 a.name: a.id
                 for a in Account.active_credit_accounts(db_session).all()

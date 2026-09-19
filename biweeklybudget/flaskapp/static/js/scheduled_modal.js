@@ -150,7 +150,7 @@ function schedModalDivForm() {
         )
         .addCurrency('sched_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
         .addCurrency('sched_frm_sales_tax', 'sales_tax', 'Sales Tax', { helpBlock: 'Sales tax for this transaction (default 0.0).' })
-        .addLabelToValueSelect('sched_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('sched_frm_account', 'account', 'Account', active_acct_names_to_id, 'None', true)
         .addLabelToValueSelect('sched_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
         .addText('sched_frm_notes', 'notes', 'Notes')
         .addCheckbox('sched_frm_active', 'is_active', 'Active?', true)
@@ -191,6 +191,15 @@ function schedModalDivFillAndShow(msg) {
     schedModalDivHandleType();
     $('#sched_frm_amount').val(msg['amount']);
     $('#sched_frm_sales_tax').val(msg['sales_tax']);
+    // The account may since have been deactivated, in which case the
+    // select will not contain it; append it so this record still shows --
+    // and saves with -- the account it actually points at, rather than
+    // being silently retargeted (GitHub issue #356).
+    if($('#sched_frm_account option[value=' + msg['account_id'] + ']').length === 0) {
+        $('#sched_frm_account').append(
+            '<option value="' + msg['account_id'] + '">' + msg['account_name'] + '</option>'
+        );
+    }
     $('#sched_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#sched_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();
     $('#sched_frm_notes').val(msg['notes']);

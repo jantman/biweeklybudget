@@ -1136,7 +1136,6 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -1324,7 +1323,6 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -1458,7 +1456,6 @@ class TestCurrentPayPeriod(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -2220,7 +2217,6 @@ class TestBudgetTransfer(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -2877,7 +2873,6 @@ class TestSkipScheduled(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -3520,3 +3515,89 @@ class TestPayPeriodAccountTotalsEmpty(AcceptanceHelper):
                 '$0.00'
             ]
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestSkipSchedTransInactiveAccount(AcceptanceHelper):
+    """
+    GitHub issue #356, for the "skip scheduled transaction" form.
+
+    This is the sharpest case of the re-add rule: the Account field is
+    *disabled*, and serializeForm() submits disabled selects anyway. Without
+    re-adding the scheduled transaction's own Account to the narrowed select,
+    the skip Transaction would be created against a different account -- or
+    none at all.
+    """
+
+    def test_00_add_sched_trans(self, testdb):
+        testdb.add(ScheduledTransaction(
+            account_id=6,  # DisabledBank, inactive
+            budget_id=1,
+            amount=Decimal('22.22'),
+            num_per_period=1,
+            description='SkipInactiveAcctST',
+            notes='SkipInactiveAcctST notes'
+        ))
+        testdb.commit()
+
+    def test_01_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'SkipInactiveAcctST'
+        ).one()
+        assert t.account_id == 6
+        assert t.account.is_active is False
+
+    def test_02_skip_modal_shows_the_inactive_account(
+        self, base_url, selenium, testdb
+    ):
+        st = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'SkipInactiveAcctST'
+        ).one()
+        pp = BiweeklyPayPeriod(PAY_PERIOD_START_DATE, testdb)
+        self.get(
+            selenium,
+            base_url + '/payperiod/' + pp.start_date.strftime('%Y-%m-%d')
+        )
+        link = selenium.find_elements(
+            By.XPATH,
+            '//a[@href="javascript:skipSchedTransModal(%d, \'%s\');"]'
+            '' % (st.id, pp.start_date.strftime('%Y-%m-%d'))
+        )[0]
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        acct_sel = Select(
+            body.find_element(By.ID, 'skipschedtrans_frm_account')
+        )
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        assert opts == [
+            ['None', ''],
+            ['1', 'BankOne'],
+            ['2', 'BankTwoStale'],
+            ['3', 'CreditOne'],
+            ['4', 'CreditTwo'],
+            ['5', 'InvestmentOne'],
+            ['6', 'DisabledBank']
+        ]
+        assert acct_sel.first_selected_option.get_attribute('value') == '6'
+        notes = selenium.find_element(By.ID, 'skipschedtrans_frm_notes')
+        notes.clear()
+        notes.send_keys('SkipInactiveAcct Notes')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_03_skip_transaction_points_at_the_inactive_account(self, testdb):
+        st = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'SkipInactiveAcctST'
+        ).one()
+        t = testdb.query(Transaction).filter(
+            Transaction.scheduled_trans_id == st.id
+        ).one()
+        assert t.notes == 'SkipInactiveAcct Notes'
+        assert t.account_id == 6

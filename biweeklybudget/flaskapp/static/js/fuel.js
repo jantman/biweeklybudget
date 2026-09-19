@@ -107,7 +107,7 @@ function fuelModalDivForm() {
             }
         )
         .addCheckbox('fuel_frm_add_trans', 'add_trans', 'Add Transaction?', true)
-        .addLabelToValueSelect('fuel_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('fuel_frm_account', 'account', 'Account', active_acct_names_to_id, 'None', true)
         .addLabelToValueSelect('fuel_frm_budget', 'budget', 'Budget', budget_names_to_id, 'None', true)
         .addText('fuel_frm_notes', 'notes', 'Notes')
         .render();

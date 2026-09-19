@@ -68,6 +68,9 @@ class TransactionsView(MethodView):
         template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         # Only credit accounts may be paid; restricting the list here is what
         # makes the "Credit Card Payment For" select correct by construction.
         # TransactionFormHandler.validate() enforces the same rule, because the
@@ -89,6 +92,7 @@ class TransactionsView(MethodView):
         return render_template(
             'transactions.html',
             accts=accts,
+            active_accts=active_accts,
             credit_accts=credit_accts,
             budgets=budgets,
             active_budgets=active_budgets
@@ -103,6 +107,9 @@ class OneTransactionView(MethodView):
         ``transactions.html`` template.
         """
         accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         credit_accts = {
             a.name: a.id
             for a in Account.active_credit_accounts(db_session).all()
@@ -120,6 +127,7 @@ class OneTransactionView(MethodView):
         return render_template(
             'transactions.html',
             accts=accts,
+            active_accts=active_accts,
             credit_accts=credit_accts,
             budgets=budgets,
             trans_id=trans_id,

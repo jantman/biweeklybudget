@@ -355,7 +355,6 @@ class TestTransModalByURL(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '3'
@@ -427,7 +426,6 @@ class TestTransModal(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '2'
@@ -551,7 +549,6 @@ class TestTransModal(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'
@@ -1003,6 +1000,144 @@ class TestTransModalDoesNotShowInactiveBudgets(AcceptanceHelper):
             ['5', 'Standing2'],
             ['3', 'Periodic3 Inactive']
         ]
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestTransModalDoesNotShowInactiveAccounts(AcceptanceHelper):
+    """
+    GitHub issue #356. The Account select offers only active Accounts, but a
+    Transaction whose Account has since been deactivated must still show --
+    and save with -- the account it actually points at.
+
+    This is the same shape as TestTransModalDoesNotShowInactiveBudgets above,
+    because it is the same problem: narrowing the list without re-adding the
+    record's own value would silently retarget a financial record.
+    """
+
+    ACTIVE_OPTS = [
+        ['None', ''],
+        ['1', 'BankOne'],
+        ['2', 'BankTwoStale'],
+        ['3', 'CreditOne'],
+        ['4', 'CreditTwo'],
+        ['5', 'InvestmentOne']
+    ]
+
+    def test_00_add_transactions(self, testdb):
+        # against DisabledBank (6), which is inactive
+        testdb.add(Transaction(
+            account_id=6,
+            budget_amounts={testdb.query(Budget).get(1): Decimal('11.11')},
+            date=dtnow().date(),
+            description='InactiveAccount1',
+            notes='InactiveAccount Txn1'
+        ))
+        # against BankOne (1), which is active
+        testdb.add(Transaction(
+            account_id=1,
+            budget_amounts={testdb.query(Budget).get(1): Decimal('22.22')},
+            date=dtnow().date(),
+            description='ActiveAccount1',
+            notes='ActiveAccount Txn1'
+        ))
+        testdb.commit()
+
+    def test_01_verify_db(self, testdb):
+        assert testdb.query(Account).get(6).is_active is False
+        t = testdb.query(Transaction).get(5)
+        assert t.description == 'InactiveAccount1'
+        assert t.account_id == 6
+        t = testdb.query(Transaction).get(6)
+        assert t.description == 'ActiveAccount1'
+        assert t.account_id == 1
+
+    def test_02_add_modal_offers_only_active(self, base_url, selenium):
+        """
+        FR-006. A new Transaction cannot be pointed at a closed account.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.ID, 'btn_add_trans')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        assert opts == self.ACTIVE_OPTS
+
+    def test_03_existing_record_keeps_its_inactive_account(
+        self, base_url, selenium
+    ):
+        """
+        FR-011. The account is appended to the select and selected, so the
+        modal shows where this transaction actually points.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(
+            By.XPATH, '//a[text()="InactiveAccount1"]'
+        )
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 5'
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        # the inactive account is appended, not restored to its sorted place
+        assert opts == self.ACTIVE_OPTS + [['6', 'DisabledBank']]
+        assert acct_sel.first_selected_option.get_attribute('value') == '6'
+
+    def test_04_active_record_does_not_get_the_inactive_account(
+        self, base_url, selenium
+    ):
+        """
+        FR-012. The re-add is for the one record that needs it; a transaction
+        on an active account sees only active accounts.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(By.XPATH, '//a[text()="ActiveAccount1"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Transaction 6'
+        acct_sel = Select(body.find_element(By.ID, 'trans_frm_account'))
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        assert opts == self.ACTIVE_OPTS
+        assert acct_sel.first_selected_option.get_attribute('value') == '1'
+
+    def test_05_saving_does_not_retarget_the_account(
+        self, base_url, selenium
+    ):
+        """
+        FR-011, the half that matters. Saving the transaction without
+        touching the Account field must leave account_id alone; before the
+        re-add this posted a different account, or None.
+        """
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/transactions')
+        link = selenium.find_element(
+            By.XPATH, '//a[text()="InactiveAccount1"]'
+        )
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        desc = body.find_element(By.ID, 'trans_frm_description')
+        desc.clear()
+        desc.send_keys('InactiveAccountEdited')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        x = selenium.find_elements(By.CLASS_NAME, 'alert-success')
+        assert len(x) == 1
+
+    def test_06_verify_db_after_save(self, testdb):
+        t = testdb.query(Transaction).get(5)
+        assert t.description == 'InactiveAccountEdited'
+        assert t.account_id == 6
 
 
 @pytest.mark.acceptance
@@ -1578,7 +1713,6 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '3'
@@ -1753,7 +1887,6 @@ class TestTransModalBudgetSplits(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'

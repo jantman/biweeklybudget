@@ -48,7 +48,7 @@ function transModalDivForm() {
         .addCurrency('trans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).', inputHtml: 'onchange="transModalCreditPaymentChanged()" onkeyup="transModalCreditPaymentChanged()"' })
         .addCurrency('trans_frm_sales_tax', 'sales_tax', 'Sales Tax', { helpBlock: 'Sales tax paid on this transaction (default 0.0).' })
         .addText('trans_frm_description', 'description', 'Description')
-        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('trans_frm_account', 'account', 'Account', active_acct_names_to_id, 'None', true)
         .addCheckbox(
             'trans_frm_is_split', 'is_split', 'Budget Split?', false,
             { inputHtml: 'onchange="transModalHandleSplit()"' }
@@ -92,6 +92,15 @@ function transModalDivFillAndShow(msg) {
     $('#trans_frm_date').val(msg['date']['str']);
     $('#trans_frm_amount').val(msg['actual_amount']);
     $('#trans_frm_sales_tax').val(msg['sales_tax']);
+    // The account may since have been deactivated, in which case the
+    // select will not contain it; append it so this record still shows --
+    // and saves with -- the account it actually points at, rather than
+    // being silently retargeted (GitHub issue #356).
+    if($('#trans_frm_account option[value=' + msg['account_id'] + ']').length === 0) {
+        $('#trans_frm_account').append(
+            '<option value="' + msg['account_id'] + '">' + msg['account_name'] + '</option>'
+        );
+    }
     $('#trans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#trans_frm_notes').val(msg['notes']);
     $('#trans_frm_no_budget_impact').prop('checked', msg['no_budget_impact'] === true);

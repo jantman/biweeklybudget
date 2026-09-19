@@ -199,7 +199,6 @@ class TestSchedTransModalPerPeriod(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '2'
@@ -821,3 +820,92 @@ class TestSchedTransModal(AcceptanceHelper):
         assert t.budget_id == 4
         assert t.notes == 'annual test notes'
         assert t.is_active is True
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestSchedModalDoesNotShowInactiveAccounts(AcceptanceHelper):
+    """
+    GitHub issue #356, for the Scheduled Transaction modal: only active
+    Accounts are offered, but a ScheduledTransaction whose Account has since
+    been deactivated still shows -- and saves with -- that Account.
+    """
+
+    ACTIVE_OPTS = [
+        ['None', ''],
+        ['1', 'BankOne'],
+        ['2', 'BankTwoStale'],
+        ['3', 'CreditOne'],
+        ['4', 'CreditTwo'],
+        ['5', 'InvestmentOne']
+    ]
+
+    def test_00_add_sched_trans(self, testdb):
+        testdb.add(ScheduledTransaction(
+            account_id=6,  # DisabledBank, inactive
+            budget_id=1,
+            amount=Decimal('11.11'),
+            num_per_period=1,
+            description='InactiveAcctST',
+            notes='InactiveAcctST notes'
+        ))
+        testdb.commit()
+
+    def test_01_verify_db(self, testdb):
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'InactiveAcctST'
+        ).one()
+        assert t.account_id == 6
+        assert t.account.is_active is False
+
+    def test_02_add_modal_offers_only_active(self, base_url, selenium):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/scheduled')
+        link = selenium.find_element(By.ID, 'btn_add_sched')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        assert opts == self.ACTIVE_OPTS
+
+    def test_03_existing_record_keeps_its_inactive_account(
+        self, base_url, selenium
+    ):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/scheduled')
+        link = selenium.find_element(By.XPATH, '//a[text()="InactiveAcctST"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        acct_sel = Select(body.find_element(By.ID, 'sched_frm_account'))
+        opts = [
+            [o.get_attribute('value'), o.text] for o in acct_sel.options
+        ]
+        assert opts == self.ACTIVE_OPTS + [['6', 'DisabledBank']]
+        assert acct_sel.first_selected_option.get_attribute('value') == '6'
+
+    def test_04_saving_does_not_retarget_the_account(
+        self, base_url, selenium
+    ):
+        self.baseurl = base_url
+        self.get(selenium, base_url + '/scheduled')
+        link = selenium.find_element(By.XPATH, '//a[text()="InactiveAcctST"]')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        notes = body.find_element(By.ID, 'sched_frm_notes')
+        notes.clear()
+        notes.send_keys('InactiveAcctST edited')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+
+    def test_05_verify_db_after_save(self, testdb):
+        t = testdb.query(ScheduledTransaction).filter(
+            ScheduledTransaction.description == 'InactiveAcctST'
+        ).one()
+        assert t.notes == 'InactiveAcctST edited'
+        assert t.account_id == 6

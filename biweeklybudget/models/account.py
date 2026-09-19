@@ -262,6 +262,27 @@ class Account(Base, ModelAsDict):
         return res
 
     @staticmethod
+    def active_accounts(db):
+        """
+        Return a query matching all active Accounts, i.e. the accounts that a
+        new or edited record may point at. See GitHub issue #356.
+
+        This is the single definition of "an Account that may be chosen". The
+        Accounts page deliberately lists inactive Accounts too, and the table
+        filters on the Transactions and OFX pages deliberately offer them, so
+        those keep querying all Accounts; everything that populates a picker
+        goes through here.
+
+        :param db: active database session to use for queries
+        :type db: sqlalchemy.orm.session.Session
+        :return: query matching all active Accounts
+        :rtype: sqlalchemy.orm.query.Query
+        """
+        return db.query(Account).filter(
+            Account.is_active.__eq__(True)
+        ).order_by(Account.name)
+
+    @staticmethod
     def active_credit_accounts(db):
         """
         Return a query matching all active credit Accounts, i.e. the accounts

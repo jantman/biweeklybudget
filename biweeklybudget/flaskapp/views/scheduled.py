@@ -60,7 +60,9 @@ class ScheduledView(MethodView):
         """
         Render the GET /scheduled view using the ``scheduled.html`` template.
         """
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         for b in db_session.query(Budget).all():
             if b.is_income:
@@ -69,7 +71,7 @@ class ScheduledView(MethodView):
                 budgets[b.name] = b.id
         return render_template(
             'scheduled.html',
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets
         )
 
@@ -81,7 +83,9 @@ class ScheduledTransView(MethodView):
         Render the GET /scheduled/<int:sched_trans_id> view using the
         ``scheduled.html`` template.
         """
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         for b in db_session.query(Budget).all():
             if b.is_income:
@@ -90,7 +94,7 @@ class ScheduledTransView(MethodView):
                 budgets[b.name] = b.id
         return render_template(
             'scheduled.html',
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets,
             sched_trans_id=sched_trans_id
         )
