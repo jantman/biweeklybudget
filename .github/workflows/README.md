@@ -99,6 +99,20 @@ puts them in its footer. A non-zero denial count, or `is_error`, fails the job. 
 `Skill` or `Task` is exactly how these runs used to finish green having done nothing, and it
 was visible nowhere a human looks.
 
+**Where the logic lives:** both workflows are thin callers of [jantman/github-actions-
+workflows](https://github.com/jantman/github-actions-workflows), pinned at `@v1`. This file
+keeps only what a composite action cannot reach, because by the time one runs the runner is up
+and the token is minted: the triggers, `concurrency`, `permissions`, the fork guard, the
+trigger guard, and `actions/checkout`. Change the behaviour there, not here — and note that a
+change *there* is testable on its own PR, whereas a change to these files is not.
+
+**Who can trigger the mention workflow:** only comment/issue/review authors whose
+`author_association` is `OWNER`, `MEMBER` or `COLLABORATOR`. This repository is public and that
+job has `contents: write` and blanket `Bash`, so without the check any passer-by who types the
+mention would get an agent run billed to the maintainer's account. The field has to be read
+per-event: on `issue_comment`, `github.event.issue.author_association` is the issue's *opener*,
+not the commenter.
+
 **Re-review on new commits:** the upstream `/code-review` plugin stops without posting if
 Claude has already commented on the PR, which would make every push after the first review a
 silent no-op. `claude-pr-review.yml` overrides that in its `prompt` and scopes re-reviews to
