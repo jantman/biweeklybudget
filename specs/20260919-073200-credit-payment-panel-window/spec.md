@@ -156,16 +156,16 @@ explanatory work that otherwise falls entirely to documentation, and it is what 
 the self-healing bound comprehensible the first time someone meets it.
 
 **Independent Test**: open the panel for an account with a derived window and confirm
-the stated date matches the start of the period containing that account's earliest
-designated payment.
+the stated date matches the start of the pay period following the one containing that
+account's earliest designated payment.
 
 **Acceptance Scenarios**:
 
 1. **Given** a panel for any credit account, **When** it renders, **Then** it states the
    date from which unpaid charges are being counted.
 2. **Given** an account whose window was derived from its earliest designated payment,
-   **When** the panel renders, **Then** the stated date is that payment's period start,
-   not the configured begin date.
+   **When** the panel renders, **Then** the stated date is the start of the period after
+   that payment's, not the configured begin date.
 
 ---
 

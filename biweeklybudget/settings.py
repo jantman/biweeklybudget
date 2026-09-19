@@ -196,12 +196,23 @@ RECONCILE_BEGIN_DATE = None
 #: amount of a credit card payment. Charges and payments before this date are
 #: ignored when computing how much of a card's recorded charges are unpaid.
 #:
-#: Payments recorded before the credit card payment feature existed carry no
+#: This is a *floor*, not the whole window. Each credit account's charges are
+#: actually counted from the later of this date and the start of the pay period
+#: following the one holding the earliest payment designated toward that
+#: account; see :py:class:`~biweeklybudget.credit_payment.\
+#: CreditPaymentAttribution`.
+#:
+#: A lower bound is needed at all because payments recorded before the credit
+#: card payment feature existed carry no
 #: :py:attr:`~.Transaction.credit_payment_acct_id`, so they are not subtracted
-#: from a card's charge total; without a lower bound, a card's apparent unpaid
-#: charges would drift upward without limit and the over-payment warning would
-#: stop meaning anything. Move this date forward once historical payments have
-#: been designated or written off.
+#: from a card's charge total; without one, a card's apparent unpaid charges
+#: would drift upward without limit and the over-payment warning would stop
+#: meaning anything. Deriving the rest of the bound per account is what makes it
+#: actually bind on an install upgraded from before 2.0.0, whose entire history
+#: would otherwise be counted as unpaid: recording one payment for a card
+#: narrows that card's window permanently, with no action needed here. Setting
+#: this date forward remains available for a card you would rather bound by
+#: hand, but is no longer something most installs need. See GitHub issue #358.
 #:
 #: If not set, this defaults to
 #: :py:attr:`biweeklybudget.settings.RECONCILE_BEGIN_DATE`. This must be
