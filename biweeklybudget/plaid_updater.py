@@ -270,9 +270,13 @@ class PlaidUpdater:
         )
         stmt.bankid = account.plaid_account.plaid_item.institution_id
         if account.plaid_account.account_type == 'credit':
+            # Plaid reports a credit card's balance as the positive amount
+            # owed; biweeklybudget records money owed as a negative balance, as
+            # it does for loans. See GitHub issue #354.
             stmt.type = 'CreditCard'
             self._update_bank_or_credit(
-                end_dt, account, plaid_acct_info, plaid_txns, stmt
+                end_dt, account, plaid_acct_info, plaid_txns, stmt,
+                negate_balance=True
             )
         elif account.plaid_account.account_type == 'depository':
             stmt.type = 'Bank'
@@ -323,12 +327,32 @@ class PlaidUpdater:
 
     def _update_bank_or_credit(
         self, end_dt: datetime, account: Account, plaid_acct_info: dict,
-        plaid_txns: List[dict], stmt: OFXStatement
+        plaid_txns: List[dict], stmt: OFXStatement,
+        negate_balance: bool = False
     ):
-        logger.debug('Generating statement for credit account')
+        """
+        Record a statement, account balance and transactions for a bank
+        (depository) or credit account.
+
+        :param end_dt: current time, as of when data was retrieved
+        :param account: the account to update
+        :param plaid_acct_info: dict of account information from Plaid
+        :param plaid_txns: list of transactions from Plaid
+        :param stmt: the statement to populate and add to the session
+        :param negate_balance: if True, record the negation of Plaid's current
+          balance. Used for credit accounts, which Plaid reports as a positive
+          amount owed. This applies to the statement's ledger balance only;
+          transaction amounts are governed by
+          :py:attr:`~.Account.negate_ofx_amounts` and the available balance is
+          recorded as Plaid reports it.
+        """
+        logger.debug(
+            'Generating statement for bank or credit account '
+            '(negate_balance=%s)', negate_balance
+        )
         stmt.as_of = end_dt
         stmt.ledger_bal_as_of = end_dt
-        stmt.ledger_bal = Decimal(
+        bal = Decimal(
             plaid_acct_info['balances']['current']
         ).quantize(
             Decimal('.01'), rounding=ROUND_HALF_DOWN
@@ -338,6 +362,11 @@ class PlaidUpdater:
                 plaid_acct_info['balances']['available']
             ).quantize(Decimal('.01'), rounding=ROUND_HALF_DOWN)
             stmt.avail_bal_as_of = end_dt
+        if negate_balance:
+            self._warn_if_credit_sign_reversed(account, bal, stmt.avail_bal)
+            # Unary minus, not "* -1", so a zero balance stays 0.00, not -0.00
+            bal = -bal
+        stmt.ledger_bal = bal
         stmt.currency = plaid_acct_info['balances']['iso_currency_code']
         db_session.add(stmt)
         account.set_balance(
@@ -371,6 +400,63 @@ class PlaidUpdater:
                 OFXTransaction,
                 ['account_id', 'fitid'],
                 **kwargs
+            )
+
+    def _warn_if_credit_sign_reversed(
+        self, account: Account, current: Decimal, avail: Decimal | None
+    ):
+        """
+        Log a warning if a credit account's balances are better explained by
+        the opposite of Plaid's documented sign convention.
+
+        Plaid documents that for a ``credit``-type account a positive
+        ``current`` balance is the amount owed, and that ``available``
+        typically equals the credit limit less ``current``, less any pending
+        outflows plus any pending inflows. So ``available`` should track
+        ``limit - current``; an institution reporting the balance owed as
+        *negative* would instead have it track ``limit + current``.
+
+        This is advisory only. Pending activity makes the relation
+        approximate, so a mismatch is reported and nothing else: the balance is
+        still recorded per the documented convention, and an update is never
+        failed over it.
+
+        Fitting better is not enough on its own to be worth reporting. Writing
+        ``d`` for ``avail - limit``, the two residuals are ``|d + current|``
+        and ``|d - current|``, so the reversed hypothesis wins exactly when
+        ``d`` and ``current`` share a sign -- which happens for a mismatch of
+        any size at all, down to a single cent. The reversed hypothesis must
+        therefore also *fit*, which is required here by its residual coming in
+        under the balance itself: a genuinely reversed institution leaves a
+        residual of only its pending activity, which does not ordinarily
+        exceed the whole balance owed. That is what keeps a pending credit on
+        a card with very little owed from being reported.
+
+        It is still only a heuristic on an approximate relation. A recorded
+        ``credit_limit`` well below the real one, for instance, can satisfy
+        both conditions -- which is why this warns and does nothing else.
+
+        :param account: the account being updated
+        :param current: Plaid's current balance, quantized, before negation
+        :param avail: the available balance recorded, or None if Plaid did not
+          report one
+        """
+        if account.credit_limit is None or avail is None or current == 0:
+            return
+        limit = Decimal(account.credit_limit)
+        err_normal = abs(avail - (limit - current))
+        err_reversed = abs(avail - (limit + current))
+        if err_reversed < err_normal and err_reversed < abs(current):
+            logger.warning(
+                'Account "%s" reports a credit balance of %s against a limit '
+                'of %s and an available balance of %s. Plaid documents a '
+                'positive credit balance as the amount owed, which implies an '
+                'available balance near %s; %s is closer to what a reversed '
+                'sign convention would give. The balance is being recorded as '
+                'documented (negated). Pending activity can produce this, so '
+                'this is a warning only; if it persists, the institution may '
+                'report credit balances with the opposite sign.',
+                account.name, current, limit, avail, limit - current, avail
             )
 
     def _update_investment(

@@ -114,6 +114,34 @@ To update transactions for Plaid Item with IDs plaidItemId1 for the last 60 days
     $ curl -XPOST -H 'Accept: application/json' -d 'item_ids=plaidItemId1&num_days=60' http://127.0.0.1:8080/plaid-update
     [{"added":0,"exception":"None","item_id":"plaidItemId1","statement_ids":[21747],"success":true,"updated":35}]
 
+.. _plaid.credit_accounts:
+
+Credit Card Accounts
+++++++++++++++++++++
+
+Plaid reports the balance of a credit card as a positive number: the amount you owe. biweeklybudget records money owed as a *negative* balance, the same as for loans, so the balance recorded for an account linked to a Plaid credit card is Plaid's balance with its sign reversed. A card carrying $1,000 owed is shown as -$1,000.00, and :ref:`app_usage.cash_position` subtracts it from your available funds.
+
+If Plaid reports a negative credit balance -- an overpaid card, or one holding a statement credit larger than its balance -- it is recorded as positive, and counts as funds you can spend. The sign is reversed, never made absolute, so a credit in your favor is never turned into a debt.
+
+Only the balance's sign differs. Transaction amounts are recorded as Plaid reports them (subject to the account's own **Negate OFX Amounts** setting, which is unrelated), and so is the available balance.
+
+Before this behavior was added, credit card balances were recorded as positive, which meant Cash Position and the unallocated-funds notification *added* what you owed instead of subtracting it. Those earlier balances are not changed automatically, so an account's line on the Account Balances chart jumps from positive to negative at its first update after upgrading. To correct the earlier balances, run the following SQL **once**, after upgrading and *before* the next Plaid update. It reverses the sign of every balance recorded for accounts linked to Plaid credit cards, so running it a second time undoes it, and running it after an update would flip that update's (already correct) balance too. If some of an account's balances came from somewhere other than Plaid, add a condition on ``account_balances.overall_date`` / ``ofx_statements.as_of`` to limit it to the Plaid period.
+
+.. code-block:: sql
+
+    UPDATE account_balances ab
+      JOIN accounts a ON ab.account_id = a.id
+      JOIN plaid_accounts pa
+        ON a.plaid_item_id = pa.item_id AND a.plaid_account_id = pa.account_id
+      SET ab.ledger = -ab.ledger
+      WHERE pa.account_type = 'credit';
+    UPDATE ofx_statements s
+      JOIN accounts a ON s.account_id = a.id
+      JOIN plaid_accounts pa
+        ON a.plaid_item_id = pa.item_id AND a.plaid_account_id = pa.account_id
+      SET s.ledger_bal = -s.ledger_bal
+      WHERE pa.account_type = 'credit';
+
 .. _plaid.loan_accounts:
 
 Loan Accounts

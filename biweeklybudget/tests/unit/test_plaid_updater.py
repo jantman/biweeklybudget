@@ -42,6 +42,7 @@ from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
 from plaid.api.plaid_api import PlaidApi
 from datetime import datetime, date
+import logging
 from decimal import Decimal
 from pytz import UTC
 
@@ -645,7 +646,10 @@ class TestStmtForAcct(PlaidUpdaterTester):
                     res = self.cls._stmt_for_acct(mock_acct, pai, txns, end_dt)
         assert res == (123, 1, 2)
         assert mocks['_update_bank_or_credit'].mock_calls == [
-            call(end_dt, mock_acct, pai, txns, mock_stmt)
+            call(
+                end_dt, mock_acct, pai, txns, mock_stmt,
+                negate_balance=True
+            )
         ]
         assert mocks['_update_investment'].mock_calls == []
         assert mocks['_new_updated_counts'].mock_calls == [call()]
@@ -1111,6 +1115,236 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
             )
         ]
         assert mock_upsert.mock_calls == []
+
+    def test_negate_balance(self):
+        """A credit card's balance owed is recorded as negative."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': '1234.5678',
+                'iso_currency_code': 'USD',
+                'available': 854.2903
+            }
+        }
+        txns = [
+            {
+                'pending': False,
+                'amount': 123.4567,
+                'date': date(2020, 2, 23),
+                'payment_meta': {
+                    'reference_number': None
+                },
+                'name': 'Some Txn',
+                'transaction_id': 'TXN001'
+            }
+        ]
+        with patch(f'{pbm}.db_session') as mock_db:
+            with patch(f'{pbm}.upsert_record') as mock_upsert:
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, txns, mock_stmt,
+                    negate_balance=True
+                )
+        assert mock_stmt.as_of == end_dt
+        assert mock_stmt.ledger_bal == Decimal('-1234.57')
+        assert mock_stmt.ledger_bal_as_of == end_dt
+        # the available balance is recorded as Plaid reports it
+        assert mock_stmt.avail_bal == Decimal('854.29')
+        assert mock_stmt.avail_bal_as_of == end_dt
+        assert mock_stmt.currency == 'USD'
+        assert mock_db.mock_calls == [call.add(mock_stmt)]
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('-1234.57'),
+                ledger_date=end_dt,
+                avail=Decimal('854.29'),
+                avail_date=end_dt
+            )
+        ]
+        # transaction amounts are unaffected by the balance negation
+        assert mock_upsert.mock_calls == [
+            call(
+                OFXTransaction,
+                ['account_id', 'fitid'],
+                amount=Decimal('123.46'),
+                date_posted=datetime(2020, 2, 23, 0, 0, 0, tzinfo=UTC),
+                fitid='TXN001',
+                name='Some Txn',
+                account_id=4,
+                statement=mock_stmt
+            )
+        ]
+
+    def test_negate_balance_negative(self):
+        """An overpaid card (negative Plaid balance) is stored positive."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': -50.25,
+                'iso_currency_code': 'USD',
+                'available': None
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=True
+                )
+        assert mock_stmt.ledger_bal == Decimal('50.25')
+        assert mock_stmt.ledger_bal > Decimal('0')
+        assert mock_acct.mock_calls == [
+            call.set_balance(
+                overall_date=end_dt,
+                ledger=Decimal('50.25'),
+                ledger_date=end_dt,
+                avail=None,
+                avail_date=None
+            )
+        ]
+
+    def test_negate_balance_zero(self):
+        """A zero credit balance is stored as 0.00, never -0.00."""
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(id=4, negate_ofx_amounts=False, credit_limit=None)
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': 0,
+                'iso_currency_code': 'USD',
+                'available': None
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=True
+                )
+        # Decimal('-0.00') == Decimal('0.00') is True, so equality alone
+        # would pass even with a negated zero; assert on the sign itself.
+        assert str(mock_stmt.ledger_bal) == '0.00'
+        assert not mock_stmt.ledger_bal.is_signed()
+        ledger = mock_acct.mock_calls[0].kwargs['ledger']
+        assert str(ledger) == '0.00'
+        assert not ledger.is_signed()
+
+
+class TestCreditBalanceSignCheck(PlaidUpdaterTester):
+    """
+    The diagnostic check for an institution that reports a credit balance with
+    the opposite sign to the one Plaid documents. It is advisory only: it must
+    never alter a recorded value, and never fail an update.
+    """
+
+    def _call(self, current, available, credit_limit, negate_balance=True):
+        """
+        Run ``_update_bank_or_credit`` with the given balances, and return the
+        statement mock so the caller can assert on what was recorded.
+        """
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(
+            id=4, negate_ofx_amounts=False, credit_limit=credit_limit
+        )
+        type(mock_acct).name = 'acct4'
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': current,
+                'iso_currency_code': 'USD',
+                'available': available
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=negate_balance
+                )
+        return mock_stmt
+
+    def _warnings(self, caplog):
+        return [
+            r.getMessage() for r in caplog.records
+            if r.levelno == logging.WARNING
+            and 'sign convention' in r.getMessage()
+        ]
+
+    def test_reversed_sign_warns(self, caplog):
+        """available tracks limit + current, which only a reversal explains."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # limit 5000, owed 1000 reported as -1000 by a reversed
+            # institution: available is 4000 = 5000 + (-1000).
+            stmt = self._call(-1000.00, 4000.00, Decimal('5000.0000'))
+        msgs = self._warnings(caplog)
+        assert len(msgs) == 1
+        assert 'acct4' in msgs[0]
+        # the balance is still recorded per the documented rule
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_consistent_does_not_warn(self, caplog):
+        """available == limit - current: the documented convention holds."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(1000.00, 4000.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
+
+    def test_pending_activity_does_not_warn(self, caplog):
+        """A residual smaller than the balance is ordinary pending activity."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # owed 1000 of a 5000 limit, with 100 of pending outflow
+            stmt = self._call(1000.00, 3900.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
+
+    def test_small_balance_big_pending_inflow_does_not_warn(self, caplog):
+        """
+        The reversed hypothesis winning is not on its own worth reporting.
+
+        With a $10 balance and a $30 pending credit, ``avail - limit`` and
+        ``current`` share a sign, so the reversed hypothesis fits better -- as
+        it does for a mismatch of any size, down to a single cent. It does not
+        fit *well* (its residual is the whole balance over), and this is
+        ordinary noise rather than an institution reporting the opposite sign.
+        """
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # limit 5000, owed 10, a 30 pending credit: available is 5020
+            stmt = self._call(10.00, 5020.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-10.00')
+
+    def test_no_credit_limit_does_not_warn(self, caplog):
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(-1000.00, 4000.00, None)
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_no_available_balance_does_not_warn(self, caplog):
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(-1000.00, None, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_zero_balance_does_not_warn(self, caplog):
+        """With a zero balance the two hypotheses coincide; nothing to say."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(0, 1234.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert str(stmt.ledger_bal) == '0.00'
+
+    def test_depository_is_never_checked(self, caplog):
+        """The check is specific to the credit sign convention."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(
+                -1000.00, 4000.00, Decimal('5000.0000'),
+                negate_balance=False
+            )
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
 
 
 class TestUpdateInvestment(PlaidUpdaterTester):

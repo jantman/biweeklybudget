@@ -645,7 +645,9 @@ until you know why:
   reason for applying the recorded sign rather than negating is that a card
   carrying a *positive* balance -- overpaid, or holding a statement credit
   larger than the balance -- really does hold money you can spend, and adding
-  it with its own sign gets that case right without a special case.
+  it with its own sign gets that case right without a special case. Balances
+  downloaded from Plaid arrive with the opposite sign and are reversed when
+  they are recorded; see :ref:`plaid.credit_accounts`.
 * **The unreconciled adjustment is subtracted**, because spending is entered
   positive. Ledger minus unreconciled is the projected balance, which is why
   the per-account table shows the same subtraction one account at a time.
