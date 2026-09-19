@@ -74,7 +74,9 @@ class IndexView(MethodView):
         # trigger calculation/cache of data before passing on to jinja
         for p in periods:
             p.overall_sums
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -101,7 +103,7 @@ class IndexView(MethodView):
             pp_curr_idx=pp_curr_idx,
             pp_next_idx=pp_next_idx,
             pp_following_idx=pp_following_idx,
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets,
             active_budgets=active_budgets
         )

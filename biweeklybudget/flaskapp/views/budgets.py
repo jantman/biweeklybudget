@@ -95,7 +95,9 @@ class BudgetsView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -124,7 +126,7 @@ class BudgetsView(MethodView):
             'budgets.html',
             standing=standing,
             periodic=periodic,
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets,
             active_budgets=active_budgets,
             allocated_by_budget=allocated_by_budget,
@@ -145,7 +147,9 @@ class OneBudgetView(MethodView):
         periodic = db_session.query(Budget).filter(
             Budget.is_periodic.__eq__(True)
         ).order_by(Budget.name).all()
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         active_budgets = {}
         for b in db_session.query(Budget).all():
@@ -175,7 +179,7 @@ class OneBudgetView(MethodView):
             standing=standing,
             periodic=periodic,
             budget_id=budget_id,
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets,
             active_budgets=active_budgets,
             allocated_by_budget=allocated_by_budget,

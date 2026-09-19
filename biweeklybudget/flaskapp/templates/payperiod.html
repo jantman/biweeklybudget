@@ -11,9 +11,9 @@
     <link href="/static/bootstrap-datepicker/css/bootstrap-datepicker.standalone.min.css" rel="stylesheet">
 
     <script>
-        var acct_names_to_id = {};
-        {% for name in accts.keys()|sort %}
-        acct_names_to_id["{{ name }}"] = "{{ accts[name] }}";
+        var active_acct_names_to_id = {};
+        {% for name in active_accts.keys()|sort %}
+        active_acct_names_to_id["{{ name }}"] = "{{ active_accts[name] }}";
         {% endfor %}
         var credit_acct_names_to_id = {};
         {% for name in credit_accts.keys()|sort %}

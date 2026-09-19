@@ -43,8 +43,8 @@ function accountTransferDivForm() {
         .addDatePicker('acct_txfr_frm_date', 'date', 'Date')
         .addCurrency('acct_txfr_frm_amount', 'amount', 'Amount', { helpBlock: 'Transfer amount relative to from account; must be positive.' })
         .addLabelToValueSelect('acct_txfr_frm_budget', 'budget', 'Budget', active_budget_names_to_id, 'None', true)
-        .addLabelToValueSelect('acct_txfr_frm_from_account', 'from_account', 'From Account', acct_names_to_id, 'None', true)
-        .addLabelToValueSelect('acct_txfr_frm_to_account', 'to_account', 'To Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('acct_txfr_frm_from_account', 'from_account', 'From Account', active_acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('acct_txfr_frm_to_account', 'to_account', 'To Account', active_acct_names_to_id, 'None', true)
         .addText('acct_txfr_frm_notes', 'notes', 'Notes')
         .render();
 }

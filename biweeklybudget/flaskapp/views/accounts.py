@@ -81,7 +81,9 @@ def _render_accounts_template(account_id=None):
     :return: rendered ``accounts.html`` template
     :rtype: str
     """
-    accts = {a.name: a.id for a in db_session.query(Account).all()}
+    active_accts = {
+        a.name: a.id for a in Account.active_accounts(db_session).all()
+    }
     budgets = {}
     active_budgets = {}
     for b in db_session.query(Budget).all():
@@ -111,7 +113,7 @@ def _render_accounts_template(account_id=None):
         account_id=account_id,
         interest_class_names=INTEREST_CALCULATION_NAMES.keys(),
         min_pay_class_names=MIN_PAYMENT_FORMULA_NAMES.keys(),
-        accts=accts,
+        active_accts=active_accts,
         budgets=budgets,
         active_budgets=active_budgets,
         plaid_accounts=plaid_accts

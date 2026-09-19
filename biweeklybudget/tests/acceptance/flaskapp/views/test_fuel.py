@@ -461,7 +461,6 @@ class TestModals(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert acct_sel.first_selected_option.get_attribute('value') == '1'

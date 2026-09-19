@@ -63,7 +63,9 @@ class FuelView(MethodView):
     """
 
     def get(self):
-        accts = {a.name: a.id for a in db_session.query(Account).all()}
+        active_accts = {
+            a.name: a.id for a in Account.active_accounts(db_session).all()
+        }
         budgets = {}
         for b in db_session.query(Budget).all():
             if b.is_income:
@@ -76,7 +78,7 @@ class FuelView(MethodView):
         }
         return render_template(
             'fuel.html',
-            accts=accts,
+            active_accts=active_accts,
             budgets=budgets,
             vehicles=vehicles
         )

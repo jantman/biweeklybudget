@@ -1141,7 +1141,6 @@ class TestAccountTransfer(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert from_acct_sel.first_selected_option.get_attribute(
@@ -1160,7 +1159,6 @@ class TestAccountTransfer(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert to_acct_sel.first_selected_option.get_attribute(
@@ -1297,7 +1295,6 @@ class TestAccountTransfer(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert from_acct_sel.first_selected_option.get_attribute(
@@ -1316,7 +1313,6 @@ class TestAccountTransfer(AcceptanceHelper):
             ['2', 'BankTwoStale'],
             ['3', 'CreditOne'],
             ['4', 'CreditTwo'],
-            ['6', 'DisabledBank'],
             ['5', 'InvestmentOne']
         ]
         assert to_acct_sel.first_selected_option.get_attribute(

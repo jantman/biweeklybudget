@@ -135,7 +135,7 @@ function skipSchedTransModalDivForm() {
         )
         .addDatePicker('skipschedtrans_frm_date', 'date', 'Specific Date', { groupHtml: ' style="display: none;"' })
         .addCurrency('skipschedtrans_frm_amount', 'amount', 'Amount', { helpBlock: 'Transaction amount (positive for expenses, negative for income).' })
-        .addLabelToValueSelect('skipschedtrans_frm_account', 'account', 'Account', acct_names_to_id, 'None', true)
+        .addLabelToValueSelect('skipschedtrans_frm_account', 'account', 'Account', active_acct_names_to_id, 'None', true)
         .addLabelToValueSelect('skipschedtrans_frm_budget', 'budget', 'Budget', active_budget_names_to_id, 'None', true)
         .addText('skipschedtrans_frm_notes', 'notes', 'Notes')
         .render();
@@ -192,6 +192,15 @@ function skipSchedTransModalDivFillAndShow(msg) {
     // end disable date inputs
     $('#skipschedtrans_frm_amount').val(msg['amount']);
     $('#skipschedtrans_frm_amount').prop('disabled', true);
+    // The account may since have been deactivated, in which case the
+    // select will not contain it; append it so this record still shows --
+    // and saves with -- the account it actually points at, rather than
+    // being silently retargeted (GitHub issue #356).
+    if($('#skipschedtrans_frm_account option[value=' + msg['account_id'] + ']').length === 0) {
+        $('#skipschedtrans_frm_account').append(
+            '<option value="' + msg['account_id'] + '">' + msg['account_name'] + '</option>'
+        );
+    }
     $('#skipschedtrans_frm_account option[value=' + msg['account_id'] + ']').prop('selected', 'selected').change();
     $('#skipschedtrans_frm_account').prop('disabled', true);
     $('#skipschedtrans_frm_budget option[value=' + msg['budget_id'] + ']').prop('selected', 'selected').change();

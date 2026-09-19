@@ -4,6 +4,13 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #356 <https://github.com/jantman/biweeklybudget/issues/356>`_ - Inactive Accounts are no longer offered in the account dropdowns used to add or edit records, and are no longer plotted on the dashboard's Account Balances chart. 2.0.0 said both of these were already the case; they were not, so a closed account stayed in every picker and kept a flat line on the chart forever.
+
+  * The Account Transfer (from and to), Add/Edit Transaction, Budget Transfer, Add/Edit Scheduled Transaction, Add Fuel Fill and "skip scheduled transaction" dropdowns now list active Accounts only.
+  * An existing record whose Account was deactivated after it was created still shows, and still saves with, that Account - editing an old transaction does not silently retarget it.
+  * The Account filters above the Transactions and OFX Transactions tables still offer inactive Accounts, so historical data stays searchable, and the Accounts page still lists them.
+  * Nothing is deleted: an inactive Account's balance history is retained, and re-activating it restores its chart line and its place in every dropdown.
+
 * `Issue #358 <https://github.com/jantman/biweeklybudget/issues/358>`_ - The "This payment covers:" panel in the transaction modal now counts a card's unpaid charges from the first payment you recorded toward that card, instead of from ``CREDIT_PAYMENT_BEGIN_DATE``. On a long-running install the panel used to list every pay period since you started - over 200 rows in a modal - with an unpaid total unrelated to the card's balance.
 
   * Payments made before 2.0.0 carry no card designation and are never subtracted, so the first payment you enter for each card after upgrading still shows the old, whole-history window and will warn that it exceeds your recorded charges. Save it anyway; every payment for that card afterwards is scoped to the periods since it. This is per-card and needs no configuration.
