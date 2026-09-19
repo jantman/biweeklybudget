@@ -42,6 +42,7 @@ from biweeklybudget.models.plaid_items import PlaidItem
 from biweeklybudget.models.plaid_accounts import PlaidAccount
 from plaid.api.plaid_api import PlaidApi
 from datetime import datetime, date
+import logging
 from decimal import Decimal
 from pytz import UTC
 
@@ -1231,6 +1232,103 @@ class TestUpdateBankOrCredit(PlaidUpdaterTester):
         ledger = mock_acct.mock_calls[0].kwargs['ledger']
         assert str(ledger) == '0.00'
         assert not ledger.is_signed()
+
+
+class TestCreditBalanceSignCheck(PlaidUpdaterTester):
+    """
+    The diagnostic check for an institution that reports a credit balance with
+    the opposite sign to the one Plaid documents. It is advisory only: it must
+    never alter a recorded value, and never fail an update.
+    """
+
+    def _call(self, current, available, credit_limit, negate_balance=True):
+        """
+        Run ``_update_bank_or_credit`` with the given balances, and return the
+        statement mock so the caller can assert on what was recorded.
+        """
+        mock_stmt = Mock(avail_bal=None, avail_bal_as_of=None)
+        mock_acct = Mock(
+            id=4, negate_ofx_amounts=False, credit_limit=credit_limit
+        )
+        type(mock_acct).name = 'acct4'
+        end_dt = datetime(2020, 5, 25, 0, 0, 0)
+        acct = {
+            'balances': {
+                'current': current,
+                'iso_currency_code': 'USD',
+                'available': available
+            }
+        }
+        with patch(f'{pbm}.db_session'):
+            with patch(f'{pbm}.upsert_record'):
+                self.cls._update_bank_or_credit(
+                    end_dt, mock_acct, acct, [], mock_stmt,
+                    negate_balance=negate_balance
+                )
+        return mock_stmt
+
+    def _warnings(self, caplog):
+        return [
+            r.getMessage() for r in caplog.records
+            if r.levelno == logging.WARNING
+            and 'sign convention' in r.getMessage()
+        ]
+
+    def test_reversed_sign_warns(self, caplog):
+        """available tracks limit + current, which only a reversal explains."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # limit 5000, owed 1000 reported as -1000 by a reversed
+            # institution: available is 4000 = 5000 + (-1000).
+            stmt = self._call(-1000.00, 4000.00, Decimal('5000.0000'))
+        msgs = self._warnings(caplog)
+        assert len(msgs) == 1
+        assert 'acct4' in msgs[0]
+        # the balance is still recorded per the documented rule
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_consistent_does_not_warn(self, caplog):
+        """available == limit - current: the documented convention holds."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(1000.00, 4000.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
+
+    def test_pending_activity_does_not_warn(self, caplog):
+        """A residual smaller than the balance is ordinary pending activity."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            # owed 1000 of a 5000 limit, with 100 of pending outflow
+            stmt = self._call(1000.00, 3900.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
+
+    def test_no_credit_limit_does_not_warn(self, caplog):
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(-1000.00, 4000.00, None)
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_no_available_balance_does_not_warn(self, caplog):
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(-1000.00, None, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('1000.00')
+
+    def test_zero_balance_does_not_warn(self, caplog):
+        """With a zero balance the two hypotheses coincide; nothing to say."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(0, 1234.00, Decimal('5000.0000'))
+        assert self._warnings(caplog) == []
+        assert str(stmt.ledger_bal) == '0.00'
+
+    def test_depository_is_never_checked(self, caplog):
+        """The check is specific to the credit sign convention."""
+        with caplog.at_level(logging.WARNING, logger=pbm):
+            stmt = self._call(
+                -1000.00, 4000.00, Decimal('5000.0000'),
+                negate_balance=False
+            )
+        assert self._warnings(caplog) == []
+        assert stmt.ledger_bal == Decimal('-1000.00')
 
 
 class TestUpdateInvestment(PlaidUpdaterTester):
