@@ -3206,7 +3206,13 @@ class TestPayPeriodNoBudgetImpact(AcceptanceHelper):
 class TestPayPeriodAccountTotals(AcceptanceHelper):
     """
     The per-account transaction totals table on the single pay period view.
-    GitHub issue #213.
+    GitHub issues #213 and #355.
+
+    Since #355 the table covers the pay period being viewed and no other, with
+    accounts as columns and their totals in a single row. The fixture's
+    previous- and next-period transactions are kept from #213, where they
+    proved the adjacent columns worked; they now prove those periods are
+    *excluded*.
     """
 
     def test_0_clean_db(self, dump_file_path):
@@ -3232,8 +3238,8 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
             acct_type=AcctType.Cash
         )
         testdb.add(cash)
-        # An account with no transactions at all, in any displayed period. It
-        # must not appear in the table (FR-002).
+        # An account with no transactions at all. It must not appear in the
+        # table (#355 FR-003).
         testdb.add(Account(
             description='Quiet Account',
             name='QuietOne',
@@ -3270,7 +3276,7 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
             description='CurrOrdinary',
             account=acct
         ))
-        # split across two budgets; must count its own amount once (FR-004)
+        # split across two budgets; must count its own amount once
         testdb.add(Transaction(
             date=pp.start_date + timedelta(days=2),
             budget_amounts={
@@ -3280,7 +3286,7 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
             description='CurrSplit',
             account=acct
         ))
-        # income; negative, so the account's total goes negative (FR-007)
+        # income; negative, so the account's total goes negative
         testdb.add(Transaction(
             date=pp.start_date + timedelta(days=3),
             budget_amounts={income: Decimal('-2345.67')},
@@ -3288,7 +3294,7 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
             account=acct
         ))
         # no budget impact, and a card payment: both counted here, unlike in
-        # the budget sums (FR-004)
+        # the budget sums (#355 FR-005)
         testdb.add(Transaction(
             date=pp.start_date + timedelta(days=4),
             budget_amounts={budget: Decimal('40.00')},
@@ -3333,62 +3339,46 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
         }
 
     def test_3_table_present_and_rows(self, base_url, selenium):
-        """FR-001, FR-002, FR-007, FR-010, FR-011, FR-012."""
+        """FR-001, FR-002, FR-005, FR-006, FR-007: one header row of accounts
+        and one row of amounts, for the period being viewed."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
-        htmls = self.inner_htmls(self.tbody2elemlist(table))
-        assert htmls == [
+        heads = self.inner_htmls([self.thead2elemlist(table)])
+        assert heads == [
             [
                 '<a href="/accounts/1">BankOne</a>',
-                '$0.00',
-                '<span class="text-danger">-$2,215.67</span>',
-                '$8.88',
-                '$0.00',
-                '$0.00'
-            ],
-            [
                 '<a href="/accounts/3">CashOne</a>',
-                '$0.00',
+                'Total'
+            ]
+        ]
+        assert self.inner_htmls(self.tbody2elemlist(table)) == [
+            [
+                '<span class="text-danger">-$2,215.67</span>',
                 '$100.00',
-                '$0.00',
-                '$0.00',
-                '$0.00'
-            ],
-            [
-                '<a href="/accounts/2">CreditOne</a>',
-                '$7.77',
-                '$0.00',
-                '$0.00',
-                '$0.00',
-                '$0.00'
-            ],
-            [
-                '<strong>Total</strong>',
-                '$7.77',
-                '<span class="text-danger">-$2,115.67</span>',
-                '$8.88',
-                '$0.00',
-                '$0.00'
+                '<span class="text-danger">-$2,115.67</span>'
             ]
         ]
 
     def test_4_quiet_account_absent(self, base_url, selenium):
-        """FR-002: an account with no transactions in any displayed period does
-        not get a row."""
+        """FR-003: an account gets a column only if it has a transaction in the
+        period being viewed. QuietOne has none anywhere; CreditOne has one in
+        the *previous* period, which no longer counts."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
-        assert 'QuietOne' not in table.get_attribute('innerHTML')
+        html = table.get_attribute('innerHTML')
+        assert 'QuietOne' not in html
+        assert 'CreditOne' not in html
 
     def test_5_totals_include_no_budget_impact(self, base_url, selenium):
-        """FR-004: CashOne's only two transactions are a statement credit and a
+        """FR-005: CashOne's only two transactions are a statement credit and a
         card payment, both excluded from budget arithmetic. Its total is their
         full sum, and it deliberately disagrees with the period's spent total,
         which counts neither."""
@@ -3398,60 +3388,52 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
-        rows = self.inner_htmls(self.tbody2elemlist(table))
-        cash = [r for r in rows if 'CashOne' in r[0]][0]
-        assert cash[2] == '$100.00'
+        heads = self.thead2list(table)
+        amounts = self.tbody2textlist(table)[0]
+        assert amounts[heads.index('CashOne')] == '$100.00'
         assert selenium.find_element(By.ID, 'amt-spent').text == '$130.00'
 
-    def test_6_totals_row_sums_current_column(self, base_url, selenium):
-        """FR-011 and SC-003: the totals row equals the sum of the column above
-        it, in every column."""
+    def test_6_total_column_sums_the_row(self, base_url, selenium):
+        """FR-007 and SC-003: the final cell is the sum of the account cells
+        beside it."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
-        rows = self.tbody2textlist(table)
-        accounts = rows[:-1]
-        totals = rows[-1]
-        assert totals[0] == 'Total'
-        for col in range(1, 6):
-            expected = sum([
-                Decimal(r[col].replace('$', '').replace(',', ''))
-                for r in accounts
-            ])
-            assert Decimal(
-                totals[col].replace('$', '').replace(',', '')
-            ) == expected
+        assert self.thead2list(table)[-1] == 'Total'
+        cells = self.tbody2textlist(table)[0]
+        expected = sum([
+            Decimal(c.replace('$', '').replace(',', ''))
+            for c in cells[:-1]
+        ])
+        assert Decimal(
+            cells[-1].replace('$', '').replace(',', '')
+        ) == expected
 
-    def test_7_headers_match_remaining_balances(self, base_url, selenium):
-        """FR-003, FR-008, FR-009: the columns are the same five pay periods as
-        the Remaining Balances table, in the same order, with the same labels,
-        the same links and the same current-period emphasis."""
+    def test_7_no_other_pay_period_named(self, base_url, selenium):
+        """FR-009 and SC-004: the table shows one pay period, so it links to no
+        pay period and carries no current-period emphasis. This replaces the
+        test that asserted its headers matched the Remaining Balances table --
+        that coupling is exactly what GitHub issue #355 removes."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
-        balances = selenium.find_element(By.ID, 'pay-period-table')
-        accts = selenium.find_element(By.ID, 'pp-acct-table')
-        bal_heads = self.thead2elemlist(balances)
-        acct_heads = self.thead2elemlist(accts)
-        # the account table has a leading "Account" column; the rest match
-        assert acct_heads[0].get_attribute('innerHTML') == 'Account'
-        assert len(acct_heads) == len(bal_heads) + 1
-        for idx, bal in enumerate(bal_heads):
-            acct = acct_heads[idx + 1]
-            assert acct.get_attribute(
-                'innerHTML'
-            ) == bal.get_attribute('innerHTML')
-            assert acct.get_attribute(
-                'class'
-            ) == bal.get_attribute('class')
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        html = table.get_attribute('innerHTML')
+        assert '/payperiod/' not in html
+        assert 'class="info"' not in html
+        # no date anywhere in the table, in any cell
+        cells = self.thead2list(table) + self.tbody2textlist(table)[0]
+        for text in cells:
+            assert PAY_PERIOD_START_DATE.strftime('%Y-%m-%d') not in text
 
     def test_8_account_name_links(self, base_url, selenium):
-        """FR-010: clicking an account name opens that account."""
+        """FR-008: clicking an account name in the header opens that
+        account."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -3466,7 +3448,8 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
 
     def test_9_no_datatable_js(self, base_url, selenium):
         """The table is plain server-rendered markup: no DataTables wrapper is
-        added around it."""
+        added around it, and it stays inside the responsive wrapper that
+        absorbs its horizontal growth (FR-011)."""
         self.get(
             selenium,
             base_url + '/payperiod/' +
@@ -3474,6 +3457,22 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
         assert 'dataTable' not in (table.get_attribute('class') or '')
+        wrapper = table.find_element(By.XPATH, '..')
+        assert 'table-responsive' in wrapper.get_attribute('class')
+
+    def test_10_other_period_shows_its_own_totals(self, base_url, selenium):
+        """FR-001: the table follows the period being viewed. The next period
+        has only BankOne's 8.88; the previous has only CreditOne's 7.77."""
+        nxt = PAY_PERIOD_START_DATE + timedelta(days=14)
+        self.get(selenium, base_url + '/payperiod/' + nxt.strftime('%Y-%m-%d'))
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        assert self.thead2list(table) == ['BankOne', 'Total']
+        assert self.tbody2textlist(table) == [['$8.88', '$8.88']]
+        prev = PAY_PERIOD_START_DATE - timedelta(days=14)
+        self.get(selenium, base_url + '/payperiod/' + prev.strftime('%Y-%m-%d'))
+        table = selenium.find_element(By.ID, 'pp-acct-table')
+        assert self.thead2list(table) == ['CreditOne', 'Total']
+        assert self.tbody2textlist(table) == [['$7.77', '$7.77']]
 
 
 @pytest.mark.acceptance
@@ -3481,9 +3480,9 @@ class TestPayPeriodAccountTotals(AcceptanceHelper):
 @pytest.mark.incremental
 class TestPayPeriodAccountTotalsEmpty(AcceptanceHelper):
     """
-    With no transactions at all, the per-account totals table still renders,
-    with its headers and a totals row of zeros, and no account rows.
-    GitHub issue #213, spec edge case 1.
+    With no transactions at all, the per-account totals table still renders:
+    the Total column alone, over a zero, and no account columns.
+    GitHub issues #213 and #355, spec edge case 1.
     """
 
     def test_0_clean_db(self, dump_file_path):
@@ -3505,16 +3504,8 @@ class TestPayPeriodAccountTotalsEmpty(AcceptanceHelper):
             PAY_PERIOD_START_DATE.strftime('%Y-%m-%d')
         )
         table = selenium.find_element(By.ID, 'pp-acct-table')
-        assert self.inner_htmls(self.tbody2elemlist(table)) == [
-            [
-                '<strong>Total</strong>',
-                '$0.00',
-                '$0.00',
-                '$0.00',
-                '$0.00',
-                '$0.00'
-            ]
-        ]
+        assert self.inner_htmls([self.thead2elemlist(table)]) == [['Total']]
+        assert self.inner_htmls(self.tbody2elemlist(table)) == [['$0.00']]
 
 
 @pytest.mark.acceptance

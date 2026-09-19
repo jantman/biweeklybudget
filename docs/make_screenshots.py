@@ -231,10 +231,9 @@ class Screenshotter(object):
             'title': 'Single Pay Period View',
             'description': 'Shows a pay period (current in this example) '
                            'balances (income, allocated, spent, remaining), '
-                           'per-account transaction totals across the five '
-                           'periods shown at the top of the page, budgets and '
-                           'transactions (previous/manually-entered and '
-                           'scheduled).',
+                           'per-account transaction totals for that period, '
+                           'budgets and transactions '
+                           '(previous/manually-entered and scheduled).',
             'postshot_func': '_payperiod_postshot'
         },
         {
