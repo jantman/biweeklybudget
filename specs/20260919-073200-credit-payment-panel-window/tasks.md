@@ -142,8 +142,8 @@ full test gate, the changelog entry, and delivery.
 - [X] T026 Run `tox -e migrations`, redirecting to a scratchpad file, as a regression check. This change alters no model and adds no migration, so head must still match the models.
 - [X] T027 Run a lint pass (pycodestyle and pyflakes under the exceptions in `setup.cfg`/`pytest.ini`, `max-line-length` 100) over every changed Python file. Per project memory this needs a scratch venv in a worktree. Clean before commit.
 - [X] T028 Update this feature's spec artifacts to record progress and the delivered outcome, then commit the whole milestone together with the prefix `Credit Payment Panel Window - M3.{task}`.
-- [ ] T029 Push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-358-credit-payment-this-payment-covers` — per project memory this worktree's branch tracks `origin/master`, so a bare `git push` would push to master — and open a pull request describing the problem, the two changes, the decisions taken with the maintainer (spec D-1, D-1a, D-2, D-3), and the accepted cost of the boundary rule.
-- [ ] T030 Monitor the pull request's CI jobs to completion. When all are complete, run `/answer-reviews` to respond to review comments, and repeat until reviews from Claude state "No issues found" and any Copilot review recommends approval.
+- [X] T029 Push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-358-credit-payment-this-payment-covers` — per project memory this worktree's branch tracks `origin/master`, so a bare `git push` would push to master — and open a pull request describing the problem, the two changes, the decisions taken with the maintainer (spec D-1, D-1a, D-2, D-3), and the accepted cost of the boundary rule.
+- [X] T030 Monitor the pull request's CI jobs to completion. When all are complete, run `/answer-reviews` to respond to review comments, and repeat until reviews from Claude state "No issues found" and any Copilot review recommends approval.
 
 ---
 
