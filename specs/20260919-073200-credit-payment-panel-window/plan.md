@@ -198,3 +198,55 @@ Human approval is required to advance between milestones (Constitution I).
 | Existing acceptance tests collapse to asserting zeroes, hiding a regression | Anchor payment added to the fixture so every existing assertion keeps its original value and meaning — research.md D-5 works the arithmetic through case by case. |
 | Rounding drift makes rows stop summing to the totals line | Rollup summed server-side in `Decimal`; FR-014 tested with pinned numbers. |
 | Acceptance flakiness masking a real failure | Per project memory, the reconcile-drag, fuel-search and Plaid "Uncheck All" tests have known waits races; re-run in isolation before attributing a failure to this change. |
+
+## Delivery Record
+
+**Implemented 2026-09-19**, in one pass rather than three approval-gated milestones:
+the change is ~60 lines of Python and ~55 of JavaScript in two files, and M1 and M2 touch
+the same two functions. Splitting them would have meant two passes over the same code for
+no independent value. The milestone structure is retained above as the record of what was
+built and why.
+
+### What landed
+
+| Milestone | Where |
+|---|---|
+| M1 — window derivation | `CreditPaymentAttribution._effective_begin_date()`, `configured_begin_date`, `as_dict` |
+| M2 — capped table | `CREDIT_PAYMENT_MAX_PERIODS`, `_split_for_display()`, `rollup` in `as_dict`, `transModalCreditPaymentRollupHtml()` and `transModalCreditPaymentWindowHtml()` |
+| M3 — documentation | class docstring, `CREDIT_PAYMENT_BEGIN_DATE` docstring, two new `app_usage.rst` sections, `CHANGES.rst` |
+
+### Deviations from the plan
+
+1. **A third affected test class.** Planning found two acceptance classes asserting
+   numbers the new window changes; there is a third,
+   `TestCreditPaymentInfoAjax` in
+   `biweeklybudget/tests/acceptance/flaskapp/views/test_transactions.py`, which
+   research.md D-5 did not cover. Its fixture records its payment in the same pay period
+   as its charges, so the derived bound landed after the payment date and the window came
+   out empty — the FR-005b case. It was repaired the same way D-5 repairs the others: an
+   anchor payment two pay periods earlier, leaving all of its existing assertions at their
+   original values. Two tests (`test_12_window_keys`, `test_13_rollup_absent_...`) were
+   added there for the new response keys, per the contract.
+2. **`_split_for_display()` extracted as a static method** rather than written inline in
+   `_calculate()`. It makes the cap unit-testable against pinned numbers the way
+   `_consume()` already is, which is what the plan wanted from computing the rollup
+   server-side.
+3. **Invariant 1 in data-model.md was wrong** as first written
+   (`... == total_unpaid + total_attributed`). Each period dict's `outstanding` is
+   restored to its pre-attribution value and `total_unpaid` is likewise measured before
+   this payment, so the correct statement is `... == total_unpaid`. Corrected in
+   data-model.md and pinned by `test_04_cap_and_rollup`.
+
+### Test gate
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` (unit, incl. pycodestyle/pyflakes) | pass |
+| `tox -e acceptance` | pass |
+| `tox -e docs` | builds clean; the 155 warnings are pre-existing duplicate-jsdoc ones |
+| `tox -e migrations` | pass — no model changed, head still matches |
+
+Coverage added: 12 unit tests (`TestEffectiveBeginDate`, `TestSplitForDisplay`), 12
+attribution-level acceptance tests (`TestCreditPaymentWindow`), 2 endpoint tests and 5
+Selenium tests across `TestTransModalCreditPaymentPanel` and
+`TestTransModalCreditPaymentRollup`.

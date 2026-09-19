@@ -68,9 +68,10 @@ non-zero total; `None` otherwise.
 
 These hold for every result and are what the tests pin:
 
-1. `sum(p['outstanding'] for p in periods) + rollup['outstanding'] == total_unpaid + total_attributed`
-   (each period's `outstanding` includes what this payment covers, so the right-hand side
-   is the window's unpaid charges before this payment).
+1. `sum(p['outstanding'] for p in periods) + rollup['outstanding'] == total_unpaid`.
+   Each period's `outstanding` is restored to its pre-attribution value
+   (`outstanding + attributed`), and `total_unpaid` is likewise measured after prior
+   payments but before this one, so the two sides describe the same quantity.
 2. `sum(p['attributed'] for p in periods) + rollup['attributed'] == total_attributed`.
 3. `total_attributed + excess == amount`.
 4. `len(periods) <= CREDIT_PAYMENT_MAX_PERIODS`, always.

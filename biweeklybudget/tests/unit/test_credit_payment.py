@@ -35,9 +35,15 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import Mock, patch
 
-from biweeklybudget.credit_payment import CreditPaymentAttribution
+from biweeklybudget.credit_payment import (
+    CreditPaymentAttribution, CREDIT_PAYMENT_MAX_PERIODS
+)
+
+pbm = 'biweeklybudget.credit_payment'
 
 
 class TestConsume(object):
@@ -140,3 +146,202 @@ class TestConsume(object):
         )
         assert rem == Decimal('-50.00')
         assert p[0]['outstanding'] == Decimal('400.00')
+
+
+class TestEffectiveBeginDate(object):
+    """
+    Tests for the per-account lower bound on the charge window; GitHub issue
+    #358. The bound is the later of the configured begin date and the start of
+    the pay period *after* the one holding the earliest payment designated
+    toward the account.
+    """
+
+    def _attr(self, first_payment_date, configured, next_period_start=None):
+        """
+        Build a CreditPaymentAttribution far enough to call
+        ``_effective_begin_date()`` without touching a database, and return a
+        2-tuple of it and the mocked session, so the query can be inspected.
+        """
+        db = Mock()
+        db.query.return_value.filter.return_value.scalar.return_value = \
+            first_payment_date
+        a = CreditPaymentAttribution.__new__(CreditPaymentAttribution)
+        a._db = db
+        a.account = Mock(id=2)
+        a.payment_date = date(2017, 6, 21)
+        a.exclude_txn_id = None
+        a.configured_begin_date = configured
+        period = Mock()
+        period.next.start_date = next_period_start
+        with patch('%s.BiweeklyPayPeriod' % pbm) as m_pp:
+            m_pp.period_for_date.return_value = period
+            result = a._effective_begin_date()
+            calls = m_pp.period_for_date.call_args_list
+        return result, db, calls
+
+    def test_no_designated_payment_returns_configured(self):
+        """FR-004: with nothing to anchor the window, the configured date
+        stands and behaviour is exactly what it was before issue #358."""
+        result, _, calls = self._attr(None, date(2017, 1, 1))
+        assert result == date(2017, 1, 1)
+        # no pay period is looked up at all
+        assert calls == []
+
+    def test_derived_bound_wins_when_later(self):
+        """FR-002: the bound is the start of the period after the one holding
+        the earliest designated payment."""
+        result, _, calls = self._attr(
+            date(2017, 4, 20), date(2017, 1, 1),
+            next_period_start=date(2017, 4, 28)
+        )
+        assert result == date(2017, 4, 28)
+        assert len(calls) == 1
+        assert calls[0][0][0] == date(2017, 4, 20)
+
+    def test_configured_date_wins_when_later(self):
+        """FR-007: the configured date is a floor and is never undercut by a
+        derived bound that falls earlier."""
+        result, _, _ = self._attr(
+            date(2017, 4, 20), date(2017, 6, 1),
+            next_period_start=date(2017, 4, 28)
+        )
+        assert result == date(2017, 6, 1)
+
+    def test_equal_dates_are_stable(self):
+        """The two bounds coinciding is not a special case."""
+        result, _, _ = self._attr(
+            date(2017, 4, 20), date(2017, 4, 28),
+            next_period_start=date(2017, 4, 28)
+        )
+        assert result == date(2017, 4, 28)
+
+    def test_exclude_txn_id_is_not_applied(self):
+        """FR-005: the transaction being edited still anchors the window, so
+        the derivation query must not filter it out. Only two filter terms are
+        passed -- the account and the payment date -- and the query is never
+        narrowed further."""
+        db = Mock()
+        db.query.return_value.filter.return_value.scalar.return_value = None
+        a = CreditPaymentAttribution.__new__(CreditPaymentAttribution)
+        a._db = db
+        a.account = Mock(id=2)
+        a.payment_date = date(2017, 6, 21)
+        a.exclude_txn_id = 17
+        a.configured_begin_date = date(2017, 1, 1)
+        a._effective_begin_date()
+        # one filter() call carrying exactly the account and date bounds
+        assert db.query.return_value.filter.call_count == 1
+        assert len(db.query.return_value.filter.call_args[0]) == 2
+        # and no second filter chained off the first
+        assert db.query.return_value.filter.return_value.filter.called is False
+
+
+class TestSplitForDisplay(object):
+    """
+    Tests for the display cap; GitHub issue #358. Everything older than the
+    most recent :py:const:`~.CREDIT_PAYMENT_MAX_PERIODS` periods collapses into
+    one summary row. The cap is a display concern and must never change an
+    amount.
+    """
+
+    def _periods(self, count, attributed_through=0):
+        """
+        ``count`` period dicts, oldest first, each 100.00 outstanding. The
+        first ``attributed_through`` of them have their whole 100.00 covered by
+        the payment, which is what oldest-first attribution produces.
+        """
+        return [
+            {
+                'start_date': date(2017, 1, 6) + timedelta(days=14 * n),
+                'end_date': date(2017, 1, 19) + timedelta(days=14 * n),
+                'is_closed': True,
+                'outstanding': Decimal('100.00'),
+                'attributed': (
+                    Decimal('100.00') if n < attributed_through
+                    else Decimal('0.0')
+                )
+            }
+            for n in range(0, count)
+        ]
+
+    def test_empty(self):
+        periods, rollup = CreditPaymentAttribution._split_for_display([])
+        assert periods == []
+        assert rollup is None
+
+    def test_under_the_cap(self):
+        given = self._periods(CREDIT_PAYMENT_MAX_PERIODS - 1)
+        periods, rollup = CreditPaymentAttribution._split_for_display(given)
+        assert periods == given
+        assert rollup is None
+
+    def test_exactly_the_cap_is_not_collapsed(self):
+        """FR-013: the boundary is inclusive -- a window holding exactly the
+        cap's worth of periods renders as it did before issue #358."""
+        given = self._periods(CREDIT_PAYMENT_MAX_PERIODS)
+        periods, rollup = CreditPaymentAttribution._split_for_display(given)
+        assert periods == given
+        assert rollup is None
+
+    def test_one_over_the_cap(self):
+        """The smallest rollup there can be: one period."""
+        given = self._periods(CREDIT_PAYMENT_MAX_PERIODS + 1)
+        periods, rollup = CreditPaymentAttribution._split_for_display(given)
+        assert len(periods) == CREDIT_PAYMENT_MAX_PERIODS
+        assert periods == given[1:]
+        assert rollup == {
+            'count': 1,
+            'start_date': given[0]['start_date'],
+            'end_date': given[0]['end_date'],
+            'outstanding': Decimal('100.00'),
+            'attributed': Decimal('0.0')
+        }
+
+    def test_long_window_sums_and_dates(self):
+        """FR-012: the summary states how many periods it stands for, the
+        range they span, and both of their summed amounts."""
+        given = self._periods(20, attributed_through=4)
+        periods, rollup = CreditPaymentAttribution._split_for_display(given)
+        assert len(periods) == CREDIT_PAYMENT_MAX_PERIODS
+        assert periods == given[-CREDIT_PAYMENT_MAX_PERIODS:]
+        assert rollup['count'] == 20 - CREDIT_PAYMENT_MAX_PERIODS
+        assert rollup['start_date'] == given[0]['start_date']
+        assert rollup['end_date'] == given[13]['end_date']
+        assert rollup['outstanding'] == Decimal('1400.00')
+        # oldest-first attribution puts the whole payment on collapsed
+        # periods; the summary must say so rather than hide it
+        assert rollup['attributed'] == Decimal('400.00')
+
+    def test_amounts_are_conserved(self):
+        """FR-014: nothing is lost or double-counted by the split, for either
+        column, whatever the window's length."""
+        for count in [0, 1, CREDIT_PAYMENT_MAX_PERIODS, 7, 20, 213]:
+            given = self._periods(count, attributed_through=min(count, 9))
+            periods, rollup = CreditPaymentAttribution._split_for_display(
+                given
+            )
+            for key in ['outstanding', 'attributed']:
+                split_total = sum(
+                    [p[key] for p in periods], Decimal('0.0')
+                ) + (Decimal('0.0') if rollup is None else rollup[key])
+                assert split_total == sum(
+                    [p[key] for p in given], Decimal('0.0')
+                )
+
+    def test_decimal_arithmetic(self):
+        """Constitution "Financial correctness": the sums stay exact. Summed
+        as floats, 0.1 twelve times over is not 1.2."""
+        given = [
+            {
+                'start_date': date(2017, 1, 6) + timedelta(days=14 * n),
+                'end_date': date(2017, 1, 19) + timedelta(days=14 * n),
+                'is_closed': True,
+                'outstanding': Decimal('0.10'),
+                'attributed': Decimal('0.10')
+            }
+            for n in range(0, 18)
+        ]
+        _, rollup = CreditPaymentAttribution._split_for_display(given)
+        assert rollup['outstanding'] == Decimal('1.20')
+        assert rollup['attributed'] == Decimal('1.20')
+        assert isinstance(rollup['outstanding'], Decimal)

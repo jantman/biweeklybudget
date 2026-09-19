@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+* `Issue #358 <https://github.com/jantman/biweeklybudget/issues/358>`_ - The "This payment covers:" panel in the transaction modal now counts a card's unpaid charges from the first payment you recorded toward that card, instead of from ``CREDIT_PAYMENT_BEGIN_DATE``. On a long-running install the panel used to list every pay period since you started - over 200 rows in a modal - with an unpaid total unrelated to the card's balance.
+
+  * Payments made before 2.0.0 carry no card designation and are never subtracted, so the first payment you enter for each card after upgrading still shows the old, whole-history window and will warn that it exceeds your recorded charges. Save it anyway; every payment for that card afterwards is scoped to the periods since it. This is per-card and needs no configuration.
+  * ``CREDIT_PAYMENT_BEGIN_DATE`` keeps its name, default and meaning, but is now a floor beneath the per-card date rather than the whole window, so most installs no longer need to set it.
+  * The table shows at most six pay periods, collapsing anything older into one row giving their count, date range, unpaid charges and how much of the payment they absorbed. The panel also states the date it is counting from. See "What the payment panel tells you" in the Credit Card Payments documentation.
+
 * `Issue #354 <https://github.com/jantman/biweeklybudget/issues/354>`_ - Balances for credit cards linked through Plaid are now recorded as negative, the same as every other account where money is owed. Cash Position and the unallocated-funds notification therefore subtract what is owed on them, instead of adding it.
 
   * Plaid reports a credit card's balance as the positive amount owed, and that number was recorded as-is, so both figures were overstated by twice the balance owed - a card carrying $1,000 made $2,000 more look available than there was. Only the balance's sign was wrong; transaction amounts were not affected.

@@ -38,12 +38,21 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 from decimal import Decimal
 
+from sqlalchemy import func
+
 from biweeklybudget import settings
 from biweeklybudget.biweeklypayperiod import BiweeklyPayPeriod
 from biweeklybudget.models.transaction import Transaction
 from biweeklybudget.utils import dtnow, fmt_currency
 
 logger = logging.getLogger(__name__)
+
+#: Maximum number of pay periods the payment panel lists individually. Six
+#: biweekly periods is about three months -- enough to show a card carried
+#: across a few cycles, few enough to fit in a modal. Everything older is
+#: collapsed into a single summary row. This is a display cap, not a setting:
+#: it never changes an amount. See GitHub issue #358.
+CREDIT_PAYMENT_MAX_PERIODS = 6
 
 
 class CreditPaymentAttribution(object):
@@ -61,23 +70,40 @@ class CreditPaymentAttribution(object):
 
     The algorithm:
 
-    1. **Window.** Only transactions dated on or after
-       :py:attr:`biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE` and on or
-       before the payment date are considered. The lower bound exists because
-       payments recorded before this feature carry no
+    1. **Window.** Only transactions dated on or after the *effective* begin
+       date for this account, and on or before the payment date, are
+       considered. The effective begin date is derived per account by
+       :py:meth:`~._effective_begin_date`: the later of
+       :py:attr:`biweeklybudget.settings.CREDIT_PAYMENT_BEGIN_DATE` and the
+       start of the pay period following the one holding the earliest payment
+       designated toward this account. A lower bound is needed because payments
+       recorded before this feature carry no
        :py:attr:`~.Transaction.credit_payment_acct_id` and so are never
-       subtracted; without it a card's apparent unpaid total would drift upward
-       without limit. The upper bound exists because a payment cannot settle a
-       charge that had not yet been made when it was paid.
+       subtracted; without one a card's apparent unpaid total would drift
+       upward without limit. Deriving it per account is what makes the bound
+       actually bind for an install upgraded from before 2.0.0, whose whole
+       history would otherwise be counted as unpaid; the setting remains the
+       operator's floor. See GitHub issue #358. The upper bound exists because
+       a payment cannot settle a charge that had not yet been made when it was
+       paid.
     2. **Charges.** Every transaction recorded *against* the credit account
        inside the window, grouped by the pay period its date falls in, summed
        per period, oldest period first.
     3. **Prior payments.** Every transaction inside the window designated as a
-       payment toward this account, excluding the one being edited, summed.
+       payment toward this account, excluding the one being edited, summed. The
+       payment that anchors the window falls outside it by construction, so no
+       payment is ever subtracted twice.
     4. **Consume** those prior payments against the per-period charge totals,
        oldest first, leaving each period's outstanding charges.
     5. **Attribute** this payment against those remainders, oldest first, until
        it is exhausted. Whatever is left over is the excess.
+    6. **Cap** the result for display: the most recent
+       :py:const:`~.CREDIT_PAYMENT_MAX_PERIODS` periods are kept in
+       :py:attr:`~.periods` and everything older is collapsed into
+       :py:attr:`~.rollup`, a summary carrying the collapsed periods' count,
+       date range and summed amounts. This never changes an amount;
+       :py:attr:`~.total_unpaid`, :py:attr:`~.total_attributed` and
+       :py:attr:`~.excess` are computed over the whole window.
 
     Because both charges and prior payments are bounded the same way and
     consumed in date order, the result does not depend on the order in which
@@ -108,8 +134,10 @@ class CreditPaymentAttribution(object):
         self.payment_date = payment_date
         self.exclude_txn_id = exclude_txn_id
         self.payer_account_id = payer_account_id
-        self.begin_date = settings.CREDIT_PAYMENT_BEGIN_DATE
+        self.configured_begin_date = settings.CREDIT_PAYMENT_BEGIN_DATE
+        self.begin_date = self._effective_begin_date()
         self.periods = []
+        self.rollup = None
         self.total_unpaid = Decimal('0.0')
         self.total_attributed = Decimal('0.0')
         self.excess = Decimal('0.0')
@@ -119,6 +147,59 @@ class CreditPaymentAttribution(object):
         )
         self.warnings = []
         self._calculate()
+
+    def _effective_begin_date(self):
+        """
+        Return the date from which this account's charges are counted: the
+        later of :py:attr:`~.configured_begin_date` and the start of the pay
+        period *following* the one holding the earliest payment designated
+        toward this account.
+
+        Payments made before this feature existed carry no
+        :py:attr:`~.Transaction.credit_payment_acct_id`, so they are invisible
+        to :py:meth:`~._prior_payments` and nothing ever settles the charges
+        they paid. The first payment recorded toward a card is therefore taken
+        as the point from which the application's own records are complete:
+        everything charged up to and including that payment's pay period is
+        treated as settled, by that payment together with the untracked ones
+        before it.
+
+        The bound sits *after* that payment's period rather than at its start
+        so that the anchoring payment falls outside the window. Were it inside,
+        it would reduce the card's unpaid charges twice -- once implicitly,
+        because the charges it settled are excluded, and once explicitly, as a
+        prior payment -- and the surplus would spill forward into later periods,
+        understating unpaid charges on every payment thereafter. The cost is
+        that charges made later in that period, after the payment, fall outside
+        the window too.
+
+        Only payments dated on or before :py:attr:`~.payment_date` are
+        considered, so a payment recorded later cannot narrow the window for one
+        entered earlier. :py:attr:`~.exclude_txn_id` is deliberately *not*
+        applied: the transaction being edited still anchors the window, so the
+        panel shown while editing a payment matches the one shown when it was
+        entered.
+
+        An account with no designated payment at all gets
+        :py:attr:`~.configured_begin_date` unchanged, which is the behaviour
+        every account had before GitHub issue #358. The derived bound may fall
+        after the payment date, leaving the window empty; the configured date is
+        not reinstated in that case, as doing so would swing the panel back to
+        the whole of recorded history.
+
+        :return: the effective start of this account's charge window
+        :rtype: datetime.date
+        """
+        first = self._db.query(func.min(Transaction.date)).filter(
+            Transaction.credit_payment_acct_id.__eq__(self.account.id),
+            Transaction.date.__le__(self.payment_date)
+        ).scalar()
+        if first is None:
+            return self.configured_begin_date
+        return max(
+            self.configured_begin_date,
+            BiweeklyPayPeriod.period_for_date(first, self._db).next.start_date
+        )
 
     def _charges_by_period(self):
         """
@@ -194,6 +275,47 @@ class CreditPaymentAttribution(object):
             remaining -= applied
         return remaining
 
+    @staticmethod
+    def _split_for_display(periods):
+        """
+        Split an oldest-first list of rendered period dicts into the most
+        recent :py:const:`~.CREDIT_PAYMENT_MAX_PERIODS` of them and a summary
+        of everything older.
+
+        The cap exists so that the payment panel stays a modal-sized panel
+        however wide the window turns out to be; before GitHub issue #358 a
+        card with years of history produced a row per pay period. It is purely
+        a display concern and never changes an amount: the collapsed periods'
+        charges and attributions are carried in the summary, and
+        :py:attr:`~.total_unpaid`, :py:attr:`~.total_attributed` and
+        :py:attr:`~.excess` are computed over the whole window regardless.
+
+        Because attribution is oldest-first, the periods a payment actually
+        settles are the oldest ones -- exactly those this cap collapses -- so
+        the summary carries its own ``attributed`` total rather than hiding
+        where the payment went.
+
+        :param periods: rendered period dicts, oldest first
+        :type periods: list
+        :return: 2-tuple of (periods to render individually, summary dict or
+          None if nothing was collapsed)
+        :rtype: tuple
+        """
+        if len(periods) <= CREDIT_PAYMENT_MAX_PERIODS:
+            return periods, None
+        older = periods[:-CREDIT_PAYMENT_MAX_PERIODS]
+        return periods[-CREDIT_PAYMENT_MAX_PERIODS:], {
+            'count': len(older),
+            'start_date': older[0]['start_date'],
+            'end_date': older[-1]['end_date'],
+            'outstanding': sum(
+                [p['outstanding'] for p in older], Decimal('0.0')
+            ),
+            'attributed': sum(
+                [p['attributed'] for p in older], Decimal('0.0')
+            )
+        }
+
     def _calculate(self):
         today = dtnow().date()
         current = BiweeklyPayPeriod.period_for_date(today, self._db)
@@ -214,7 +336,7 @@ class CreditPaymentAttribution(object):
         remaining = self._consume(periods, self.amount, 'attributed')
         self.excess = remaining
         self.total_attributed = self.amount - remaining
-        self.periods = [
+        self.periods, self.rollup = self._split_for_display([
             {
                 'start_date': p['period'].start_date,
                 'end_date': p['period'].end_date,
@@ -224,7 +346,7 @@ class CreditPaymentAttribution(object):
             }
             for p in periods
             if p['outstanding'] + p['attributed'] > Decimal('0.0')
-        ]
+        ])
         self._make_warnings()
 
     def _make_warnings(self):
@@ -261,7 +383,9 @@ class CreditPaymentAttribution(object):
             'account_name': self.account.name,
             'amount': self.amount,
             'begin_date': self.begin_date,
+            'configured_begin_date': self.configured_begin_date,
             'periods': self.periods,
+            'rollup': self.rollup,
             'total_unpaid': self.total_unpaid,
             'total_attributed': self.total_attributed,
             'excess': self.excess,
