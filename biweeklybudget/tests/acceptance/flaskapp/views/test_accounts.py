@@ -2128,3 +2128,182 @@ class TestAccountsMissingData(AcceptanceHelper):
         assert selenium.find_element(
             By.ID, 'account_frm_active'
         ).is_selected() is False
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+@pytest.mark.incremental
+class TestAccountModalOmitFromGraphs(AcceptanceHelper):
+    """
+    GitHub issue #357: the "Omit from graphs?" checkbox on the Account modal.
+
+    The setting is only useful if it survives a round trip, so this walks the
+    whole of one: read the unticked state, tick it, save, read it back, untick
+    it, save, read it back. It also checks the two states the checkbox can be
+    wrong in without anything else noticing -- a save that does not touch it
+    must leave it alone, and a brand new Account must start unticked.
+    """
+
+    def test_01_verify_db(self, testdb):
+        acct = testdb.query(Account).get(1)
+        assert acct is not None
+        assert acct.name == 'BankOne'
+        assert acct.omit_from_graphs is False
+
+    def test_02_modal_shows_it_unticked(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Edit Account 1'
+        assert selenium.find_element(
+            By.ID, 'account_frm_omit_from_graphs'
+        ).is_selected() is False
+
+    def test_03_tick_it_and_save(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        selenium.find_element(By.ID, 'account_frm_omit_from_graphs').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        assert x.text.strip() == 'Successfully saved Account 1 in database.'
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_04_verify_db(self, testdb):
+        acct = testdb.query(Account).get(1)
+        assert acct.omit_from_graphs is True
+        # and nothing else about the Account moved
+        assert acct.name == 'BankOne'
+        assert acct.is_active is True
+        assert acct.reconcile_trans is True
+        assert acct.acct_type == AcctType.Bank
+
+    def test_05_modal_shows_it_ticked(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'account_frm_omit_from_graphs'
+        ).is_selected() is True
+
+    def test_06_saving_without_touching_it_leaves_it_alone(
+        self, base_url, selenium
+    ):
+        """
+        The failure this guards against is a handler that reads the field only
+        when it changed, or a form that does not submit an unchanged checkbox:
+        either would silently clear the flag on the next unrelated edit.
+        """
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        selenium.find_element(By.ID, 'account_frm_description').send_keys('X')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_07_verify_db(self, testdb):
+        acct = testdb.query(Account).get(1)
+        assert acct.omit_from_graphs is True
+        assert acct.description == 'First Bank AccountX'
+
+    def test_08_untick_it_and_save(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts/1')
+        modal, title, body = self.get_modal_parts(selenium)
+        self.assert_modal_displayed(modal, title, body)
+        assert selenium.find_element(
+            By.ID, 'account_frm_omit_from_graphs'
+        ).is_selected() is True
+        selenium.find_element(By.ID, 'account_frm_omit_from_graphs').click()
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_09_verify_db(self, testdb):
+        acct = testdb.query(Account).get(1)
+        assert acct.omit_from_graphs is False
+
+    def test_10_add_account_modal_starts_unticked(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element(By.ID, 'btn_add_acct_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        assert title.text == 'Add New Account'
+        assert selenium.find_element(
+            By.ID, 'account_frm_omit_from_graphs'
+        ).is_selected() is False
+
+    def test_11_new_account_is_not_omitted(self, base_url, selenium):
+        self.get(selenium, base_url + '/accounts')
+        link = selenium.find_element(By.ID, 'btn_add_acct_bank')
+        modal, title, body = self.try_click_and_get_modal(selenium, link)
+        self.assert_modal_displayed(modal, title, body)
+        selenium.find_element(By.ID, 'account_frm_name').send_keys('NewAcct357')
+        selenium.find_element(By.ID, 'modalSaveButton').click()
+        self.wait_for_jquery_done(selenium)
+        _, _, body = self.get_modal_parts(selenium)
+        x = body.find_elements(By.TAG_NAME, 'div')[0]
+        assert 'alert-success' in x.get_attribute('class')
+        selenium.find_element(By.ID, 'modalCloseButton').click()
+
+    def test_12_verify_db(self, testdb):
+        acct = testdb.query(Account).filter(
+            Account.name == 'NewAcct357'
+        ).one()
+        assert acct.omit_from_graphs is False
+        assert acct.is_active is True
+
+    def test_13_ajax_endpoint_reports_it(self, base_url):
+        """
+        The setting is readable through the same endpoint the modal reads, so
+        anything else driving the Account form gets it too (FR-008).
+        """
+        acct = requests.get(base_url + '/ajax/account/1').json()
+        assert acct['omit_from_graphs'] is False
+
+    def test_14_post_without_the_field_still_succeeds(self, base_url, testdb):
+        """
+        The field is documented as optional, so a POST that does not know
+        about it -- an external script written against an older version --
+        must still save, rather than failing with a KeyError on the new key.
+        An absent checkbox means unchecked, which is what a browser sends too.
+        """
+        acct = testdb.query(Account).get(2)
+        r = requests.post(
+            base_url + '/forms/account',
+            json={
+                'id': '2',
+                'name': acct.name,
+                'description': acct.description or '',
+                'acct_type': 'Bank',
+                'negate_ofx_amounts': True,
+                'reconcile_trans': True,
+                're_interest_charge': '',
+                're_interest_paid': '',
+                're_payment': '',
+                're_late_fee': '',
+                're_other_fee': '',
+                'credit_limit': '',
+                'apr': '',
+                'prime_rate_margin': '',
+                'is_active': True,
+                'interest_class_name': 'AdbCompoundedDaily',
+                'min_payment_class_name': 'MinPaymentAmEx',
+                'plaid_account': 'null,null'
+            }
+        )
+        assert r.status_code == 200
+        assert r.json()['success'] is True
+
+    def test_15_verify_db(self, testdb):
+        acct = testdb.query(Account).get(2)
+        assert acct.omit_from_graphs is False

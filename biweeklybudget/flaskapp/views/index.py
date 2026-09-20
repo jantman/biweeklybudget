@@ -247,11 +247,27 @@ class AcctBalanaceChartView(MethodView):
     reading this endpoint keep working. ``days=0`` reproduces the previous
     full-history response, subject to the point cap below.
 
-    Only active Accounts are returned. An Account that has been deactivated
-    is plotted nowhere -- not in ``keys``, not in any row of ``data``, and not
-    as a carried-forward value -- while its stored balance records are kept
-    untouched, so making it active again restores its line in full. See GitHub
-    issue #356.
+    Only *charted* Accounts are returned, an Account being charted when it is
+    both active and not marked :py:attr:`~.Account.omit_from_graphs`. An
+    Account failing either test is plotted nowhere -- not in ``keys``, not in
+    any row of ``data``, and not as a carried-forward value -- while its stored
+    balance records are kept untouched, so clearing whichever flag excluded it
+    restores its line in full, including the history recorded while it was
+    excluded.
+
+    The two exclusions are deliberately one mechanism rather than two. They
+    compose at the ``accounts`` map built below, so an Account that is both
+    inactive and omitted is excluded once, with no special case. Deactivation
+    (GitHub issue #356) says the user is finished with the account; omitting
+    it (GitHub issue #357) says only that its line makes the chart harder to
+    read, which is the case for an account -- a mortgage, typically -- whose
+    balance is large enough to set the vertical scale for every other line.
+
+    Note that :py:attr:`~.Account.omit_from_graphs` is ``NULL``, not ``False``,
+    for every Account that predates the column, and ``NULL`` means "not
+    omitted". The filter below is therefore spelled ``isnot(True)``: written
+    as ``== False`` it would match no pre-upgrade row, and every Account would
+    vanish from the chart the first time the page was loaded after upgrading.
 
     It guarantees that:
 
@@ -262,9 +278,9 @@ class AcctBalanaceChartView(MethodView):
     * when the window holds no more dates than that cap, every one of them is
       returned and nothing is sampled away;
     * the most recent date in the window is always the last element;
-    * the set of dates is unaffected by which accounts are active: a date whose
-      only balance record belongs to an inactive account is still returned,
-      carrying the other accounts' forward-filled values;
+    * the set of dates is unaffected by which accounts are charted: a date
+      whose only balance record belongs to an excluded account is still
+      returned, carrying the other accounts' forward-filled values;
     * every account keeps a continuous line: an account with no balance
       recorded inside the window carries forward its most recent value from
       *before* the window rather than being reported as absent or zero;
@@ -276,7 +292,11 @@ class AcctBalanaceChartView(MethodView):
     def get(self):
         accounts = {
             x.id: x.name
-            for x in Account.active_accounts(db_session).all()
+            for x in Account.active_accounts(db_session).filter(
+                # isnot(True), not __eq__(False): NULL means "not omitted".
+                # See this class's docstring and GitHub issue #357.
+                Account.omit_from_graphs.isnot(True)
+            ).all()
         }
         acct_names = accounts.values()
         days = parse_chart_days(
@@ -303,12 +323,13 @@ class AcctBalanaceChartView(MethodView):
             # round trips, and it was the dominant cost of this endpoint.
             name = accounts.get(bal.account_id)
             if name is None:
-                # An inactive Account. Its balance records are kept -- nothing
-                # here deletes them, and reactivating the account restores its
-                # line in full -- but it is not plotted (GitHub issue #356).
+                # An Account that is not charted: inactive (GitHub issue #356)
+                # or marked omit_from_graphs (GitHub issue #357). Its balance
+                # records are kept -- nothing here deletes them, and clearing
+                # the flag restores its line in full -- but it is not plotted.
                 # The row is skipped rather than the query being narrowed to
-                # active accounts, so that a date whose only balance record
-                # belongs to an inactive account still appears; narrowing the
+                # charted accounts, so that a date whose only balance record
+                # belongs to an excluded account still appears; narrowing the
                 # query would drop it from the chart's x axis.
                 continue
             if bal.ledger is None:
