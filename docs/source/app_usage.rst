@@ -445,7 +445,10 @@ range, and a hint above it lists the controls:
   greyed out when there is nothing to reset.
 * **Click a name in the legend** below the chart to hide that line, and click
   again to bring it back. This is useful when one large account or budget sets
-  the scale for all the others.
+  the scale for all the others. The hiding lasts for the current visit only; to
+  keep an account off the Account Balances chart for good, see
+  :ref:`app_usage.account_balance_chart.omit`, and for a budget, see
+  :ref:`app_usage.spending_charts`.
 
 Whenever the visible dates or lines change, the vertical axis rescales to fit
 just what is shown. A chart cannot be zoomed narrower than the widest gap
@@ -518,6 +521,38 @@ very different statement from "nothing new has been recorded".
 An account whose data begins part-way through the selected range is not treated
 this way — its line simply starts where its data starts, rather than being
 extended back over dates when the account had no recorded balance.
+
+.. _app_usage.account_balance_chart.omit:
+
+Leaving an account out
+++++++++++++++++++++++
+
+One account can make the chart useless for all the others. A mortgage balance is
+often two orders of magnitude larger than a checking account, and because every
+line shares one vertical axis, the mortgage sets the scale and everything else is
+squashed into a flat band along the bottom.
+
+Clicking the account in the legend hides it, but only until the page is reloaded.
+To keep it off the chart for good, open the account from the Accounts page and
+tick **Omit from graphs?**, the same setting the Budgets page offers for budgets.
+
+An omitted account is left out of the chart entirely: it has no line, no legend
+entry, and its balances are not sent to the browser at all. The remaining accounts
+are then rescaled to fill the chart, which is the point of the setting. Untick it
+and the line comes back in full, including the balances recorded while it was
+omitted — nothing is deleted and nothing is lost.
+
+**Only the chart is affected.** The account is still listed on the Accounts page
+with its balance, still counted in every total on the dashboard, the Cash Position
+page and every pay period, still offered in every account dropdown, and still
+reconciled and updated as before. This is what makes the setting different from
+deactivating the account: deactivating says you are finished with it, whereas
+omitting it from graphs says only that its line makes the chart harder to read.
+
+The dates on the chart do not change when an account is omitted. A date that is on
+the chart only because the omitted account recorded a balance that day is still
+plotted, carrying the other accounts' values forward, so omitting an account never
+puts a gap in the timeline.
 
 .. _app_usage.spending_charts:
 

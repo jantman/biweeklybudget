@@ -386,6 +386,7 @@ Create a new :py:class:`~.Account` or update an existing one. Handled by :py:cla
 - ``description`` *(string, optional)* - Account description.
 - ``acct_type`` *(string, required)* - Account type: ``Bank``, ``Credit``, or ``Investment``.
 - ``is_active`` *(boolean, optional)* - Whether the account is active.
+- ``omit_from_graphs`` *(boolean, optional)* - Whether to leave this account off charts that plot accounts, currently the Account Balances chart on the index page. Presentation only: it affects no balance, total or account picker.
 - ``credit_limit`` *(decimal, optional)* - Credit limit (for credit accounts).
 - ``apr`` *(decimal, optional)* - Annual Percentage Rate (for credit accounts). Values greater than 1 are converted to a decimal (e.g. ``22.5`` becomes ``0.225``).
 - ``prime_rate_margin`` *(decimal, optional)* - Prime rate margin (for credit accounts).
@@ -801,8 +802,8 @@ has a value on every returned date. Handled by
 
 **Response:**
 
-- ``data`` *(array)* - One object per date, ascending. Each has a ``date`` key in ``YYYY-MM-DD`` format plus one key per account name, whose value is that account's balance on that date, or ``null`` if the account had no recorded balance at or before it. A ``NULL`` ledger balance is reported as ``0.0``.
-- ``keys`` *(array)* - Account names, sorted. Includes inactive accounts.
+- ``data`` *(array)* - One object per date, ascending. Each has a ``date`` key in ``YYYY-MM-DD`` format plus one key per charted account name, whose value is that account's balance on that date, or ``null`` if the account had no recorded balance at or before it. A ``NULL`` ledger balance is reported as ``0.0``.
+- ``keys`` *(array)* - The charted account names, sorted. An account is charted when it is both active and not marked ``omit_from_graphs``; an account failing either test appears in neither ``keys`` nor any object in ``data``. The set of dates returned is unaffected either way.
 
 .. code-block:: json
 
