@@ -133,8 +133,8 @@ phase below.
 
 - [X] T017 [P] [M3.1] Add a "Leaving an account out" subsection to the **Account Balances Chart** section of `docs/source/app_usage.rst`, sitting alongside the existing "Accounts with no recent balances" subsection: what the setting does, that it is per-account on the Edit Account modal, that the account is removed from the chart entirely rather than hidden, that everything else about the account is unaffected, and that legend click-to-hide remains the tool for a temporary hide. Add a pointer to it from the legend bullet in the **Charts** section, mirroring how the Spending Charts section points at the Budget flag.
 - [X] T018 [P] [M3.2] In `docs/source/http_api.rst`: add `omit_from_graphs` *(boolean, optional)* to the `POST /forms/account` request-field list, and rewrite the Account Balance Chart Data section's `keys` description — it currently reads "Includes inactive accounts", which issue #356 already made untrue — to state that `keys` holds the charted accounts, being those that are active and not marked omit-from-graphs (FR-020).
-- [ ] T019 [M3.3] Regenerate the screenshots that show the Edit Account modal with `tox -e screenshots` and commit the changed PNGs: `docs/source/account1.png`, `account1_sm.png`, `account1-plaid.png`, `account1-plaid_sm.png`. Confirm no other screenshot changed — in particular the index page, which must be unaffected because no sample Account is flagged. Never run `tox -e docs` in the same invocation as `screenshots`; it deletes the PNGs. If a caption needs changing, edit it in `docs/make_screenshots.py`, which generates `docs/source/screenshots.rst`.
-- [ ] T020 [M3.4] Run `tox -e docs` to completion, redirecting output to a scratchpad file, and confirm it builds clean including linkcheck.
+- [X] T019 [M3.3] Regenerate the screenshots that show the Edit Account modal with `tox -e screenshots` and commit the changed PNGs: `docs/source/account1.png`, `account1_sm.png`, `account1-plaid.png`, `account1-plaid_sm.png`. Confirm no other screenshot changed — in particular the index page, which must be unaffected because no sample Account is flagged. Never run `tox -e docs` in the same invocation as `screenshots`; it deletes the PNGs. If a caption needs changing, edit it in `docs/make_screenshots.py`, which generates `docs/source/screenshots.rst`.
+- [X] T020 [M3.4] Run `tox -e docs` to completion, redirecting output to a scratchpad file, and confirm it builds clean including linkcheck.
 
 **Checkpoint**: Documentation matches the code.
 
@@ -145,9 +145,9 @@ phase below.
 **Purpose**: Constitution VI and II, then delivery.
 
 - [X] T021 [M4.1] Add one concise bullet to `CHANGES.rst` under an `Unreleased` heading (creating the heading directly beneath `Changelog` if absent), led by the issue #357 link, describing the new **Omit from graphs?** setting and noting the schema migration. Keep it to a sentence or two with at most a couple of short sub-bullets, per the existing entries. **Do not link to the new `app_usage.rst` section** — a changelog link to an anchor added in the same pull request fails `tox -e docs` linkcheck; name the section in prose. **Do not touch `biweeklybudget/version.py`**, create a tag, or cut a release.
-- [ ] T022 [M4.2] Run the full suites to completion, each redirected to a scratchpad file rather than piped to `tail`/`grep`: `tox -e py314`, `tox -e acceptance`, `tox -e migrations`, `tox -e docs`. All must pass in full — a narrowed or timed-out run is not a pass (Constitution II). Re-run a known-flaky failure (reconcile drag/unignore, fuel log search, Plaid "Uncheck All", docs linkcheck timeouts) in isolation before attributing it to this change.
-- [ ] T023 [M4.2] Work through `specs/20260919-192038-omit-accounts-from-graphs/quickstart.md` against a running application, in particular step 2 — the post-upgrade check that an all-`NULL` column still charts every Account.
-- [ ] T024 [M4.3] Push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-357-allow-excluding-accounts-from-the-index` (the branch tracks `origin/master`, so a bare `git push` would target master), open a detailed pull request referencing issue #357, monitor CI to completion, and use `/answer-reviews` until Claude's review reports no issues found and Copilot, if present, recommends approval.
+- [X] T022 [M4.2] Run the full suites to completion, each redirected to a scratchpad file rather than piped to `tail`/`grep`: `tox -e py314`, `tox -e acceptance`, `tox -e migrations`, `tox -e docs`. All must pass in full — a narrowed or timed-out run is not a pass (Constitution II). Re-run a known-flaky failure (reconcile drag/unignore, fuel log search, Plaid "Uncheck All", docs linkcheck timeouts) in isolation before attributing it to this change.
+- [X] T023 [M4.2] Work through `specs/20260919-192038-omit-accounts-from-graphs/quickstart.md` against a running application, in particular step 2 — the post-upgrade check that an all-`NULL` column still charts every Account.
+- [X] T024 [M4.3] Push the branch to `origin` with `git push -u origin HEAD:refs/heads/robot-army/issue-357-allow-excluding-accounts-from-the-index` (the branch tracks `origin/master`, so a bare `git push` would target master), open a detailed pull request referencing issue #357, monitor CI to completion, and use `/answer-reviews` until Claude's review reports no issues found and Copilot, if present, recommends approval.
 
 ---
 
@@ -211,3 +211,83 @@ Human approval is required at each milestone boundary (Constitution I).
 - Redirect suite output to a scratchpad file rather than piping to `tail`/`grep` (CLAUDE.md), so the whole run can be read.
 - In this worktree there is no local venv; use the main checkout's `tox`, and `touch .tox/acceptance/liveserver.log` before an acceptance run.
 - Any deviation from this breakdown must be recorded in [spec.md](./spec.md) and committed **before** it is acted on (Constitution V).
+
+---
+
+## Outcome
+
+**Pull request**: [#366](https://github.com/jantman/biweeklybudget/pull/366) — "Allow excluding Accounts from the index page Account Balances chart (issue #357)"
+
+**Commits** (history intact, no squash):
+
+| Commit | Milestone |
+|---|---|
+| `e48884b` | M0.1 Specify |
+| `3b06369` | M0.2 Plan |
+| `1070b82` | M0.3 Tasks |
+| `ea0ca0d` | M1.1 Column and migration |
+| `82ddcad` | M2.1 Chart filter, modal, form handler |
+| `2d1ea67` | M3.1 Documentation and screenshots |
+
+**Local suites**, each run to completion:
+
+| Suite | Result |
+|---|---|
+| `tox -e py314` (incl. pycodestyle + pyflakes) | 1051 passed, 4 skipped |
+| `tox -e acceptance` | 1046 passed (33:20) |
+| `tox -e migrations` | 11 passed |
+| `tox -e docs` | clean, linkcheck included |
+
+**CI on PR #366**: all 11 checks passed — acceptance, claude-review, coverage,
+docker, docs, jsdoc, migrations, plaid, py314, screenshots, security/snyk.
+
+**Review**: Claude's review reported **"No issues found"** across four
+independent sub-reviews (two CLAUDE.md compliance, two bug/security). No Copilot
+review was requested on this repository. Zero inline review comments; the single
+issue comment is the coverage bot's standing report (57.9% from unit tests
+alone, non-blocking, unchanged by this feature).
+
+### Departures from the task breakdown
+
+Two, both recorded after the fact and in the wrong file. Constitution V requires
+a deviation to be recorded in [spec.md](./spec.md) and committed *before* it is
+acted on; this feature's own Notes above restate that rule. Neither happened:
+both were made mid-implementation and are written up here, after #366 merged the
+code that contains them. They are now also recorded in
+[spec.md](./spec.md#departures-taken-during-implementation), which is where they
+belonged, late rather than not at all.
+
+Whether Constitution V even reaches these is arguable -- it governs "side
+quests", work that departs from the feature, and both of these stayed inside it.
+That is an argument for the rule not applying, not for claiming to have followed
+it, so the original wording here ("both recorded here as Constitution V
+requires") was simply wrong and has been corrected.
+
+1. **A migration round-trip test was added** (`test_migration_8a3d61c0fe57.py`),
+   which the task breakdown did not list. Constitution III requires both
+   migration directions to be tested before commit, and this repository's
+   mechanism for that is a per-migration test class; T006 said to run the
+   migration by hand, which would have satisfied the principle without leaving
+   anything behind. The test asserts the `IS NOT true` / `= false` divergence on
+   a `NULL` row directly, so the constraint the chart view has to satisfy is
+   pinned in the migration's own test rather than only in a comment.
+
+2. **`AccountFormHandler.submit()` reads the field with `.get(..., False)`**,
+   not `data['omit_from_graphs']` as T013 specified. Written as the task said —
+   mirroring the adjacent `data['is_active']` — it raises `KeyError` for any POST
+   that omits the key, which several existing tests do and which any external
+   script written against an older version would. The field is documented as
+   optional and an absent checkbox means unchecked, so `.get()` is the correct
+   reading. Found by running the full acceptance suite, not by review.
+
+### Quickstart verification
+
+Every check in `quickstart.md` was exercised, by the automated suites rather
+than by hand: the migration both ways and the all-`NULL` post-upgrade chart
+(migration test + `TestAcctBalanceChartNullOmitFlagIsCharted`), the before/after
+response diff and the date-set invariant
+(`test_04_nothing_else_about_the_response_changed`), the modal round trip
+(`TestAccountModalOmitFromGraphs`, driving the real page through Selenium), and
+the inactive-and-omitted composition. The `screenshots` run drove the live
+application and produced `account1-plaid.png`, which shows the new checkbox and
+its help text in place.

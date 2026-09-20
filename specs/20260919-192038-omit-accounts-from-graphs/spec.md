@@ -215,6 +215,36 @@ request the chart data. Every account that was plotted before is plotted after.
 - **SC-006**: The complete unit and acceptance suites pass, with new tests covering the endpoint's exclusion of flagged Accounts and the modal's read/write of the checkbox, and with no existing assertion weakened or removed to accommodate a failure.
 - **SC-007**: The `docs` suite builds without errors, and the Account Balances chart, Accounts page and HTTP API documentation each describe the new setting.
 
+## Departures taken during implementation
+
+Recorded late, and that is itself the first thing to note. Constitution V
+requires a deviation to be recorded here and committed *before* it is acted on.
+Both of these were made mid-implementation and written up afterwards, once
+[#366](https://github.com/jantman/biweeklybudget/pull/366) had already merged
+the code containing them. Whether Constitution V reaches them at all is
+arguable, since it governs "side quests" that depart from the feature and both
+of these stayed inside it -- but that is a reason the rule may not apply, not a
+reason to have claimed it was followed.
+
+1. **A migration round-trip test was added**
+   (`biweeklybudget/tests/migrations/test_migration_8a3d61c0fe57.py`), which the
+   task breakdown did not call for. Constitution III requires both migration
+   directions to be tested before commit, and this repository's mechanism for
+   that is a per-migration test class; the task as written would have satisfied
+   the principle by running the migration by hand, leaving nothing behind. The
+   test also asserts the `IS NOT true` / `= false` divergence on a `NULL` row
+   directly, so the constraint the chart view has to satisfy is pinned in the
+   migration's own test rather than only in a comment.
+
+2. **`AccountFormHandler.submit()` reads the new field with
+   `data.get('omit_from_graphs', False)`**, not `data['omit_from_graphs']` as
+   the task specified. Written as specified -- mirroring the adjacent
+   `data['is_active']` -- it raises `KeyError` for any POST that omits the key,
+   which several existing tests do and any external script written against an
+   older version would. FR-008 and the HTTP contract both describe the field as
+   optional, so `.get()` is what they require. Found by running the full
+   acceptance suite, not by review.
+
 ## Assumptions
 
 - **The Budget flag is the model, deliberately.** The issue asks for "an Account-level equivalent" of `Budget.omit_from_graphs`, and the maintainer confirmed the same name and the same modal label. This buys a user one concept rather than two, and a reviewer one pattern rather than two.
