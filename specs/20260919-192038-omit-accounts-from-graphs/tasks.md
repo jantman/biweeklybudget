@@ -247,9 +247,21 @@ review was requested on this repository. Zero inline review comments; the single
 issue comment is the coverage bot's standing report (57.9% from unit tests
 alone, non-blocking, unchanged by this feature).
 
-### Deviations from the plan
+### Departures from the task breakdown
 
-Two, both recorded here as Constitution V requires.
+Two, both recorded after the fact and in the wrong file. Constitution V requires
+a deviation to be recorded in [spec.md](./spec.md) and committed *before* it is
+acted on; this feature's own Notes above restate that rule. Neither happened:
+both were made mid-implementation and are written up here, after #366 merged the
+code that contains them. They are now also recorded in
+[spec.md](./spec.md#departures-taken-during-implementation), which is where they
+belonged, late rather than not at all.
+
+Whether Constitution V even reaches these is arguable -- it governs "side
+quests", work that departs from the feature, and both of these stayed inside it.
+That is an argument for the rule not applying, not for claiming to have followed
+it, so the original wording here ("both recorded here as Constitution V
+requires") was simply wrong and has been corrected.
 
 1. **A migration round-trip test was added** (`test_migration_8a3d61c0fe57.py`),
    which the task breakdown did not list. Constitution III requires both
