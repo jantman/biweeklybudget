@@ -60,9 +60,39 @@ File: ``biweeklybudget/flaskapp/static/js/transactions_modal.js``
 
    Render the HTML for the credit payment information panel.
 
+   At most ``CREDIT_PAYMENT_MAX_PERIODS`` pay periods are listed individually;
+   anything older arrives in the response's ``rollup`` key and is rendered as a
+   single summary row at the head of the table, where those periods would have
+   been. See GitHub issue #358.
+
    :param data: the ``/ajax/credit-payment-info`` response
    :type data: **Object**
    :returns: **String** -- HTML for the panel
+.. js:function:: ................................l(rollup)
+
+   Render the summary row standing for the pay periods older than the display
+   cap, or null when nothing was collapsed.
+
+   Attribution is oldest-first, so the periods a payment actually settles are
+   the oldest ones - exactly those this row collapses. It therefore carries the
+   collapsed periods' covered amount as well as their unpaid charges, and is
+   emphasised when that amount is non-zero, so a payment landing on old charges
+   is stated rather than hidden. See GitHub issue #358.
+
+   :param rollup: the ``rollup`` key of the response, or null
+   :type rollup: **Object**
+   :returns: **Object** -- jQuery row element, or null
+.. js:function:: ................................l(data)
+
+   Render the "counted from" line naming the start of the charge window.
+
+   The window is derived per account - it begins after the first payment
+   recorded toward the card - so the panel says which window its figures
+   describe rather than leaving it to be inferred. See GitHub issue #358.
+
+   :param data: the ``/ajax/credit-payment-info`` response
+   :type data: **Object**
+   :returns: **Object** -- jQuery paragraph element
 .. js:function:: .......................w(msg)
 
    Ajax callback to fill in the modalDiv with data on a Transaction.
