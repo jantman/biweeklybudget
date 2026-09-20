@@ -147,6 +147,16 @@ class Account(Base, ModelAsDict):
     #: whether or not the account is active and can be used, or historical
     is_active = Column(Boolean, default=True)
 
+    #: Whether to leave this Account out of charts that plot accounts. Today
+    #: that is the Account Balances chart on the index page: a marked Account
+    #: is not plotted and gets no legend entry, so that one very large balance
+    #: -- a mortgage, say -- stops setting the vertical scale for every other
+    #: line. Nothing else about the Account changes; it is still listed, still
+    #: offered in every picker, and still counted in every total. NULL, which
+    #: is what every row holds until the user sets this, means "not omitted".
+    #: See GitHub issue #357.
+    omit_from_graphs = Column(Boolean, default=False)
+
     #: Relationship to all :py:class:`~.OFXStatement` for this Account
     all_statements = relationship(
         'OFXStatement', order_by='OFXStatement.as_of'

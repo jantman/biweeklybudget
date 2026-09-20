@@ -16,6 +16,12 @@ Unreleased
   * The Account filters above the Transactions and OFX Transactions tables still offer inactive Accounts, so historical data stays searchable, and the Accounts page still lists them.
   * Nothing is deleted: an inactive Account's balance history is retained, and re-activating it restores its chart line and its place in every dropdown.
 
+* `Issue #357 <https://github.com/jantman/biweeklybudget/issues/357>`_ - Accounts can now be left off the dashboard's Account Balances chart, with a new "Omit from graphs?" checkbox on the Add/Edit Account modal. One large balance - a mortgage, typically - used to set the chart's vertical scale and flatten every other account into a band along the bottom, and hiding it from the legend lasted only until the page was reloaded.
+
+  * An omitted Account is left out of the chart data entirely: no line, no legend entry, and its balances are not sent to the browser. Untick the setting and its line returns in full, including the balances recorded while it was omitted.
+  * Only the chart is affected. The Account is still listed, still counted in every total, still offered in every dropdown, and still reconciled and updated as before. See "Leaving an account out" in the Account Balances Chart documentation.
+  * Requires a schema migration, which adds the column as unset; no existing Account is omitted by the upgrade.
+
 * `Issue #358 <https://github.com/jantman/biweeklybudget/issues/358>`_ - The "This payment covers:" panel in the transaction modal now counts a card's unpaid charges from the first payment you recorded toward that card, instead of from ``CREDIT_PAYMENT_BEGIN_DATE``. On a long-running install the panel used to list every pay period since you started - over 200 rows in a modal - with an unpaid total unrelated to the card's balance.
 
   * Payments made before 2.0.0 carry no card designation and are never subtracted, so the first payment you enter for each card after upgrading still shows the old, whole-history window and will warn that it exceeds your recorded charges. Save it anyway; every payment for that card afterwards is scoped to the periods since it. This is per-card and needs no configuration.

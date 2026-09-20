@@ -267,6 +267,12 @@ class AccountFormHandler(FormHandlerView):
             account.interest_class_name = data['interest_class_name']
             account.min_payment_class_name = data['min_payment_class_name']
         account.is_active = data['is_active']
+        # .get(), not [...]: the field is optional, so a POST that predates
+        # it -- an external script, or a caller that only knows the older
+        # fields -- keeps working instead of failing with a KeyError. An
+        # absent checkbox means unchecked, which is also what a browser sends.
+        # See GitHub issue #357.
+        account.omit_from_graphs = data.get('omit_from_graphs', False)
         for f in RE_FIELD_NAMES:
             data[f] = data[f].strip()
             if data[f] == '':

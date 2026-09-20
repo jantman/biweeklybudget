@@ -1257,3 +1257,186 @@ class TestIndexMissingData(AcceptanceHelper):
         table = selenium.find_element(By.ID, 'table-accounts-bank')
         rows = {r[0]: r for r in self.tbody2textlist(table)}
         assert rows['BankNoData'] == ['BankNoData', '', '$0.00', '']
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestAcctBalanceChartExcludesOmittedAccounts(AcceptanceHelper):
+    """
+    GitHub issue #357: an Account marked "Omit from graphs?" must not be
+    plotted, so that one very large balance -- a mortgage, typically -- stops
+    setting the vertical scale for every other line.
+
+    Nothing in the sample data ships flagged, deliberately: flagging one of the
+    shared accounts, or adding a new one, would force edits to assertions all
+    over the suite that have nothing to do with this feature. This class alters
+    data instead and ``class_refresh_db`` puts it back afterwards.
+
+    ``InvestmentOne`` (id 5) is the account flagged here because it is
+    *active*. Using an active account is the point: it proves the new
+    exclusion is doing the work rather than the inactive-account exclusion
+    from issue #356 doing it.
+
+    As with that issue, what must *not* change carries as much of the weight as
+    what must: the dates, and every remaining account's values, are identical
+    to the response before the account was flagged.
+    """
+
+    def test_00_capture_unflagged_response(self, base_url):
+        """
+        Capture the before picture, and assert the starting state, so that the
+        comparisons below are against a known response rather than a hardcoded
+        copy of one.
+        """
+        r = requests.get(base_url + CHART_URL + '?days=0')
+        assert r.status_code == 200
+        unflagged = r.json()
+        assert 'InvestmentOne' in unflagged['keys']
+        type(self).unflagged = unflagged
+
+    def test_01_flag_investment_one(self, testdb):
+        acct = testdb.query(Account).get(5)
+        assert acct.name == 'InvestmentOne'
+        assert acct.is_active is True
+        acct.omit_from_graphs = True
+        testdb.add(acct)
+        testdb.commit()
+
+    def test_02_omitted_account_is_not_a_series(self, base_url):
+        keys = requests.get(base_url + CHART_URL).json()['keys']
+        assert 'InvestmentOne' not in keys
+        assert keys == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo'
+        ]
+
+    @pytest.mark.parametrize('param', ['', '?days=0', '?days=15', '?days=365'])
+    def test_03_omitted_account_is_in_no_data_point(self, base_url, param):
+        """
+        Not merely absent from ``keys``: absent from every row, for every
+        window. A key present in ``data`` but missing from ``keys`` would
+        still be read by anything iterating the rows.
+        """
+        data = requests.get(base_url + CHART_URL + param).json()['data']
+        assert data != []
+        for row in data:
+            assert 'InvestmentOne' not in row, row['date']
+
+    def test_04_nothing_else_about_the_response_changed(self, base_url):
+        """
+        FR-011 and contract C-2/C-3: excluding an account changes that account
+        and nothing else. The dates in particular must be untouched -- a date
+        whose only balance record belongs to the omitted account is still
+        returned, carrying the other accounts' forward-filled values, so
+        flagging an account cannot punch a hole in the chart's x axis.
+        """
+        after = requests.get(base_url + CHART_URL + '?days=0').json()
+        before = type(self).unflagged
+        assert sorted(after.keys()) == ['data', 'keys']
+        assert after['keys'] == [
+            k for k in before['keys'] if k != 'InvestmentOne'
+        ]
+        assert [x['date'] for x in after['data']] == [
+            x['date'] for x in before['data']
+        ]
+        for before_row, after_row in zip(before['data'], after['data']):
+            expected = {
+                k: v for k, v in before_row.items() if k != 'InvestmentOne'
+            }
+            assert after_row == expected, after_row['date']
+
+    def test_05_omitted_account_is_still_offered_for_new_records(self, testdb):
+        """
+        The guard against the most likely wrong implementation of this feature
+        (FR-014).
+
+        ``Account.active_accounts()`` calls itself "the single definition of an
+        Account that may be chosen", and six account pickers share it, so it is
+        the obvious home for the omit filter -- and the wrong one. Putting it
+        there would make flagging an account silently remove it from every
+        dropdown in the application. Nothing else in the suite would notice.
+        """
+        names = [a.name for a in Account.active_accounts(testdb).all()]
+        assert 'InvestmentOne' in names
+
+    def test_06_omitted_and_inactive_is_excluded_once(self, testdb, base_url):
+        """
+        The two exclusions compose rather than conflict: DisabledBank is
+        already inactive, and flagging it as well must not error or produce a
+        duplicate. See GitHub issues #356 and #357.
+        """
+        acct = testdb.query(Account).get(6)
+        assert acct.name == 'DisabledBank'
+        assert acct.is_active is False
+        acct.omit_from_graphs = True
+        testdb.add(acct)
+        testdb.commit()
+        data = requests.get(base_url + CHART_URL + '?days=0').json()
+        assert data['keys'] == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo'
+        ]
+        for row in data['data']:
+            assert 'DisabledBank' not in row, row['date']
+
+    def test_07_clearing_the_flag_restores_the_line(self, testdb, base_url):
+        """
+        Nothing about this setting is destructive: the balance records were
+        kept while the account was omitted, so clearing the flag brings the
+        line back in full (FR-012).
+        """
+        for acct_id in [5, 6]:
+            acct = testdb.query(Account).get(acct_id)
+            acct.omit_from_graphs = False
+            testdb.add(acct)
+        testdb.commit()
+        after = requests.get(base_url + CHART_URL + '?days=0').json()
+        # DisabledBank stays out -- it is still inactive -- but InvestmentOne
+        # comes back with exactly the data it had before it was flagged.
+        assert after['keys'] == type(self).unflagged['keys']
+        assert after['data'] == type(self).unflagged['data']
+
+
+@pytest.mark.acceptance
+@pytest.mark.usefixtures('class_refresh_db', 'refreshdb', 'testflask')
+class TestAcctBalanceChartNullOmitFlagIsCharted(AcceptanceHelper):
+    """
+    GitHub issue #357, the upgrade path: ``accounts.omit_from_graphs`` is
+    ``NULL`` for every row that predates the migration, and ``NULL`` must mean
+    "not omitted".
+
+    This is the one defect in this feature that would reach users silently. In
+    SQL ``NULL = false`` is not true, so a filter written ``== False`` matches
+    no pre-upgrade row and the chart comes back **empty** the first time the
+    index page is loaded after upgrading -- with nothing on screen to explain
+    it and no action by the user to blame it on. The filter is therefore
+    written ``isnot(True)``, and this class is what keeps it that way.
+
+    The sample data loader inserts explicit values, so the ``NULL`` state is
+    set up here rather than assumed.
+    """
+
+    def test_00_null_the_flag_on_every_account(self, testdb):
+        for acct in testdb.query(Account).all():
+            acct.omit_from_graphs = None
+            testdb.add(acct)
+        testdb.commit()
+        for acct in testdb.query(Account).all():
+            assert acct.omit_from_graphs is None, acct.name
+
+    def test_01_every_active_account_is_still_charted(self, base_url):
+        r = requests.get(base_url + CHART_URL + '?days=0')
+        assert r.status_code == 200
+        data = r.json()
+        assert data['keys'] == [
+            'BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
+            'InvestmentOne'
+        ]
+        assert data['data'] != []
+
+    @pytest.mark.parametrize('param', ['', '?days=0', '?days=15', '?days=365'])
+    def test_02_null_flagged_accounts_have_values(self, base_url, param):
+        data = requests.get(base_url + CHART_URL + param).json()['data']
+        assert data != []
+        for row in data:
+            for name in ['BankOne', 'BankTwoStale', 'CreditOne', 'CreditTwo',
+                         'InvestmentOne']:
+                assert name in row, '%s missing on %s' % (name, row['date'])

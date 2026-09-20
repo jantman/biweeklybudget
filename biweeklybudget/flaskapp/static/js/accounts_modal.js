@@ -100,6 +100,7 @@ function accountModalDivForm() {
             plaid_accounts
         )
         .addCheckbox('account_frm_active', 'is_active', 'Active?', true)
+        .addCheckbox('account_frm_omit_from_graphs', 'omit_from_graphs', 'Omit from graphs?', false, { helpBlock: 'If checked, this account is left off the Account Balances chart on the index page. Useful for an account whose balance is large enough to flatten every other line. Nothing else about the account changes.'})
         .render();
 }
 
@@ -132,6 +133,13 @@ function accountModalDivFillAndShow(msg) {
         $('#account_frm_active').prop('checked', true);
     } else {
         $('#account_frm_active').prop('checked', false);
+    }
+    // strict === true: the column is null for accounts that predate it, and
+    // null means "not omitted". See GitHub issue #357.
+    if(msg['omit_from_graphs'] === true) {
+        $('#account_frm_omit_from_graphs').prop('checked', true);
+    } else {
+        $('#account_frm_omit_from_graphs').prop('checked', false);
     }
     $('#account_frm_min_pay_class_name option[value=' + msg['min_payment_class_name'] + ']').prop('selected', 'selected').change();
     $('#account_frm_name').val(msg['name']);
