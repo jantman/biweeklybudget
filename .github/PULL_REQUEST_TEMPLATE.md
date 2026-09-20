@@ -15,6 +15,10 @@ __IMPORTANT:__ Please take note of the below checklist, especially the first two
     - [ ] The changelog entry is concise, following the format and level of detail of the
       existing entries (a sentence or two, plus a few short sub-bullets only if needed);
       background and rationale belong in the pull request description.
+    - [ ] If upgrading an existing installation needs anything done by hand (SQL, a new
+      container image, a replaced command/endpoint/setting, a change in how data is
+      recorded), it is also listed in the ``Upgrading`` subsection at the top of the
+      release section of ``CHANGES.rst``.
     - [ ] All modules should have (and use) module-level loggers.
     - [ ] **Commit messages** should be meaningful, and reference the Issue number
       if you're working on a GitHub issue (i.e. "issue #x - <message>"). Please
