@@ -1,34 +1,41 @@
 Changelog
 =========
 
-Unreleased
-----------
+2.0.0 (2026-09-20)
+------------------
 
 Upgrading
 +++++++++
 
-Manual steps that may be needed when upgrading from 2.0.0. Not all of them apply to every installation.
+Manual steps that may be needed when upgrading to this version from 1.6.0. Not all of them apply to every installation.
 
-* **Back up the database and apply the migration before starting the application**, as for any upgrade. This release adds one column, unset for every existing Account. Run the ``initdb`` console script before starting Flask.
+* **Back up the database and apply the migrations before starting the application.** This release contains five database migrations, one of which drops Account columns. Run the ``initdb`` console script before starting Flask; see "Database Migrations" in the Flask Application documentation.
 
-* **If any Account is linked to a Plaid credit card, correct its historical balances by hand.** Credit card balances are now recorded as negative, but balances recorded before upgrading keep their old positive sign and are not corrected automatically. The SQL to reverse them, and the conditions for running it safely (once, after upgrading and before the next Plaid update), is in "Credit Card Accounts" in the Plaid documentation.
+* **Pull the Docker image from** ``ghcr.io/jantman/biweeklybudget``. The Docker Hub image ``jantman/biweeklybudget`` stops at 1.6.0 and receives no further updates; update any ``docker run`` command, Compose file or systemd unit naming it.
 
-* **Expect one over-payment warning per credit card.** The first payment recorded for each card after upgrading is still measured against your whole transaction history, because payments made before 2.0.0 carry no card designation, and will warn that it exceeds the card's recorded charges. Save it anyway; every later payment for that card is scoped to the periods since it. Nothing needs to be configured.
+* **Replace anything that used OFX downloading.** The ``ofxgetter``, ``ofxbackfiller`` and ``ofxclient`` commands and the ``/api/ofx/accounts`` and ``/api/ofx/statement`` endpoints are removed, so any cron job, timer or script calling them will fail; download transactions with Plaid instead, or stay on 1.6.0. The ``VAULT_ADDR``, ``TOKEN_PATH`` and ``STATEMENTS_SAVE_PATH`` settings are ignored if still set and can be deleted, along with any Vault or keyring configuration. Transactions already downloaded over OFX, and their reconciliations, are unaffected.
+
+* **If any Account is linked to a Plaid credit card or loan, correct its historical balances by hand.** Both are now recorded as negative, money owed, but balances recorded before upgrading keep their old positive sign and are not corrected automatically. The SQL to reverse them, and the conditions for running it safely (once, after upgrading and before the next Plaid update), is in "Credit Card Accounts" and "Loan Accounts" in the Plaid documentation.
+
+* **If you record credit card payments, stop entering offsetting "pseudo-transactions" and remove any already entered.** Mark the payment itself with "Credit Card Payment For" instead; an offsetting entry now overcorrects, because the payment no longer counts against the budget. If you carry a balance on a card, also start recording its interest and fees as ordinary transactions against that card, or your budgets will overstate what is available by the amount of interest you pay. See "Credit Card Payments" in the Application Usage documentation. The new ``CREDIT_PAYMENT_BEGIN_DATE`` setting is optional and defaults to ``RECONCILE_BEGIN_DATE``.
+
+* **Expect one over-payment warning per credit card.** The first payment recorded for each card after upgrading is measured against your whole transaction history, because payments recorded before upgrading carry no card designation, and will warn that it exceeds the card's recorded charges. Save it anyway; every later payment for that card is scoped to the periods since it. Nothing needs to be configured.
+
+* **Update any script calling** ``GET /ajax/chart-data/account-balances``. With no ``days`` parameter it now returns only the default window rather than all recorded history, and no response contains more than ``ACCOUNT_BALANCE_CHART_MAX_POINTS`` dates. Pass ``days=0`` for all history.
+
+* **Update any script calling** ``/plaid-update``. It now returns HTTP 500, rather than 200, when any Item fails to update, so a script that treats a non-200 response as fatal (``curl --fail``, for example) will start reporting partial failures it previously ignored.
+
+* **Development environments only:** the ``MYSQL_DBNAME_RIGHT`` environment variable is no longer used and can be removed.
 
 Changes
 +++++++
 
-* `Issue #359 <https://github.com/jantman/biweeklybudget/issues/359>`_ - Each release section of this changelog now opens with an ``Upgrading`` subsection listing the steps an operator may need to take by hand when upgrading to it, above a ``Changes`` subsection holding the entries themselves. Such steps were previously only a clause inside the entry that caused them - the SQL needed to correct Plaid loan balances in 2.0.0, for example - so they could not be found without reading every entry.
+* `Issue #359 <https://github.com/jantman/biweeklybudget/issues/359>`_ - Each release section of this changelog now opens with an ``Upgrading`` subsection listing the steps an operator may need to take by hand when upgrading to it, above a ``Changes`` subsection holding the entries themselves. Such steps were previously only a clause inside the entry that caused them - the SQL needed to correct Plaid loan balances, for example - so they could not be found without reading every entry.
 
-  * The 2.0.0 and ``Unreleased`` sections gain one, covering everything merged since 1.6.0. No entry's content changed; nothing about the application changed.
+  * The 2.0.0 section gains one, covering everything merged since 1.6.0.
   * Adding one is now required by the development Guidelines, the pull request checklist and constitution Principle VI (amended to 2.2.0).
 
-* `Issue #355 <https://github.com/jantman/biweeklybudget/issues/355>`_ - The pay period view's Per-Account Transaction Totals table now covers only the pay period being viewed, and is transposed so that accounts are columns and their totals a single row ending in a Total column. It was five columns of pay periods by one row per account, four of those periods showing totals that were of little use and taking a lot of vertical space on an already long page.
-
-  * An account with no transactions in the period being viewed no longer appears at all, including one that was active in an adjacent period; view that period to see it. With many accounts the table scrolls sideways within its panel.
-  * The totals still include credit card payments and transactions marked No Budget Impact, and so still differ deliberately from the budget totals above them, as the Per-Account Transaction Totals documentation explains.
-
-* `Issue #356 <https://github.com/jantman/biweeklybudget/issues/356>`_ - Inactive Accounts are no longer offered in the account dropdowns used to add or edit records, and are no longer plotted on the dashboard's Account Balances chart. 2.0.0 said both of these were already the case; they were not, so a closed account stayed in every picker and kept a flat line on the chart forever.
+* `Issue #356 <https://github.com/jantman/biweeklybudget/issues/356>`_ - Inactive Accounts are no longer offered in the account dropdowns used to add or edit records, and are no longer plotted on the dashboard's Account Balances chart. Deactivating an Account was always meant to do both; it did neither, so a closed account stayed in every picker and kept a flat line on the chart forever.
 
   * The Account Transfer (from and to), Add/Edit Transaction, Budget Transfer, Add/Edit Scheduled Transaction, Add Fuel Fill and "skip scheduled transaction" dropdowns now list active Accounts only.
   * An existing record whose Account was deactivated after it was created still shows, and still saves with, that Account - editing an old transaction does not silently retarget it.
@@ -41,43 +48,10 @@ Changes
   * Only the chart is affected. The Account is still listed, still counted in every total, still offered in every dropdown, and still reconciled and updated as before. See "Leaving an account out" in the Account Balances Chart documentation.
   * Requires a schema migration, which adds the column as unset; no existing Account is omitted by the upgrade.
 
-* `Issue #358 <https://github.com/jantman/biweeklybudget/issues/358>`_ - The "This payment covers:" panel in the transaction modal now counts a card's unpaid charges from the first payment you recorded toward that card, instead of from ``CREDIT_PAYMENT_BEGIN_DATE``. On a long-running install the panel used to list every pay period since you started - over 200 rows in a modal - with an unpaid total unrelated to the card's balance.
-
-  * Payments made before 2.0.0 carry no card designation and are never subtracted, so the first payment you enter for each card after upgrading still shows the old, whole-history window and will warn that it exceeds your recorded charges. Save it anyway; every payment for that card afterwards is scoped to the periods since it. This is per-card and needs no configuration.
-  * ``CREDIT_PAYMENT_BEGIN_DATE`` keeps its name, default and meaning, but is now a floor beneath the per-card date rather than the whole window, so most installs no longer need to set it.
-  * The table shows at most six pay periods, collapsing anything older into one row giving their count, date range, unpaid charges and how much of the payment they absorbed. The panel also states the date it is counting from. See "What the payment panel tells you" in the Credit Card Payments documentation.
-
 * `Issue #354 <https://github.com/jantman/biweeklybudget/issues/354>`_ - Balances for credit cards linked through Plaid are now recorded as negative, the same as every other account where money is owed. Cash Position and the unallocated-funds notification therefore subtract what is owed on them, instead of adding it.
 
   * Plaid reports a credit card's balance as the positive amount owed, and that number was recorded as-is, so both figures were overstated by twice the balance owed - a card carrying $1,000 made $2,000 more look available than there was. Only the balance's sign was wrong; transaction amounts were not affected.
   * Balances recorded before this change keep their old sign and are not corrected automatically, so a card's line on the Account Balances chart jumps from positive to negative at its first update after upgrading. SQL to correct them, and the conditions for running it safely, are in "Credit Card Accounts" in the Plaid documentation.
-
-2.0.0 (2026-09-20)
-------------------
-
-Upgrading
-+++++++++
-
-Manual steps that may be needed when upgrading to this version from 1.6.0. Not all of them apply to every installation.
-
-* **Back up the database and apply the migrations before starting the application.** This release contains four database migrations, one of which drops Account columns. Run the ``initdb`` console script before starting Flask; see "Database Migrations" in the Flask Application documentation.
-
-* **Pull the Docker image from** ``ghcr.io/jantman/biweeklybudget``. The Docker Hub image ``jantman/biweeklybudget`` stops at 1.6.0 and receives no further updates; update any ``docker run`` command, Compose file or systemd unit naming it.
-
-* **Replace anything that used OFX downloading.** The ``ofxgetter``, ``ofxbackfiller`` and ``ofxclient`` commands and the ``/api/ofx/accounts`` and ``/api/ofx/statement`` endpoints are removed, so any cron job, timer or script calling them will fail; download transactions with Plaid instead, or stay on 1.6.0. The ``VAULT_ADDR``, ``TOKEN_PATH`` and ``STATEMENTS_SAVE_PATH`` settings are ignored if still set and can be deleted, along with any Vault or keyring configuration. Transactions already downloaded over OFX, and their reconciliations, are unaffected.
-
-* **If any Account is linked to a Plaid loan, correct its historical balances by hand.** Loan balances are now recorded as negative, but balances recorded before upgrading keep their old positive sign and are not corrected automatically. The SQL to reverse them, and the conditions for running it safely (once, after upgrading and before the next Plaid update), is in "Loan Accounts" in the Plaid documentation.
-
-* **If you record credit card payments, stop entering offsetting "pseudo-transactions" and remove any already entered.** Mark the payment itself with "Credit Card Payment For" instead; an offsetting entry now overcorrects, because the payment no longer counts against the budget. If you carry a balance on a card, also start recording its interest and fees as ordinary transactions against that card, or your budgets will overstate what is available by the amount of interest you pay. See "Credit Card Payments" in the Application Usage documentation. The new ``CREDIT_PAYMENT_BEGIN_DATE`` setting is optional and defaults to ``RECONCILE_BEGIN_DATE``.
-
-* **Update any script calling** ``GET /ajax/chart-data/account-balances``. With no ``days`` parameter it now returns only the default window rather than all recorded history, and no response contains more than ``ACCOUNT_BALANCE_CHART_MAX_POINTS`` dates. Pass ``days=0`` for all history.
-
-* **Update any script calling** ``/plaid-update``. It now returns HTTP 500, rather than 200, when any Item fails to update, so a script that treats a non-200 response as fatal (``curl --fail``, for example) will start reporting partial failures it previously ignored.
-
-* **Development environments only:** the ``MYSQL_DBNAME_RIGHT`` environment variable is no longer used and can be removed.
-
-Changes
-+++++++
 
 * **Breaking:** Docker images are now published to the GitHub Container Registry only, as ``ghcr.io/jantman/biweeklybudget``. Nothing is pushed to Docker Hub any more, so ``jantman/biweeklybudget`` on Docker Hub stops receiving updates at 1.6.0.
 
@@ -146,9 +120,9 @@ Changes
 
   * Scripts calling the endpoint (for example with ``curl --fail``) will now see partial failures as errors.
 
-* Change the release process: changes accumulate under this ``Unreleased`` heading, and the version is only incremented when a release is cut, following `Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_. Changelog entries should be concise. The development documentation, ``CLAUDE.md``, project constitution, and pull request template are updated to match.
+* Change the release process: changes accumulate under an ``Unreleased`` heading, and the version is only incremented when a release is cut, following `Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_. Changelog entries should be concise. The development documentation, ``CLAUDE.md``, project constitution, and pull request template are updated to match.
 
-  * Reset ``version.py`` to ``1.6.0``, the most recent release. The changes below were previously listed under versions 1.6.1 through 1.12.1, which were never released, and have been rewritten more concisely.
+  * The changes in this release were previously listed under versions 1.6.1 through 1.12.1, which were never released, and have been rewritten more concisely under this one.
 
 * `Issue #311 <https://github.com/jantman/biweeklybudget/issues/311>`_ - Remove the ``sqlalchemy-diff`` test dependency. The migration tests now compare the migrated database to the models using Alembic's ``compare_metadata()``, and use alembic-verify 1.x's supported fixtures.
 
@@ -176,13 +150,17 @@ Changes
   * ``GET /ajax/chart-data/account-balances`` accepts an optional ``days`` parameter (``0`` for all history). **Behavior change:** without it, only the default window is returned rather than all history.
   * New settings ``ACCOUNT_BALANCE_CHART_DEFAULT_DAYS`` (default ``365``) and ``ACCOUNT_BALANCE_CHART_MAX_POINTS`` (default ``300``); the chart is sampled down to at most that many dates.
 
-* `Issue #213 <https://github.com/jantman/biweeklybudget/issues/213>`_ - Add a per-account transaction totals table to the pay period view, covering the same five pay periods as the Remaining Balances table. These totals include credit card payments and no-budget-impact transactions, so they intentionally differ from the budget totals.
+* `Issue #213 <https://github.com/jantman/biweeklybudget/issues/213>`_ and `Issue #355 <https://github.com/jantman/biweeklybudget/issues/355>`_ - Add a Per-Account Transaction Totals table to the pay period view, covering the pay period being viewed, with accounts as columns and their totals a single row ending in a Total column.
+
+  * An account with no transactions in the period being viewed does not appear at all, including one that was active in an adjacent period; view that period to see it. With many accounts the table scrolls sideways within its panel.
+  * The totals include credit card payments and transactions marked No Budget Impact, and so differ deliberately from the budget totals above them, as the Per-Account Transaction Totals documentation explains.
 
 * `Issue #210 <https://github.com/jantman/biweeklybudget/issues/210>`_ and `Issue #319 <https://github.com/jantman/biweeklybudget/issues/319>`_ - Credit card payments no longer count against the budget, removing the need for offsetting "pseudo-transactions".
 
   * Transactions gain a "Credit Card Payment For" field and a general "no budget impact" flag (for statement credits, balance adjustments and similar); transactions with either are excluded from budget totals but can still be reconciled.
   * The transaction modal shows how a payment maps onto the card's unpaid charges, and warns if it exceeds them.
-  * New optional setting ``CREDIT_PAYMENT_BEGIN_DATE``, defaulting to ``RECONCILE_BEGIN_DATE``.
+  * The panel counts a card's unpaid charges from the first payment recorded toward that card, so it covers the periods since you started paying that card rather than your whole history (`Issue #358 <https://github.com/jantman/biweeklybudget/issues/358>`_). It shows at most six pay periods, collapsing anything older into one row giving their count, date range, unpaid charges and how much of the payment they absorbed, and states the date it is counting from. See "What the payment panel tells you" in the Credit Card Payments documentation.
+  * New optional setting ``CREDIT_PAYMENT_BEGIN_DATE``, defaulting to ``RECONCILE_BEGIN_DATE``. It is a floor beneath each card's own date rather than the whole window, so most installs need not set it.
   * Database migration ``f9df90273cdd`` adds the ``no_budget_impact`` and ``credit_payment_acct_id`` columns to ``transactions``.
   * If you carry a card balance, interest and fees must now be recorded as ordinary transactions; see the documentation.
 
