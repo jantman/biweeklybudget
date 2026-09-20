@@ -4,6 +4,25 @@ Changelog
 Unreleased
 ----------
 
+Upgrading
++++++++++
+
+Manual steps that may be needed when upgrading from 2.0.0. Not all of them apply to every installation.
+
+* **Back up the database and apply the migration before starting the application**, as for any upgrade. This release adds one column, unset for every existing Account. Run the ``initdb`` console script before starting Flask.
+
+* **If any Account is linked to a Plaid credit card, correct its historical balances by hand.** Credit card balances are now recorded as negative, but balances recorded before upgrading keep their old positive sign and are not corrected automatically. The SQL to reverse them, and the conditions for running it safely (once, after upgrading and before the next Plaid update), is in "Credit Card Accounts" in the Plaid documentation.
+
+* **Expect one over-payment warning per credit card.** The first payment recorded for each card after upgrading is still measured against your whole transaction history, because payments made before 2.0.0 carry no card designation, and will warn that it exceeds the card's recorded charges. Save it anyway; every later payment for that card is scoped to the periods since it. Nothing needs to be configured.
+
+Changes
++++++++
+
+* `Issue #359 <https://github.com/jantman/biweeklybudget/issues/359>`_ - Each release section of this changelog now opens with an ``Upgrading`` subsection listing the steps an operator may need to take by hand when upgrading to it, above a ``Changes`` subsection holding the entries themselves. Such steps were previously only a clause inside the entry that caused them - the SQL needed to correct Plaid loan balances in 2.0.0, for example - so they could not be found without reading every entry.
+
+  * The 2.0.0 and ``Unreleased`` sections gain one, covering everything merged since 1.6.0. No entry's content changed; nothing about the application changed.
+  * Adding one is now required by the development Guidelines, the pull request checklist and constitution Principle VI (amended to 2.2.0).
+
 * `Issue #355 <https://github.com/jantman/biweeklybudget/issues/355>`_ - The pay period view's Per-Account Transaction Totals table now covers only the pay period being viewed, and is transposed so that accounts are columns and their totals a single row ending in a Total column. It was five columns of pay periods by one row per account, four of those periods showing totals that were of little use and taking a lot of vertical space on an already long page.
 
   * An account with no transactions in the period being viewed no longer appears at all, including one that was active in an adjacent period; view that period to see it. With many accounts the table scrolls sideways within its panel.
@@ -35,6 +54,30 @@ Unreleased
 
 2.0.0 (2026-09-20)
 ------------------
+
+Upgrading
++++++++++
+
+Manual steps that may be needed when upgrading to this version from 1.6.0. Not all of them apply to every installation.
+
+* **Back up the database and apply the migrations before starting the application.** This release contains four database migrations, one of which drops Account columns. Run the ``initdb`` console script before starting Flask; see "Database Migrations" in the Flask Application documentation.
+
+* **Pull the Docker image from** ``ghcr.io/jantman/biweeklybudget``. The Docker Hub image ``jantman/biweeklybudget`` stops at 1.6.0 and receives no further updates; update any ``docker run`` command, Compose file or systemd unit naming it.
+
+* **Replace anything that used OFX downloading.** The ``ofxgetter``, ``ofxbackfiller`` and ``ofxclient`` commands and the ``/api/ofx/accounts`` and ``/api/ofx/statement`` endpoints are removed, so any cron job, timer or script calling them will fail; download transactions with Plaid instead, or stay on 1.6.0. The ``VAULT_ADDR``, ``TOKEN_PATH`` and ``STATEMENTS_SAVE_PATH`` settings are ignored if still set and can be deleted, along with any Vault or keyring configuration. Transactions already downloaded over OFX, and their reconciliations, are unaffected.
+
+* **If any Account is linked to a Plaid loan, correct its historical balances by hand.** Loan balances are now recorded as negative, but balances recorded before upgrading keep their old positive sign and are not corrected automatically. The SQL to reverse them, and the conditions for running it safely (once, after upgrading and before the next Plaid update), is in "Loan Accounts" in the Plaid documentation.
+
+* **If you record credit card payments, stop entering offsetting "pseudo-transactions" and remove any already entered.** Mark the payment itself with "Credit Card Payment For" instead; an offsetting entry now overcorrects, because the payment no longer counts against the budget. If you carry a balance on a card, also start recording its interest and fees as ordinary transactions against that card, or your budgets will overstate what is available by the amount of interest you pay. See "Credit Card Payments" in the Application Usage documentation. The new ``CREDIT_PAYMENT_BEGIN_DATE`` setting is optional and defaults to ``RECONCILE_BEGIN_DATE``.
+
+* **Update any script calling** ``GET /ajax/chart-data/account-balances``. With no ``days`` parameter it now returns only the default window rather than all recorded history, and no response contains more than ``ACCOUNT_BALANCE_CHART_MAX_POINTS`` dates. Pass ``days=0`` for all history.
+
+* **Update any script calling** ``/plaid-update``. It now returns HTTP 500, rather than 200, when any Item fails to update, so a script that treats a non-200 response as fatal (``curl --fail``, for example) will start reporting partial failures it previously ignored.
+
+* **Development environments only:** the ``MYSQL_DBNAME_RIGHT`` environment variable is no longer used and can be removed.
+
+Changes
++++++++
 
 * **Breaking:** Docker images are now published to the GitHub Container Registry only, as ``ghcr.io/jantman/biweeklybudget``. Nothing is pushed to Docker Hub any more, so ``jantman/biweeklybudget`` on Docker Hub stops receiving updates at 1.6.0.
 

@@ -34,6 +34,13 @@ Guidelines
   a few short sub-bullets for things users need to know (new settings, database
   migrations, UI changes, breaking changes, upgrade steps). Background and rationale
   belong in the pull request, not the changelog.
+* If your change requires anything to be done by hand when upgrading an existing
+  installation - running SQL, changing the container image, replacing a removed command,
+  endpoint or setting, or changing how data is recorded - also add a bullet for it to an
+  ``Upgrading`` subsection at the top of the release section, creating that subsection
+  (and the ``Changes`` subsection that holds the entries) if it does not exist. Say when
+  the step applies and point at the documentation that gives the detail; keep the detail
+  itself in the documentation.
 
 .. _development.docker_database:
 
@@ -311,7 +318,9 @@ requests do not change the version. Until then, changes accumulate under the ``U
 heading at the top of ``CHANGES.rst``. Version numbers follow
 `Semantic Versioning 2.0.0 <https://semver.org/spec/v2.0.0.html>`_.
 
-1. Ensure that ``CHANGES.rst`` has entries under ``Unreleased`` for all changes since the last release.
+1. Ensure that ``CHANGES.rst`` has entries under ``Unreleased`` for all changes since the last release,
+   and that its ``Upgrading`` subsection lists every manual step an upgrade from the previous release
+   may need.
 2. Choose the new version from those entries: a MAJOR increment if any change is
    backwards-incompatible for users (for example a removed or renamed setting, console
    script, or HTTP endpoint or parameter; a dropped Python version; or an upgrade that

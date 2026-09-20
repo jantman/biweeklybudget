@@ -263,6 +263,11 @@ All Python files include a standard copyright header with AGPL v3 license text. 
   for what users need to know (new settings, migrations, UI changes, breaking changes,
   upgrade steps). Problem narratives, investigation, rationale, and design discussion go
   in the spec and PR, not the changelog.
+- **Manual upgrade steps also go in an `Upgrading` subsection** at the top of the release
+  section, above a `Changes` subsection holding the entries themselves (create either if
+  absent). A change needing SQL run by hand, a different container image, a replacement
+  for a removed command/endpoint/setting, or a change in how the user records data gets a
+  bullet there saying when the step applies and naming the documentation with the detail.
 - When a release is requested, choose the version per
   [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) from *all* entries under
   `Unreleased`: MAJOR if any change is backwards-incompatible for users (e.g. a removed or

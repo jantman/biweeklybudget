@@ -1,6 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.2 → 2.2.0
+Rationale: MINOR. Principle VI gains a requirement: a change needing manual steps on
+upgrade must also list them in an "Upgrading" subsection at the top of its release
+section in CHANGES.rst (GitHub issue #359). Manual upgrade steps were previously
+buried in a sub-bullet of the entry that caused them, so an operator upgrading could
+not find them without reading every entry.
+
+Modified sections:
+  - VI. Changelog Every Change; Release Only On Request (adds the "Upgrading"
+    subsection requirement)
+
+Added sections: none
+Removed sections: none
+
+Dependent files updated in the same change: docs/source/development.rst (Guidelines,
+Release Checklist), .github/PULL_REQUEST_TEMPLATE.md, CLAUDE.md, CHANGES.rst
+(Upgrading subsections added to Unreleased and 2.0.0).
+
+Follow-up TODOs: none.
+
+---
+
 Version change: 2.1.1 → 2.1.2
 Rationale: PATCH. OFX downloading, Hashicorp Vault and keyring support were removed
 (GitHub issue #265), so the Secrets constraint's statement that "OFX credentials live
@@ -176,6 +198,14 @@ migrations, UI changes, breaking changes, upgrade steps). Problem narratives,
 investigation, rationale, and design discussion belong in the spec and pull request,
 not the changelog.
 
+Where a change requires an operator to do something by hand when upgrading an existing
+installation — run SQL, change a container image, replace a removed command, endpoint
+or setting, or alter how they record data — that step MUST also be listed as a bullet
+in an `Upgrading` subsection at the top of the release section, created if absent and
+placed above a `Changes` subsection holding the entries themselves. The bullet states
+when the step applies and points to the documentation that gives the detail; the detail
+itself stays in the documentation.
+
 Version increments, tags, and releases happen only when the maintainer explicitly
 requests a release. The new version MUST then be chosen per Semantic Versioning 2.0.0
 from all `Unreleased` entries accumulated since the last release: MAJOR if any change
@@ -267,4 +297,4 @@ unjustified deviation is grounds to reject the change. Principles marked
 NON-NEGOTIABLE are not subject to case-by-case waiver — changing them requires
 amending this constitution first.
 
-**Version**: 2.1.2 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-14
+**Version**: 2.2.0 | **Ratified**: 2026-09-06 | **Last Amended**: 2026-09-20
